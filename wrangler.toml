@@ -1,21 +1,7 @@
-﻿name = "kharon-unified-api"
+name = "kharon-unified-api"
 main = "apps/api/src/index.ts"
 compatibility_date = "2026-04-09"
 workers_dev = true
-[observability]
-enabled = false
-head_sampling_rate = 1
-
-[observability.logs]
-enabled = true
-head_sampling_rate = 1
-persist = true
-invocation_logs = true
-
-[observability.traces]
-enabled = false
-persist = true
-head_sampling_rate = 1
 
 [vars]
 KHARON_MODE = "production"
@@ -51,3 +37,9 @@ head_sampling_rate = 1
 # GOOGLE_CHAT_WEBHOOK_URL
 # GOOGLE_CALENDAR_ID
 # GMAIL_SENDER_ADDRESS
+# Optional Cloudflare Access verification (recommended when Access is enabled)
+# CF_ACCESS_AUD
+# CF_ACCESS_JWKS_URL
+# CF_ACCESS_ISSUER
+# CF_ACCESS_JWKS_JSON
+# CF_ACCESS_ENABLED
