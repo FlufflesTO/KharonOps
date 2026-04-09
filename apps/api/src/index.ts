@@ -71,6 +71,13 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   app.use("*", sessionMiddleware(config));
 
   app.use("/api/v1/*", async (_c, next) => {
+    const path = _c.req.path;
+    const skipSchemaInit = path === "/api/v1/auth/session" || path === "/api/v1/auth/logout";
+    if (skipSchemaInit) {
+      await next();
+      return;
+    }
+
     if (!schemaInitPromise) {
       schemaInitPromise = store.ensureSchema();
     }
