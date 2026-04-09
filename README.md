@@ -94,6 +94,11 @@ Treat build hook URLs as sensitive trigger credentials. Rotate if exposed.
 
 Runtime config is in `wrangler.toml`.
 
+Recommended split for production:
+- Internal/API admin origin (Access-protected): `kharon-unified-api`
+- Public portal API origin (no Access challenge): `kharon-unified-api-public`
+- Netlify `/api/*` should proxy to `kharon-unified-api-public`
+
 ## Cloudflare Access (Optional, Hardened Mode)
 
 If Access is enabled on Worker routes, enable server verification with:

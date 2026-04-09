@@ -15,6 +15,7 @@
     "check": "npm run typecheck",
     "build:packages": "npm run build -w @kharon/domain && npm run build -w @kharon/google && npm run build -w @kharon/ui",
     "build:apps": "npm run build -w @kharon/api && npm run build -w @kharon/site && npm run build -w @kharon/portal && node ./scripts/build-static.mjs",
+    "build:web": "npm run build -w @kharon/site && npm run build -w @kharon/portal && node ./scripts/build-static.mjs",
     "build": "npm run build:packages && npm run build:apps",
     "pretest": "npm run build:packages",
     "test": "vitest run",

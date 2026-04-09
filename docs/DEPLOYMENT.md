@@ -136,6 +136,12 @@ Use one of these production-safe patterns:
 1. Keep Access enabled and ensure API requests include a valid `Cf-Access-Jwt-Assertion` token.
 2. Use a non-Access-protected origin specifically for Netlify proxy traffic (recommended for public client portal flows).
 
+### Recommended Production Pattern (Implemented)
+
+- Keep `kharon-unified-api` as internal Access-protected origin.
+- Deploy `kharon-unified-api-public` for Netlify proxy traffic.
+- Proxy `/api/*` from Netlify to `https://kharon-unified-api-public.connor-venter.workers.dev/api/:splat`.
+
 ## Workbook Migration
 
 After Worker deployment and secrets setup:
