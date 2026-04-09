@@ -7,6 +7,13 @@ export interface RuntimeConfig {
   sessionCookieName: string;
   sessionTtlSeconds: number;
   googleClientId: string;
+  cloudflareAccess: {
+    enabled: boolean;
+    audience: string;
+    jwksUrl: string;
+    issuer: string;
+    jwksJson: string;
+  };
   rails: WorkspaceRails;
 }
 
@@ -35,6 +42,12 @@ export function createRuntimeConfig(env: Record<string, string | undefined>): Ru
   const sessionKeys = splitKeys(sessionKeysRaw);
 
   const effectiveKeys = sessionKeys.length > 0 ? sessionKeys : ["local-dev-session-key-change-me-1234567890"];
+  const accessAudience = envFirst(env, ["CF_ACCESS_AUD", "CLOUDFLARE_ACCESS_AUD"]);
+  const accessJwksUrl = envFirst(env, ["CF_ACCESS_JWKS_URL", "CLOUDFLARE_ACCESS_JWKS_URL"]);
+  const accessIssuer = envFirst(env, ["CF_ACCESS_ISSUER", "CLOUDFLARE_ACCESS_ISSUER"]);
+  const accessJwksJson = envFirst(env, ["CF_ACCESS_JWKS_JSON", "CLOUDFLARE_ACCESS_JWKS_JSON"]);
+  const accessEnabledRaw = envFirst(env, ["CF_ACCESS_ENABLED", "CLOUDFLARE_ACCESS_ENABLED"]);
+  const accessEnabled = accessEnabledRaw === "true" || (accessAudience !== "" && (accessJwksUrl !== "" || accessJwksJson !== ""));
 
   return {
     mode,
@@ -42,6 +55,13 @@ export function createRuntimeConfig(env: Record<string, string | undefined>): Ru
     sessionCookieName: envFirst(env, ["SESSION_COOKIE_NAME"]) || "kharon_session",
     sessionTtlSeconds: Number(envFirst(env, ["SESSION_TTL_SECONDS"]) || 28_800),
     googleClientId: envFirst(env, ["GOOGLE_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "KHARON_GOOGLE_CLIENT_ID"]),
+    cloudflareAccess: {
+      enabled: accessEnabled,
+      audience: accessAudience,
+      jwksUrl: accessJwksUrl,
+      issuer: accessIssuer,
+      jwksJson: accessJwksJson
+    },
     rails: createWorkspaceRails(env)
   };
 }

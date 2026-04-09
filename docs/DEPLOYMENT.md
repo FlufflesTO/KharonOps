@@ -78,6 +78,13 @@ Optional for future build/runtime metadata:
 - `GOOGLE_CALENDAR_ID`
 - `GMAIL_SENDER_ADDRESS`
 
+Optional Cloudflare Access JWT verification at app layer:
+- `CF_ACCESS_ENABLED=true`
+- `CF_ACCESS_AUD=<access-audience>`
+- `CF_ACCESS_JWKS_URL=https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`
+- `CF_ACCESS_ISSUER=https://<team>.cloudflareaccess.com` (optional, recommended)
+- `CF_ACCESS_JWKS_JSON=<jwks-json>` (optional local/test alternative to URL)
+
 Compatibility aliases already supported by runtime (no code changes required):
 - `PORTAL_SESSION_SECRET` as fallback for `SESSION_KEYS`
 - `GOOGLE_SERVICE_ACCOUNT_JSON` as fallback source for:
@@ -110,6 +117,14 @@ Compatibility aliases already supported by runtime (no code changes required):
    - `/`
    - `/portal/`
    - `/api/v1/admin/health` (authenticated admin session)
+
+## Cloudflare Access + Netlify Proxy Note
+
+If Netlify proxies `/api/*` to a Worker origin protected by Cloudflare Access, requests may return Access challenge HTML instead of API JSON unless a valid Access JWT is present.
+
+Use one of these production-safe patterns:
+1. Keep Access enabled and ensure API requests include a valid `Cf-Access-Jwt-Assertion` token.
+2. Use a non-Access-protected origin specifically for Netlify proxy traffic (recommended for public client portal flows).
 
 ## Workbook Migration
 

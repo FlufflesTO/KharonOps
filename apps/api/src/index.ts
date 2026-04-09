@@ -34,7 +34,7 @@ import { createRuntimeConfig } from "./config.js";
 import type { AppBindings } from "./context.js";
 import { verifyIdentity } from "./auth/google.js";
 import { clearSessionCookie, createSessionToken, setSessionCookie } from "./auth/session.js";
-import { getSessionUser, requireRoles, requireSession, sessionMiddleware } from "./middleware/auth.js";
+import { accessMiddleware, getSessionUser, requireRoles, requireSession, sessionMiddleware } from "./middleware/auth.js";
 import { correlationMiddleware } from "./middleware/correlation.js";
 import { parseJsonBody } from "./services/parse.js";
 import { createWorkbookStore } from "./store/factory.js";
@@ -67,6 +67,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
   const app = new Hono<AppBindings>();
   app.use("*", correlationMiddleware);
+  app.use("/api/v1/*", accessMiddleware(config));
   app.use("*", sessionMiddleware(config));
 
   app.use("/api/v1/*", async (_c, next) => {

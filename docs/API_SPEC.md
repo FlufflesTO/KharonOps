@@ -2,6 +2,8 @@
 
 Base path: `/api/v1`
 
+When Cloudflare Access enforcement is enabled in runtime config, every `/api/v1/*` request must include a valid `Cf-Access-Jwt-Assertion` header.
+
 All responses use:
 
 ```json

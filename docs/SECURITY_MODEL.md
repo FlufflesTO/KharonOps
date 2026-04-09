@@ -27,6 +27,12 @@ Cookie flags:
 
 - Correlation ID assigned on every request.
 - Correlation ID is propagated in all responses and mutable writes.
+- Optional Cloudflare Access JWT verification can be enforced on `/api/v1/*` using:
+  - `CF_ACCESS_AUD`
+  - `CF_ACCESS_JWKS_URL` (or `CF_ACCESS_JWKS_JSON`)
+  - optional `CF_ACCESS_ISSUER`
+  - optional `CF_ACCESS_ENABLED=true`
+- When enabled, API requests without a valid `Cf-Access-Jwt-Assertion` are rejected with `401`.
 
 ## Concurrency Controls
 
