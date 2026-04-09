@@ -1,0 +1,180 @@
+import type { ApiEnvelope, SyncMutation, SyncPushResult } from "@kharon/domain";
+
+const JSON_HEADERS = {
+  "content-type": "application/json"
+};
+
+async function request<T>(path: string, init?: RequestInit): Promise<ApiEnvelope<T>> {
+  const response = await fetch(path, {
+    credentials: "include",
+    ...init,
+    headers: {
+      ...(init?.headers ?? {}),
+      ...(init?.body ? JSON_HEADERS : {})
+    }
+  });
+
+  const body = (await response.json()) as ApiEnvelope<T>;
+  if (!response.ok) {
+    throw body;
+  }
+  return body;
+}
+
+export interface PortalSession {
+  session: {
+    user_uid: string;
+    email: string;
+    role: "client" | "technician" | "dispatcher" | "admin";
+    display_name: string;
+    client_uid: string;
+    technician_uid: string;
+  };
+  mode: "local" | "production";
+  rails_mode: "local" | "production";
+}
+
+export const apiClient = {
+  async login(idToken: string): Promise<PortalSession> {
+    const result = await request<PortalSession>("/api/v1/auth/google-login", {
+      method: "POST",
+      body: JSON.stringify({ id_token: idToken })
+    });
+    return result.data!;
+  },
+  async session(): Promise<PortalSession> {
+    const result = await request<PortalSession>("/api/v1/auth/session", {
+      method: "GET"
+    });
+    return result.data!;
+  },
+  async logout(): Promise<void> {
+    await request<{ logged_out: boolean }>("/api/v1/auth/logout", {
+      method: "POST"
+    });
+  },
+  async listJobs() {
+    const result = await request<Array<Record<string, unknown>>>("/api/v1/jobs", {
+      method: "GET"
+    });
+    return result.data ?? [];
+  },
+  async getJob(jobUid: string) {
+    const result = await request<Record<string, unknown>>(`/api/v1/jobs/${jobUid}`, {
+      method: "GET"
+    });
+    return result;
+  },
+  async updateStatus(jobUid: string, status: string, rowVersion: number) {
+    return request<Record<string, unknown>>(`/api/v1/jobs/${jobUid}/status`, {
+      method: "POST",
+      body: JSON.stringify({ status, row_version: rowVersion })
+    });
+  },
+  async addNote(jobUid: string, note: string, rowVersion: number) {
+    return request<Record<string, unknown>>(`/api/v1/jobs/${jobUid}/note`, {
+      method: "POST",
+      body: JSON.stringify({ note, row_version: rowVersion })
+    });
+  },
+  async requestSchedule(jobUid: string, slot: { start_at: string; end_at: string }, timezone: string, rowVersion: number) {
+    return request<Record<string, unknown>>("/api/v1/schedules/request-slot", {
+      method: "POST",
+      body: JSON.stringify({
+        job_uid: jobUid,
+        preferred_slots: [slot],
+        timezone,
+        notes: "",
+        row_version: rowVersion
+      })
+    });
+  },
+  async confirmSchedule(requestUid: string, startAt: string, endAt: string, technicianUid: string, rowVersion: number) {
+    return request<Record<string, unknown>>("/api/v1/schedules/confirm", {
+      method: "POST",
+      body: JSON.stringify({
+        request_uid: requestUid,
+        start_at: startAt,
+        end_at: endAt,
+        technician_uid: technicianUid,
+        row_version: rowVersion
+      })
+    });
+  },
+  async reschedule(scheduleUid: string, startAt: string, endAt: string, rowVersion: number) {
+    return request<Record<string, unknown>>("/api/v1/schedules/reschedule", {
+      method: "POST",
+      body: JSON.stringify({
+        schedule_uid: scheduleUid,
+        start_at: startAt,
+        end_at: endAt,
+        row_version: rowVersion
+      })
+    });
+  },
+  async generateDocument(jobUid: string, documentType: "jobcard" | "service_report") {
+    return request<Record<string, unknown>>("/api/v1/documents/generate", {
+      method: "POST",
+      body: JSON.stringify({
+        job_uid: jobUid,
+        document_type: documentType,
+        tokens: {}
+      })
+    });
+  },
+  async publishDocument(documentUid: string, rowVersion: number) {
+    return request<Record<string, unknown>>("/api/v1/documents/publish", {
+      method: "POST",
+      body: JSON.stringify({
+        document_uid: documentUid,
+        row_version: rowVersion,
+        client_visible: true
+      })
+    });
+  },
+  async history(jobUid?: string) {
+    const suffix = jobUid ? `?job_uid=${encodeURIComponent(jobUid)}` : "";
+    return request<Array<Record<string, unknown>>>(`/api/v1/documents/history${suffix}`, {
+      method: "GET"
+    });
+  },
+  async sendGmailNotification(to: string, subject: string, body: string, jobUid: string) {
+    return request<Record<string, unknown>>("/api/v1/workspace/gmail/notify", {
+      method: "POST",
+      body: JSON.stringify({ to, subject, body, job_uid: jobUid })
+    });
+  },
+  async sendChatAlert(message: string, severity: "info" | "warning" | "critical", jobUid: string) {
+    return request<Record<string, unknown>>("/api/v1/workspace/chat/alert", {
+      method: "POST",
+      body: JSON.stringify({ message, severity, job_uid: jobUid })
+    });
+  },
+  async syncPerson(name: string, email: string, phone: string, roleHint: string) {
+    return request<Record<string, unknown>>("/api/v1/workspace/people/sync", {
+      method: "POST",
+      body: JSON.stringify({ name, email, phone, role_hint: roleHint })
+    });
+  },
+  async adminHealth() {
+    return request<Record<string, unknown>>("/api/v1/admin/health", {
+      method: "GET"
+    });
+  },
+  async adminAudits() {
+    return request<Array<Record<string, unknown>>>("/api/v1/admin/audits", {
+      method: "GET"
+    });
+  },
+  async retryAutomation(automationJobUid: string) {
+    return request<Record<string, unknown>>(`/api/v1/admin/retries/${automationJobUid}`, {
+      method: "POST"
+    });
+  },
+  async syncPush(mutations: SyncMutation[]): Promise<ApiEnvelope<SyncPushResult>> {
+    return request<SyncPushResult>("/api/v1/sync/push", {
+      method: "POST",
+      body: JSON.stringify({ mutations })
+    });
+  }
+};

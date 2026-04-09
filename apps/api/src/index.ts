@@ -1,0 +1,995 @@
+import { Hono } from "hono";
+import { ZodError } from "zod";
+import {
+  canConfirmSchedule,
+  canGenerateDocument,
+  canPublishDocument,
+  canReadJob,
+  canRequestSchedule,
+  canUpdateJobStatus,
+  canUseAdmin,
+  canWriteJobNote,
+  bumpMutableMeta,
+  chatAlertSchema,
+  documentGenerateSchema,
+  documentPublishSchema,
+  envelopeError,
+  envelopeSuccess,
+  gmailNotifySchema,
+  googleLoginSchema,
+  noteSchema,
+  peopleSyncSchema,
+  resolveConflictSchema,
+  scheduleConfirmSchema,
+  scheduleRequestSchema,
+  scheduleRescheduleSchema,
+  statusUpdateSchema,
+  syncPushSchema,
+  type JobDocumentRow,
+  type JobRow,
+  type ScheduleRequestRow,
+  type ScheduleRow
+} from "@kharon/domain";
+import { createRuntimeConfig } from "./config.js";
+import type { AppBindings } from "./context.js";
+import { verifyIdentity } from "./auth/google.js";
+import { clearSessionCookie, createSessionToken, setSessionCookie } from "./auth/session.js";
+import { getSessionUser, requireRoles, requireSession, sessionMiddleware } from "./middleware/auth.js";
+import { correlationMiddleware } from "./middleware/correlation.js";
+import { parseJsonBody } from "./services/parse.js";
+import { createWorkbookStore } from "./store/factory.js";
+import { createMutable, createStoreContext } from "./services/meta.js";
+
+function rowVersionConflictResponse(correlationId: string, rowVersion: number, conflict: NonNullable<ReturnType<typeof envelopeError>["conflict"]>) {
+  return envelopeError({
+    correlationId,
+    rowVersion,
+    conflict,
+    error: {
+      code: "row_version_conflict",
+      message: "The record was modified by another actor"
+    }
+  });
+}
+
+function parseEnvBindings(bindings: Record<string, unknown>): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(bindings)) {
+    env[key] = typeof value === "string" ? value : undefined;
+  }
+  return env;
+}
+
+export function createApp(env: Record<string, string | undefined> = {}): Hono<AppBindings> {
+  const config = createRuntimeConfig(env);
+  const store = createWorkbookStore(config);
+  let schemaInitPromise: Promise<void> | null = null;
+
+  const app = new Hono<AppBindings>();
+  app.use("*", correlationMiddleware);
+  app.use("*", sessionMiddleware(config));
+
+  app.use("/api/v1/*", async (_c, next) => {
+    if (!schemaInitPromise) {
+      schemaInitPromise = store.ensureSchema();
+    }
+    await schemaInitPromise;
+    await next();
+  });
+
+  app.onError((error, c) => {
+    const correlationId = c.get("correlationId") ?? crypto.randomUUID();
+
+    if (error instanceof ZodError) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "validation_error",
+            message: "Request validation failed",
+            details: {
+              issues: error.issues
+            }
+          }
+        }),
+        400
+      );
+    }
+
+    return c.json(
+      envelopeError({
+        correlationId,
+        error: {
+          code: "internal_error",
+          message: String(error)
+        }
+      }),
+      500
+    );
+  });
+
+  const api = new Hono<AppBindings>();
+
+  api.post("/auth/google-login", async (c) => {
+    const correlationId = c.get("correlationId");
+    const body = await parseJsonBody(c.req.raw, googleLoginSchema);
+
+    const identity = await verifyIdentity({
+      mode: config.mode,
+      idToken: body.id_token,
+      googleClientId: config.googleClientId
+    });
+
+    const userRow = await store.getUserByEmail(identity.email);
+    if (!userRow) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "forbidden",
+            message: "User is not provisioned in Users_Master"
+          }
+        }),
+        403
+      );
+    }
+
+    const sessionUser = {
+      user_uid: userRow.user_uid,
+      email: userRow.email,
+      role: userRow.role,
+      display_name: userRow.display_name,
+      client_uid: userRow.client_uid,
+      technician_uid: userRow.technician_uid
+    };
+
+    const token = await createSessionToken({
+      user: sessionUser,
+      ttlSeconds: config.sessionTtlSeconds,
+      signingKey: config.sessionKeys[0] ?? config.sessionKeys.at(-1) ?? "fallback-session-key"
+    });
+
+    await setSessionCookie({
+      c,
+      cookieName: config.sessionCookieName,
+      token,
+      ttlSeconds: config.sessionTtlSeconds
+    });
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          session: sessionUser,
+          mode: config.mode,
+          rails_mode: config.rails.mode
+        }
+      })
+    );
+  });
+
+  api.get("/auth/session", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          session: user,
+          mode: config.mode,
+          rails_mode: config.rails.mode
+        }
+      })
+    );
+  });
+
+  api.post("/auth/logout", async (c) => {
+    const correlationId = c.get("correlationId");
+    clearSessionCookie({ c, cookieName: config.sessionCookieName });
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          logged_out: true
+        }
+      })
+    );
+  });
+
+  api.get("/jobs", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const jobs = await store.listJobsForUser(user);
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: jobs
+      })
+    );
+  });
+
+  api.get("/jobs/:job_uid", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const jobUid = c.req.param("job_uid");
+    const job = await store.getJob(jobUid);
+
+    if (!job) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "not_found",
+            message: "Job not found"
+          }
+        }),
+        404
+      );
+    }
+
+    if (!canReadJob(user, job)) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "forbidden",
+            message: "Ownership check failed"
+          }
+        }),
+        403
+      );
+    }
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        rowVersion: job.row_version,
+        data: job
+      })
+    );
+  });
+
+  api.post("/jobs/:job_uid/status", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const jobUid = c.req.param("job_uid");
+    const body = await parseJsonBody(c.req.raw, statusUpdateSchema);
+
+    const existing = await store.getJob(jobUid);
+    if (!existing) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: { code: "not_found", message: "Job not found" }
+        }),
+        404
+      );
+    }
+
+    if (!canUpdateJobStatus(user, existing)) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "forbidden",
+            message: "Role is not allowed to update this job"
+          }
+        }),
+        403
+      );
+    }
+
+    const update = await store.updateJobStatus({
+      jobUid,
+      status: body.status,
+      expectedRowVersion: body.row_version,
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    if (update.conflict) {
+      return c.json(rowVersionConflictResponse(correlationId, update.job.row_version, update.conflict), 409);
+    }
+
+    if (user.role === "dispatcher" || user.role === "admin") {
+      await store.appendAudit({
+        action: "jobs.status.update",
+        payload: {
+          job_uid: jobUid,
+          status: body.status,
+          actor_role: user.role
+        },
+        ctx: createStoreContext(user.user_uid, correlationId)
+      });
+    }
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        rowVersion: update.job.row_version,
+        data: update.job
+      })
+    );
+  });
+
+  api.post("/jobs/:job_uid/note", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const jobUid = c.req.param("job_uid");
+    const body = await parseJsonBody(c.req.raw, noteSchema);
+
+    const existing = await store.getJob(jobUid);
+    if (!existing) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: { code: "not_found", message: "Job not found" }
+        }),
+        404
+      );
+    }
+
+    if (!canWriteJobNote(user, existing)) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "forbidden",
+            message: "Role is not allowed to add notes on this job"
+          }
+        }),
+        403
+      );
+    }
+
+    const update = await store.appendJobNote({
+      jobUid,
+      note: body.note,
+      expectedRowVersion: body.row_version,
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    if (update.conflict) {
+      return c.json(rowVersionConflictResponse(correlationId, update.job.row_version, update.conflict), 409);
+    }
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        rowVersion: update.job.row_version,
+        data: update.job
+      })
+    );
+  });
+
+  api.post("/schedules/request-slot", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    if (!canRequestSchedule(user.role)) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: { code: "forbidden", message: "Role cannot request scheduling" }
+        }),
+        403
+      );
+    }
+
+    const body = await parseJsonBody(c.req.raw, scheduleRequestSchema);
+    const job = await store.getJob(body.job_uid);
+
+    if (!job) {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "not_found", message: "Job not found" } }),
+        404
+      );
+    }
+
+    if (!canReadJob(user, job)) {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "forbidden", message: "Ownership check failed" } }),
+        403
+      );
+    }
+
+    if (job.row_version !== body.row_version) {
+      const conflict = {
+        type: "row_version_conflict" as const,
+        entity: "Jobs_Master",
+        entity_id: job.job_uid,
+        client_row_version: body.row_version,
+        server_row_version: job.row_version,
+        server_state: job as unknown as Record<string, unknown>
+      };
+      return c.json(rowVersionConflictResponse(correlationId, job.row_version, conflict), 409);
+    }
+
+    const row: ScheduleRequestRow = {
+      request_uid: `REQ-${crypto.randomUUID()}`,
+      job_uid: body.job_uid,
+      client_uid: job.client_uid,
+      preferred_slots_json: JSON.stringify(body.preferred_slots),
+      timezone: body.timezone,
+      notes: body.notes ?? "",
+      status: "requested",
+      ...createMutable(user.user_uid, correlationId)
+    };
+
+    await store.createScheduleRequest(row);
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        rowVersion: row.row_version,
+        data: row
+      })
+    );
+  });
+
+  api.post("/schedules/confirm", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    if (!canConfirmSchedule(user.role)) {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot confirm schedule" } }),
+        403
+      );
+    }
+
+    const body = await parseJsonBody(c.req.raw, scheduleConfirmSchema);
+    const request = await store.getScheduleRequest(body.request_uid);
+
+    if (!request) {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "not_found", message: "Schedule request not found" } }),
+        404
+      );
+    }
+
+    if (request.row_version !== body.row_version) {
+      const conflict = {
+        type: "row_version_conflict" as const,
+        entity: "Schedule_Requests",
+        entity_id: request.request_uid,
+        client_row_version: body.row_version,
+        server_row_version: request.row_version,
+        server_state: request as unknown as Record<string, unknown>
+      };
+      return c.json(rowVersionConflictResponse(correlationId, request.row_version, conflict), 409);
+    }
+
+    const scheduleUid = `SCH-${crypto.randomUUID()}`;
+    const calendar = await config.rails.calendar.confirmEvent({
+      jobUid: request.job_uid,
+      scheduleUid,
+      startAt: body.start_at,
+      endAt: body.end_at,
+      technicianUid: body.technician_uid
+    });
+
+    const updatedRequest: ScheduleRequestRow = {
+      ...request,
+      status: "confirmed",
+      ...bumpMutableMeta(request, user.user_uid, correlationId)
+    };
+
+    const schedule: ScheduleRow = {
+      schedule_uid: scheduleUid,
+      request_uid: request.request_uid,
+      job_uid: request.job_uid,
+      calendar_event_id: calendar.eventId,
+      start_at: body.start_at,
+      end_at: body.end_at,
+      technician_uid: body.technician_uid,
+      status: "confirmed",
+      ...createMutable(user.user_uid, correlationId)
+    };
+
+    await store.upsertScheduleRequest(updatedRequest);
+    await store.createSchedule(schedule);
+
+    await store.appendAudit({
+      action: "schedules.confirm",
+      payload: {
+        request_uid: request.request_uid,
+        schedule_uid: schedule.schedule_uid
+      },
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        rowVersion: schedule.row_version,
+        data: schedule
+      })
+    );
+  });
+
+  api.post("/schedules/reschedule", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    if (!canConfirmSchedule(user.role)) {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot reschedule" } }),
+        403
+      );
+    }
+
+    const body = await parseJsonBody(c.req.raw, scheduleRescheduleSchema);
+    const schedule = await store.getSchedule(body.schedule_uid);
+
+    if (!schedule) {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "not_found", message: "Schedule not found" } }),
+        404
+      );
+    }
+
+    if (schedule.row_version !== body.row_version) {
+      const conflict = {
+        type: "row_version_conflict" as const,
+        entity: "Schedules_Master",
+        entity_id: schedule.schedule_uid,
+        client_row_version: body.row_version,
+        server_row_version: schedule.row_version,
+        server_state: schedule as unknown as Record<string, unknown>
+      };
+      return c.json(rowVersionConflictResponse(correlationId, schedule.row_version, conflict), 409);
+    }
+
+    const calendar = await config.rails.calendar.confirmEvent({
+      jobUid: schedule.job_uid,
+      scheduleUid: schedule.schedule_uid,
+      startAt: body.start_at,
+      endAt: body.end_at,
+      technicianUid: schedule.technician_uid,
+      existingEventId: schedule.calendar_event_id
+    });
+
+    const updated: ScheduleRow = {
+      ...schedule,
+      start_at: body.start_at,
+      end_at: body.end_at,
+      status: "rescheduled",
+      calendar_event_id: calendar.eventId,
+      ...bumpMutableMeta(schedule, user.user_uid, correlationId)
+    };
+
+    await store.upsertSchedule(updated);
+
+    await store.appendAudit({
+      action: "schedules.reschedule",
+      payload: {
+        schedule_uid: updated.schedule_uid
+      },
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        rowVersion: updated.row_version,
+        data: updated
+      })
+    );
+  });
+
+  api.post("/documents/generate", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    if (!canGenerateDocument(user.role)) {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot generate documents" } }),
+        403
+      );
+    }
+
+    const body = await parseJsonBody(c.req.raw, documentGenerateSchema);
+    const job = await store.getJob(body.job_uid);
+    if (!job) {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "not_found", message: "Job not found" } }),
+        404
+      );
+    }
+
+    if (!canReadJob(user, job) && user.role === "technician") {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "forbidden", message: "Ownership check failed" } }),
+        403
+      );
+    }
+
+    const generated = await config.rails.docs.generateDocument({
+      jobUid: body.job_uid,
+      documentType: body.document_type,
+      tokens: {
+        job_uid: job.job_uid,
+        status: job.status,
+        scheduled_start: job.scheduled_start,
+        scheduled_end: job.scheduled_end,
+        ...body.tokens
+      }
+    });
+
+    const document: JobDocumentRow = {
+      document_uid: `DOC-${crypto.randomUUID()}`,
+      job_uid: body.job_uid,
+      document_type: body.document_type,
+      status: "generated",
+      drive_file_id: generated.drive_file_id,
+      pdf_file_id: generated.pdf_file_id,
+      published_url: "",
+      ...createMutable(user.user_uid, correlationId)
+    };
+
+    await store.createDocument(document);
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        rowVersion: document.row_version,
+        data: document
+      })
+    );
+  });
+
+  api.post("/documents/publish", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    if (!canPublishDocument(user.role)) {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot publish documents" } }),
+        403
+      );
+    }
+
+    const body = await parseJsonBody(c.req.raw, documentPublishSchema);
+    const document = await store.getDocument(body.document_uid);
+
+    if (!document) {
+      return c.json(
+        envelopeError({ correlationId, error: { code: "not_found", message: "Document not found" } }),
+        404
+      );
+    }
+
+    if (document.row_version !== body.row_version) {
+      const conflict = {
+        type: "row_version_conflict" as const,
+        entity: "Job_Documents",
+        entity_id: document.document_uid,
+        client_row_version: body.row_version,
+        server_row_version: document.row_version,
+        server_state: document as unknown as Record<string, unknown>
+      };
+      return c.json(rowVersionConflictResponse(correlationId, document.row_version, conflict), 409);
+    }
+
+    const publish = await config.rails.drive.publishFile({
+      fileId: document.pdf_file_id,
+      clientVisible: body.client_visible ?? true
+    });
+
+    const updated: JobDocumentRow = {
+      ...document,
+      status: "published",
+      published_url: publish.publishedUrl,
+      ...bumpMutableMeta(document, user.user_uid, correlationId)
+    };
+
+    await store.upsertDocument(updated);
+    await store.appendAudit({
+      action: "documents.publish",
+      payload: {
+        document_uid: updated.document_uid,
+        published_url: updated.published_url
+      },
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        rowVersion: updated.row_version,
+        data: updated
+      })
+    );
+  });
+
+  api.get("/documents/history", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const jobUid = c.req.query("job_uid");
+    const documents = await store.listDocuments(jobUid);
+
+    const visibleDocuments: JobDocumentRow[] = [];
+    for (const document of documents) {
+      const job = await store.getJob(document.job_uid);
+      if (!job) {
+        continue;
+      }
+      if (canReadJob(user, job) || user.role === "dispatcher" || user.role === "admin") {
+        visibleDocuments.push(document);
+      }
+    }
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: visibleDocuments
+      })
+    );
+  });
+
+  api.get("/sync/pull", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const since = c.req.query("since") ?? "1970-01-01T00:00:00.000Z";
+
+    const pulled = await store.pullSyncData({
+      actor: user,
+      since
+    });
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: pulled
+      })
+    );
+  });
+
+  api.post("/sync/push", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const body = await parseJsonBody(c.req.raw, syncPushSchema);
+
+    const result = await store.applySyncMutations({
+      actor: user,
+      mutations: body.mutations,
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    const status = result.applied.length === 0 && result.conflicts.length > 0 && result.failed.length === 0 ? 409 : 200;
+    const conflict = result.conflicts[0]?.conflict ?? null;
+
+    return c.json(
+      status === 409
+        ? envelopeError({
+            correlationId,
+            conflict,
+            error: {
+              code: "sync_conflict",
+              message: "One or more mutations conflicted"
+            }
+          })
+        : envelopeSuccess({
+            correlationId,
+            conflict,
+            data: result
+          }),
+      status
+    );
+  });
+
+  api.post("/sync/conflict/resolve", requireSession(), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const body = await parseJsonBody(c.req.raw, resolveConflictSchema);
+
+    const resolved = await store.resolveSyncConflict({
+      actor: user,
+      jobUid: body.job_uid,
+      strategy: body.strategy,
+      serverRowVersion: body.server_row_version,
+      clientRowVersion: body.client_row_version,
+      ...(body.merge_patch ? { mergePatch: body.merge_patch } : {}),
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    if (resolved.conflict) {
+      return c.json(rowVersionConflictResponse(correlationId, resolved.job.row_version, resolved.conflict), 409);
+    }
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        rowVersion: resolved.job.row_version,
+        data: resolved.job
+      })
+    );
+  });
+
+  api.post("/workspace/gmail/notify", requireSession(), requireRoles("dispatcher", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const body = await parseJsonBody(c.req.raw, gmailNotifySchema);
+
+    const result = await config.rails.gmail.sendNotification({
+      to: body.to,
+      subject: body.subject,
+      body: body.body
+    });
+
+    await store.appendAudit({
+      action: "workspace.gmail.notify",
+      payload: body,
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: result
+      })
+    );
+  });
+
+  api.post("/workspace/chat/alert", requireSession(), requireRoles("dispatcher", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const body = await parseJsonBody(c.req.raw, chatAlertSchema);
+
+    await config.rails.chat.sendAlert({
+      severity: body.severity,
+      message: body.message
+    });
+
+    await store.appendAudit({
+      action: "workspace.chat.alert",
+      payload: body,
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          sent: true
+        }
+      })
+    );
+  });
+
+  api.post("/workspace/people/sync", requireSession(), requireRoles("dispatcher", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const body = await parseJsonBody(c.req.raw, peopleSyncSchema);
+
+    const result = await config.rails.people.syncContact({
+      name: body.name,
+      email: body.email,
+      phone: body.phone,
+      ...(body.role_hint ? { roleHint: body.role_hint } : {})
+    });
+
+    await store.appendAudit({
+      action: "workspace.people.sync",
+      payload: body,
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: result
+      })
+    );
+  });
+
+  api.get("/admin/health", requireSession(), requireRoles("admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const health = {
+      status: "ok",
+      mode: config.mode,
+      rails_mode: config.rails.mode,
+      timestamp: new Date().toISOString()
+    };
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: health
+      })
+    );
+  });
+
+  api.get("/admin/audits", requireSession(), requireRoles("admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    if (!canUseAdmin(user.role)) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: { code: "forbidden", message: "Admin role required" }
+        }),
+        403
+      );
+    }
+
+    const audits = await store.listAudits();
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: audits
+      })
+    );
+  });
+
+  api.post("/admin/retries/:automation_job_uid", requireSession(), requireRoles("admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const automationJobUid = c.req.param("automation_job_uid");
+    const automationJob = await store.getAutomationJob(automationJobUid);
+
+    if (!automationJob) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "not_found",
+            message: "Automation job not found"
+          }
+        }),
+        404
+      );
+    }
+
+    const updated = {
+      ...automationJob,
+      status: "queued" as const,
+      retry_count: automationJob.retry_count + 1,
+      last_error: "",
+      ...bumpMutableMeta(automationJob, user.user_uid, correlationId)
+    };
+
+    await store.upsertAutomationJob(updated);
+    await store.appendAudit({
+      action: "admin.automation.retry",
+      payload: {
+        automation_job_uid: automationJobUid,
+        retry_count: updated.retry_count
+      },
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        rowVersion: updated.row_version,
+        data: updated
+      })
+    );
+  });
+
+  app.route("/api/v1", api);
+
+  app.get("/", (c) => {
+    const correlationId = c.get("correlationId");
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          service: "kharon-unified-api",
+          version: "v1"
+        }
+      })
+    );
+  });
+
+  return app;
+}
+
+const defaultApp = createApp(parseEnvBindings((globalThis as { process?: { env?: Record<string, string> } }).process?.env ?? {}));
+
+export default {
+  fetch(request: Request, env: Record<string, unknown>) {
+    const runtimeEnv = parseEnvBindings(env);
+    if (Object.keys(runtimeEnv).length > 0) {
+      return createApp(runtimeEnv).fetch(request, env);
+    }
+    return defaultApp.fetch(request, env);
+  }
+};

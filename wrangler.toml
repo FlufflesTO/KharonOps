@@ -1,0 +1,22 @@
+name = "kharon-unified-api"
+main = "apps/api/src/index.ts"
+compatibility_date = "2026-04-09"
+workers_dev = true
+
+[vars]
+KHARON_MODE = "local"
+SESSION_COOKIE_NAME = "kharon_session"
+SESSION_TTL_SECONDS = "28800"
+
+# Configure secrets via `wrangler secret put`
+# SESSION_KEYS
+# GOOGLE_CLIENT_ID
+# GOOGLE_SERVICE_ACCOUNT_EMAIL
+# GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+# WORKBOOK_SPREADSHEET_ID
+# GOOGLE_DRIVE_ROOT_FOLDER_ID
+# GOOGLE_DOCCARD_TEMPLATE_ID
+# GOOGLE_SERVICE_REPORT_TEMPLATE_ID
+# GOOGLE_CHAT_WEBHOOK_URL
+# GOOGLE_CALENDAR_ID
+# GMAIL_SENDER_ADDRESS

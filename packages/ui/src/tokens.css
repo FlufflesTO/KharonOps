@@ -1,0 +1,46 @@
+:root {
+  --kharon-purple: #673AB7;
+  --kharon-blue: #2196F3;
+  --kharon-grey: #455A64;
+  --kharon-black: #121212;
+  --kharon-white: #FAFAFA;
+  --kharon-radius-0: 0px;
+  --kharon-radius-1: 1px;
+  --kharon-radius-2: 2px;
+  --kharon-font-family: "Century Gothic", "Montserrat", "Poppins", sans-serif;
+  --kharon-border: 1px solid var(--kharon-grey);
+  --kharon-surface-0: #0e0e10;
+  --kharon-surface-1: #16171a;
+  --kharon-surface-2: #20232a;
+  --kharon-text: var(--kharon-white);
+  --kharon-text-dim: #c6ccd0;
+}
+
+* {
+  box-sizing: border-box;
+  border-radius: var(--kharon-radius-1);
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  width: 100%;
+  font-family: var(--kharon-font-family);
+  color: var(--kharon-text);
+  background: linear-gradient(160deg, #121212 0%, #1f2430 55%, #20242b 100%);
+  line-height: 1.35;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--kharon-font-family);
+  border-radius: var(--kharon-radius-1);
+}
+
+a {
+  color: var(--kharon-blue);
+}

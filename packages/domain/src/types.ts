@@ -1,0 +1,152 @@
+export type Role = "client" | "technician" | "dispatcher" | "admin";
+
+export type JobStatus =
+  | "open"
+  | "assigned"
+  | "en_route"
+  | "on_site"
+  | "paused"
+  | "completed"
+  | "cancelled";
+
+export type DocumentType = "jobcard" | "service_report";
+
+export interface MutableMeta {
+  row_version: number;
+  updated_at: string;
+  updated_by: string;
+  correlation_id: string;
+}
+
+export interface UserRow extends MutableMeta {
+  user_uid: string;
+  email: string;
+  display_name: string;
+  role: Role;
+  client_uid: string;
+  technician_uid: string;
+  active: "true" | "false";
+}
+
+export interface JobRow extends MutableMeta {
+  job_uid: string;
+  client_uid: string;
+  site_uid: string;
+  technician_uid: string;
+  title: string;
+  status: JobStatus;
+  scheduled_start: string;
+  scheduled_end: string;
+  last_note: string;
+}
+
+export interface JobEventRow extends MutableMeta {
+  event_uid: string;
+  job_uid: string;
+  event_type: string;
+  payload_json: string;
+}
+
+export interface JobDocumentRow extends MutableMeta {
+  document_uid: string;
+  job_uid: string;
+  document_type: DocumentType;
+  status: "generated" | "published";
+  drive_file_id: string;
+  pdf_file_id: string;
+  published_url: string;
+}
+
+export interface ScheduleRequestRow extends MutableMeta {
+  request_uid: string;
+  job_uid: string;
+  client_uid: string;
+  preferred_slots_json: string;
+  timezone: string;
+  notes: string;
+  status: "requested" | "confirmed" | "rescheduled";
+}
+
+export interface ScheduleRow extends MutableMeta {
+  schedule_uid: string;
+  request_uid: string;
+  job_uid: string;
+  calendar_event_id: string;
+  start_at: string;
+  end_at: string;
+  technician_uid: string;
+  status: "confirmed" | "rescheduled";
+}
+
+export interface AutomationJobRow extends MutableMeta {
+  automation_job_uid: string;
+  action: string;
+  payload_json: string;
+  status: "queued" | "done" | "failed";
+  retry_count: number;
+  last_error: string;
+}
+
+export interface SyncQueueRow extends MutableMeta {
+  mutation_uid: string;
+  job_uid: string;
+  actor_uid: string;
+  payload_json: string;
+  status: "applied" | "conflict" | "failed";
+  last_result: string;
+}
+
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
+export interface ConflictPayload {
+  type: "row_version_conflict";
+  entity: string;
+  entity_id: string;
+  client_row_version: number;
+  server_row_version: number;
+  server_state: Record<string, unknown>;
+}
+
+export interface ApiEnvelope<T> {
+  data: T | null;
+  error: ApiError | null;
+  correlation_id: string;
+  row_version: number | null;
+  conflict: ConflictPayload | null;
+}
+
+export interface SessionUser {
+  user_uid: string;
+  email: string;
+  role: Role;
+  display_name: string;
+  client_uid: string;
+  technician_uid: string;
+}
+
+export interface SyncMutation {
+  mutation_id: string;
+  kind: "job_status" | "job_note";
+  job_uid: string;
+  expected_row_version: number;
+  payload: Record<string, unknown>;
+}
+
+export interface SyncPushResult {
+  applied: Array<{ mutation_id: string; job_uid: string; row_version: number }>;
+  conflicts: Array<{ mutation_id: string; job_uid: string; conflict: ConflictPayload }>;
+  failed: Array<{ mutation_id: string; job_uid: string; error: ApiError }>;
+}
+
+export interface OfflineQueueItem extends SyncMutation {
+  created_at: string;
+}
+
+export interface ReplayDecision {
+  removeMutationIds: string[];
+  keepMutationIds: string[];
+}

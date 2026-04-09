@@ -1,0 +1,10 @@
+﻿{
+  "name": "Kharon Operations Portal",
+  "short_name": "KharonOps",
+  "start_url": "/portal/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "description": "Unified client-technician-dispatch operations portal.",
+  "icons": []
+}
