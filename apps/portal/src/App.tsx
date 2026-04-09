@@ -31,6 +31,11 @@ function nowPlusHours(hours: number): string {
   return value.toISOString().slice(0, 16);
 }
 
+function errorMessage(error: unknown): string {
+  const typed = error as { error?: { message?: string } };
+  return typed.error?.message ?? String(error);
+}
+
 export function PortalApp(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<PortalSession | null>(null);
@@ -80,20 +85,28 @@ export function PortalApp(): React.JSX.Element {
     if (!session) {
       return;
     }
-    const data = await apiClient.listJobs();
-    const mapped = data.map(asJob);
-    setJobs(mapped);
-    if (!selectedJobUid && mapped.length > 0) {
-      const first = mapped[0];
-      if (first) {
-        setSelectedJobUid(first.job_uid);
+    try {
+      const data = await apiClient.listJobs();
+      const mapped = data.map(asJob);
+      setJobs(mapped);
+      if (!selectedJobUid && mapped.length > 0) {
+        const first = mapped[0];
+        if (first) {
+          setSelectedJobUid(first.job_uid);
+        }
       }
+    } catch (error) {
+      setFeedback(`Jobs load failed: ${errorMessage(error)}`);
     }
   }
 
   async function refreshDocuments(jobUid?: string): Promise<void> {
-    const response = await apiClient.history(jobUid);
-    setDocuments(response.data ?? []);
+    try {
+      const response = await apiClient.history(jobUid);
+      setDocuments(response.data ?? []);
+    } catch (error) {
+      setFeedback(`Document history load failed: ${errorMessage(error)}`);
+    }
   }
 
   async function refreshSession(): Promise<void> {
@@ -130,8 +143,10 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
 
-    void refreshJobs();
-    void refreshDocuments();
+    void (async () => {
+      await refreshJobs();
+      await refreshDocuments();
+    })();
   }, [session]);
 
   async function handleLogin(token: string): Promise<void> {

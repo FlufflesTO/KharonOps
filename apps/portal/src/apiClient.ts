@@ -14,7 +14,30 @@ async function request<T>(path: string, init?: RequestInit): Promise<ApiEnvelope
     }
   });
 
-  const body = (await response.json()) as ApiEnvelope<T>;
+  const contentType = response.headers.get("content-type") ?? "";
+  let body: ApiEnvelope<T>;
+
+  if (contentType.includes("application/json")) {
+    body = (await response.json()) as ApiEnvelope<T>;
+  } else {
+    const raw = await response.text();
+    const accessHint =
+      raw.includes("cloudflareaccess.com") || raw.toLowerCase().includes("access denied");
+
+    throw {
+      data: null,
+      error: {
+        code: "upstream_non_json",
+        message: accessHint
+          ? "API is protected by Cloudflare Access challenge for this request."
+          : `API returned non-JSON content (status ${response.status}).`
+      },
+      correlation_id: "",
+      row_version: null,
+      conflict: null
+    } satisfies ApiEnvelope<null>;
+  }
+
   if (!response.ok) {
     throw body;
   }
