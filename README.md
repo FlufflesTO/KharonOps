@@ -1,5 +1,7 @@
 # Kharon Unified Rebuild v1
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/6cfc13ea-cf68-4281-b196-85fa6a4fc555/deploy-status)](https://app.netlify.com/projects/kharonop/deploys)
+
 Unified public website + operations PWA for Kharon Fire and Security Solutions, with Cloudflare Worker API and Netlify static hosting.
 
 ## Stack
@@ -53,6 +55,33 @@ Unified public website + operations PWA for Kharon Fire and Security Solutions, 
 - `/portal` -> `/portal/` redirect
 - `/api/*` proxy to Cloudflare Worker origin
 - security headers + CSP
+
+Production guidance:
+- Do not load dev-bypass variables into Netlify production context.
+- Keep backend-only secrets on Cloudflare Worker, not Netlify static build, unless strictly needed.
+
+## Netlify CLI In This Monorepo
+
+This repository has multiple npm workspace projects, so Netlify CLI must be called with a filter to avoid:
+`Projects detected: @kharon/api, @kharon/portal, ...`.
+
+Use:
+
+```bash
+npx netlify deploy --no-build --dir dist/public --site kharonop --filter @kharon/site --json
+```
+
+Trigger a production rebuild from Netlify without local upload:
+
+```bash
+curl -X POST -d {} https://api.netlify.com/build_hooks/69d81c8f76f6aef12b671b6b
+```
+
+Build hook:
+- `stackbit-build-hook`
+- `https://api.netlify.com/build_hooks/69d81c8f76f6aef12b671b6b`
+
+Treat build hook URLs as sensitive trigger credentials. Rotate if exposed.
 
 ## Cloudflare Worker Settings
 

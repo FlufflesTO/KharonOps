@@ -58,6 +58,16 @@ Optional for future build/runtime metadata:
 - `NETLIFY_WORKER_ORIGIN`
 - `SITE_URL`
 
+### Netlify CLI With npm Workspaces
+
+This repository is an npm workspaces monorepo. Netlify CLI needs an explicit filter to avoid interactive project selection errors.
+
+Use:
+
+```bash
+npx netlify deploy --no-build --dir dist/public --site kharonop --filter @kharon/site --json
+```
+
 ## Cloudflare Worker Configuration
 
 `wrangler.toml` defines worker entrypoint and compatibility date.
