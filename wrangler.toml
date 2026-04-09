@@ -8,6 +8,10 @@ KHARON_MODE = "production"
 NODE_ENV = "production"
 SESSION_COOKIE_NAME = "kharon_session"
 SESSION_TTL_SECONDS = "28800"
+CF_ACCESS_ENABLED = "true"
+CF_ACCESS_AUD = "64026cae8eb5946cfaa9e0915a953b9bd0e84a4876babcb5a7834cba53cd172c"
+CF_ACCESS_JWKS_URL = "https://kharonops-pages.cloudflareaccess.com/cdn-cgi/access/certs"
+CF_ACCESS_ISSUER = "https://kharonops-pages.cloudflareaccess.com"
 
 [observability]
 enabled = false
