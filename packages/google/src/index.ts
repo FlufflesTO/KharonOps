@@ -11,20 +11,51 @@ function envValue(env: Record<string, string | undefined>, key: string): string 
   return String(env[key] ?? "").trim();
 }
 
+function envFirst(env: Record<string, string | undefined>, keys: string[]): string {
+  for (const key of keys) {
+    const value = envValue(env, key);
+    if (value !== "") {
+      return value;
+    }
+  }
+  return "";
+}
+
+function parseServiceAccountJson(raw: string): { email: string; privateKey: string } {
+  if (!raw) {
+    return { email: "", privateKey: "" };
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { client_email?: string; private_key?: string };
+    return {
+      email: String(parsed.client_email ?? ""),
+      privateKey: String(parsed.private_key ?? "")
+    };
+  } catch {
+    return { email: "", privateKey: "" };
+  }
+}
+
 export function buildGoogleRuntimeConfig(env: Record<string, string | undefined>): GoogleRuntimeConfig {
-  const mode = envValue(env, "KHARON_MODE") === "production" ? "production" : "local";
+  const modeValue = envFirst(env, ["KHARON_MODE", "NODE_ENV"]);
+  const mode = modeValue === "production" ? "production" : "local";
+  const serviceAccount = parseServiceAccountJson(envValue(env, "GOOGLE_SERVICE_ACCOUNT_JSON"));
+
   return {
     mode,
-    googleClientId: envValue(env, "GOOGLE_CLIENT_ID"),
-    serviceAccountEmail: envValue(env, "GOOGLE_SERVICE_ACCOUNT_EMAIL"),
-    serviceAccountPrivateKey: envValue(env, "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY"),
-    workbookSpreadsheetId: envValue(env, "WORKBOOK_SPREADSHEET_ID"),
-    driveRootFolderId: envValue(env, "GOOGLE_DRIVE_ROOT_FOLDER_ID"),
-    jobcardTemplateId: envValue(env, "GOOGLE_DOCCARD_TEMPLATE_ID"),
-    serviceReportTemplateId: envValue(env, "GOOGLE_SERVICE_REPORT_TEMPLATE_ID"),
-    calendarId: envValue(env, "GOOGLE_CALENDAR_ID") || "primary",
-    gmailSenderAddress: envValue(env, "GMAIL_SENDER_ADDRESS"),
-    chatWebhookUrl: envValue(env, "GOOGLE_CHAT_WEBHOOK_URL")
+    googleClientId: envFirst(env, ["GOOGLE_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "KHARON_GOOGLE_CLIENT_ID"]),
+    serviceAccountEmail:
+      envFirst(env, ["GOOGLE_SERVICE_ACCOUNT_EMAIL"]) || serviceAccount.email,
+    serviceAccountPrivateKey:
+      envFirst(env, ["GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY"]) || serviceAccount.privateKey,
+    workbookSpreadsheetId: envFirst(env, ["WORKBOOK_SPREADSHEET_ID", "KHARON_JOBS_SPREADSHEET_ID"]),
+    driveRootFolderId: envFirst(env, ["GOOGLE_DRIVE_ROOT_FOLDER_ID", "KHARON_DRIVE_ROOT_FOLDER_ID"]),
+    jobcardTemplateId: envFirst(env, ["GOOGLE_DOCCARD_TEMPLATE_ID", "KHARON_DOC_TEMPLATE_JOBCARD_ID"]),
+    serviceReportTemplateId: envFirst(env, ["GOOGLE_SERVICE_REPORT_TEMPLATE_ID", "KHARON_DOC_TEMPLATE_SERVICE_REPORT_ID"]),
+    calendarId: envFirst(env, ["GOOGLE_CALENDAR_ID", "KHARON_CALENDAR_ID"]) || "primary",
+    gmailSenderAddress: envFirst(env, ["GMAIL_SENDER_ADDRESS", "KHARON_GMAIL_FROM", "SUPPORT_EMAIL"]),
+    chatWebhookUrl: envFirst(env, ["GOOGLE_CHAT_WEBHOOK_URL", "KHARON_CHAT_WEBHOOK_URL"])
   };
 }
 

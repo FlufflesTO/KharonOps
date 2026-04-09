@@ -5,6 +5,30 @@
 - Static surfaces: Netlify
 - API runtime: Cloudflare Workers
 
+## Dashboard Setup Values
+
+### Netlify (single project for this monorepo)
+
+- Project to deploy: `FlufflesTO/KharonOps` (repo root)
+- Base directory (Root Directory): leave empty or `/`
+- Build command: `npm run build`
+- Publish directory (Build output): `dist/public`
+- Framework preset: `Other`
+- Node version: `22` (set in Netlify env if needed)
+
+Netlify is hosting both:
+- `/` -> marketing site
+- `/portal/` -> unified portal PWA
+
+### Cloudflare Workers (API project)
+
+- Worker name: `kharon-unified-api` (from `wrangler.toml`)
+- Entrypoint: `apps/api/src/index.ts`
+- Compatibility date: `2026-04-09`
+- Root Directory (if Git-connected build): repo root `/`
+- Framework: none / Workers
+- Deploy command (CI/manual): `npx wrangler deploy`
+
 ## Build Output
 
 `npm run build` produces:
@@ -20,9 +44,19 @@
 - proxy `/api/*` to Worker origin
 - enforce secure response headers
 
+Important:
+- Update `netlify.toml` redirect target from placeholder to your real Worker URL:
+  - `https://kharon-api.example.workers.dev` -> your deployed Cloudflare worker origin
+- Update CSP `connect-src` to that same real origin.
+
 ### Required Netlify Environment Variables
+
+Required:
+- `NODE_VERSION=22`
+
+Optional for future build/runtime metadata:
 - `NETLIFY_WORKER_ORIGIN`
-- `GOOGLE_CLIENT_ID` (for frontend context if exposed intentionally)
+- `SITE_URL`
 
 ## Cloudflare Worker Configuration
 
@@ -43,6 +77,19 @@
 - `GOOGLE_CHAT_WEBHOOK_URL`
 - `GOOGLE_CALENDAR_ID`
 - `GMAIL_SENDER_ADDRESS`
+
+Compatibility aliases already supported by runtime (no code changes required):
+- `PORTAL_SESSION_SECRET` as fallback for `SESSION_KEYS`
+- `GOOGLE_SERVICE_ACCOUNT_JSON` as fallback source for:
+  - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+  - `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
+- `KHARON_JOBS_SPREADSHEET_ID` as fallback for `WORKBOOK_SPREADSHEET_ID`
+- `KHARON_DRIVE_ROOT_FOLDER_ID` as fallback for `GOOGLE_DRIVE_ROOT_FOLDER_ID`
+- `KHARON_DOC_TEMPLATE_JOBCARD_ID` as fallback for `GOOGLE_DOCCARD_TEMPLATE_ID`
+- `KHARON_DOC_TEMPLATE_SERVICE_REPORT_ID` as fallback for `GOOGLE_SERVICE_REPORT_TEMPLATE_ID`
+- `KHARON_CHAT_WEBHOOK_URL` as fallback for `GOOGLE_CHAT_WEBHOOK_URL`
+- `KHARON_CALENDAR_ID` as fallback for `GOOGLE_CALENDAR_ID`
+- `KHARON_GMAIL_FROM` as fallback for `GMAIL_SENDER_ADDRESS`
 
 ## Deployment Steps
 

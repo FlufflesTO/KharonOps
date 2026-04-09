@@ -4,12 +4,14 @@ compatibility_date = "2026-04-09"
 workers_dev = true
 
 [vars]
-KHARON_MODE = "local"
+KHARON_MODE = "production"
+NODE_ENV = "production"
 SESSION_COOKIE_NAME = "kharon_session"
 SESSION_TTL_SECONDS = "28800"
 
 # Configure secrets via `wrangler secret put`
 # SESSION_KEYS
+# PORTAL_SESSION_SECRET
 # GOOGLE_CLIENT_ID
 # GOOGLE_SERVICE_ACCOUNT_EMAIL
 # GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
