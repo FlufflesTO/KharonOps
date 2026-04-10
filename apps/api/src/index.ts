@@ -36,6 +36,7 @@ import { verifyIdentity } from "./auth/google.js";
 import { clearSessionCookie, createSessionToken, setSessionCookie } from "./auth/session.js";
 import { accessMiddleware, getSessionUser, requireRoles, requireSession, sessionMiddleware } from "./middleware/auth.js";
 import { correlationMiddleware } from "./middleware/correlation.js";
+import { apiSecurityHeadersMiddleware } from "./middleware/security.js";
 import { parseJsonBody } from "./services/parse.js";
 import { createWorkbookStore } from "./store/factory.js";
 import { createMutable, createStoreContext } from "./services/meta.js";
@@ -67,6 +68,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
   const app = new Hono<AppBindings>();
   app.use("*", correlationMiddleware);
+  app.use("/api/v1/*", apiSecurityHeadersMiddleware());
   app.use("/api/v1/*", accessMiddleware(config));
   app.use("*", sessionMiddleware(config));
 

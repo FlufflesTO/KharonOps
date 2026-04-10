@@ -3,34 +3,43 @@
   publish = "dist/public"
 
 [build.environment]
+  NODE_VERSION = "22"
   # These keys are operational config values, not secrets. Their values can legitimately
   # appear in source/build output and should not block deploys.
   SECRETS_SCAN_OMIT_KEYS = "NODE_ENV,DISPATCH_EMAIL,DEV_BYPASS_TECHNICIAN_ID"
-  # Temporary hard stop override for false-positive build failures in this monorepo.
+  # Keep disabled until the remaining monorepo false positives are cleared.
   SECRETS_SCAN_ENABLED = "false"
+  NETLIFY_SITE_CACHE_CONTROL = "public, max-age=0, must-revalidate"
+  NETLIFY_STATIC_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable"
+  NETLIFY_PORTAL_INDEX_CACHE_CONTROL = "no-store"
+  NETLIFY_PORTAL_SW_CACHE_CONTROL = "public, max-age=0, must-revalidate"
+  NETLIFY_PORTAL_MANIFEST_CACHE_CONTROL = "public, max-age=3600"
+  NETLIFY_PORTAL_NOINDEX = "true"
+  NETLIFY_WORKER_ORIGIN = "https://kharon-unified-api-public.connor-venter.workers.dev"
+  NETLIFY_CSP_REPORT_ONLY = "false"
+  NETLIFY_ENABLE_HSTS = "true"
+  NETLIFY_GLOBAL_NOINDEX = "false"
 
-[[redirects]]
-  from = "/portal"
-  to = "/portal/"
-  status = 301
+[context.production.environment]
+  NETLIFY_WORKER_ORIGIN = "https://kharon-unified-api-public.connor-venter.workers.dev"
+  NETLIFY_CSP_REPORT_ONLY = "false"
+  NETLIFY_ENABLE_HSTS = "true"
+  NETLIFY_GLOBAL_NOINDEX = "false"
 
-[[redirects]]
-  from = "/api/*"
-  to = "https://kharon-unified-api-public.connor-venter.workers.dev/api/:splat"
-  status = 200
-  force = true
+[context.deploy-preview.environment]
+  NETLIFY_WORKER_ORIGIN = "https://kharon-unified-api-staging-public.connor-venter.workers.dev"
+  NETLIFY_CSP_REPORT_ONLY = "true"
+  NETLIFY_ENABLE_HSTS = "false"
+  NETLIFY_GLOBAL_NOINDEX = "true"
 
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-    Content-Security-Policy = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://kharon-unified-api-public.connor-venter.workers.dev"
+[context.branch-deploy.environment]
+  NETLIFY_WORKER_ORIGIN = "https://kharon-unified-api-staging-public.connor-venter.workers.dev"
+  NETLIFY_CSP_REPORT_ONLY = "true"
+  NETLIFY_ENABLE_HSTS = "false"
+  NETLIFY_GLOBAL_NOINDEX = "true"
 
-[[headers]]
-  for = "/portal/*"
-  [headers.values]
-    Cache-Control = "no-store"
+[context."staging".environment]
+  NETLIFY_WORKER_ORIGIN = "https://kharon-unified-api-staging-public.connor-venter.workers.dev"
+  NETLIFY_CSP_REPORT_ONLY = "false"
+  NETLIFY_ENABLE_HSTS = "false"
+  NETLIFY_GLOBAL_NOINDEX = "true"

@@ -41,13 +41,21 @@ Netlify is hosting both:
 
 `netlify.toml` is configured to:
 - publish `dist/public`
-- proxy `/api/*` to Worker origin
-- enforce secure response headers
+- set production, staging branch, and deploy-preview build contexts
+- feed the correct Worker origin into the static bundle assembly step
+
+`scripts/build-static.mjs` now generates:
+- `dist/public/_redirects`
+- `dist/public/_headers`
+
+That generated output is what controls:
+- `/portal` -> `/portal/`
+- `/api/*` proxying to the correct public Worker per deploy context
+- CSP, HSTS, cache policy, and noindex behavior per context
 
 Important:
-- Update `netlify.toml` redirect target from placeholder to your real Worker URL:
-  - `https://kharon-api.example.workers.dev` -> your deployed Cloudflare worker origin
-- Update CSP `connect-src` to that same real origin.
+- Keep the production public Worker origin aligned with `env.public` in `wrangler.toml`.
+- Keep the staging preview Worker origin aligned with `env.staging-public` in `wrangler.toml`.
 
 ### Required Netlify Environment Variables
 
@@ -70,7 +78,13 @@ npx netlify deploy --no-build --dir dist/public --site kharonop --filter @kharon
 
 ## Cloudflare Worker Configuration
 
-`wrangler.toml` defines worker entrypoint and compatibility date.
+`wrangler.toml` defines:
+- production internal Worker (`kharon-unified-api`)
+- staging internal Worker (`--env staging`)
+- production public Worker (`--env public`)
+- staging public Worker (`--env staging-public`)
+
+The public Workers are the only origins Netlify should proxy to.
 
 ### Required Worker Secrets/Vars
 - `KHARON_MODE`
@@ -121,6 +135,12 @@ Compatibility aliases already supported by runtime (no code changes required):
 2. Deploy Worker:
    ```bash
    npx wrangler deploy
+   npx wrangler deploy --env public
+   ```
+   For staging:
+   ```bash
+   npx wrangler deploy --env staging
+   npx wrangler deploy --env staging-public
    ```
 3. Deploy Netlify static bundle (`dist/public`).
 4. Validate:

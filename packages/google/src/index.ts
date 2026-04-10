@@ -37,6 +37,23 @@ function parseServiceAccountJson(raw: string): { email: string; privateKey: stri
   }
 }
 
+export function listMissingGoogleProductionConfig(env: Record<string, string | undefined>): string[] {
+  const config = buildGoogleRuntimeConfig(env);
+  const required: Array<[string, string]> = [
+    ["GOOGLE_CLIENT_ID", config.googleClientId],
+    ["GOOGLE_SERVICE_ACCOUNT_EMAIL", config.serviceAccountEmail],
+    ["GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY", config.serviceAccountPrivateKey],
+    ["WORKBOOK_SPREADSHEET_ID", config.workbookSpreadsheetId],
+    ["GOOGLE_DRIVE_ROOT_FOLDER_ID", config.driveRootFolderId],
+    ["GOOGLE_DOCCARD_TEMPLATE_ID", config.jobcardTemplateId],
+    ["GOOGLE_SERVICE_REPORT_TEMPLATE_ID", config.serviceReportTemplateId],
+    ["GMAIL_SENDER_ADDRESS", config.gmailSenderAddress],
+    ["GOOGLE_CHAT_WEBHOOK_URL", config.chatWebhookUrl]
+  ];
+
+  return required.filter(([, value]) => value === "").map(([name]) => name);
+}
+
 export function buildGoogleRuntimeConfig(env: Record<string, string | undefined>): GoogleRuntimeConfig {
   const modeValue = envFirst(env, ["KHARON_MODE", "NODE_ENV"]);
   const mode = modeValue === "production" ? "production" : "local";
