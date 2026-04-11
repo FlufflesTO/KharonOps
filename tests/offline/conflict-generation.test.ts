@@ -19,7 +19,7 @@ describe("offline conflict generation", () => {
             kind: "job_status",
             job_uid: "JOB-1001",
             expected_row_version: 1,
-            payload: { status: "en_route" }
+            payload: { status: "draft" }
           }
         ]
       })

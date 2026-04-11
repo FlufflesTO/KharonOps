@@ -1,0 +1,67 @@
+# Core project + IAM + platform
+serviceusage.googleapis.com
+cloudresourcemanager.googleapis.com
+iam.googleapis.com
+iamcredentials.googleapis.com
+cloudidentity.googleapis.com
+admin.googleapis.com
+apikeys.googleapis.com
+secretmanager.googleapis.com
+cloudkms.googleapis.com
+cloudbuild.googleapis.com
+artifactregistry.googleapis.com
+run.googleapis.com
+cloudfunctions.googleapis.com
+pubsub.googleapis.com
+workflows.googleapis.com
+cloudscheduler.googleapis.com
+
+# Google Workspace stack
+drive.googleapis.com
+sheets.googleapis.com
+docs.googleapis.com
+slides.googleapis.com
+forms.googleapis.com
+script.googleapis.com
+gmail.googleapis.com
+calendar-json.googleapis.com
+tasks.googleapis.com
+chat.googleapis.com
+people.googleapis.com
+groupssettings.googleapis.com
+
+# Analytics + observability
+analytics.googleapis.com
+analyticsdata.googleapis.com
+tagmanager.googleapis.com
+logging.googleapis.com
+monitoring.googleapis.com
+cloudtrace.googleapis.com
+clouderrorreporting.googleapis.com
+
+# Google Maps Platform
+maps-backend.googleapis.com
+geocoding-backend.googleapis.com
+places-backend.googleapis.com
+routes.googleapis.com
+distance-matrix-backend.googleapis.com
+timezone-backend.googleapis.com
+elevation-backend.googleapis.com
+geolocation.googleapis.com
+addressvalidation.googleapis.com
+# Optional / entitlement-dependent in some projects:
+# maptiles.googleapis.com
+
+# Firebase + identity + data
+firebase.googleapis.com
+firebaseextensions.googleapis.com
+firebaseappcheck.googleapis.com
+firebasehosting.googleapis.com
+firebasestorage.googleapis.com
+firebasedatabase.googleapis.com
+firebaseremoteconfig.googleapis.com
+firebaserules.googleapis.com
+fcm.googleapis.com
+identitytoolkit.googleapis.com
+securetoken.googleapis.com
+firestore.googleapis.com

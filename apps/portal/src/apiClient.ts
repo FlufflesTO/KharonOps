@@ -57,6 +57,19 @@ export interface PortalSession {
   rails_mode: "local" | "production";
 }
 
+interface PortalSessionState {
+  authenticated: boolean;
+  session: PortalSession["session"] | null;
+  mode: "local" | "production";
+  rails_mode: "local" | "production";
+}
+
+export interface PortalAuthConfig {
+  mode: "local" | "production";
+  google_client_id: string;
+  dev_tokens_enabled: boolean;
+}
+
 export const apiClient = {
   async login(idToken: string): Promise<PortalSession> {
     const result = await request<PortalSession>("/api/v1/auth/google-login", {
@@ -66,7 +79,30 @@ export const apiClient = {
     return result.data!;
   },
   async session(): Promise<PortalSession> {
-    const result = await request<PortalSession>("/api/v1/auth/session", {
+    const result = await request<PortalSessionState>("/api/v1/auth/session", {
+      method: "GET"
+    });
+    if (!result.data?.authenticated || !result.data.session) {
+      throw {
+        data: null,
+        error: {
+          code: "unauthorized",
+          message: "Authentication required"
+        },
+        correlation_id: result.correlation_id,
+        row_version: null,
+        conflict: null
+      } satisfies ApiEnvelope<null>;
+    }
+
+    return {
+      session: result.data.session,
+      mode: result.data.mode,
+      rails_mode: result.data.rails_mode
+    };
+  },
+  async authConfig(): Promise<PortalAuthConfig> {
+    const result = await request<PortalAuthConfig>("/api/v1/auth/config", {
       method: "GET"
     });
     return result.data!;
@@ -112,7 +148,14 @@ export const apiClient = {
       })
     });
   },
-  async confirmSchedule(requestUid: string, startAt: string, endAt: string, technicianUid: string, rowVersion: number) {
+  async confirmSchedule(
+    requestUid: string,
+    startAt: string,
+    endAt: string,
+    technicianUid: string,
+    rowVersion: number,
+    options?: { job_uid?: string }
+  ) {
     return request<Record<string, unknown>>("/api/v1/schedules/confirm", {
       method: "POST",
       body: JSON.stringify({
@@ -120,18 +163,34 @@ export const apiClient = {
         start_at: startAt,
         end_at: endAt,
         technician_uid: technicianUid,
-        row_version: rowVersion
+        row_version: rowVersion,
+        ...(options?.job_uid ? { job_uid: options.job_uid } : {})
       })
     });
   },
-  async reschedule(scheduleUid: string, startAt: string, endAt: string, rowVersion: number) {
+  async reschedule(
+    scheduleUid: string,
+    startAt: string,
+    endAt: string,
+    rowVersion: number,
+    options?: {
+      job_uid?: string;
+      technician_uid?: string;
+      request_uid?: string;
+      calendar_event_id?: string;
+    }
+  ) {
     return request<Record<string, unknown>>("/api/v1/schedules/reschedule", {
       method: "POST",
       body: JSON.stringify({
         schedule_uid: scheduleUid,
         start_at: startAt,
         end_at: endAt,
-        row_version: rowVersion
+        row_version: rowVersion,
+        ...(options?.job_uid ? { job_uid: options.job_uid } : {}),
+        ...(options?.technician_uid ? { technician_uid: options.technician_uid } : {}),
+        ...(options?.request_uid ? { request_uid: options.request_uid } : {}),
+        ...(options?.calendar_event_id ? { calendar_event_id: options.calendar_event_id } : {})
       })
     });
   },
@@ -145,13 +204,19 @@ export const apiClient = {
       })
     });
   },
-  async publishDocument(documentUid: string, rowVersion: number) {
+  async publishDocument(
+    documentUid: string,
+    rowVersion: number,
+    options?: { job_uid?: string; document_type?: "jobcard" | "service_report" }
+  ) {
     return request<Record<string, unknown>>("/api/v1/documents/publish", {
       method: "POST",
       body: JSON.stringify({
         document_uid: documentUid,
         row_version: rowVersion,
-        client_visible: true
+        client_visible: true,
+        ...(options?.job_uid ? { job_uid: options.job_uid } : {}),
+        ...(options?.document_type ? { document_type: options.document_type } : {})
       })
     });
   },

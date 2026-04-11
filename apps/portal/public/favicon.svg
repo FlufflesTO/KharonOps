@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="portal-favicon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f1b2d" />
+      <stop offset="100%" stop-color="#1f4f7d" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#portal-favicon-gradient)" />
+  <path d="M18 14h10v16l14-16h12L39 31l16 19H42L28 33v17H18V14z" fill="#edf2f6" />
+</svg>

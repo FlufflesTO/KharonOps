@@ -1,14 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import { canTransitionStatus, ensureStatusTransition } from "@kharon/domain";
 
-describe("status transitions", () => {
-  it("accepts valid transition path", () => {
-    expect(canTransitionStatus("assigned", "en_route")).toBe(true);
-    expect(canTransitionStatus("on_site", "completed")).toBe(true);
+describe("Job Status Transitions", () => {
+  it("allows valid transitions", () => {
+    expect(canTransitionStatus("draft", "performed")).toBe(true);
+    expect(canTransitionStatus("performed", "approved")).toBe(true);
   });
 
-  it("rejects invalid transition", () => {
-    expect(canTransitionStatus("open", "completed")).toBe(false);
-    expect(() => ensureStatusTransition("open", "completed")).toThrowError(/Invalid status transition/);
+  it("blocks invalid transitions", () => {
+    expect(canTransitionStatus("draft", "certified")).toBe(false);
+    expect(() => ensureStatusTransition("draft", "certified")).toThrowError(/Invalid status transition/);
   });
 });

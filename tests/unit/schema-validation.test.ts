@@ -3,7 +3,7 @@ import { scheduleRequestSchema, statusUpdateSchema, syncPushSchema } from "@khar
 
 describe("schema validation", () => {
   it("validates status payload", () => {
-    expect(statusUpdateSchema.parse({ status: "on_site", row_version: 2 }).status).toBe("on_site");
+    expect(statusUpdateSchema.parse({ status: "performed", row_version: 2 }).status).toBe("performed");
     expect(() => statusUpdateSchema.parse({ status: "invalid", row_version: 2 })).toThrow();
   });
 
@@ -33,7 +33,7 @@ describe("schema validation", () => {
           job_uid: "JOB-1001",
           expected_row_version: 3,
           payload: {
-            status: "on_site"
+            status: "performed"
           }
         }
       ]

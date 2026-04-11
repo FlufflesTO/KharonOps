@@ -236,6 +236,35 @@ button:hover {
   margin-top: 1rem;
 }
 
+.support-details {
+  margin-top: 1rem;
+  border-top: 1px solid rgba(18, 32, 47, 0.08);
+  padding-top: 1rem;
+}
+
+.support-details summary {
+  cursor: pointer;
+  color: #41576b;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.support-details .field-stack,
+.support-details .button-row {
+  margin-top: 0.85rem;
+}
+
+.google-signin-slot {
+  min-height: 44px;
+}
+
+.google-signin-help {
+  margin: 0;
+  color: #7a5a28;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
 .feedback-panel {
   margin-top: 1rem;
   padding: 0.9rem 1rem;

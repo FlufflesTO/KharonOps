@@ -27,7 +27,7 @@ describe("contract: role and ownership boundaries", () => {
         "content-type": "application/json"
       },
       body: JSON.stringify({
-        status: "en_route",
+        status: "draft",
         row_version: 1
       })
     });

@@ -62,7 +62,7 @@ describe("contract: cloudflare access jwt", () => {
       privateKey: keyPair.privateKey,
       audience,
       issuer,
-      subject: "admin@kharon.co.za"
+      subject: "connor@kharon.co.za"
     });
 
     const app = createApp({

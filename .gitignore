@@ -4,3 +4,7 @@ coverage/
 .env
 .wrangler/
 .DS_Store
+*.tfstate
+*.tfstate.backup
+.terraform/
+*.tfvars

@@ -5,7 +5,7 @@ export const googleLoginSchema = z.object({
 });
 
 export const statusUpdateSchema = z.object({
-  status: z.enum(["open", "assigned", "en_route", "on_site", "paused", "completed", "cancelled"]),
+  status: z.enum(["draft", "performed", "rejected", "approved", "certified", "cancelled"]),
   row_version: z.number().int().nonnegative()
 });
 
@@ -27,14 +27,19 @@ export const scheduleConfirmSchema = z.object({
   start_at: z.string().datetime(),
   end_at: z.string().datetime(),
   technician_uid: z.string().trim().min(1),
-  row_version: z.number().int().nonnegative()
+  row_version: z.number().int().nonnegative(),
+  job_uid: z.string().trim().min(1).optional()
 });
 
 export const scheduleRescheduleSchema = z.object({
   schedule_uid: z.string().trim().min(1),
   start_at: z.string().datetime(),
   end_at: z.string().datetime(),
-  row_version: z.number().int().nonnegative()
+  row_version: z.number().int().nonnegative(),
+  job_uid: z.string().trim().min(1).optional(),
+  technician_uid: z.string().trim().min(1).optional(),
+  request_uid: z.string().trim().min(1).optional(),
+  calendar_event_id: z.string().trim().optional()
 });
 
 export const documentGenerateSchema = z.object({
@@ -46,16 +51,31 @@ export const documentGenerateSchema = z.object({
 export const documentPublishSchema = z.object({
   document_uid: z.string().trim().min(1),
   row_version: z.number().int().nonnegative(),
-  client_visible: z.boolean().default(true)
+  client_visible: z.boolean().default(true),
+  job_uid: z.string().trim().min(1).optional(),
+  document_type: z.enum(["jobcard", "service_report"]).optional()
 });
 
-export const syncMutationSchema = z.object({
-  mutation_id: z.string().trim().min(1),
-  kind: z.enum(["job_status", "job_note"]),
-  job_uid: z.string().trim().min(1),
-  expected_row_version: z.number().int().nonnegative(),
-  payload: z.record(z.string(), z.unknown())
-});
+export const syncMutationSchema = z.discriminatedUnion("kind", [
+  z.object({
+    mutation_id: z.string().trim().min(1),
+    kind: z.literal("job_status"),
+    job_uid: z.string().trim().min(1),
+    expected_row_version: z.number().int().nonnegative(),
+    payload: z.object({
+      status: z.enum(["draft", "performed", "rejected", "approved", "certified", "cancelled"])
+    })
+  }),
+  z.object({
+    mutation_id: z.string().trim().min(1),
+    kind: z.literal("job_note"),
+    job_uid: z.string().trim().min(1),
+    expected_row_version: z.number().int().nonnegative(),
+    payload: z.object({
+      note: z.string().trim().min(1).max(4000)
+    })
+  })
+]);
 
 export const syncPushSchema = z.object({
   mutations: z.array(syncMutationSchema).max(100)

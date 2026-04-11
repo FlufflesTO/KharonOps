@@ -2,51 +2,45 @@
 
 ## Objective
 
-Execute hard cutover from legacy system to Kharon Unified Rebuild v1 with controlled rollback path.
+Execute hard cutover from the legacy system to Kharon Unified Rebuild v1 with a controlled rollback path.
 
 ## Preconditions
 
-1. Internal pilot sign-off complete.
-2. All required secrets configured in Cloudflare and Netlify.
-3. Workbook schema migration completed.
-4. Contract/offline test suite green.
-5. Rollback package prepared and validated.
+1. internal pilot sign-off complete
+2. all required Cloudflare secrets configured
+3. workbook schema migration completed
+4. contract and offline test suite green
+5. rollback package prepared and validated
 
 ## T-7 Days
 
-1. Freeze non-critical changes.
-2. Validate Google rails permissions (Sheets, Drive, Docs, Calendar, Gmail, Chat, People).
-3. Rehearse cutover script and collect artifacts.
+1. freeze non-critical changes
+2. validate Google rails permissions
+3. rehearse the cutover script and collect artifacts
 
 ## T-1 Day
 
-1. Export legacy read-only snapshot.
-2. Notify internal stakeholders of cutover window.
-3. Confirm dispatcher and admin access in v1 production environment.
+1. export legacy read-only snapshot
+2. notify internal stakeholders of the cutover window
+3. confirm dispatcher and admin access in production
 
 ## Cutover Day Procedure
 
-1. Enable read-only mode on legacy front-end and operations paths.
-2. Deploy latest verified Worker and Netlify build.
-3. Execute smoke sequence:
+1. enable read-only mode on legacy front-end and operations paths
+2. deploy the latest verified internal Worker
+3. deploy the latest verified public Worker
+4. execute smoke sequence:
    - admin login
    - job list and job detail
    - status update with row version
-   - schedule request + confirm
-   - document generate + publish
-   - sync push/pull with conflict case
-4. Enable client access only after internal smoke passes.
+   - schedule request and confirm
+   - document generate and publish
+   - sync push and pull with a conflict case
+5. enable client access only after internal smoke passes
 
-## Hypercare (First 24 Hours)
+## Hypercare
 
-1. Monitor `/api/v1/admin/health` and audit logs.
-2. Review sync conflict rates every hour.
-3. Validate Gmail/Chat/People operational outputs.
-4. Escalate and decide rollback if severity threshold is exceeded.
-
-## Exit Criteria
-
-- no P1/P2 unresolved incidents
-- stable session and RBAC behavior
-- no sustained data integrity errors
-- successful controlled document publication
+1. monitor `/api/v1/admin/health` and audit logs
+2. review sync conflict rates every hour
+3. validate Gmail, Chat, and People outputs
+4. escalate and decide rollback if severity threshold is exceeded

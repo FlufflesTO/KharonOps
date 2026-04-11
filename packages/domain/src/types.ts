@@ -1,13 +1,12 @@
 export type Role = "client" | "technician" | "dispatcher" | "admin";
 
 export type JobStatus =
-  | "open"
-  | "assigned"
-  | "en_route"
-  | "on_site"
-  | "paused"
-  | "completed"
-  | "cancelled";
+  | "draft"       // Initial local state
+  | "performed"   // Evidence captured and submitted by technician
+  | "rejected"    // Determination failed; returns to technician
+  | "approved"    // Determination passed; document generation unlocked
+  | "certified"   // Document generated and promoted to canon
+  | "cancelled";  // Formal cancellation of intent
 
 export type DocumentType = "jobcard" | "service_report";
 

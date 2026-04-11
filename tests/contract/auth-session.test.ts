@@ -30,6 +30,9 @@ describe("contract: auth/session lifecycle", () => {
       method: "GET"
     });
 
-    expect(afterLogout.status).toBe(401);
+    expect(afterLogout.status).toBe(200);
+    const afterLogoutBody = (await afterLogout.json()) as { data: { authenticated: boolean; session: null } };
+    expect(afterLogoutBody.data.authenticated).toBe(false);
+    expect(afterLogoutBody.data.session).toBeNull();
   });
 });

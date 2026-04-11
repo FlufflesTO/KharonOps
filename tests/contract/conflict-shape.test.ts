@@ -20,7 +20,7 @@ describe("contract: conflict response shape", () => {
             job_uid: "JOB-1001",
             expected_row_version: 999,
             payload: {
-              status: "on_site"
+              status: "performed"
             }
           }
         ]

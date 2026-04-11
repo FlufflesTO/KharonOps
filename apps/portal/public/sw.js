@@ -1,9 +1,18 @@
-const CACHE_NAME = "kharon-portal-v1";
+const CACHE_NAME = "kharon-portal-v5";
 const STATIC_ASSETS = [
-  "/portal/",
-  "/portal/index.html",
   "/portal/manifest.webmanifest"
 ];
+
+function offlineFallbackResponse() {
+  return new Response("Portal is temporarily offline. Retry shortly.", {
+    status: 503,
+    statusText: "Service Unavailable",
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store"
+    }
+  });
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -29,8 +38,11 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   if (url.pathname.startsWith("/api/")) {
-    event.respondWith(fetch(request));
     return;
   }
 
@@ -38,21 +50,29 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) {
-        return cached;
-      }
+  const isPortalNavigation =
+    request.mode === "navigate" &&
+    (url.pathname === "/portal" || url.pathname === "/portal/" || url.pathname === "/portal/index.html");
 
-      return fetch(request)
+  if (isPortalNavigation) {
+    event.respondWith(
+      fetch(request)
         .then((response) => {
-          if (response.ok && (url.pathname.startsWith("/portal/") || url.pathname === "/portal")) {
+          if (response.ok) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put("/portal/index.html", copy).catch(() => undefined);
+            });
           }
           return response;
         })
-        .catch(() => caches.match("/portal/index.html"));
-    })
-  );
+        .catch(async () => {
+          const cached =
+            (await caches.match(request, { ignoreSearch: true })) ??
+            (await caches.match("/portal/")) ??
+            (await caches.match("/portal/index.html"));
+          return cached ?? offlineFallbackResponse();
+        })
+    );
+  }
 });

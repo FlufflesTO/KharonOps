@@ -83,6 +83,7 @@ function validateProductionConfig(args: {
   sessionKeys: string[];
   googleClientId: string;
   rails: WorkspaceRails;
+  allowLocalRailsInProduction: boolean;
   cloudflareAccess: RuntimeConfig["cloudflareAccess"];
 }): void {
   if (!hasStrongSessionKey(args.sessionKeys)) {
@@ -93,7 +94,7 @@ function validateProductionConfig(args: {
     throw new Error("Production configuration requires GOOGLE_CLIENT_ID.");
   }
 
-  if (args.rails.mode !== "production") {
+  if (args.rails.mode !== "production" && !args.allowLocalRailsInProduction) {
     const missing = listMissingGoogleProductionConfig(args.env);
     const detail = missing.length > 0 ? missing.join(", ") : "unknown production Google rails requirements";
     throw new Error(`Production configuration is incomplete. Missing Google rails configuration: ${detail}.`);
@@ -130,6 +131,8 @@ export function createRuntimeConfig(env: Record<string, string | undefined>): Ru
   const accessEnabled = accessEnabledRaw === "true" || (accessAudience !== "" && (accessJwksUrl !== "" || accessJwksJson !== ""));
   const googleClientId = envFirst(env, ["GOOGLE_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "KHARON_GOOGLE_CLIENT_ID"]);
   const rails = createWorkspaceRails(env);
+  const railsModeOverride = envFirst(env, ["GOOGLE_RAILS_MODE", "KHARON_RAILS_MODE"]).toLowerCase();
+  const allowLocalRailsInProduction = railsModeOverride === "local";
   const storeBackend = parseStoreBackend(env, mode);
   const postgres: PostgresStoreConfig = {
     connectionString: envFirst(env, ["POSTGRES_URL", "DATABASE_URL"]),
@@ -165,6 +168,7 @@ export function createRuntimeConfig(env: Record<string, string | undefined>): Ru
       sessionKeys: effectiveKeys,
       googleClientId,
       rails,
+      allowLocalRailsInProduction,
       cloudflareAccess: config.cloudflareAccess
     });
   }

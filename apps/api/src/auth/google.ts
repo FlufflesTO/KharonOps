@@ -3,13 +3,14 @@ import { verifyGoogleIdToken } from "@kharon/google";
 export interface VerifiedIdentity {
   email: string;
   displayName: string;
+  localUserUid?: string;
 }
 
 const localTokenMap: Record<string, VerifiedIdentity> = {
-  "dev-client": { email: "client@example.com", displayName: "Client Operator" },
-  "dev-technician": { email: "tech@example.com", displayName: "Field Technician" },
-  "dev-dispatcher": { email: "dispatcher@example.com", displayName: "Dispatch Controller" },
-  "dev-admin": { email: "admin@example.com", displayName: "Security Admin" }
+  "dev-client": { localUserUid: "USR-CLIENT-1", email: "connor@kharon.co.za", displayName: "Client Operator" },
+  "dev-technician": { localUserUid: "USR-TECH-1", email: "connor@kharon.co.za", displayName: "Field Technician" },
+  "dev-dispatcher": { localUserUid: "USR-DISP-1", email: "connor@kharon.co.za", displayName: "Dispatch Controller" },
+  "dev-admin": { localUserUid: "USR-ADMIN-1", email: "connor@kharon.co.za", displayName: "Security Admin" }
 };
 
 export async function verifyIdentity(args: {

@@ -1,4 +1,4 @@
-import type { JobRow, Role, SessionUser } from "./types.js";
+import type { JobRow, Role, SessionUser, JobStatus } from "./types.js";
 
 export function canReadJob(user: SessionUser, job: JobRow): boolean {
   if (user.role === "admin" || user.role === "dispatcher") {
@@ -33,12 +33,20 @@ export function canUseAdmin(role: Role): boolean {
   return role === "admin";
 }
 
-export function canUpdateJobStatus(user: SessionUser, job: JobRow): boolean {
+export function canUpdateJobStatus(user: SessionUser, job: JobRow, requestedStatus?: JobStatus): boolean {
   if (user.role === "admin" || user.role === "dispatcher") {
     return true;
   }
   if (user.role === "technician") {
-    return user.technician_uid !== "" && user.technician_uid === job.technician_uid;
+    // Technician must be assigned to the job
+    if (user.technician_uid === "" || user.technician_uid !== job.technician_uid) {
+      return false;
+    }
+    // Technician can only transition to 'performed' or 'cancelled'
+    if (requestedStatus && !["performed", "cancelled"].includes(requestedStatus)) {
+      return false;
+    }
+    return true;
   }
   return false;
 }

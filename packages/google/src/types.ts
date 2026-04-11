@@ -7,6 +7,9 @@ export interface GoogleRuntimeConfig {
   googleClientId: string;
   serviceAccountEmail: string;
   serviceAccountPrivateKey: string;
+  delegatedServiceAccountEmail: string;
+  delegatedServiceAccountPrivateKey: string;
+  impersonatedUser: string;
   workbookSpreadsheetId: string;
   driveRootFolderId: string;
   jobcardTemplateId: string;

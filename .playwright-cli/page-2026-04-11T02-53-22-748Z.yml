@@ -1,0 +1,23 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - paragraph [ref=e6]: Kharon operations portal
+    - heading "Client, technician, dispatcher, and admin access in one controlled workspace." [level=1] [ref=e7]
+    - paragraph [ref=e8]: The public website should carry the brand. This surface should stay calm, readable, and operational. Production access uses Google OIDC. Development tokens are only valid when the API is running in local mode.
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - strong [ref=e11]: Server-side session validation
+        - generic [ref=e12]: Identity and role checks are enforced beyond the browser.
+      - generic [ref=e13]:
+        - strong [ref=e14]: Controlled records and outputs
+        - generic [ref=e15]: Jobs, notes, schedules, and documents stay inside one governed operational flow.
+      - generic [ref=e16]:
+        - strong [ref=e17]: Role-specific workspaces
+        - generic [ref=e18]: Clients see visibility, technicians see execution, dispatch sees control, and admin sees oversight.
+  - generic [ref=e19]:
+    - generic [ref=e20]:
+      - paragraph [ref=e21]: Sign in
+      - heading "Portal access" [level=2] [ref=e22]
+    - generic [ref=e24]: Sign in with a provisioned Google account
+    - group [ref=e25]:
+      - generic "Support token input" [ref=e26] [cursor=pointer]
+    - generic [ref=e28]: Ready.

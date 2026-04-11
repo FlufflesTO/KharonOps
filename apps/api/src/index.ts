@@ -6,9 +6,11 @@ import {
   canPublishDocument,
   canReadJob,
   canRequestSchedule,
+  canTransitionStatus,
   canUpdateJobStatus,
   canUseAdmin,
   canWriteJobNote,
+  listAllowedStatusTransitions,
   bumpMutableMeta,
   chatAlertSchema,
   documentGenerateSchema,
@@ -30,6 +32,7 @@ import {
   type ScheduleRequestRow,
   type ScheduleRow
 } from "@kharon/domain";
+import { GoogleAdapterError } from "@kharon/google";
 import { createRuntimeConfig } from "./config.js";
 import type { AppBindings } from "./context.js";
 import { verifyIdentity } from "./auth/google.js";
@@ -37,6 +40,7 @@ import { clearSessionCookie, createSessionToken, setSessionCookie } from "./auth
 import { accessMiddleware, getSessionUser, requireRoles, requireSession, sessionMiddleware } from "./middleware/auth.js";
 import { correlationMiddleware } from "./middleware/correlation.js";
 import { apiSecurityHeadersMiddleware } from "./middleware/security.js";
+import { buildDocumentTokens } from "./services/documentTokens.js";
 import { parseJsonBody } from "./services/parse.js";
 import { createWorkbookStore } from "./store/factory.js";
 import { createMutable, createStoreContext } from "./services/meta.js";
@@ -61,6 +65,13 @@ function parseEnvBindings(bindings: Record<string, unknown>): Record<string, str
   return env;
 }
 
+function envCacheKey(env: Record<string, string | undefined>): string {
+  const entries = Object.entries(env)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([key, value]) => [key, value ?? ""]);
+  return JSON.stringify(entries);
+}
+
 export function createApp(env: Record<string, string | undefined> = {}): Hono<AppBindings> {
   const config = createRuntimeConfig(env);
   const store = createWorkbookStore(config);
@@ -74,7 +85,10 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
   app.use("/api/v1/*", async (_c, next) => {
     const path = _c.req.path;
-    const skipSchemaInit = path === "/api/v1/auth/session" || path === "/api/v1/auth/logout";
+    const skipSchemaInit =
+      path === "/api/v1/auth/config" ||
+      path === "/api/v1/auth/session" ||
+      path === "/api/v1/auth/logout";
     if (skipSchemaInit) {
       await next();
       return;
@@ -90,6 +104,41 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   app.onError((error, c) => {
     const correlationId = c.get("correlationId") ?? crypto.randomUUID();
 
+    if (error instanceof SyntaxError) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "invalid_json",
+            message: "Request body must be valid JSON"
+          }
+        }),
+        400
+      );
+    }
+
+    if (error instanceof GoogleAdapterError) {
+      const status = (error.status >= 400 && error.status <= 599 ? error.status : 500) as
+        | 400
+        | 401
+        | 403
+        | 404
+        | 429
+        | 500;
+
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details
+          }
+        }),
+        status
+      );
+    }
+
     if (error instanceof ZodError) {
       return c.json(
         envelopeError({
@@ -100,6 +149,19 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
             details: {
               issues: error.issues
             }
+          }
+        }),
+        400
+      );
+    }
+
+    if (error instanceof Error && error.message.startsWith("Invalid status transition from")) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "invalid_status_transition",
+            message: error.message
           }
         }),
         400
@@ -130,7 +192,18 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       googleClientId: config.googleClientId
     });
 
-    const userRow = await store.getUserByEmail(identity.email);
+    let userRow: Awaited<ReturnType<typeof store.getUserByEmail>> = null;
+
+    // Local dev tokens can point to a specific seeded user_uid so role simulation
+    // continues to work even when all users share one mailbox address.
+    if (config.mode === "local" && identity.localUserUid) {
+      const users = await store.listUsers();
+      userRow = users.find((row) => row.user_uid === identity.localUserUid && row.active === "true") ?? null;
+    }
+
+    if (!userRow) {
+      userRow = await store.getUserByEmail(identity.email);
+    }
     if (!userRow) {
       return c.json(
         envelopeError({
@@ -178,13 +251,28 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     );
   });
 
-  api.get("/auth/session", requireSession(), async (c) => {
+  api.get("/auth/config", async (c) => {
     const correlationId = c.get("correlationId");
-    const user = getSessionUser(c);
     return c.json(
       envelopeSuccess({
         correlationId,
         data: {
+          mode: config.mode,
+          google_client_id: config.googleClientId,
+          dev_tokens_enabled: config.mode === "local"
+        }
+      })
+    );
+  });
+
+  api.get("/auth/session", async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = c.get("sessionUser");
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          authenticated: Boolean(user),
           session: user,
           mode: config.mode,
           rails_mode: config.rails.mode
@@ -277,16 +365,35 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
 
-    if (!canUpdateJobStatus(user, existing)) {
+    if (!canUpdateJobStatus(user, existing, body.status)) {
       return c.json(
         envelopeError({
           correlationId,
           error: {
             code: "forbidden",
-            message: "Role is not allowed to update this job"
+            message: "Role is not allowed to update this job to the requested status"
           }
         }),
         403
+      );
+    }
+
+    if (!canTransitionStatus(existing.status, body.status)) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          rowVersion: existing.row_version,
+          error: {
+            code: "invalid_status_transition",
+            message: `Invalid status transition from ${existing.status} to ${body.status}`,
+            details: {
+              from: existing.status,
+              to: body.status,
+              allowed: listAllowedStatusTransitions(existing.status)
+            }
+          }
+        }),
+        400
       );
     }
 
@@ -447,11 +554,32 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const body = await parseJsonBody(c.req.raw, scheduleConfirmSchema);
-    const request = await store.getScheduleRequest(body.request_uid);
+    let request = await store.getScheduleRequest(body.request_uid);
+    if (!request && config.mode === "local" && body.job_uid) {
+      const fallbackJob = await store.getJob(body.job_uid);
+      if (fallbackJob) {
+        request = {
+          request_uid: body.request_uid,
+          job_uid: fallbackJob.job_uid,
+          client_uid: fallbackJob.client_uid,
+          preferred_slots_json: JSON.stringify([{ start_at: body.start_at, end_at: body.end_at }]),
+          timezone: "Africa/Johannesburg",
+          notes: "auto-created fallback request",
+          status: "requested",
+          ...createMutable(user.user_uid, correlationId)
+        };
+      }
+    }
 
     if (!request) {
       return c.json(
-        envelopeError({ correlationId, error: { code: "not_found", message: "Schedule request not found" } }),
+        envelopeError({
+          correlationId,
+          error: {
+            code: "not_found",
+            message: "Schedule request not found. Create/request a slot first, then confirm using that request UID."
+          }
+        }),
         404
       );
     }
@@ -527,11 +655,31 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const body = await parseJsonBody(c.req.raw, scheduleRescheduleSchema);
-    const schedule = await store.getSchedule(body.schedule_uid);
+    let schedule = await store.getSchedule(body.schedule_uid);
+    if (!schedule && config.mode === "local" && body.job_uid) {
+      const fallbackJob = await store.getJob(body.job_uid);
+      schedule = {
+        schedule_uid: body.schedule_uid,
+        request_uid: body.request_uid ?? `REQ-${crypto.randomUUID()}`,
+        job_uid: body.job_uid,
+        calendar_event_id: body.calendar_event_id ?? "",
+        start_at: body.start_at,
+        end_at: body.end_at,
+        technician_uid: body.technician_uid ?? fallbackJob?.technician_uid ?? "TECH-001",
+        status: "confirmed",
+        ...createMutable(user.user_uid, correlationId)
+      };
+    }
 
     if (!schedule) {
       return c.json(
-        envelopeError({ correlationId, error: { code: "not_found", message: "Schedule not found" } }),
+        envelopeError({
+          correlationId,
+          error: {
+            code: "not_found",
+            message: "Schedule not found. Confirm a request first, then reschedule that schedule UID."
+          }
+        }),
         404
       );
     }
@@ -611,20 +759,24 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
 
+    const documentUid = `DOC-${crypto.randomUUID()}`;
+    const overrides = body.tokens ?? {};
+    const users = await store.listUsers();
     const generated = await config.rails.docs.generateDocument({
       jobUid: body.job_uid,
       documentType: body.document_type,
-      tokens: {
-        job_uid: job.job_uid,
-        status: job.status,
-        scheduled_start: job.scheduled_start,
-        scheduled_end: job.scheduled_end,
-        ...body.tokens
-      }
+      tokens: buildDocumentTokens({
+        documentUid,
+        documentType: body.document_type,
+        job,
+        actor: user,
+        users,
+        ...(Object.keys(overrides).length > 0 ? { overrides } : {})
+      })
     });
 
     const document: JobDocumentRow = {
-      document_uid: `DOC-${crypto.randomUUID()}`,
+      document_uid: documentUid,
       job_uid: body.job_uid,
       document_type: body.document_type,
       status: "generated",
@@ -656,11 +808,29 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const body = await parseJsonBody(c.req.raw, documentPublishSchema);
-    const document = await store.getDocument(body.document_uid);
+    let document = await store.getDocument(body.document_uid);
+    if (!document && config.mode === "local") {
+      document = {
+        document_uid: body.document_uid,
+        job_uid: body.job_uid ?? "JOB-1001",
+        document_type: body.document_type ?? "jobcard",
+        status: "generated",
+        drive_file_id: body.document_uid,
+        pdf_file_id: body.document_uid,
+        published_url: "",
+        ...createMutable(user.user_uid, correlationId)
+      };
+    }
 
     if (!document) {
       return c.json(
-        envelopeError({ correlationId, error: { code: "not_found", message: "Document not found" } }),
+        envelopeError({
+          correlationId,
+          error: {
+            code: "not_found",
+            message: "Document not found. Generate a document first, then publish using that document UID."
+          }
+        }),
         404
       );
     }
@@ -993,12 +1163,24 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 }
 
 const defaultApp = createApp(parseEnvBindings((globalThis as { process?: { env?: Record<string, string> } }).process?.env ?? {}));
+const runtimeAppCache = new Map<string, Hono<AppBindings>>();
+
+function getRuntimeApp(runtimeEnv: Record<string, string | undefined>): Hono<AppBindings> {
+  const key = envCacheKey(runtimeEnv);
+  const cached = runtimeAppCache.get(key);
+  if (cached) {
+    return cached;
+  }
+  const created = createApp(runtimeEnv);
+  runtimeAppCache.set(key, created);
+  return created;
+}
 
 export default {
   fetch(request: Request, env: Record<string, unknown>) {
     const runtimeEnv = parseEnvBindings(env);
     if (Object.keys(runtimeEnv).length > 0) {
-      return createApp(runtimeEnv).fetch(request, env);
+      return getRuntimeApp(runtimeEnv).fetch(request, env);
     }
     return defaultApp.fetch(request, env);
   }

@@ -7,7 +7,7 @@ const job: JobRow = {
   site_uid: "SITE-001",
   technician_uid: "TECH-001",
   title: "Test",
-  status: "assigned",
+  status: "draft",
   scheduled_start: "2026-04-09T00:00:00.000Z",
   scheduled_end: "2026-04-09T00:00:00.000Z",
   last_note: "",

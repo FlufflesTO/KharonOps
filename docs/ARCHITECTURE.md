@@ -2,33 +2,36 @@
 
 ## System Overview
 
-Kharon Unified Rebuild v1 is a single product with two user-facing surfaces and one API runtime:
-- `apps/site`: public conversion site
-- `apps/portal`: authenticated role portal PWA (client, technician, dispatcher, admin)
-- `apps/api`: Cloudflare Worker API under `/api/v1/*`
+Kharon Unified Rebuild v1 is a single Cloudflare-hosted product with:
+
+- `apps/site` for public marketing
+- `apps/portal` for authenticated operations
+- `apps/api` for the Hono API under `/api/v1/*`
 
 ## Hosting Topology
 
-- Netlify hosts static content (`dist/public`)
-- Netlify proxies `/api/*` to Cloudflare Worker origin
-- Cloudflare Worker executes all API logic and RBAC enforcement
+- Public and staging public Workers serve static assets from `dist/public`
+- Those same public Workers execute `/api/*`
+- Internal and staging internal Workers remain API-only and can stay Access-protected
 
 ## Runtime Components
 
 ### UI Layer
-- Shared design tokens from `packages/ui`
-- Public site for marketing and conversion
-- Portal for operations workflows and workspace triggers
-- Offline support in portal:
+
+- shared design tokens from `packages/ui`
+- public marketing site
+- portal for client, technician, dispatcher, and admin roles
+- offline support in the portal:
   - service worker caches shell
   - IndexedDB queue stores mutations
   - replay posts batches to `/api/v1/sync/push`
 
 ### API Layer
+
 - Hono-based API router
-- Correlation ID middleware for every request
-- Session middleware validates signed httpOnly cookie
-- Route groups:
+- correlation ID middleware on every request
+- session middleware with signed `httpOnly` cookie validation
+- route groups:
   - `auth`
   - `jobs`
   - `schedules`
@@ -37,81 +40,73 @@ Kharon Unified Rebuild v1 is a single product with two user-facing surfaces and 
   - `workspace`
   - `admin`
 
-### Domain Layer (`packages/domain`)
-- canonical types and schemas
-- response envelope helpers
-- RBAC + ownership matrix
-- status transition graph
-- workbook sheet schema definitions
-- concurrency + conflict payload helpers
+### Domain Layer
 
-### Google Adapter Layer (`packages/google`)
-- unified rails interfaces for:
-  - Sheets
-  - Drive
-  - Docs
-  - Calendar
-  - Gmail
-  - Chat
-  - People
-- bounded retry/backoff for transient API failures
-- normalized Google error mapping
-- dual mode operation:
-  - production mode with service-account-backed API calls
-  - local deterministic fallback mode
+- canonical types and schemas
+- response envelopes
+- RBAC and ownership rules
+- status transitions
+- workbook schema definitions
+- conflict payload helpers
+
+### Google Adapter Layer
+
+- Sheets
+- Drive
+- Docs
+- Calendar
+- Gmail
+- Chat
+- People
+
+Production mode uses service-account-backed API calls. Local mode uses deterministic fallbacks.
 
 ## Data Model
 
 ### Canonical Source of Record
-Google Sheets workbook is canonical in production mode.
+
+Google Sheets remains canonical in the current production design.
 
 ### Store Implementations
-- `LocalWorkbookStore`: deterministic functional fallback for local validation
-- `SheetsWorkbookStore`: Sheets-backed persistence using canonical tabs
 
-Both stores enforce:
+- `LocalWorkbookStore`
+- `SheetsWorkbookStore`
+- scaffolded `PostgresWorkbookStore`
+- scaffolded `DualWorkbookStore`
+
+All stores enforce:
+
 - row version checks
 - mutable audit fields
 - conflict payload generation
-- idempotent sync replay behavior
+- replay-safe mutation behavior
 
 ## Identity and Session
 
 - Google ID token verification is server-side
-- Session token signed with rotating key ring (`SESSION_KEYS`)
-- Session delivered via `httpOnly`, `secure`, `sameSite=Lax` cookie
-- No client-provided role claims are trusted
+- session token signing uses rotating `SESSION_KEYS`
+- session cookie is `httpOnly`, `secure`, `sameSite=Lax`
+- client role claims are never trusted
 
 ## RBAC and Ownership
 
-Enforced server-side at route and entity level:
-- client: own jobs and schedule requests only
-- technician: assigned jobs and document generation for owned jobs
+Enforced server-side:
+
+- client: own jobs and schedule requests
+- technician: assigned jobs and controlled document generation for owned jobs
 - dispatcher: operational overrides and workspace actions
-- admin: full access + audits + automation retries
-
-## Concurrency and Conflict
-
-Optimistic concurrency on mutable entities:
-- every mutable write includes `row_version`
-- stale writes return `409` with canonical `conflict` payload
-- offline sync supports partial success and explicit conflict resolution strategies (`server`, `client`, `merge`)
+- admin: full access, audits, and recovery actions
 
 ## Controlled Documents
 
-v1 controlled docs:
+Current controlled documents:
+
 - Jobcard
 - Service Report
 
 Flow:
-1. Generate from Docs template with token replacement
-2. Export PDF
-3. Store in Drive
-4. Publish action updates status + publication URL
 
-## Operational Controls
-
-- Correlation IDs on all requests
-- Audit logs for privileged operations
-- Admin health endpoint for runtime diagnostics
-- Automation retry endpoint for operational replay
+1. generate from Docs template
+2. export PDF
+3. store in Drive
+4. publish and update status/history

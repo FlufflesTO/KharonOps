@@ -9,7 +9,7 @@ describe("offline replay process", () => {
         kind: "job_status",
         job_uid: "JOB-1001",
         expected_row_version: 1,
-        payload: { status: "en_route" },
+        payload: { status: "draft" },
         created_at: "2026-04-09T10:00:00.000Z"
       },
       {

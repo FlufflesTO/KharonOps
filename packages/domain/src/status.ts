@@ -1,12 +1,11 @@
 import type { JobStatus } from "./types.js";
 
 const transitions: Record<JobStatus, JobStatus[]> = {
-  open: ["assigned", "cancelled"],
-  assigned: ["en_route", "on_site", "paused", "cancelled"],
-  en_route: ["on_site", "paused", "cancelled"],
-  on_site: ["paused", "completed", "cancelled"],
-  paused: ["en_route", "on_site", "cancelled"],
-  completed: [],
+  draft: ["performed", "cancelled"],
+  performed: ["approved", "rejected", "cancelled"],
+  rejected: ["performed", "cancelled"],
+  approved: ["certified", "cancelled"],
+  certified: [],
   cancelled: []
 };
 

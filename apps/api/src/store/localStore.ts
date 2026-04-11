@@ -50,7 +50,7 @@ function makeSeedData(): LocalData {
   const userRows: UserRow[] = [
     {
       user_uid: "USR-CLIENT-1",
-      email: "client@example.com",
+      email: "connor@kharon.co.za",
       display_name: "Client Operator",
       role: "client",
       client_uid: "CLI-001",
@@ -60,7 +60,7 @@ function makeSeedData(): LocalData {
     },
     {
       user_uid: "USR-TECH-1",
-      email: "tech@example.com",
+      email: "connor@kharon.co.za",
       display_name: "Field Technician",
       role: "technician",
       client_uid: "",
@@ -70,7 +70,7 @@ function makeSeedData(): LocalData {
     },
     {
       user_uid: "USR-DISP-1",
-      email: "dispatcher@example.com",
+      email: "connor@kharon.co.za",
       display_name: "Dispatch Controller",
       role: "dispatcher",
       client_uid: "",
@@ -80,7 +80,7 @@ function makeSeedData(): LocalData {
     },
     {
       user_uid: "USR-ADMIN-1",
-      email: "admin@example.com",
+      email: "connor@kharon.co.za",
       display_name: "Security Administrator",
       role: "admin",
       client_uid: "",
@@ -97,7 +97,7 @@ function makeSeedData(): LocalData {
       site_uid: "SITE-001",
       technician_uid: "TECH-001",
       title: "Fire panel fault isolation",
-      status: "assigned",
+      status: "draft",
       scheduled_start: nowIso(),
       scheduled_end: nowIso(),
       last_note: "Initial assignment",
@@ -109,7 +109,7 @@ function makeSeedData(): LocalData {
       site_uid: "SITE-002",
       technician_uid: "TECH-002",
       title: "Suppression cylinder pressure test",
-      status: "open",
+      status: "draft",
       scheduled_start: nowIso(),
       scheduled_end: nowIso(),
       last_note: "Awaiting assignment",

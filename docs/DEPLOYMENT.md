@@ -2,127 +2,82 @@
 
 ## Targets
 
-- Static surfaces: Netlify
+- Static surfaces: Cloudflare Workers static assets
 - API runtime: Cloudflare Workers
 
-## Dashboard Setup Values
+## Worker Topology
 
-### Netlify (single project for this monorepo)
+- `kharon-unified-api`
+  Production internal Worker
+- `kharon-unified-api-staging`
+  Staging internal Worker
+- `kharon-unified-api-public`
+  Production public Worker with static assets from `dist/public`
+- `kharon-unified-api-staging-public`
+  Staging public Worker with static assets from `dist/public`
 
-- Project to deploy: `FlufflesTO/KharonOps` (repo root)
-- Base directory (Root Directory): leave empty or `/`
-- Build command: `npm run build`
-- Publish directory (Build output): `dist/public`
-- Framework preset: `Other`
-- Node version: `22` (set in Netlify env if needed)
+The public Workers serve:
 
-Netlify is hosting both:
-- `/` -> marketing site
-- `/portal/` -> unified portal PWA
+- `/`
+- `/portal/`
+- `/api/v1/*`
 
-### Cloudflare Workers (API project)
-
-- Worker name: `kharon-unified-api` (from `wrangler.toml`)
-- Entrypoint: `apps/api/src/index.ts`
-- Compatibility date: `2026-04-09`
-- Root Directory (if Git-connected build): repo root `/`
-- Framework: none / Workers
-- Deploy command (CI/manual): `npx wrangler deploy`
+The internal Workers remain API-only.
 
 ## Build Output
 
 `npm run build` produces:
-- `apps/api/dist` (Worker build artifacts)
-- `apps/site/dist` (public site)
-- `apps/portal/dist` (portal PWA)
-- `dist/public` (combined static bundle for Netlify)
 
-## Netlify Configuration
+- `apps/api/dist`
+- `apps/site/dist`
+- `apps/portal/dist`
+- `dist/public`
 
-`netlify.toml` is configured to:
-- publish `dist/public`
-- set production, staging branch, and deploy-preview build contexts
-- feed the correct Worker origin into the static bundle assembly step
+`dist/public` is assembled by [build-static.mjs](C:/Users/User/KharonOps/KharonOps/scripts/build-static.mjs) and includes:
 
-`scripts/build-static.mjs` now generates:
-- `dist/public/_redirects`
-- `dist/public/_headers`
+- the site root build
+- the portal build under `/portal`
+- `_headers`
+- `_redirects`
 
-That generated output is what controls:
-- `/portal` -> `/portal/`
-- `/api/*` proxying to the correct public Worker per deploy context
-- CSP, HSTS, cache policy, and noindex behavior per context
+## Worker Configuration
 
-Important:
-- Keep the production public Worker origin aligned with `env.public` in `wrangler.toml`.
-- Keep the staging preview Worker origin aligned with `env.staging-public` in `wrangler.toml`.
+[wrangler.toml](C:/Users/User/KharonOps/KharonOps/wrangler.toml) defines:
 
-### Required Netlify Environment Variables
+- public asset-backed environments for `public` and `staging-public`
+- required secrets for all environments
+- Cloudflare Access config for internal environments
+- observability for runtime visibility
 
-Required:
-- `NODE_VERSION=22`
+The public environments use:
 
-Optional for future build/runtime metadata:
-- `NETLIFY_WORKER_ORIGIN`
-- `SITE_URL`
+- `directory = "./dist/public"`
+- `run_worker_first = ["/api/*"]`
 
-### Netlify CLI With npm Workspaces
+That keeps static requests on the asset path while ensuring `/api/*` executes Worker code first.
 
-This repository is an npm workspaces monorepo. Netlify CLI needs an explicit filter to avoid interactive project selection errors.
+## Required Secrets
 
-Use:
-
-```bash
-npx netlify deploy --no-build --dir dist/public --site kharonop --filter @kharon/site --json
-```
-
-## Cloudflare Worker Configuration
-
-`wrangler.toml` defines:
-- production internal Worker (`kharon-unified-api`)
-- staging internal Worker (`--env staging`)
-- production public Worker (`--env public`)
-- staging public Worker (`--env staging-public`)
-
-The public Workers are the only origins Netlify should proxy to.
-
-### Required Worker Secrets/Vars
-- `KHARON_MODE`
 - `SESSION_KEYS`
-- `SESSION_COOKIE_NAME`
-- `SESSION_TTL_SECONDS`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
 - `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
 - `WORKBOOK_SPREADSHEET_ID`
 - `GOOGLE_DRIVE_ROOT_FOLDER_ID`
-- `GOOGLE_DOCCARD_TEMPLATE_ID`
+- `GOOGLE_JOBCARD_TEMPLATE_ID`
 - `GOOGLE_SERVICE_REPORT_TEMPLATE_ID`
 - `GOOGLE_CHAT_WEBHOOK_URL`
 - `GOOGLE_CALENDAR_ID`
 - `GMAIL_SENDER_ADDRESS`
 
-Optional Cloudflare Access JWT verification at app layer:
-- `CF_ACCESS_ENABLED=true`
-- `CF_ACCESS_AUD=<access-audience>`
-- `CF_ACCESS_JWKS_URL=https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`
-- `CF_ACCESS_ISSUER=https://<team>.cloudflareaccess.com` (optional, recommended)
-- `CF_ACCESS_JWKS_JSON=<jwks-json>` (optional local/test alternative to URL)
+Compatibility fallbacks still supported by runtime:
 
-Compatibility aliases already supported by runtime (no code changes required):
-- `PORTAL_SESSION_SECRET` as fallback for `SESSION_KEYS`
-- `GOOGLE_SERVICE_ACCOUNT_JSON` as fallback source for:
-  - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-  - `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
-- `KHARON_JOBS_SPREADSHEET_ID` as fallback for `WORKBOOK_SPREADSHEET_ID`
-- `KHARON_DRIVE_ROOT_FOLDER_ID` as fallback for `GOOGLE_DRIVE_ROOT_FOLDER_ID`
-- `KHARON_DOC_TEMPLATE_JOBCARD_ID` as fallback for `GOOGLE_DOCCARD_TEMPLATE_ID`
-- `KHARON_DOC_TEMPLATE_SERVICE_REPORT_ID` as fallback for `GOOGLE_SERVICE_REPORT_TEMPLATE_ID`
-- `KHARON_CHAT_WEBHOOK_URL` as fallback for `GOOGLE_CHAT_WEBHOOK_URL`
-- `KHARON_CALENDAR_ID` as fallback for `GOOGLE_CALENDAR_ID`
-- `KHARON_GMAIL_FROM` as fallback for `GMAIL_SENDER_ADDRESS`
+- `GOOGLE_DOCCARD_TEMPLATE_ID` as a legacy fallback for the jobcard template
+- `PORTAL_SESSION_SECRET` as a fallback for `SESSION_KEYS`
+- `GOOGLE_SERVICE_ACCOUNT_JSON` as a fallback source for service account credentials
+- `KHARON_DOC_TEMPLATE_JOBCARD_ID` as a legacy Kharon alias
 
-## Deployment Steps
+## Deploy Steps
 
 1. Install and validate:
    ```bash
@@ -132,50 +87,34 @@ Compatibility aliases already supported by runtime (no code changes required):
    npm run test
    npm run lint
    ```
-2. Deploy Worker:
-   ```bash
-   npx wrangler deploy
-   npx wrangler deploy --env public
-   ```
-   For staging:
+2. Deploy staging:
    ```bash
    npx wrangler deploy --env staging
    npx wrangler deploy --env staging-public
    ```
-3. Deploy Netlify static bundle (`dist/public`).
+3. Deploy production:
+   ```bash
+   npx wrangler deploy
+   npx wrangler deploy --env public
+   ```
 4. Validate:
    - `/`
    - `/portal/`
-   - `/api/v1/admin/health` (authenticated admin session)
+   - `/api/v1/auth/session`
+   - `/api/v1/admin/health` with an authenticated admin session
 
-## Cloudflare Access + Netlify Proxy Note
+## Cutover Utilities
 
-If Netlify proxies `/api/*` to a Worker origin protected by Cloudflare Access, requests may return Access challenge HTML instead of API JSON unless a valid Access JWT is present.
-
-Use one of these production-safe patterns:
-1. Keep Access enabled and ensure API requests include a valid `Cf-Access-Jwt-Assertion` token.
-2. Use a non-Access-protected origin specifically for Netlify proxy traffic (recommended for public client portal flows).
-
-### Recommended Production Pattern (Implemented)
-
-- Keep `kharon-unified-api` as internal Access-protected origin.
-- Deploy `kharon-unified-api-public` for Netlify proxy traffic.
-- Proxy `/api/*` from Netlify to `https://kharon-unified-api-public.connor-venter.workers.dev/api/:splat`.
-
-## Workbook Migration
-
-After Worker deployment and secrets setup:
+Workbook migration:
 
 ```bash
 node scripts/migrate-workbook.mjs
 ```
 
-## Cutover Rehearsal
+Cutover rehearsal:
 
 ```bash
 node scripts/cutover-rehearsal.mjs
 ```
 
-Artifacts generated in `dist/cutover`:
-- `cutover-rehearsal.json`
-- `rollback-bundle.txt`
+Artifacts are written to `dist/cutover`.

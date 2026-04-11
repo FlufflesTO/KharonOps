@@ -1,26 +1,65 @@
-import React, { startTransition, useEffect, useMemo, useState } from "react";
+import React, { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import type { OfflineQueueItem } from "@kharon/domain";
-import { apiClient, type PortalSession } from "./apiClient";
+import { apiClient, type PortalAuthConfig, type PortalSession } from "./apiClient";
 import { enqueueMutation, listQueuedMutations } from "./offline/queue";
 import { replayQueuedMutations } from "./offline/replay";
+
+declare global {
+  interface Window {
+    google?: {
+      accounts?: {
+        id?: {
+          initialize: (args: {
+            client_id: string;
+            callback: (response: { credential?: string }) => void;
+          }) => void;
+          renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
+          prompt: () => void;
+          cancel?: () => void;
+        };
+      };
+    };
+  }
+}
 
 type SessionRole = PortalSession["session"]["role"];
 
 type JobRecord = {
   job_uid: string;
   title: string;
-  status: string;
+  status: JobStatus;
   row_version: number;
   client_uid: string;
   technician_uid: string;
   last_note: string;
 };
 
+type JobStatus = "open" | "assigned" | "en_route" | "on_site" | "paused" | "completed" | "cancelled";
+
+const STATUS_TRANSITIONS: Record<JobStatus, JobStatus[]> = {
+  open: ["assigned", "cancelled"],
+  assigned: ["en_route", "on_site", "paused", "cancelled"],
+  en_route: ["on_site", "paused", "cancelled"],
+  on_site: ["paused", "completed", "cancelled"],
+  paused: ["en_route", "on_site", "cancelled"],
+  completed: [],
+  cancelled: []
+};
+
+function allowedStatusTargets(from: JobStatus): JobStatus[] {
+  return [from, ...STATUS_TRANSITIONS[from]];
+}
+
 function asJob(record: Record<string, unknown>): JobRecord {
+  const rawStatus = String(record.status ?? "");
+  const status = (Object.keys(STATUS_TRANSITIONS) as JobStatus[]).includes(rawStatus as JobStatus)
+    ? (rawStatus as JobStatus)
+    : "open";
+
   return {
     job_uid: String(record.job_uid ?? ""),
     title: String(record.title ?? ""),
-    status: String(record.status ?? ""),
+    status,
     row_version: Number(record.row_version ?? 0),
     client_uid: String(record.client_uid ?? ""),
     technician_uid: String(record.technician_uid ?? ""),
@@ -33,9 +72,22 @@ function nowPlusHours(hours: number): string {
   return value.toISOString().slice(0, 16);
 }
 
+function toIsoOrNull(value: string): string | null {
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+  return new Date(parsed).toISOString();
+}
+
 function errorMessage(error: unknown): string {
   const typed = error as { error?: { message?: string } };
   return typed.error?.message ?? String(error);
+}
+
+function errorCode(error: unknown): string {
+  const typed = error as { error?: { code?: string } };
+  return typed.error?.code ?? "";
 }
 
 function roleLabel(role: SessionRole): string {
@@ -85,6 +137,15 @@ function statusTone(status: string): "active" | "warning" | "critical" | "neutra
     default:
       return "neutral";
   }
+}
+
+function looksLikeJwt(token: string): boolean {
+  const trimmed = token.trim();
+  return trimmed.split(".").length === 3 && trimmed.length > 40;
+}
+
+function hasRenderedGoogleButton(container: HTMLDivElement | null): boolean {
+  return Boolean(container?.querySelector("iframe, [role='button'], button"));
 }
 
 type WorkspaceBrief = {
@@ -305,12 +366,12 @@ function SummaryCard({ label, value, detail }: SummaryCardProps): React.JSX.Elem
 type QuickLoginButtonProps = {
   label: string;
   token: string;
-  onClick: (token: string) => void;
+  onClick: (token: string) => Promise<void> | void;
 };
 
 function QuickLoginButton({ label, token, onClick }: QuickLoginButtonProps): React.JSX.Element {
   return (
-    <button className="button button--ghost" onClick={() => onClick(token)}>
+    <button className="button button--ghost" onClick={() => void onClick(token)}>
       {label}
     </button>
   );
@@ -319,6 +380,7 @@ function QuickLoginButton({ label, token, onClick }: QuickLoginButtonProps): Rea
 export function PortalApp(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<PortalSession | null>(null);
+  const [authConfig, setAuthConfig] = useState<PortalAuthConfig | null>(null);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [selectedJobUid, setSelectedJobUid] = useState("");
   const [statusTarget, setStatusTarget] = useState("on_site");
@@ -338,13 +400,13 @@ export function PortalApp(): React.JSX.Element {
   const [documentType, setDocumentType] = useState<"jobcard" | "service_report">("jobcard");
   const [publishDocumentUid, setPublishDocumentUid] = useState("");
   const [publishRowVersion, setPublishRowVersion] = useState(1);
-  const [gmailTo, setGmailTo] = useState("client@example.com");
+  const [gmailTo, setGmailTo] = useState("connor@kharon.co.za");
   const [gmailSubject, setGmailSubject] = useState("Kharon service update");
   const [gmailBody, setGmailBody] = useState("Service team update attached.");
   const [chatMessage, setChatMessage] = useState("Dispatcher alert test");
   const [chatSeverity, setChatSeverity] = useState<"info" | "warning" | "critical">("info");
   const [personName, setPersonName] = useState("New Contact");
-  const [personEmail, setPersonEmail] = useState("new.contact@example.com");
+  const [personEmail, setPersonEmail] = useState("connor@kharon.co.za");
   const [personPhone, setPersonPhone] = useState("+27110000000");
   const [offlineEnabled, setOfflineEnabled] = useState(false);
   const [networkOnline, setNetworkOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
@@ -353,12 +415,38 @@ export function PortalApp(): React.JSX.Element {
   const [documents, setDocuments] = useState<Array<Record<string, unknown>>>([]);
   const [adminHealth, setAdminHealth] = useState<Record<string, unknown> | null>(null);
   const [adminAuditCount, setAdminAuditCount] = useState(0);
+  const [googleButtonStatus, setGoogleButtonStatus] = useState<"idle" | "ready" | "unavailable">("idle");
+  const [actionPending, setActionPending] = useState(false);
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
 
   const selectedJob = useMemo(() => jobs.find((job) => job.job_uid === selectedJobUid) ?? null, [jobs, selectedJobUid]);
+  const selectableStatuses = useMemo<JobStatus[]>(
+    () => (selectedJob ? allowedStatusTargets(selectedJob.status) : ["on_site"]),
+    [selectedJob]
+  );
 
   const openJobCount = jobs.filter((job) => job.status !== "completed" && job.status !== "cancelled").length;
   const generatedDocumentCount = documents.length;
   const selectedJobStatus = selectedJob?.status ?? "no selection";
+  const productionAuth = authConfig?.mode === "production";
+
+  const runAction = (action: () => Promise<void>): void => {
+    if (actionPending) {
+      setFeedback("Another action is still running. Wait a moment and retry.");
+      return;
+    }
+    setActionPending(true);
+    void action().catch((error) => {
+      const code = errorCode(error);
+      if (code === "google_transient_error") {
+        setFeedback("Google API rate limit reached (429). Wait 30-60 seconds and retry one action at a time.");
+        return;
+      }
+      setFeedback(errorMessage(error));
+    }).finally(() => {
+      setActionPending(false);
+    });
+  };
 
   async function refreshQueueCount(): Promise<void> {
     const queue = await listQueuedMutations();
@@ -410,6 +498,15 @@ export function PortalApp(): React.JSX.Element {
     }
   }
 
+  async function refreshAuthConfig(): Promise<void> {
+    try {
+      const config = await apiClient.authConfig();
+      setAuthConfig(config);
+    } catch (error) {
+      setFeedback(`Auth config failed: ${errorMessage(error)}`);
+    }
+  }
+
   useEffect(() => {
     const online = () => setNetworkOnline(true);
     const offline = () => setNetworkOnline(false);
@@ -417,6 +514,7 @@ export function PortalApp(): React.JSX.Element {
     window.addEventListener("offline", offline);
 
     void (async () => {
+      await refreshAuthConfig();
       await refreshSession();
       await refreshQueueCount();
       setLoading(false);
@@ -427,6 +525,110 @@ export function PortalApp(): React.JSX.Element {
       window.removeEventListener("offline", offline);
     };
   }, []);
+
+  useEffect(() => {
+    if (session || !authConfig || !productionAuth || authConfig.google_client_id === "") {
+      setGoogleButtonStatus("idle");
+      return;
+    }
+
+    let cancelled = false;
+    let renderCheckTimer: number | undefined;
+
+    const setButtonUnavailable = () => {
+      setGoogleButtonStatus("unavailable");
+      setFeedback((current) =>
+        current === "Ready."
+          ? "Google sign-in button did not render in this browser session. Hard refresh once, then retry in a private window with extensions disabled."
+          : current
+      );
+    };
+
+    const mountGoogleIdentity = () => {
+      const googleIdentity = window.google?.accounts?.id;
+      if (!googleIdentity || !googleButtonRef.current || cancelled) {
+        return;
+      }
+
+      setGoogleButtonStatus("idle");
+      googleButtonRef.current.replaceChildren();
+      googleIdentity.initialize({
+        client_id: authConfig.google_client_id,
+        callback: (response) => {
+          if (!response.credential) {
+            setFeedback("Google sign-in did not return an ID token.");
+            return;
+          }
+          void handleLogin(response.credential);
+        }
+      });
+      googleIdentity.renderButton(googleButtonRef.current, {
+        theme: "outline",
+        size: "large",
+        shape: "pill",
+        text: "signin_with",
+        width: 320
+      });
+
+      renderCheckTimer = window.setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+
+        if (hasRenderedGoogleButton(googleButtonRef.current)) {
+          setGoogleButtonStatus("ready");
+          return;
+        }
+
+        setButtonUnavailable();
+      }, 2500);
+    };
+
+    const handleScriptError = () => {
+      if (cancelled) {
+        return;
+      }
+      setButtonUnavailable();
+    };
+
+    if (window.google?.accounts?.id) {
+      mountGoogleIdentity();
+      return () => {
+        cancelled = true;
+        if (renderCheckTimer !== undefined) {
+          window.clearTimeout(renderCheckTimer);
+        }
+        window.google?.accounts?.id?.cancel?.();
+      };
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-identity="true"]');
+    const script =
+      existingScript ??
+      Object.assign(document.createElement("script"), {
+        src: "https://accounts.google.com/gsi/client",
+        async: true,
+        defer: true
+      });
+
+    script.dataset.googleIdentity = "true";
+    script.addEventListener("load", mountGoogleIdentity, { once: true });
+    script.addEventListener("error", handleScriptError);
+
+    if (!existingScript) {
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      cancelled = true;
+      if (renderCheckTimer !== undefined) {
+        window.clearTimeout(renderCheckTimer);
+      }
+      script.removeEventListener("load", mountGoogleIdentity);
+      script.removeEventListener("error", handleScriptError);
+      window.google?.accounts?.id?.cancel?.();
+    };
+  }, [authConfig, productionAuth, session]);
 
   useEffect(() => {
     if (!session) {
@@ -441,19 +643,37 @@ export function PortalApp(): React.JSX.Element {
     })();
   }, [session]);
 
+  useEffect(() => {
+    if (!selectableStatuses.includes(statusTarget as JobStatus)) {
+      const next = selectableStatuses[0];
+      if (next) {
+        setStatusTarget(next);
+      }
+    }
+  }, [selectableStatuses, statusTarget]);
+
   async function handleLogin(token: string): Promise<void> {
     try {
       setLoading(true);
       await apiClient.login(token);
       await refreshSession();
       await refreshJobs();
-      setFeedback(`Logged in with token ${token}`);
+      setFeedback("Signed in.");
     } catch (error) {
       const envelope = error as { error?: { message?: string } };
       setFeedback(envelope.error?.message ?? "Login failed");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSupportTokenSubmit(): Promise<void> {
+    if (productionAuth && !looksLikeJwt(loginToken)) {
+      setFeedback("Use the Google sign-in button above. This field only accepts a raw Google ID token JWT for diagnostics.");
+      return;
+    }
+
+    await handleLogin(loginToken);
   }
 
   async function handleLogout(): Promise<void> {
@@ -472,6 +692,10 @@ export function PortalApp(): React.JSX.Element {
 
   async function handleStatusUpdate(): Promise<void> {
     if (!selectedJob) {
+      return;
+    }
+    if (!selectableStatuses.includes(statusTarget as JobStatus)) {
+      setFeedback(`Invalid transition from ${selectedJob.status} to ${statusTarget}.`);
       return;
     }
 
@@ -536,30 +760,139 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
 
-    await apiClient.requestSchedule(
+    const startIso = toIsoOrNull(preferredStart);
+    const endIso = toIsoOrNull(preferredEnd);
+    if (!startIso || !endIso) {
+      setFeedback("Provide a valid preferred start and end time.");
+      return;
+    }
+    if (Date.parse(startIso) >= Date.parse(endIso)) {
+      setFeedback("Preferred end time must be after the preferred start time.");
+      return;
+    }
+
+    const response = await apiClient.requestSchedule(
       selectedJob.job_uid,
       {
-        start_at: new Date(preferredStart).toISOString(),
-        end_at: new Date(preferredEnd).toISOString()
+        start_at: startIso,
+        end_at: endIso
       },
       Intl.DateTimeFormat().resolvedOptions().timeZone,
       selectedJob.row_version
     );
 
-    setFeedback("Preferred slot request submitted.");
+    const createdRequestUid = String(response.data?.request_uid ?? "");
+    if (createdRequestUid !== "") {
+      setConfirmRequestUid(createdRequestUid);
+    }
+    if (typeof response.row_version === "number") {
+      setConfirmRowVersion(response.row_version);
+    }
+
+    setFeedback(createdRequestUid ? `Preferred slot request submitted (${createdRequestUid}).` : "Preferred slot request submitted.");
+  }
+
+  async function handleScheduleConfirm(): Promise<void> {
+    if (confirmRequestUid.trim() === "") {
+      setFeedback("Enter a valid request UID before confirming.");
+      return;
+    }
+    if (confirmTechUid.trim() === "") {
+      setFeedback("Enter a technician UID before confirming.");
+      return;
+    }
+
+    const startIso = toIsoOrNull(confirmStart);
+    const endIso = toIsoOrNull(confirmEnd);
+    if (!startIso || !endIso) {
+      setFeedback("Provide a valid confirm start and end time.");
+      return;
+    }
+    if (Date.parse(startIso) >= Date.parse(endIso)) {
+      setFeedback("Confirm end time must be after confirm start time.");
+      return;
+    }
+
+    const response = await apiClient.confirmSchedule(
+      confirmRequestUid.trim(),
+      startIso,
+      endIso,
+      confirmTechUid.trim(),
+      confirmRowVersion,
+      selectedJob ? { job_uid: selectedJob.job_uid } : undefined
+    );
+
+    const createdScheduleUid = String(response.data?.schedule_uid ?? "");
+    if (createdScheduleUid !== "") {
+      setRescheduleUid(createdScheduleUid);
+    }
+    if (typeof response.row_version === "number") {
+      setRescheduleRowVersion(response.row_version);
+    }
+
+    setFeedback(createdScheduleUid ? `Schedule confirmed (${createdScheduleUid}).` : "Schedule confirmed.");
+  }
+
+  async function handleReschedule(): Promise<void> {
+    if (rescheduleUid.trim() === "") {
+      setFeedback("Enter a schedule UID before rescheduling.");
+      return;
+    }
+
+    const startIso = toIsoOrNull(rescheduleStart);
+    const endIso = toIsoOrNull(rescheduleEnd);
+    if (!startIso || !endIso) {
+      setFeedback("Provide a valid reschedule start and end time.");
+      return;
+    }
+    if (Date.parse(startIso) >= Date.parse(endIso)) {
+      setFeedback("Reschedule end time must be after reschedule start time.");
+      return;
+    }
+
+    const response = await apiClient.reschedule(rescheduleUid.trim(), startIso, endIso, rescheduleRowVersion, {
+      ...(selectedJob ? { job_uid: selectedJob.job_uid } : {}),
+      ...(selectedJob?.technician_uid ? { technician_uid: selectedJob.technician_uid } : {}),
+      ...(confirmRequestUid.trim() !== "" ? { request_uid: confirmRequestUid.trim() } : {})
+    });
+    if (typeof response.row_version === "number") {
+      setRescheduleRowVersion(response.row_version);
+    }
+    setFeedback("Schedule rescheduled.");
   }
 
   async function handleDocumentGenerate(): Promise<void> {
     if (!selectedJob) {
       return;
     }
-    await apiClient.generateDocument(selectedJob.job_uid, documentType);
+
+    const response = await apiClient.generateDocument(selectedJob.job_uid, documentType);
+    const generatedDocumentUid = String(response.data?.document_uid ?? "");
+    if (generatedDocumentUid !== "") {
+      setPublishDocumentUid(generatedDocumentUid);
+    }
+    if (typeof response.row_version === "number") {
+      setPublishRowVersion(response.row_version);
+    }
+
     await refreshDocuments(selectedJob.job_uid);
-    setFeedback(`${documentType} generated.`);
+    setFeedback(generatedDocumentUid ? `${documentType} generated (${generatedDocumentUid}).` : `${documentType} generated.`);
   }
 
   async function handleDocumentPublish(): Promise<void> {
-    await apiClient.publishDocument(publishDocumentUid, publishRowVersion);
+    if (publishDocumentUid.trim() === "") {
+      setFeedback("Enter a document UID before publishing.");
+      return;
+    }
+
+    const response = await apiClient.publishDocument(publishDocumentUid.trim(), publishRowVersion, {
+      ...(selectedJob ? { job_uid: selectedJob.job_uid } : {}),
+      document_type: documentType
+    });
+    if (typeof response.row_version === "number") {
+      setPublishRowVersion(response.row_version);
+    }
+
     await refreshDocuments(selectedJob?.job_uid);
     setFeedback("Document published.");
   }
@@ -593,7 +926,7 @@ export function PortalApp(): React.JSX.Element {
             <h1>Client, technician, dispatcher, and admin access in one controlled workspace.</h1>
             <p>
               The public website should carry the brand. This surface should stay calm, readable, and operational. Production access
-              uses Google OIDC; deterministic development tokens remain available during pilot.
+              uses Google OIDC. Development tokens are only valid when the API is running in local mode.
             </p>
             <div className="portal-auth-points">
               <div>
@@ -617,23 +950,76 @@ export function PortalApp(): React.JSX.Element {
               <h2>Portal access</h2>
             </div>
 
-            <label className="field-stack">
-              <span>Google ID token or local development token</span>
-              <input value={loginToken} onChange={(event) => setLoginToken(event.target.value)} placeholder="Paste token or use a quick token below" />
-            </label>
+            {productionAuth ? (
+              <div className="field-stack">
+                <span>Sign in with a provisioned Google account</span>
+                <div ref={googleButtonRef} className="google-signin-slot" />
+                {googleButtonStatus === "unavailable" ? (
+                  <p className="google-signin-help">
+                    Google Sign-In did not render in this browser session. Hard refresh once, then retry in a private window with
+                    extensions disabled.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
-            <div className="button-row">
-              <button className="button button--primary" onClick={() => handleLogin(loginToken)}>
-                Sign in
-              </button>
-            </div>
+            {!productionAuth ? (
+              <>
+                <label className="field-stack">
+                  <span>Google ID token or local development token</span>
+                  <input
+                    id="portal-login-token"
+                    name="portal_login_token"
+                    value={loginToken}
+                    onChange={(event) => setLoginToken(event.target.value)}
+                    placeholder="Paste token or use a quick token below"
+                  />
+                </label>
 
-            <div className="quick-login-grid">
-              <QuickLoginButton label="dev-client" token="dev-client" onClick={handleLogin} />
-              <QuickLoginButton label="dev-technician" token="dev-technician" onClick={handleLogin} />
-              <QuickLoginButton label="dev-dispatcher" token="dev-dispatcher" onClick={handleLogin} />
-              <QuickLoginButton label="dev-admin" token="dev-admin" onClick={handleLogin} />
-            </div>
+                <div className="button-row">
+                  <button className="button button--primary" onClick={() => runAction(() => handleLogin(loginToken))}>
+                    Sign in
+                  </button>
+                </div>
+
+                <div className="quick-login-grid">
+                  <QuickLoginButton label="dev-client" token="dev-client" onClick={(token) => runAction(() => handleLogin(token))} />
+                  <QuickLoginButton
+                    label="dev-technician"
+                    token="dev-technician"
+                    onClick={(token) => runAction(() => handleLogin(token))}
+                  />
+                  <QuickLoginButton
+                    label="dev-dispatcher"
+                    token="dev-dispatcher"
+                    onClick={(token) => runAction(() => handleLogin(token))}
+                  />
+                  <QuickLoginButton label="dev-admin" token="dev-admin" onClick={(token) => runAction(() => handleLogin(token))} />
+                </div>
+              </>
+              ) : (
+                <details className="support-details">
+                  <summary>Diagnostic token input</summary>
+                  <label className="field-stack">
+                    <span>Paste a raw Google ID token JWT for diagnostics only</span>
+                    <input
+                      id="portal-support-token"
+                      name="portal_support_token"
+                      value={loginToken}
+                      onChange={(event) => setLoginToken(event.target.value)}
+                      placeholder="eyJhbGciOiJSUzI1NiIs..."
+                    />
+                  </label>
+                  <p className="muted-copy">
+                    This is not your Google account email or session. Production login should happen from the Google button above.
+                  </p>
+                  <div className="button-row">
+                    <button className="button button--secondary" onClick={() => runAction(handleSupportTokenSubmit)}>
+                      Submit token
+                    </button>
+                  </div>
+                </details>
+              )}
 
             <div className="feedback-panel">
               <pre>{feedback}</pre>
@@ -689,14 +1075,20 @@ export function PortalApp(): React.JSX.Element {
 
         <div className="portal-topbar__actions">
           <label className="toggle-inline">
-            <input type="checkbox" checked={offlineEnabled} onChange={(event) => setOfflineEnabled(event.target.checked)} />
+            <input
+              id="portal-offline-queue-toggle"
+              name="portal_offline_queue_toggle"
+              type="checkbox"
+              checked={offlineEnabled}
+              onChange={(event) => setOfflineEnabled(event.target.checked)}
+            />
             Force queue mode
           </label>
           <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`}>{networkOnline ? "Online" : "Offline"}</span>
-          <button className="button button--secondary" onClick={handleReplay}>
+          <button className="button button--secondary" onClick={() => runAction(handleReplay)}>
             Replay queue ({queueCount})
           </button>
-          <button className="button button--ghost" onClick={handleLogout}>
+          <button className="button button--ghost" onClick={() => runAction(handleLogout)}>
             Logout
           </button>
         </div>
@@ -856,15 +1248,14 @@ export function PortalApp(): React.JSX.Element {
                         <label className="field-stack">
                           <span>Status transition</span>
                           <div className="button-row">
-                            <select value={statusTarget} onChange={(event) => setStatusTarget(event.target.value)}>
-                              <option value="assigned">assigned</option>
-                              <option value="en_route">en_route</option>
-                              <option value="on_site">on_site</option>
-                              <option value="paused">paused</option>
-                              <option value="completed">completed</option>
-                              <option value="cancelled">cancelled</option>
+                            <select name="job_status_target" value={statusTarget} onChange={(event) => setStatusTarget(event.target.value)}>
+                              {selectableStatuses.map((status) => (
+                                <option key={status} value={status}>
+                                  {status}
+                                </option>
+                              ))}
                             </select>
-                            <button className="button button--primary" onClick={handleStatusUpdate}>
+                            <button className="button button--primary" onClick={() => runAction(handleStatusUpdate)}>
                               Apply
                             </button>
                           </div>
@@ -873,8 +1264,13 @@ export function PortalApp(): React.JSX.Element {
                         <label className="field-stack">
                           <span>Operator note</span>
                           <div className="button-row">
-                            <input value={noteValue} onChange={(event) => setNoteValue(event.target.value)} placeholder="Add note to selected job" />
-                            <button className="button button--secondary" onClick={handleNote}>
+                            <input
+                              name="job_operator_note"
+                              value={noteValue}
+                              onChange={(event) => setNoteValue(event.target.value)}
+                              placeholder="Add note to selected job"
+                            />
+                            <button className="button button--secondary" onClick={() => runAction(handleNote)}>
                               Save note
                             </button>
                           </div>
@@ -892,15 +1288,25 @@ export function PortalApp(): React.JSX.Element {
                       <div className="form-grid form-grid--three">
                         <label className="field-stack">
                           <span>Preferred start</span>
-                          <input type="datetime-local" value={preferredStart} onChange={(event) => setPreferredStart(event.target.value)} />
+                          <input
+                            name="preferred_start"
+                            type="datetime-local"
+                            value={preferredStart}
+                            onChange={(event) => setPreferredStart(event.target.value)}
+                          />
                         </label>
                         <label className="field-stack">
                           <span>Preferred end</span>
-                          <input type="datetime-local" value={preferredEnd} onChange={(event) => setPreferredEnd(event.target.value)} />
+                          <input
+                            name="preferred_end"
+                            type="datetime-local"
+                            value={preferredEnd}
+                            onChange={(event) => setPreferredEnd(event.target.value)}
+                          />
                         </label>
                         <div className="field-stack field-stack--action">
                           <span>&nbsp;</span>
-                          <button className="button button--primary" onClick={handleScheduleRequest}>
+                          <button className="button button--primary" onClick={() => runAction(handleScheduleRequest)}>
                             Submit request
                           </button>
                         </div>
@@ -915,11 +1321,15 @@ export function PortalApp(): React.JSX.Element {
                         <p>Generate the latest jobcard or service report from the active job.</p>
                       </div>
                       <div className="button-row">
-                        <select value={documentType} onChange={(event) => setDocumentType(event.target.value as "jobcard" | "service_report")}>
+                        <select
+                          name="document_type"
+                          value={documentType}
+                          onChange={(event) => setDocumentType(event.target.value as "jobcard" | "service_report")}
+                        >
                           <option value="jobcard">Jobcard</option>
                           <option value="service_report">Service report</option>
                         </select>
-                        <button className="button button--secondary" onClick={handleDocumentGenerate}>
+                        <button className="button button--secondary" onClick={() => runAction(handleDocumentGenerate)}>
                           Generate
                         </button>
                       </div>
@@ -946,23 +1356,44 @@ export function PortalApp(): React.JSX.Element {
                   <div className="form-grid">
                     <label className="field-stack">
                       <span>Request UID</span>
-                      <input value={confirmRequestUid} onChange={(event) => setConfirmRequestUid(event.target.value)} placeholder="request_uid" />
+                      <input
+                        name="confirm_request_uid"
+                        value={confirmRequestUid}
+                        onChange={(event) => setConfirmRequestUid(event.target.value)}
+                        placeholder="request_uid"
+                      />
                     </label>
                     <label className="field-stack">
                       <span>Technician UID</span>
-                      <input value={confirmTechUid} onChange={(event) => setConfirmTechUid(event.target.value)} placeholder="technician_uid" />
+                      <input
+                        name="confirm_technician_uid"
+                        value={confirmTechUid}
+                        onChange={(event) => setConfirmTechUid(event.target.value)}
+                        placeholder="technician_uid"
+                      />
                     </label>
                     <label className="field-stack">
                       <span>Start</span>
-                      <input type="datetime-local" value={confirmStart} onChange={(event) => setConfirmStart(event.target.value)} />
+                      <input
+                        name="confirm_start"
+                        type="datetime-local"
+                        value={confirmStart}
+                        onChange={(event) => setConfirmStart(event.target.value)}
+                      />
                     </label>
                     <label className="field-stack">
                       <span>End</span>
-                      <input type="datetime-local" value={confirmEnd} onChange={(event) => setConfirmEnd(event.target.value)} />
+                      <input
+                        name="confirm_end"
+                        type="datetime-local"
+                        value={confirmEnd}
+                        onChange={(event) => setConfirmEnd(event.target.value)}
+                      />
                     </label>
                     <label className="field-stack">
                       <span>Row version</span>
                       <input
+                        name="confirm_row_version"
                         type="number"
                         value={confirmRowVersion}
                         onChange={(event) => setConfirmRowVersion(Number(event.target.value))}
@@ -971,19 +1402,7 @@ export function PortalApp(): React.JSX.Element {
                     </label>
                     <div className="field-stack field-stack--action">
                       <span>&nbsp;</span>
-                      <button
-                        className="button button--primary"
-                        onClick={async () => {
-                          await apiClient.confirmSchedule(
-                            confirmRequestUid,
-                            new Date(confirmStart).toISOString(),
-                            new Date(confirmEnd).toISOString(),
-                            confirmTechUid,
-                            confirmRowVersion
-                          );
-                          setFeedback("Schedule confirmed.");
-                        }}
-                      >
+                      <button className="button button--primary" onClick={() => runAction(handleScheduleConfirm)}>
                         Confirm
                       </button>
                     </div>
@@ -998,11 +1417,17 @@ export function PortalApp(): React.JSX.Element {
                   <div className="form-grid">
                     <label className="field-stack">
                       <span>Schedule UID</span>
-                      <input value={rescheduleUid} onChange={(event) => setRescheduleUid(event.target.value)} placeholder="schedule_uid" />
+                      <input
+                        name="reschedule_uid"
+                        value={rescheduleUid}
+                        onChange={(event) => setRescheduleUid(event.target.value)}
+                        placeholder="schedule_uid"
+                      />
                     </label>
                     <label className="field-stack">
                       <span>Row version</span>
                       <input
+                        name="reschedule_row_version"
                         type="number"
                         value={rescheduleRowVersion}
                         onChange={(event) => setRescheduleRowVersion(Number(event.target.value))}
@@ -1011,26 +1436,25 @@ export function PortalApp(): React.JSX.Element {
                     </label>
                     <label className="field-stack">
                       <span>New start</span>
-                      <input type="datetime-local" value={rescheduleStart} onChange={(event) => setRescheduleStart(event.target.value)} />
+                      <input
+                        name="reschedule_start"
+                        type="datetime-local"
+                        value={rescheduleStart}
+                        onChange={(event) => setRescheduleStart(event.target.value)}
+                      />
                     </label>
                     <label className="field-stack">
                       <span>New end</span>
-                      <input type="datetime-local" value={rescheduleEnd} onChange={(event) => setRescheduleEnd(event.target.value)} />
+                      <input
+                        name="reschedule_end"
+                        type="datetime-local"
+                        value={rescheduleEnd}
+                        onChange={(event) => setRescheduleEnd(event.target.value)}
+                      />
                     </label>
                     <div className="field-stack field-stack--action">
                       <span>&nbsp;</span>
-                      <button
-                        className="button button--secondary"
-                        onClick={async () => {
-                          await apiClient.reschedule(
-                            rescheduleUid,
-                            new Date(rescheduleStart).toISOString(),
-                            new Date(rescheduleEnd).toISOString(),
-                            rescheduleRowVersion
-                          );
-                          setFeedback("Schedule rescheduled.");
-                        }}
-                      >
+                      <button className="button button--secondary" onClick={() => runAction(handleReschedule)}>
                         Reschedule
                       </button>
                     </div>
@@ -1043,14 +1467,20 @@ export function PortalApp(): React.JSX.Element {
                     <p>Move a generated record into the published state.</p>
                   </div>
                   <div className="button-row">
-                    <input value={publishDocumentUid} onChange={(event) => setPublishDocumentUid(event.target.value)} placeholder="document_uid" />
                     <input
+                      name="publish_document_uid"
+                      value={publishDocumentUid}
+                      onChange={(event) => setPublishDocumentUid(event.target.value)}
+                      placeholder="document_uid"
+                    />
+                    <input
+                      name="publish_row_version"
                       type="number"
                       value={publishRowVersion}
                       onChange={(event) => setPublishRowVersion(Number(event.target.value))}
                       placeholder="row_version"
                     />
-                    <button className="button button--secondary" onClick={handleDocumentPublish}>
+                    <button className="button button--secondary" onClick={() => runAction(handleDocumentPublish)}>
                       Publish
                     </button>
                   </div>
@@ -1073,25 +1503,32 @@ export function PortalApp(): React.JSX.Element {
                   <div className="form-grid">
                     <label className="field-stack">
                       <span>To</span>
-                      <input value={gmailTo} onChange={(event) => setGmailTo(event.target.value)} placeholder="to" />
+                      <input name="gmail_to" value={gmailTo} onChange={(event) => setGmailTo(event.target.value)} placeholder="to" />
                     </label>
                     <label className="field-stack">
                       <span>Subject</span>
-                      <input value={gmailSubject} onChange={(event) => setGmailSubject(event.target.value)} placeholder="subject" />
+                      <input
+                        name="gmail_subject"
+                        value={gmailSubject}
+                        onChange={(event) => setGmailSubject(event.target.value)}
+                        placeholder="subject"
+                      />
                     </label>
                     <label className="field-stack field-stack--full">
                       <span>Body</span>
-                      <input value={gmailBody} onChange={(event) => setGmailBody(event.target.value)} placeholder="body" />
+                      <input name="gmail_body" value={gmailBody} onChange={(event) => setGmailBody(event.target.value)} placeholder="body" />
                     </label>
                     <div className="field-stack field-stack--action">
                       <span>&nbsp;</span>
                       <button
                         className="button button--secondary"
-                        onClick={async () => {
-                          if (!selectedJob) return;
-                          await apiClient.sendGmailNotification(gmailTo, gmailSubject, gmailBody, selectedJob.job_uid);
-                          setFeedback("Gmail notification sent.");
-                        }}
+                        onClick={() =>
+                          runAction(async () => {
+                            if (!selectedJob) return;
+                            await apiClient.sendGmailNotification(gmailTo, gmailSubject, gmailBody, selectedJob.job_uid);
+                            setFeedback("Gmail notification sent.");
+                          })
+                        }
                       >
                         Send
                       </button>
@@ -1105,19 +1542,25 @@ export function PortalApp(): React.JSX.Element {
                     <p>Escalate a dispatch message for the selected job.</p>
                   </div>
                   <div className="button-row">
-                    <select value={chatSeverity} onChange={(event) => setChatSeverity(event.target.value as "info" | "warning" | "critical")}>
+                    <select
+                      name="chat_severity"
+                      value={chatSeverity}
+                      onChange={(event) => setChatSeverity(event.target.value as "info" | "warning" | "critical")}
+                    >
                       <option value="info">info</option>
                       <option value="warning">warning</option>
                       <option value="critical">critical</option>
                     </select>
-                    <input value={chatMessage} onChange={(event) => setChatMessage(event.target.value)} placeholder="message" />
+                    <input name="chat_message" value={chatMessage} onChange={(event) => setChatMessage(event.target.value)} placeholder="message" />
                     <button
                       className="button button--secondary"
-                      onClick={async () => {
-                        if (!selectedJob) return;
-                        await apiClient.sendChatAlert(chatMessage, chatSeverity, selectedJob.job_uid);
-                        setFeedback("Chat alert sent.");
-                      }}
+                      onClick={() =>
+                        runAction(async () => {
+                          if (!selectedJob) return;
+                          await apiClient.sendChatAlert(chatMessage, chatSeverity, selectedJob.job_uid);
+                          setFeedback("Chat alert sent.");
+                        })
+                      }
                     >
                       Alert
                     </button>
@@ -1132,24 +1575,36 @@ export function PortalApp(): React.JSX.Element {
                   <div className="form-grid">
                     <label className="field-stack">
                       <span>Name</span>
-                      <input value={personName} onChange={(event) => setPersonName(event.target.value)} placeholder="name" />
+                      <input name="person_name" value={personName} onChange={(event) => setPersonName(event.target.value)} placeholder="name" />
                     </label>
                     <label className="field-stack">
                       <span>Email</span>
-                      <input value={personEmail} onChange={(event) => setPersonEmail(event.target.value)} placeholder="email" />
+                      <input
+                        name="person_email"
+                        value={personEmail}
+                        onChange={(event) => setPersonEmail(event.target.value)}
+                        placeholder="email"
+                      />
                     </label>
                     <label className="field-stack">
                       <span>Phone</span>
-                      <input value={personPhone} onChange={(event) => setPersonPhone(event.target.value)} placeholder="phone" />
+                      <input
+                        name="person_phone"
+                        value={personPhone}
+                        onChange={(event) => setPersonPhone(event.target.value)}
+                        placeholder="phone"
+                      />
                     </label>
                     <div className="field-stack field-stack--action">
                       <span>&nbsp;</span>
                       <button
                         className="button button--secondary"
-                        onClick={async () => {
-                          await apiClient.syncPerson(personName, personEmail, personPhone, "client");
-                          setFeedback("People sync executed.");
-                        }}
+                        onClick={() =>
+                          runAction(async () => {
+                            await apiClient.syncPerson(personName, personEmail, personPhone, "client");
+                            setFeedback("People sync executed.");
+                          })
+                        }
                       >
                         Sync
                       </button>
@@ -1166,18 +1621,20 @@ export function PortalApp(): React.JSX.Element {
                   <h2>Health and audit surface</h2>
                 </div>
                 <div className="button-row">
-                  <button className="button button--secondary" onClick={loadAdminHealth}>
+                  <button className="button button--secondary" onClick={() => runAction(loadAdminHealth)}>
                     Load health
                   </button>
-                  <button className="button button--secondary" onClick={loadAdminAudits}>
+                  <button className="button button--secondary" onClick={() => runAction(loadAdminAudits)}>
                     Load audits
                   </button>
                   <button
                     className="button button--ghost"
-                    onClick={async () => {
-                      await apiClient.retryAutomation("AUTO-001");
-                      setFeedback("Automation retry requested.");
-                    }}
+                    onClick={() =>
+                      runAction(async () => {
+                        await apiClient.retryAutomation("AUTO-001");
+                        setFeedback("Automation retry requested.");
+                      })
+                    }
                   >
                     Retry AUTO-001
                   </button>
@@ -1194,12 +1651,7 @@ export function PortalApp(): React.JSX.Element {
                   <p className="panel-eyebrow">Documents</p>
                   <h2>{brief.documentsTitle}</h2>
                 </div>
-                <button
-                  className="button button--ghost"
-                  onClick={async () => {
-                    await refreshDocuments(selectedJob?.job_uid);
-                  }}
-                >
+                <button className="button button--ghost" onClick={() => runAction(() => refreshDocuments(selectedJob?.job_uid))}>
                   Refresh
                 </button>
               </div>

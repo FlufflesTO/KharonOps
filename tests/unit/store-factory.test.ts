@@ -14,10 +14,10 @@ const productionBaseEnv = {
   GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n",
   WORKBOOK_SPREADSHEET_ID: "spreadsheet-id",
   GOOGLE_DRIVE_ROOT_FOLDER_ID: "drive-root-id",
-  GOOGLE_DOCCARD_TEMPLATE_ID: "jobcard-template-id",
+  GOOGLE_JOBCARD_TEMPLATE_ID: "jobcard-template-id",
   GOOGLE_SERVICE_REPORT_TEMPLATE_ID: "service-report-template-id",
   GOOGLE_CHAT_WEBHOOK_URL: "https://chat.googleapis.com/v1/spaces/example/messages?key=x&token=y",
-  GMAIL_SENDER_ADDRESS: "ops@kharonfs.co.za"
+  GMAIL_SENDER_ADDRESS: "connor@kharon.co.za"
 };
 
 describe("workbook store factory", () => {

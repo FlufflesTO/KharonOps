@@ -19,7 +19,7 @@ describe("contract: job status update row_version", () => {
         cookie,
         "content-type": "application/json"
       },
-      body: JSON.stringify({ status: "en_route", row_version: version })
+      body: JSON.stringify({ status: "performed", row_version: version })
     });
     expect(updateOne.status).toBe(200);
 
@@ -29,7 +29,7 @@ describe("contract: job status update row_version", () => {
         cookie,
         "content-type": "application/json"
       },
-      body: JSON.stringify({ status: "on_site", row_version: version })
+      body: JSON.stringify({ status: "performed", row_version: version })
     });
 
     expect(staleUpdate.status).toBe(409);

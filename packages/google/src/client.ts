@@ -22,8 +22,12 @@ function scopesKey(scopes: string[]): string {
   return scopes.slice().sort().join(" ");
 }
 
-export async function getServiceAccessToken(config: GoogleRuntimeConfig, scopes: string[]): Promise<string> {
-  const cacheKey = `${config.serviceAccountEmail}|${scopesKey(scopes)}`;
+export async function getServiceAccessToken(
+  config: GoogleRuntimeConfig,
+  scopes: string[],
+  subject?: string
+): Promise<string> {
+  const cacheKey = `${config.serviceAccountEmail}|${subject ?? ""}|${scopesKey(scopes)}`;
   const cached = tokenCache.get(cacheKey);
   if (cached && cached.expiresAtMs > Date.now() + 60_000) {
     return cached.accessToken;
@@ -45,7 +49,8 @@ export async function getServiceAccessToken(config: GoogleRuntimeConfig, scopes:
       scope: scopes.join(" "),
       aud: "https://oauth2.googleapis.com/token",
       iat: now,
-      exp: now + 3_300
+      exp: now + 3_300,
+      ...(subject ? { sub: subject } : {})
     },
     config.serviceAccountPrivateKey
   );
@@ -93,6 +98,7 @@ export async function googleApiRequest<T>(args: {
   url: string;
   method?: string;
   scopes: string[];
+  subject?: string;
   headers?: Record<string, string>;
   body?: BodyInit | null;
   parse?: "json" | "text" | "arrayBuffer";
@@ -101,7 +107,7 @@ export async function googleApiRequest<T>(args: {
 
   return executeWithRetry<T>(
     async () => {
-      const accessToken = await getServiceAccessToken(args.config, args.scopes);
+      const accessToken = await getServiceAccessToken(args.config, args.scopes, args.subject);
       const response = await fetch(args.url, {
         method: args.method ?? "GET",
         headers: {

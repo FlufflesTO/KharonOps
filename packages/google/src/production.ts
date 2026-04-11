@@ -17,6 +17,36 @@ function encodeSheetRange(sheetName: string, range: string): string {
   return encodeURIComponent(`'${sheetName}'!${range}`);
 }
 
+function trimCell(value: string | undefined): string {
+  return String(value ?? "").trim();
+}
+
+function countNonEmptyCells(row: string[] | undefined): number {
+  return (row ?? []).filter((value) => trimCell(value) !== "").length;
+}
+
+export function detectSheetLayout(values: string[][]): { headerRowIndex: number; headers: string[] } {
+  if (values.length === 0) {
+    return { headerRowIndex: 0, headers: [] };
+  }
+
+  const scanLimit = Math.min(values.length, 5);
+  for (let index = 0; index < scanLimit; index += 1) {
+    const candidate = values[index] ?? [];
+    if (countNonEmptyCells(candidate) > 1) {
+      return {
+        headerRowIndex: index,
+        headers: candidate.map((value) => trimCell(value))
+      };
+    }
+  }
+
+  return {
+    headerRowIndex: 0,
+    headers: (values[0] ?? []).map((value) => trimCell(value))
+  };
+}
+
 function toRowValues(headers: string[], row: RowRecord): string[] {
   return headers.map((header) => row[header] ?? "");
 }
@@ -27,6 +57,20 @@ function fromValues(headers: string[], values: string[]): RowRecord {
     row[header] = values[index] ?? "";
   });
   return row;
+}
+
+async function getSheetLayout(config: GoogleRuntimeConfig, sheetName: string): Promise<{
+  values: string[][];
+  headerRowIndex: number;
+  headers: string[];
+}> {
+  const values = await getSheetValues(config, sheetName);
+  const layout = detectSheetLayout(values);
+  return {
+    values,
+    headerRowIndex: layout.headerRowIndex,
+    headers: layout.headers
+  };
 }
 
 async function getSheetMetadata(config: GoogleRuntimeConfig): Promise<string[]> {
@@ -103,6 +147,17 @@ function base64UrlFromText(input: string): string {
 }
 
 export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): WorkspaceRails {
+  const delegatedConfig: GoogleRuntimeConfig =
+    config.delegatedServiceAccountEmail !== "" && config.delegatedServiceAccountPrivateKey !== ""
+      ? {
+          ...config,
+          serviceAccountEmail: config.delegatedServiceAccountEmail,
+          serviceAccountPrivateKey: config.delegatedServiceAccountPrivateKey
+        }
+      : config;
+  const delegatedSubject = config.impersonatedUser || undefined;
+  const delegatedSubjectArgs = delegatedSubject ? { subject: delegatedSubject } : {};
+
   const sheets: SheetsRail = {
     async ensureWorkbookSchema(headersBySheet) {
       const existingSheetNames = await getSheetMetadata(config);
@@ -131,6 +186,11 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       }
 
       for (const [sheetName, headers] of Object.entries(headersBySheet)) {
+        const layout = await getSheetLayout(config, sheetName);
+        if (layout.headers.length > 0) {
+          continue;
+        }
+
         const encoded = encodeSheetRange(sheetName, "1:1");
         await googleApiRequest({
           config,
@@ -148,17 +208,16 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       }
     },
     async getRows(sheetName) {
-      const values = await getSheetValues(config, sheetName);
-      if (values.length === 0) {
+      const { values, headerRowIndex, headers } = await getSheetLayout(config, sheetName);
+      if (headers.length === 0) {
         return [];
       }
-      const headers = values[0] ?? [];
-      const rows = values.slice(1);
+      const rows = values.slice(headerRowIndex + 1).filter((row) => countNonEmptyCells(row) > 0);
       return rows.map((row) => fromValues(headers, row));
     },
     async appendRow(sheetName, row) {
-      const values = await getSheetValues(config, sheetName);
-      const headers = values[0] ?? Object.keys(row);
+      const { headers } = await getSheetLayout(config, sheetName);
+      const resolvedHeaders = headers.length > 0 ? headers : Object.keys(row);
       const encoded = encodeSheetRange(sheetName, "A:ZZ");
       await googleApiRequest({
         config,
@@ -170,28 +229,29 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          values: [toRowValues(headers, row)]
+          values: [toRowValues(resolvedHeaders, row)]
         })
       });
     },
     async upsertRow(sheetName, keyField, row) {
-      const values = await getSheetValues(config, sheetName);
-      if (values.length === 0) {
+      const { values, headerRowIndex, headers } = await getSheetLayout(config, sheetName);
+      if (headers.length === 0) {
         await this.appendRow(sheetName, row);
         return;
       }
-      const headers = values[0] ?? [];
       const keyIndex = headers.indexOf(keyField);
       if (keyIndex < 0) {
         throw new Error(`Missing key field ${keyField} on sheet ${sheetName}`);
       }
-      const rowIndex = values.slice(1).findIndex((candidate) => (candidate[keyIndex] ?? "") === row[keyField]);
+      const rowIndex = values
+        .slice(headerRowIndex + 1)
+        .findIndex((candidate) => trimCell(candidate[keyIndex]) === trimCell(row[keyField]));
       if (rowIndex < 0) {
         await this.appendRow(sheetName, row);
         return;
       }
 
-      const spreadsheetRowNumber = rowIndex + 2;
+      const spreadsheetRowNumber = rowIndex + headerRowIndex + 2;
       const encoded = encodeSheetRange(sheetName, `${spreadsheetRowNumber}:${spreadsheetRowNumber}`);
       await googleApiRequest({
         config,
@@ -342,11 +402,12 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
 
       if (args.existingEventId) {
         await googleApiRequest({
-          config,
+          config: delegatedConfig,
           service: "calendar",
           url: `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(config.calendarId)}/events/${args.existingEventId}`,
           method: "PUT",
           scopes: ["https://www.googleapis.com/auth/calendar"],
+          ...delegatedSubjectArgs,
           headers: {
             "content-type": "application/json"
           },
@@ -358,11 +419,12 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       }
 
       const created = await googleApiRequest<{ id: string }>({
-        config,
+        config: delegatedConfig,
         service: "calendar",
         url: `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(config.calendarId)}/events`,
         method: "POST",
         scopes: ["https://www.googleapis.com/auth/calendar"],
+        ...delegatedSubjectArgs,
         headers: {
           "content-type": "application/json"
         },
@@ -385,11 +447,12 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       );
 
       const result = await googleApiRequest<{ id: string }>({
-        config,
+        config: delegatedConfig,
         service: "gmail",
         url: "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
         method: "POST",
         scopes: ["https://www.googleapis.com/auth/gmail.send"],
+        ...delegatedSubjectArgs,
         headers: {
           "content-type": "application/json"
         },
@@ -419,11 +482,12 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
   const people: PeopleRail = {
     async syncContact(args) {
       const createResponse = await googleApiRequest<{ resourceName: string }>({
-        config,
+        config: delegatedConfig,
         service: "people",
         url: "https://people.googleapis.com/v1/people:createContact",
         method: "POST",
         scopes: ["https://www.googleapis.com/auth/contacts"],
+        ...delegatedSubjectArgs,
         headers: {
           "content-type": "application/json"
         },

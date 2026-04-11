@@ -45,7 +45,7 @@ export function listMissingGoogleProductionConfig(env: Record<string, string | u
     ["GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY", config.serviceAccountPrivateKey],
     ["WORKBOOK_SPREADSHEET_ID", config.workbookSpreadsheetId],
     ["GOOGLE_DRIVE_ROOT_FOLDER_ID", config.driveRootFolderId],
-    ["GOOGLE_DOCCARD_TEMPLATE_ID", config.jobcardTemplateId],
+    ["GOOGLE_JOBCARD_TEMPLATE_ID", config.jobcardTemplateId],
     ["GOOGLE_SERVICE_REPORT_TEMPLATE_ID", config.serviceReportTemplateId],
     ["GMAIL_SENDER_ADDRESS", config.gmailSenderAddress],
     ["GOOGLE_CHAT_WEBHOOK_URL", config.chatWebhookUrl]
@@ -58,6 +58,7 @@ export function buildGoogleRuntimeConfig(env: Record<string, string | undefined>
   const modeValue = envFirst(env, ["KHARON_MODE", "NODE_ENV"]);
   const mode = modeValue === "production" ? "production" : "local";
   const serviceAccount = parseServiceAccountJson(envValue(env, "GOOGLE_SERVICE_ACCOUNT_JSON"));
+  const delegatedServiceAccount = parseServiceAccountJson(envValue(env, "GOOGLE_DELEGATED_SERVICE_ACCOUNT_JSON"));
 
   return {
     mode,
@@ -66,9 +67,14 @@ export function buildGoogleRuntimeConfig(env: Record<string, string | undefined>
       envFirst(env, ["GOOGLE_SERVICE_ACCOUNT_EMAIL"]) || serviceAccount.email,
     serviceAccountPrivateKey:
       envFirst(env, ["GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY"]) || serviceAccount.privateKey,
+    delegatedServiceAccountEmail:
+      envFirst(env, ["GOOGLE_DELEGATED_SERVICE_ACCOUNT_EMAIL"]) || delegatedServiceAccount.email,
+    delegatedServiceAccountPrivateKey:
+      envFirst(env, ["GOOGLE_DELEGATED_SERVICE_ACCOUNT_PRIVATE_KEY"]) || delegatedServiceAccount.privateKey,
+    impersonatedUser: envFirst(env, ["GOOGLE_IMPERSONATED_USER", "GOOGLE_IMPERSONATED_USER_EMAIL"]),
     workbookSpreadsheetId: envFirst(env, ["WORKBOOK_SPREADSHEET_ID", "KHARON_JOBS_SPREADSHEET_ID"]),
     driveRootFolderId: envFirst(env, ["GOOGLE_DRIVE_ROOT_FOLDER_ID", "KHARON_DRIVE_ROOT_FOLDER_ID"]),
-    jobcardTemplateId: envFirst(env, ["GOOGLE_DOCCARD_TEMPLATE_ID", "KHARON_DOC_TEMPLATE_JOBCARD_ID"]),
+    jobcardTemplateId: envFirst(env, ["GOOGLE_JOBCARD_TEMPLATE_ID", "GOOGLE_DOCCARD_TEMPLATE_ID", "KHARON_DOC_TEMPLATE_JOBCARD_ID"]),
     serviceReportTemplateId: envFirst(env, ["GOOGLE_SERVICE_REPORT_TEMPLATE_ID", "KHARON_DOC_TEMPLATE_SERVICE_REPORT_ID"]),
     calendarId: envFirst(env, ["GOOGLE_CALENDAR_ID", "KHARON_CALENDAR_ID"]) || "primary",
     gmailSenderAddress: envFirst(env, ["GMAIL_SENDER_ADDRESS", "KHARON_GMAIL_FROM", "SUPPORT_EMAIL"]),
@@ -94,8 +100,29 @@ function canUseProduction(config: GoogleRuntimeConfig): boolean {
   ].every((value) => value !== "");
 }
 
+function parseRailsModeOverride(env: Record<string, string | undefined>): "local" | "production" | null {
+  const raw = envFirst(env, ["GOOGLE_RAILS_MODE", "KHARON_RAILS_MODE"]).toLowerCase();
+  if (raw === "local" || raw === "production") {
+    return raw;
+  }
+  return null;
+}
+
 export function createWorkspaceRails(env: Record<string, string | undefined>): WorkspaceRails {
   const config = buildGoogleRuntimeConfig(env);
+  const modeOverride = parseRailsModeOverride(env);
+
+  if (modeOverride === "local") {
+    return createLocalWorkspaceRails();
+  }
+
+  if (modeOverride === "production") {
+    if (canUseProduction(config)) {
+      return createProductionWorkspaceRails(config);
+    }
+    throw new Error("GOOGLE_RAILS_MODE=production but production Google rails configuration is incomplete.");
+  }
+
   if (canUseProduction(config)) {
     return createProductionWorkspaceRails(config);
   }

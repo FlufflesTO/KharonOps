@@ -20,6 +20,12 @@
     "build:apps": "npm run build -w @kharon/api && npm run build -w @kharon/site && npm run build -w @kharon/portal && node ./scripts/build-static.mjs",
     "build:web": "npm run build -w @kharon/site && npm run build -w @kharon/portal && node ./scripts/build-static.mjs",
     "build": "npm run build:packages && npm run build:apps",
+    "preview:worker": "npx wrangler dev --remote",
+    "preview:public": "npx wrangler dev --env public --remote",
+    "deploy:worker": "npx wrangler deploy",
+    "deploy:public": "npx wrangler deploy --env public",
+    "deploy:staging": "npx wrangler deploy --env staging",
+    "deploy:staging-public": "npx wrangler deploy --env staging-public",
     "pretest": "npm run build:packages",
     "test": "vitest run",
     "lint": "eslint ."
@@ -37,5 +43,10 @@
     "vite": "^6.3.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.1.1"
+  },
+  "dependencies": {
+    "gcp": "^0.0.0",
+    "infra": "^1.0.3",
+    "terraform": "^1.23.1"
   }
 }

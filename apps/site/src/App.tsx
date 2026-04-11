@@ -167,7 +167,7 @@ export function SiteApp(): React.JSX.Element {
               </p>
 
               <div className="hero-actions">
-                <a className="site-button site-button--primary" href="mailto:ops@kharonfs.co.za?subject=Kharon%20Site%20Assessment">
+                <a className="site-button site-button--primary" href="mailto:connor@kharon.co.za?subject=Kharon%20Site%20Assessment">
                   Request Assessment
                 </a>
                 <a className="site-button site-button--secondary" href="/portal/">
@@ -327,7 +327,7 @@ export function SiteApp(): React.JSX.Element {
               </p>
             </div>
             <div className="cta-panel__actions">
-              <a className="site-button site-button--primary" href="mailto:projects@kharonfs.co.za?subject=Kharon%20Programme%20Enquiry">
+              <a className="site-button site-button--primary" href="mailto:connor@kharon.co.za?subject=Kharon%20Programme%20Enquiry">
                 Start a Programme Conversation
               </a>
               <a className="site-button site-button--secondary" href="/portal/">
@@ -337,6 +337,20 @@ export function SiteApp(): React.JSX.Element {
           </div>
         </section>
       </main>
+
+      <footer className="site-footer">
+        <div className="site-footer__inner">
+          <div className="site-footer__brand">
+            <strong>Kharon Fire &amp; Security</strong>
+            <span>Interim public domain currently served on tequit.co.za for controlled rollout and testing.</span>
+          </div>
+          <nav className="site-footer__links" aria-label="Legal">
+            <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
+            <a href="/portal/">Portal</a>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }
