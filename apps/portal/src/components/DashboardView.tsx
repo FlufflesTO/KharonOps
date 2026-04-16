@@ -95,7 +95,7 @@ const ROLE_DISPLAY: Record<string, { label: string; sub: string }> = {
 interface DashboardViewProps {
   session: PortalSession;
   openJobCount: number;
-  onEnterWorkspace: () => void;
+  onEnterWorkspace: (tool: string) => void;
   onLogout: () => void;
 }
 
@@ -117,7 +117,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.jobs}
             label="Open Work Orders"
             description={`${openJobCount} jobs assigned to you — open the workspace to begin or update`}
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("jobs")}
             accent="green"
             badge={openJobCount}
           />
@@ -128,14 +128,14 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.checklist}
             label="Generate Jobcard"
             description="Capture readings, photos, and sign-off before leaving site"
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("jobs")}
             accent="blue"
           />
           <ActionCard
             icon={ICONS.documents}
             label="Prior Reports"
             description="Review previously generated jobcards and service reports for reference"
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("documents")}
             accent="slate"
           />
         </DashSection>
@@ -156,7 +156,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.dispatch}
             label="Job Queue"
             description={`${openJobCount} open engagements awaiting schedule or technician assignment`}
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("schedule")}
             accent="amber"
             badge={openJobCount}
           />
@@ -164,7 +164,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.scheduling}
             label="Scheduling"
             description="Confirm, assign, or reschedule maintenance windows for open jobs"
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("schedule")}
             accent="amber"
           />
         </DashSection>
@@ -174,7 +174,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.comms}
             label="Client Updates"
             description="Send Gmail or chat rail messages tied directly to a selected job record"
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("comms")}
             accent="blue"
           />
         </DashSection>
@@ -184,7 +184,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.documents}
             label="Document Control"
             description="Release or review controlled outputs — jobcards, service reports, certificates"
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("documents")}
             accent="slate"
           />
         </DashSection>
@@ -205,7 +205,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.visibility}
             label="Service Status"
             description={`${openJobCount} active service records — track live job progress for your sites`}
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("jobs")}
             accent="blue"
             badge={openJobCount}
           />
@@ -216,7 +216,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.compliance}
             label="Reports & Evidence"
             description="Review published jobcards, service reports, and SANS compliance certificates"
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("documents")}
             accent="green"
           />
         </DashSection>
@@ -237,7 +237,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.jobs}
             label="All Engagements"
             description={`${openJobCount} open jobs platform-wide — search, filter, and act on any record`}
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("jobs")}
             accent="blue"
             badge={openJobCount}
           />
@@ -248,7 +248,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.documents}
             label="Document Control"
             description="Review, release, and manage all controlled outputs across every job"
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("documents")}
             accent="purple"
           />
         </DashSection>
@@ -258,14 +258,14 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             icon={ICONS.admin}
             label="Platform Governance"
             description="Health checks, configuration audit, and privileged recovery actions"
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("admin")}
             accent="slate"
           />
           <ActionCard
             icon={ICONS.audit}
             label="Audit Trail"
             description="Forensic log of platform activity — certification posture and closeout verification"
-            onClick={onEnterWorkspace}
+            onClick={() => onEnterWorkspace("admin")}
             accent="slate"
           />
         </DashSection>
@@ -287,7 +287,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
           icon={ICONS.jobs}
           label="Open Work Orders"
           description={`${openJobCount} open jobs — technician job list with assign, note, and closeout`}
-          onClick={onEnterWorkspace}
+          onClick={() => onEnterWorkspace("jobs")}
           accent="green"
           badge={openJobCount}
         />
@@ -295,7 +295,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
           icon={ICONS.checklist}
           label="Jobcard Generator"
           description="Generate jobcards and service reports from the field execution workspace"
-          onClick={onEnterWorkspace}
+          onClick={() => onEnterWorkspace("jobs")}
           accent="green"
         />
       </DashSection>
@@ -306,14 +306,14 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
           icon={ICONS.dispatch}
           label="Job Queue"
           description="Assign technicians and confirm maintenance windows for open engagements"
-          onClick={onEnterWorkspace}
+          onClick={() => onEnterWorkspace("schedule")}
           accent="amber"
         />
         <ActionCard
           icon={ICONS.scheduling}
           label="Schedule Control"
           description="Confirm requests, adjust windows, and manage reschedule flows"
-          onClick={onEnterWorkspace}
+          onClick={() => onEnterWorkspace("schedule")}
           accent="amber"
         />
       </DashSection>
@@ -324,14 +324,14 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
           icon={ICONS.comms}
           label="Client Communications"
           description="Send Gmail and chat rail updates — linked per job record"
-          onClick={onEnterWorkspace}
+          onClick={() => onEnterWorkspace("comms")}
           accent="blue"
         />
         <ActionCard
           icon={ICONS.compliance}
           label="Client-Facing Reports"
           description="Review published compliance documents from the client view posture"
-          onClick={onEnterWorkspace}
+          onClick={() => onEnterWorkspace("documents")}
           accent="blue"
         />
       </DashSection>
@@ -342,7 +342,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
           icon={ICONS.people}
           label="People Registry"
           description="Sync technicians, clients, and provisioned users from the master roster"
-          onClick={onEnterWorkspace}
+          onClick={() => onEnterWorkspace("people")}
           accent="purple"
         />
       </DashSection>
@@ -353,7 +353,7 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
           icon={ICONS.documents}
           label="Document Control"
           description="Platform-wide controlled output review — release, publish, and audit"
-          onClick={onEnterWorkspace}
+          onClick={() => onEnterWorkspace("documents")}
           accent="slate"
         />
       </DashSection>
@@ -364,14 +364,14 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
           icon={ICONS.admin}
           label="Platform Governance"
           description="Health checks, configuration audit, and privileged recovery"
-          onClick={onEnterWorkspace}
+          onClick={() => onEnterWorkspace("admin")}
           accent="rose"
         />
         <ActionCard
           icon={ICONS.audit}
           label="Forensic Audit Trail"
           description="Immutable activity log — certification posture, closeout verification"
-          onClick={onEnterWorkspace}
+          onClick={() => onEnterWorkspace("admin")}
           accent="rose"
         />
       </DashSection>

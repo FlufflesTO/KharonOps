@@ -80,6 +80,7 @@ export function PortalApp(): React.JSX.Element {
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [selectedJobUid, setSelectedJobUid] = useState("");
   const [portalView, setPortalView] = useState<"dashboard" | "workspace">("dashboard");
+  const [activeWorkspaceTool, setActiveWorkspaceTool] = useState<string>("jobs");
   const [statusTarget, setStatusTarget] = useState<JobStatus>("draft");
   const [noteValue, setNoteValue] = useState("");
   const [loginToken, setLoginToken] = useState("dev-client");
@@ -221,7 +222,6 @@ export function PortalApp(): React.JSX.Element {
       window.removeEventListener("offline", offline);
     };
   }, []);
-
 
   useEffect(() => {
     if (!session) {
@@ -534,7 +534,7 @@ export function PortalApp(): React.JSX.Element {
         <DashboardView
           session={session}
           openJobCount={openJobCount}
-          onEnterWorkspace={() => setPortalView("workspace")}
+          onEnterWorkspace={(tool) => { setActiveWorkspaceTool(tool); setPortalView("workspace"); }}
           onLogout={() => runAction(handleLogout)}
         />
         <footer className="portal-statusbar">
