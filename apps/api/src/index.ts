@@ -1349,7 +1349,7 @@ export default {
           ok: false,
           error: {
             code: "bootstrap_error",
-            message
+            message: "API bootstrap failed"
           }
         }),
         {
