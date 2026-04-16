@@ -2,6 +2,9 @@
  * KharonOps Portal - JobListView Component
  * Purpose: Scrollable sidebar list of jobs with status filter and text search.
  *          Reduces cognitive load when 100+ jobs are active (e.g. admin view).
+ *          Default filter is "draft" (Open / Ready) so the list opens showing
+ *          only actionable jobs — user must explicitly change filter to see
+ *          performed, approved, certified, or cancelled records.
  * Dependencies: @kharon/domain (JobStatus)
  * Structural Role: Left sidebar in the workspace view; drives job context for all cards.
  */
@@ -9,7 +12,7 @@ import React, { useState, useMemo } from "react";
 import type { JobStatus } from "@kharon/domain";
 
 const JOB_STATUS_LABELS: Record<JobStatus, string> = {
-  draft: "Ready / Open",
+  draft: "Open / Ready",
   performed: "Work Performed",
   rejected: "Correction Required",
   approved: "Office Approved",
@@ -67,13 +70,20 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
   );
 }
 
+// Default filter: "draft" (Open / Ready) — ensures the list opens showing only
+// immediately actionable jobs. Users must opt-in to see other statuses.
+// This is a deliberate UX decision: dispatchers and admins managing 200+ jobs
+// should land on work that needs action, not a wall of closed records.
+const DEFAULT_STATUS_FILTER: StatusFilter = "draft";
+
 // "all" is the sentinel value meaning no status filter is active.
 type StatusFilter = JobStatus | "all";
 
-// Active statuses shown by default — closed/cancelled jobs are hidden
-// to reduce list noise. User can reveal them via the filter dropdown.
-const DEFAULT_STATUS_FILTER: StatusFilter = "all";
-const ACTIVE_STATUSES: ReadonlySet<JobStatus> = new Set(["draft", "performed", "rejected", "approved"]);
+// Default filter: "draft" (Open / Ready) — ensures the list opens showing only
+// immediately actionable jobs. Users must opt-in to see other statuses.
+// This is a deliberate UX decision: dispatchers and admins managing 200+ jobs
+// should land on work that needs action, not a wall of closed records.
+const DEFAULT_STATUS_FILTER: StatusFilter = "draft";
 
 interface JobListViewProps {
   jobs: JobRecord[];
@@ -85,19 +95,13 @@ interface JobListViewProps {
 export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobListViewProps): React.JSX.Element {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(DEFAULT_STATUS_FILTER);
   const [searchQuery, setSearchQuery] = useState("");
-  // hideClosedByDefault: when no explicit filter is set, suppress certified/cancelled
-  // to reduce noise for high-volume contexts (e.g. admin seeing 236 jobs).
-  const [hideClosedByDefault, setHideClosedByDefault] = useState(true);
 
   const filtered = useMemo(() => {
     let result = jobs;
 
-    // Status filter — explicit selection overrides the default suppression
+    // Status filter — "all" bypasses the status check entirely
     if (statusFilter !== "all") {
       result = result.filter((j) => j.status === statusFilter);
-    } else if (hideClosedByDefault) {
-      // Default: hide certified/cancelled to surface only actionable jobs
-      result = result.filter((j) => ACTIVE_STATUSES.has(j.status));
     }
 
     // Text search — matches job_uid, title, client_uid, technician_uid
@@ -113,9 +117,7 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
     }
 
     return result;
-  }, [jobs, statusFilter, searchQuery, hideClosedByDefault]);
-
-  const activeCount = useMemo(() => jobs.filter((j) => ACTIVE_STATUSES.has(j.status)).length, [jobs]);
+  }, [jobs, statusFilter, searchQuery]);
 
   return (
     <section className="workspace-card job-list-panel">
@@ -146,12 +148,7 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
           id="job-list-status-filter"
           className="job-list-filters__select"
           value={statusFilter}
-          onChange={(e) => {
-            const val = e.target.value as StatusFilter;
-            setStatusFilter(val);
-            // If user picks an explicit filter, disable the default hide-closed behaviour
-            if (val !== "all") setHideClosedByDefault(false);
-          }}
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           aria-label="Filter by status"
         >
           <option value="all">All statuses</option>
@@ -159,17 +156,6 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
             <option key={s} value={s}>{JOB_STATUS_LABELS[s]}</option>
           ))}
         </select>
-        {/* Quick toggle to show/hide closed jobs when filter is "all" */}
-        {statusFilter === "all" && (
-          <button
-            className={`job-list-filters__toggle ${hideClosedByDefault ? "job-list-filters__toggle--active" : ""}`}
-            type="button"
-            onClick={() => setHideClosedByDefault((v) => !v)}
-            title={hideClosedByDefault ? `Showing ${activeCount} active. Click to show all ${jobs.length}` : "Click to hide certified/cancelled"}
-          >
-            {hideClosedByDefault ? `Active (${activeCount})` : `All (${jobs.length})`}
-          </button>
-        )}
       </div>
 
       <div className="job-list">

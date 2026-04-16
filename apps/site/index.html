@@ -12,10 +12,25 @@
     <title>Kharon Fire and Security Solutions</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Lighthouse fix: Google Fonts was render-blocking (990ms LCP penalty).
+      Strategy: load the CSS asynchronously via rel="preload" + onload swap.
+      The <noscript> fallback ensures fonts load for non-JS environments.
+      font-display=swap is already requested via the URL parameter so text
+      renders immediately using system fonts; web fonts swap in when ready.
+    -->
     <link
+      rel="preload"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Space+Mono:wght@400;700&display=swap"
-      rel="stylesheet"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>

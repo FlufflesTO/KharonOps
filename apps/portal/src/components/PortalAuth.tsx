@@ -32,6 +32,10 @@ export function PortalAuth({
 }: PortalAuthProps): React.JSX.Element {
   return (
     <div className="portal-auth-shell">
+      {/* Back to website — minimal top-left link so users can exit without a hard back navigation */}
+      <a href="/" className="portal-auth-back" aria-label="Back to Kharon website">
+        ← kharon.co.za
+      </a>
       <div className="portal-auth-stage">
         <section className="portal-auth-copy">
           <p className="portal-auth-kicker">KHARON OPERATIONAL COMMAND</p>

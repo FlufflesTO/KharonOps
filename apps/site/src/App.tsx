@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const heroSignals = [
   "South Africa service coverage",
@@ -123,9 +123,33 @@ const caseStudies = [
 ];
 
 export function SiteApp(): React.JSX.Element {
+  // Smart sticky: hide nav on scroll-down, reveal on scroll-up.
+  // Uses a ref for the previous scroll position to avoid stale closures.
+  const [navHidden, setNavHidden] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    function onScroll(): void {
+      const currentY = window.scrollY;
+      // Reveal immediately when within 60px of top (hysteresis guard)
+      if (currentY < 60) {
+        setNavHidden(false);
+      } else if (currentY > lastScrollY.current + 4) {
+        // Scrolling down — hide
+        setNavHidden(true);
+      } else if (currentY < lastScrollY.current - 4) {
+        // Scrolling up — show
+        setNavHidden(false);
+      }
+      lastScrollY.current = currentY;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="site-shell">
-      <header className="site-nav">
+      <header className={`site-nav${navHidden ? " site-nav--hidden" : ""}`}>
         <a className="site-brand" href="#top">
           <div className="site-brand__mark">
             <svg viewBox="0 0 100 100" width="32" height="32">
@@ -147,10 +171,9 @@ export function SiteApp(): React.JSX.Element {
         </nav>
 
         <div className="site-nav__actions">
-          <div className="nav-status">
-            <span className="nav-status__dot" />
-            Operational Command Live
-          </div>
+          {/* Compact status indicator — replaces the large pill that consumed
+              excessive header real-estate on small screens */}
+          <span className="nav-status-dot nav-status-dot--live" aria-label="Operational systems live" title="Operational systems live" />
         </div>
       </header>
 

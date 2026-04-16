@@ -739,3 +739,37 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Smart sticky nav — hide on scroll-down, reveal on scroll-up ──────────── */
+.site-nav {
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.site-nav--hidden {
+  transform: translateY(-110%);
+}
+
+/* ── Compact status dot — replaces the large "Operational Command Live" pill ─ */
+.nav-status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.nav-status-dot--live {
+  background: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+  animation: nav-dot-pulse 2.4s ease-in-out infinite;
+}
+
+.nav-status-dot--offline {
+  background: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2);
+}
+
+@keyframes nav-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2); }
+  50%       { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.08); }
+}
