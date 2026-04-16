@@ -281,37 +281,6 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     );
   });
 
-  api.get("/documents/history", requireSession(), async (c) => {
-    const correlationId = c.get("correlationId");
-    const files = await config.rails.docs.listFiles({
-      folderId: config.rails.driveRootFolderId,
-      query: "mimeType = 'application/pdf'"
-    });
-
-    const history = files.map((f: any) => {
-      // Filename format: TYPE_JOB-UID_TIMESTAMP.pdf
-      const parts = f.name.replace(".pdf", "").split("_");
-      const timestamp = parts.pop();
-      const jobUid = parts.pop();
-      const type = parts.join(" ");
-
-      return {
-        id: f.id,
-        name: f.name,
-        type,
-        job_uid: jobUid,
-        created_at: f.createdTime,
-        url: f.webViewLink
-      };
-    });
-
-    return c.json(
-      envelopeSuccess({
-        correlationId,
-        data: history
-      })
-    );
-  });
 
   api.post("/auth/logout", async (c) => {
     const correlationId = c.get("correlationId");

@@ -16,23 +16,7 @@ import { CommunicationRailsCard } from "./components/CommunicationRailsCard";
 import { AdminPanelCard } from "./components/AdminPanelCard";
 import { DocumentHistoryCard } from "./components/DocumentHistoryCard";
 
-declare global {
-  interface Window {
-    google?: {
-      accounts?: {
-        id?: {
-          initialize: (args: {
-            client_id: string;
-            callback: (response: { credential?: string }) => void;
-          }) => void;
-          renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
-          prompt: () => void;
-          cancel?: () => void;
-        };
-      };
-    };
-  }
-}
+
 
 function asJob(record: Record<string, unknown>): JobRecord {
   const status = String(record.status ?? "draft") as JobStatus;
