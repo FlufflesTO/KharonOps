@@ -147,6 +147,38 @@ function base64UrlFromText(input: string): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
+interface GoogleDocsTextElement {
+  startIndex?: number;
+  textRun?: {
+    content?: string;
+  };
+}
+
+interface GoogleDocsStructuralElement {
+  paragraph?: {
+    elements?: GoogleDocsTextElement[];
+  };
+}
+
+function findTokenIndexes(content: unknown[], tokenText: string): number[] {
+  const indexes: number[] = [];
+  for (const block of content as GoogleDocsStructuralElement[]) {
+    for (const element of block.paragraph?.elements ?? []) {
+      const baseStart = Number(element.startIndex ?? -1);
+      const text = String(element.textRun?.content ?? "");
+      if (baseStart < 0 || text === "") {
+        continue;
+      }
+      let offset = text.indexOf(tokenText);
+      while (offset >= 0) {
+        indexes.push(baseStart + offset);
+        offset = text.indexOf(tokenText, offset + tokenText.length);
+      }
+    }
+  }
+  return indexes;
+}
+
 export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): WorkspaceRails {
   const delegatedConfig: GoogleRuntimeConfig =
     config.delegatedServiceAccountEmail !== "" && config.delegatedServiceAccountPrivateKey !== ""
@@ -313,14 +345,7 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
         scopes: ["https://www.googleapis.com/auth/documents.readonly"]
       });
 
-      interface GoogleDocsBatchRequest {
-        replaceAllText?: {
-          containsText: { text: string; matchCase: boolean };
-          replaceText: string;
-        };
-        // Add other properties as needed if we expand the document engine
-      }
-
+      type GoogleDocsBatchRequest = Record<string, unknown>;
       const batchRequests: GoogleDocsBatchRequest[] = [];
 
       // Pass 1: Handle Scalars (Text)
@@ -354,17 +379,55 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
         }
       });
 
-      // Pass 3: Handle Images (QR Codes / Signatures)
+      // Pass 3: Handle image tokens with true inline image insertion.
       Object.entries(args.tokens).forEach(([token, metadata]) => {
         if (metadata.type === "image") {
-          // This requires finding the location of the token and using insertInlineImage
-          // For now, we use a placeholder text as Level 2 baseline
-          batchRequests.push({
-            replaceAllText: {
-              containsText: { text: `{{${token}}}`, matchCase: true },
-              replaceText: "[SECURE ASSET: QR CODE]"
-            }
-          });
+          const placeholder = `{{${token}}}`;
+          const locations = findTokenIndexes(docData.body.content, placeholder).sort((a, b) => b - a);
+
+          for (const startIndex of locations) {
+            const widthPt = Math.max(24, Number(metadata.width ?? 120));
+            const heightPt = Math.max(24, Number(metadata.height ?? 120));
+            const endIndex = startIndex + placeholder.length;
+
+            batchRequests.push({
+              deleteContentRange: {
+                range: {
+                  startIndex,
+                  endIndex
+                }
+              }
+            });
+
+            batchRequests.push({
+              insertInlineImage: {
+                uri: metadata.dataUri,
+                location: {
+                  index: startIndex
+                },
+                objectSize: {
+                  width: { magnitude: widthPt, unit: "PT" },
+                  height: { magnitude: heightPt, unit: "PT" }
+                }
+              }
+            });
+          }
+        }
+      });
+
+      // If image placeholders were not present in the template, fall back to text replacement
+      // so the token remains visible for debugging.
+      Object.entries(args.tokens).forEach(([token, metadata]) => {
+        if (metadata.type === "image") {
+          const placeholder = `{{${token}}}`;
+          if (findTokenIndexes(docData.body.content, placeholder).length === 0) {
+            batchRequests.push({
+              replaceAllText: {
+                containsText: { text: placeholder, matchCase: true },
+                replaceText: `[ASSET:${token}]`
+              }
+            });
+          }
         }
       });
 
@@ -440,6 +503,9 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
   const drive: DriveRail = {
     async publishFile(args) {
       if (args.clientVisible) {
+        const senderDomain = config.gmailSenderAddress.split("@")[1]?.trim().toLowerCase() ?? "";
+        const domainScoped = senderDomain !== "";
+
         await googleApiRequest({
           config,
           service: "drive",
@@ -449,11 +515,20 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
           headers: {
             "content-type": "application/json"
           },
-          body: JSON.stringify({
-            role: "reader",
-            type: "anyone",
-            allowFileDiscovery: false
-          })
+          body: JSON.stringify(
+            domainScoped
+              ? {
+                  role: "reader",
+                  type: "domain",
+                  domain: senderDomain,
+                  allowFileDiscovery: false
+                }
+              : {
+                  role: "reader",
+                  type: "anyone",
+                  allowFileDiscovery: false
+                }
+          )
         });
       }
 

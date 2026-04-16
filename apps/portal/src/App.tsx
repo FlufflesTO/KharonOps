@@ -82,7 +82,7 @@ export function PortalApp(): React.JSX.Element {
   const [rescheduleStart, setRescheduleStart] = useState(nowPlusHours(8));
   const [rescheduleEnd, setRescheduleEnd] = useState(nowPlusHours(9));
   const [rescheduleRowVersion, setRescheduleRowVersion] = useState(1);
-  const [documentType, setDocumentType] = useState<"jobcard" | "service_report">("jobcard");
+  const [documentType, setDocumentType] = useState<"jobcard" | "service_report" | "certificate">("jobcard");
   const [publishDocumentUid, setPublishDocumentUid] = useState("");
   const [publishRowVersion, setPublishRowVersion] = useState(1);
   const [offlineEnabled, setOfflineEnabled] = useState(false);

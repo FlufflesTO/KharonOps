@@ -603,6 +603,11 @@ export class DualWorkbookStore implements WorkbookStore {
         entityId: discrepancy.entityId
       });
     }
+
+    throw new Error(
+      `Automatic discrepancy reconciliation is not implemented for entity "${discrepancy.entity}". ` +
+      "Use strict dual-write mode and operator-led repair."
+    );
   }
 
   // -- Internal helpers ----------------------------------------------------
@@ -630,6 +635,9 @@ export class DualWorkbookStore implements WorkbookStore {
         entityId,
         error: message
       });
+      if (this.config.strictPrimary) {
+        throw new Error(`Strict dual-write failure for ${operation}(${entityId}): ${message}`);
+      }
     }
   }
 

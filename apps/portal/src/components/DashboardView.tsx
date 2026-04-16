@@ -17,13 +17,13 @@ interface DashboardCardProps {
 
 function DashboardCard({ title, description, icon, actionLabel, onClick, accent = "blue" }: DashboardCardProps): React.JSX.Element {
   return (
-    <article className={`dashboard-card dashboard-card--${accent}`} onClick={onClick}>
+    <article className={`dashboard-card dashboard-card--${accent}`}>
       <div className="dashboard-card__icon">{icon}</div>
       <div className="dashboard-card__content">
         <h3>{title}</h3>
         <p>{description}</p>
       </div>
-      <button className="dashboard-card__action">
+      <button type="button" className="dashboard-card__action" onClick={onClick} aria-label={actionLabel}>
         {actionLabel}
       </button>
     </article>

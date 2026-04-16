@@ -1,279 +1,86 @@
-# API Specification — KharonOps (KharonWeb Worker)
+# KharonOps API Specification
 
-Base URL: Depends on deployment (local dev: `http://localhost:8787`)
+Base URL: deployment dependent (local worker preview, staging, or production).
 
-All endpoints live under `/api/*`. The worker enforces CORS preflight (`OPTIONS`) for all routes.
+All application endpoints are under `/api/v1/*`.
 
-## Response Format
+## Envelope
 
-All responses use the following envelope:
-
-```json
-{
-  "success": true,
-  "data": { ... },
-  "error": null
-}
-```
-
-Error responses:
+Every JSON response uses the domain envelope:
 
 ```json
 {
-  "success": false,
-  "error": "Human-readable error message"
+  "data": {},
+  "error": null,
+  "correlation_id": "uuid",
+  "row_version": null,
+  "conflict": null
 }
 ```
 
-Standard HTTP status codes: `200`, `204` (CORS preflight), `400`, `403`, `404`, `422`, `500`.
+Error example:
 
-## Auth
-
-### GET `/auth/session`
-
-> **Note:** Currently a scaffold endpoint. Returns session state when Cloudflare Access JWT assertion is present.
-
-Requires: `Cf-Access-Jwt-Assertion` header (when Access enforcement is enabled).
-
-Success `200`:
-```json
-{ "success": true, "data": { "email": "tech@example.com", "role": "technician" } }
-```
-
-Failure `401`:
-```json
-{ "success": false, "error": "Unauthorized" }
-```
-
----
-
-## Endpoints
-
-### GET `/api/health`  /  `/api/v1/health`
-
-Worker health-check. No auth required.
-
-Success `200`:
 ```json
 {
-  "success": true,
-  "data": {
-    "status": "ok",
-    "timestamp": "2026-04-15T12:00:00.000Z",
-    "ledger_configured": true
-  }
+  "data": null,
+  "error": {
+    "code": "validation_error",
+    "message": "Request validation failed"
+  },
+  "correlation_id": "uuid",
+  "row_version": null,
+  "conflict": null
 }
 ```
 
-### POST `/api/submit-contact`
+## Auth Endpoints
 
-Contact form submission.
+- `GET /api/v1/auth/config`
+- `GET /api/v1/auth/session`
+- `POST /api/v1/auth/google-login`
+- `POST /api/v1/auth/logout`
 
-Body:
-```json
-{
-  "name": "Jane Doe",
-  "email": "jane@example.com",
-  "message": "Requesting a site visit.",
-  "phone": "0123456789",
-  "property_type": "commercial",
-  "service_required": "fire-alarm"
-}
-```
+## Core Endpoints
 
-Required fields: `name`, `email`, `message`.
+- `GET /api/v1/jobs`
+- `GET /api/v1/jobs/:job_uid`
+- `POST /api/v1/jobs/:job_uid/status`
+- `POST /api/v1/jobs/:job_uid/note`
+- `POST /api/v1/schedules/request-slot`
+- `POST /api/v1/schedules/confirm`
+- `POST /api/v1/schedules/reschedule`
+- `POST /api/v1/documents/generate`
+- `POST /api/v1/documents/publish`
+- `GET /api/v1/documents/history`
+- `GET /api/v1/sync/pull`
+- `POST /api/v1/sync/push`
 
-Success `200`:
-```json
-{ "success": true, "data": { "message": "Contact form submitted successfully" } }
-```
+## Admin Endpoints
 
-### POST `/api/submit-job`
+- `GET /api/v1/admin/health`
+- `GET /api/v1/admin/audits`
+- `POST /api/v1/admin/retries/:automation_job_uid`
 
-Job card submission from technician portal.
+## Health
 
-Body:
-```json
-{
-  "title": "SVR_SITE_INSPECTION",
-  "description": "Full fire alarm system audit completed.",
-  "site_name": "Acme Warehouse",
-  "status": "performed",
-  "priority": "normal",
-  "discipline": "fire",
-  "assigned_to": "tech@example.com",
-  "evidence_notes": "All zones passing."
-}
-```
+- `GET /api/v1/health`
 
-Required fields: `title`, `description`.
+## Status Codes
 
-Status taxonomy (canonical, from `packages/domain/src/status.ts`):
-`draft` → `performed` → `rejected` | `approved` → `certified`
+Common status codes used by the runtime:
 
-Additional terminal state: `cancelled`.
+- `200` success
+- `400` invalid request / validation failure
+- `401` unauthorized
+- `403` forbidden
+- `404` not found
+- `409` conflict (row-version or sync conflict)
+- `429` upstream/google throttling
+- `500` internal error
 
-Success `200`:
-```json
-{
-  "success": true,
-  "data": {
-    "job": {
-      "id": "uuid-v4",
-      "created_at": "2026-04-15T12:00:00.000Z",
-      "title": "SVR_SITE_INSPECTION",
-      "description": "Full fire alarm system audit completed.",
-      "status": "performed",
-      "site_name": "Acme Warehouse",
-      "determination_status": "PENDING"
-    }
-  }
-}
-```
+## Notes
 
-### GET `/api/get-jobs`
-
-Retrieve job list. Query params filter by `status` and `role`.
-
-Query: `?role=admin&status=performed`
-
-- Non-admin callers receive a reduced object: `{ id, created_at, title, status, priority }`.
-- Admin callers receive the full job record.
-
-Success `200`:
-```json
-{
-  "success": true,
-  "data": {
-    "jobs": [
-      {
-        "id": "uuid-v4",
-        "created_at": "2026-04-15T12:00:00.000Z",
-        "title": "SVR_SITE_INSPECTION",
-        "status": "performed",
-        "priority": "normal"
-      }
-    ]
-  }
-}
-```
-
-### POST `/api/submit-sla-request`
-
-SLA / fault request submission.
-
-Body:
-```json
-{
-  "clientCode": "CLI-001",
-  "contactName": "John Smith",
-  "contactEmail": "john@client.com",
-  "siteName": "Client HQ",
-  "faultDescription": "Intruder panel showing persistent fault code E-42.",
-  "priority": "high"
-}
-```
-
-Also accepts flat field names: `client_name`, `property`, `description`, `urgency`.
-
-Required fields: `clientCode` (or `client_name`), `siteName` (or `property`), `faultDescription` (or `description`).
-
-Success `200`:
-```json
-{ "success": true, "data": { "message": "SLA request submitted successfully" } }
-```
-
-### POST `/api/determine-job`
-
-Log a determination (approve / reject / certify) for a job.
-
-Body:
-```json
-{
-  "jobId": "uuid-v4",
-  "status": "approved",
-  "rationale": "All checks passed per SVR protocol.",
-  "determinedBy": "admin@example.com"
-}
-```
-
-Required fields: `jobId`, `status`.
-
-Success `200`:
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Determination logged as approved",
-    "integrity_marker": "SVR_HASH:<sha256-hash>"
-  }
-}
-```
-
-### POST `/api/generate-report`
-
-Generate an audit-ready controlled document for a job.
-
-Body:
-```json
-{ "jobId": "uuid-v4" }
-```
-
-Required: job must have `determination_status === 'APPROVED'`, else `403`.
-
-Success `200`:
-```json
-{
-  "success": true,
-  "data": {
-    "report": {
-      "job_id": "uuid-v4",
-      "generated_at": "2026-04-15T12:00:00.000Z",
-      "title": "SVR_SITE_INSPECTION",
-      "status": "performed",
-      "determined_by": "admin@example.com",
-      "site_name": "Acme Warehouse",
-      "discipline": "fire"
-    }
-  }
-}
-```
-
----
-
-## Sheet Column Layout (Jobs)
-
-| Col | Field                |
-|-----|----------------------|
-| A   | id                   |
-| B   | created_at           |
-| C   | title                |
-| D   | description          |
-| E   | assigned_to          |
-| F   | priority             |
-| G   | status               |
-| H   | notes                |
-| I   | site_name            |
-| J   | site_address         |
-| K   | discipline           |
-| L   | impairments          |
-| M   | arrival_at           |
-| N   | compliance_passed    |
-| O   | determination_status |
-| P   | determined_by        |
-| Q   | rationale            |
-| R   | integrity_marker     |
-
----
-
-## Error Semantics
-
-| Code | Meaning                         |
-|------|---------------------------------|
-| 400  | Bad request / not found         |
-| 401  | Auth required (Access JWT)      |
-| 403  | Role / ownership forbidden      |
-| 404  | Entity not found                |
-| 422  | Missing required fields         |
-| 409  | Optimistic concurrency conflict |
-| 500  | Internal / runtime failure      |
+- `correlation_id` is generated per request and propagated into audit/store events.
+- `row_version` is returned on mutable operations to support optimistic concurrency.
+- `conflict` is populated for conflict responses (`409`) and includes server state.
+- Cloudflare Access can be enabled for `/api/v1/*` via runtime config.

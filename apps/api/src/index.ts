@@ -984,7 +984,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
     const publish = await config.rails.drive.publishFile({
       fileId: document.pdf_file_id,
-      clientVisible: body.client_visible ?? true
+      clientVisible: body.client_visible ?? false
     });
 
     const updated: JobDocumentRow = {
@@ -1019,16 +1019,18 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const jobUid = c.req.query("job_uid");
     const documents = await store.listDocuments(jobUid);
 
-    const visibleDocuments: JobDocumentRow[] = [];
-    for (const document of documents) {
-      const job = await store.getJob(document.job_uid);
-      if (!job) {
-        continue;
-      }
-      if (canReadJob(user, job) || user.role === "dispatcher" || user.role === "admin") {
-        visibleDocuments.push(document);
-      }
+    if (user.role === "admin" || user.role === "dispatcher") {
+      return c.json(
+        envelopeSuccess({
+          correlationId,
+          data: documents
+        })
+      );
     }
+
+    const readableJobs = await store.listJobsForUser(user);
+    const readableJobUids = new Set(readableJobs.map((job) => job.job_uid));
+    const visibleDocuments = documents.filter((document) => readableJobUids.has(document.job_uid));
 
     return c.json(
       envelopeSuccess({
@@ -1300,6 +1302,22 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     // Fetch the static asset from the CDN binding.
+    // GUARD: ASSETS binding must be declared via `binding = "ASSETS"` in the
+    // [assets] section of wrangler.toml. If undefined, the deployment config is
+    // missing the explicit binding declaration — not a runtime code error.
+    if (!c.env.ASSETS) {
+      return c.json(
+        envelopeError({
+          correlationId: c.get("correlationId"),
+          error: {
+            code: "assets_binding_unavailable",
+            message: "Static assets binding is not configured. Ensure `binding = \"ASSETS\"` is declared in wrangler.toml [assets]."
+          }
+        }),
+        503
+      );
+    }
+
     const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
 
     // IMPORTANT: The ASSETS binding returns a Response whose Headers object is

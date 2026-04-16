@@ -18,8 +18,8 @@ interface JobDetailViewProps {
   preferredEnd: string;
   setPreferredEnd: (value: string) => void;
   onScheduleRequest: () => void;
-  documentType: "jobcard" | "service_report";
-  setDocumentType: (type: "jobcard" | "service_report") => void;
+  documentType: "jobcard" | "service_report" | "certificate";
+  setDocumentType: (type: "jobcard" | "service_report" | "certificate") => void;
   onDocumentGenerate: () => void;
   onChecklistChange: (data: Record<string, string>) => void;
   selectedJobTitle: string;
@@ -201,23 +201,24 @@ export function JobDetailView({
         <div className="control-block">
           <div className="control-block__head">
             <h3>Controlled documents</h3>
-            <p>Generate the latest jobcard or service report from the active job.</p>
+            <p>Generate the latest jobcard, service report, or certificate from the active job.</p>
           </div>
           <div className="button-row">
             <select
               name="document_type"
               value={documentType}
-              onChange={(event) => setDocumentType(event.target.value as "jobcard" | "service_report")}
+              onChange={(event) => setDocumentType(event.target.value as "jobcard" | "service_report" | "certificate")}
             >
               <option value="jobcard">Jobcard</option>
               <option value="service_report">Service report</option>
+              <option value="certificate">Certificate</option>
             </select>
             <button className="button button--secondary" onClick={onDocumentGenerate}>
               Generate
             </button>
           </div>
 
-          {documentType === "service_report" && (
+          {(documentType === "service_report" || documentType === "certificate") && (
             <CertificationForm jobTitle={selectedJob.title} onChange={onChecklistChange} />
           )}
         </div>

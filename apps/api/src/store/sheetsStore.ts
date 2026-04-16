@@ -246,6 +246,9 @@ function parseDocumentType(value: string): JobDocumentRow["document_type"] {
   if (normalized.includes("jobcard")) {
     return "jobcard";
   }
+  if (normalized.includes("certificate") || normalized.includes("coc")) {
+    return "certificate";
+  }
   if (normalized === "service_report" || normalized === "service" || normalized.includes("report")) {
     return "service_report";
   }
@@ -269,11 +272,25 @@ function portalFileDocumentUid(row: Row): string {
 }
 
 function fileRoleForDocumentType(documentType: string): string {
-  return normalizeToken(documentType).includes("jobcard") ? "jobcard_pdf" : "report_pdf";
+  const normalized = normalizeToken(documentType);
+  if (normalized.includes("jobcard")) {
+    return "jobcard_pdf";
+  }
+  if (normalized.includes("certificate") || normalized.includes("coc")) {
+    return "certificate_pdf";
+  }
+  return "report_pdf";
 }
 
 function fileCategoryForDocumentType(documentType: string): string {
-  return normalizeToken(documentType).includes("jobcard") ? "jobcard" : "report";
+  const normalized = normalizeToken(documentType);
+  if (normalized.includes("jobcard")) {
+    return "jobcard";
+  }
+  if (normalized.includes("certificate") || normalized.includes("coc")) {
+    return "certificate";
+  }
+  return "report";
 }
 
 function fileUidForDocument(documentUid: string): string {
@@ -359,7 +376,14 @@ function conflictFor(job: JobRow, expected: number): ConflictPayload {
 }
 
 function templateIdForDocumentType(documentType: string): string {
-  return normalizeToken(documentType).includes("jobcard") ? "TPL-JOBCARD" : "TPL-SERVICE-REPORT";
+  const normalized = normalizeToken(documentType);
+  if (normalized.includes("jobcard")) {
+    return "TPL-JOBCARD";
+  }
+  if (normalized.includes("certificate") || normalized.includes("coc")) {
+    return "TPL-CERTIFICATE";
+  }
+  return "TPL-SERVICE-REPORT";
 }
 
 function nowIso(): string {

@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   site_uid TEXT NOT NULL REFERENCES sites (site_uid) ON DELETE RESTRICT,
   technician_uid TEXT REFERENCES technicians (technician_uid) ON DELETE RESTRICT,
   title TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('open', 'assigned', 'en_route', 'on_site', 'paused', 'completed', 'cancelled')),
+  status TEXT NOT NULL CHECK (status IN ('draft', 'performed', 'rejected', 'approved', 'certified', 'cancelled')),
   scheduled_start TIMESTAMPTZ NOT NULL,
   scheduled_end TIMESTAMPTZ NOT NULL,
   last_note TEXT NOT NULL DEFAULT '',
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS job_events (
 CREATE TABLE IF NOT EXISTS job_documents (
   document_uid TEXT PRIMARY KEY,
   job_uid TEXT NOT NULL REFERENCES jobs (job_uid) ON DELETE CASCADE,
-  document_type TEXT NOT NULL CHECK (document_type IN ('jobcard', 'service_report')),
+  document_type TEXT NOT NULL CHECK (document_type IN ('jobcard', 'service_report', 'certificate')),
   status TEXT NOT NULL CHECK (status IN ('generated', 'published')),
   drive_file_id TEXT NOT NULL DEFAULT '',
   pdf_file_id TEXT NOT NULL DEFAULT '',

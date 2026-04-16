@@ -30,7 +30,7 @@ interface ScheduleControlCardProps {
   setPublishDocumentUid: (uid: string) => void;
   publishRowVersion: number;
   setPublishRowVersion: (v: number) => void;
-  documentType: "jobcard" | "service_report";
+  documentType: "jobcard" | "service_report" | "certificate";
   onScheduleRequest: () => void;
   onScheduleConfirm: () => void;
   onReschedule: () => void;

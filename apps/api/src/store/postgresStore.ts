@@ -423,9 +423,23 @@ export class PostgresWorkbookStore implements WorkbookStore {
 
   async listJobsForUser(user: SessionUser): Promise<JobRow[]> {
     const pool = await this.getPool();
-    const result = await pool.query(
-      `SELECT * FROM ${this.schema}.svr_jobs ORDER BY updated_at DESC`
-    );
+    let result;
+
+    if (user.role === "admin" || user.role === "dispatcher") {
+      result = await pool.query(`SELECT * FROM ${this.schema}.svr_jobs ORDER BY updated_at DESC`);
+    } else if (user.role === "client") {
+      result = await pool.query(
+        `SELECT * FROM ${this.schema}.svr_jobs WHERE client_uid = $1 ORDER BY updated_at DESC`,
+        [user.client_uid]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT * FROM ${this.schema}.svr_jobs WHERE technician_uid = $1 ORDER BY updated_at DESC`,
+        [user.technician_uid]
+      );
+    }
+
+    // Keep RBAC check as a defense-in-depth guard.
     return result.rows.map(jobRowFromPg).filter((job) => canReadJob(user, job));
   }
 

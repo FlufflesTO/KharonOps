@@ -1,20 +1,48 @@
-const parityChecks = [
-  "row counts by table",
-  "sample key parity for users, jobs, schedules, and documents",
-  "row_version parity on mutable entities",
-  "latest updated_at / correlation_id drift",
-  "sync_queue status distribution",
-  "audit and document edge-case spot checks"
+const tables = [
+  "svr_users",
+  "svr_jobs",
+  "svr_job_events",
+  "svr_job_documents",
+  "svr_schedule_requests",
+  "svr_schedules",
+  "svr_automation_jobs",
+  "svr_sync_queue",
+  "svr_audit_log"
 ];
 
-async function main() {
-  console.log("Store parity scaffold is present.");
-  console.log("No Sheets or Postgres systems were queried.");
-  console.log("Planned verification set:");
-  for (const check of parityChecks) {
-    console.log(`- ${check}`);
+function resolveConnectionString() {
+  return process.env.POSTGRES_URL || process.env.DATABASE_URL || process.env.POSTGRES_DIRECT_URL || "";
+}
+
+async function runParity(connectionString) {
+  const { Client } = await import("pg");
+  const client = new Client({ connectionString });
+  await client.connect();
+  try {
+    const summary = {};
+    for (const table of tables) {
+      const { rows } = await client.query(`SELECT COUNT(*)::bigint AS count FROM ${table}`);
+      summary[table] = Number(rows[0]?.count ?? 0);
+    }
+    return summary;
+  } finally {
+    await client.end();
   }
-  console.log("Next implementation step: add real connectors and fail thresholds before enabling dual-write.");
+}
+
+async function main() {
+  const connectionString = resolveConnectionString();
+  if (!connectionString) {
+    console.log("No connection string found (POSTGRES_URL / DATABASE_URL / POSTGRES_DIRECT_URL).");
+    console.log("Parity check skipped.");
+    return;
+  }
+
+  const summary = await runParity(connectionString);
+  console.log("Postgres table counts:");
+  for (const [table, count] of Object.entries(summary)) {
+    console.log(`- ${table}: ${count}`);
+  }
 }
 
 main().catch((error) => {

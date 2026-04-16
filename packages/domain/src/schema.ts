@@ -51,7 +51,7 @@ export const documentGenerateSchema = z.object({
 export const documentPublishSchema = z.object({
   document_uid: z.string().trim().min(1),
   row_version: z.number().int().nonnegative(),
-  client_visible: z.boolean().default(true),
+  client_visible: z.boolean().default(false),
   job_uid: z.string().trim().min(1).optional(),
   document_type: z.enum(["jobcard", "service_report", "certificate"]).optional()
 });

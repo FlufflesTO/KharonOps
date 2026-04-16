@@ -215,7 +215,7 @@ export const apiClient = {
       })
     });
   },
-  async generateDocument(jobUid: string, documentType: "jobcard" | "service_report", tokens: Record<string, string> = {}) {
+  async generateDocument(jobUid: string, documentType: "jobcard" | "service_report" | "certificate", tokens: Record<string, string> = {}) {
     return request<Record<string, unknown>>("/api/v1/documents/generate", {
       method: "POST",
       body: JSON.stringify({
@@ -229,14 +229,14 @@ export const apiClient = {
   async publishDocument(
     documentUid: string,
     rowVersion: number,
-    options?: { job_uid?: string; document_type?: "jobcard" | "service_report" }
+    options?: { job_uid?: string; document_type?: "jobcard" | "service_report" | "certificate"; client_visible?: boolean }
   ) {
     return request<Record<string, unknown>>("/api/v1/documents/publish", {
       method: "POST",
       body: JSON.stringify({
         document_uid: documentUid,
         row_version: rowVersion,
-        client_visible: true,
+        client_visible: options?.client_visible ?? false,
         ...(options?.job_uid ? { job_uid: options.job_uid } : {}),
         ...(options?.document_type ? { document_type: options.document_type } : {})
       })
