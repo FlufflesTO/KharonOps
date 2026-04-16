@@ -17,7 +17,40 @@ function formatStatusIcon(value: string | undefined): string {
   return "☐ N/A";
 }
 
-// ... existing helpers (formatLabel, formatDateTime, etc.) ...
+function formatLabel(value: string | undefined): string {
+  if (!value) return "";
+  return value
+    .split(/[_-]/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function formatDateTime(iso: string | undefined): string {
+  if (!iso) return "N/A";
+  return new Date(iso).toLocaleString("en-ZA", { timeZone: DOCUMENT_TIME_ZONE });
+}
+
+function formatDateOnly(iso: string | undefined): string {
+  if (!iso) return "N/A";
+  return new Date(iso).toLocaleDateString("en-ZA", { timeZone: DOCUMENT_TIME_ZONE });
+}
+
+function formatTimeOnly(iso: string | undefined): string {
+  if (!iso) return "N/A";
+  return new Date(iso).toLocaleTimeString("en-ZA", { timeZone: DOCUMENT_TIME_ZONE });
+}
+
+function formatScheduleWindow(job: JobRow): string {
+  return `${formatTimeOnly(job.scheduled_start)} - ${formatTimeOnly(job.scheduled_end)}`;
+}
+
+function resolveClientUser(users: UserRow[], uid: string): UserRow | undefined {
+  return users.find(u => u.user_uid === uid);
+}
+
+function resolveTechnicianUser(users: UserRow[], uid: string): UserRow | undefined {
+  return users.find(u => u.user_uid === uid);
+}
 
 export function buildDocumentTokens(args: {
   documentUid: string;

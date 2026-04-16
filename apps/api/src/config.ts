@@ -128,7 +128,7 @@ export function createRuntimeConfig(env: Record<string, string | undefined>): Ru
   const accessIssuer = envFirst(env, ["CF_ACCESS_ISSUER", "CLOUDFLARE_ACCESS_ISSUER"]);
   const accessJwksJson = envFirst(env, ["CF_ACCESS_JWKS_JSON", "CLOUDFLARE_ACCESS_JWKS_JSON"]);
   const accessEnabledRaw = envFirst(env, ["CF_ACCESS_ENABLED", "CLOUDFLARE_ACCESS_ENABLED"]);
-  const accessEnabled = accessEnabledRaw === "true" || (accessAudience !== "" && (accessJwksUrl !== "" || accessJwksJson !== ""));
+  const accessEnabled = accessEnabledRaw === "true";
   const googleClientId = envFirst(env, ["GOOGLE_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "KHARON_GOOGLE_CLIENT_ID"]);
   const rails = createWorkspaceRails(env);
   const railsModeOverride = envFirst(env, ["GOOGLE_RAILS_MODE", "KHARON_RAILS_MODE"]).toLowerCase();

@@ -66,7 +66,7 @@ STORE_BACKEND = "sheets"
 GOOGLE_RAILS_MODE = "production"
 SESSION_COOKIE_NAME = "kharon_session"
 SESSION_TTL_SECONDS = "28800"
-CF_ACCESS_ENABLED = "true"
+CF_ACCESS_ENABLED = "false"
 CF_ACCESS_AUD = "64026cae8eb5946cfaa9e0915a953b9bd0e84a4876babcb5a7834cba53cd172c"
 CF_ACCESS_JWKS_URL = "https://kharonops-pages.cloudflareaccess.com/cdn-cgi/access/certs"
 CF_ACCESS_ISSUER = "https://kharonops-pages.cloudflareaccess.com"
@@ -74,6 +74,14 @@ CF_ACCESS_ISSUER = "https://kharonops-pages.cloudflareaccess.com"
 [env.public.assets]
 directory = "./dist/public"
 run_worker_first = ["/api/*"]
+
+[[env.public.routes]]
+pattern = "tequit.co.za"
+custom_domain = true
+
+[[env.public.routes]]
+pattern = "www.tequit.co.za"
+custom_domain = true
 
 [env.public.secrets]
 required = [
