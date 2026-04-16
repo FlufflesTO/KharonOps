@@ -79,7 +79,16 @@ export const apiClient = {
       },
       body: JSON.stringify({ id_token: idToken })
     });
-    return result.data!;
+    if (!result.data) {
+      throw {
+        data: null,
+        error: { code: "empty_response", message: "Login succeeded but the server returned no session data." },
+        correlation_id: result.correlation_id ?? "",
+        row_version: null,
+        conflict: null
+      } satisfies ApiEnvelope<null>;
+    }
+    return result.data;
   },
   async session(): Promise<PortalSession> {
     const result = await request<PortalSessionState>("/api/v1/auth/session", {
@@ -108,7 +117,16 @@ export const apiClient = {
     const result = await request<PortalAuthConfig>("/api/v1/auth/config", {
       method: "GET"
     });
-    return result.data!;
+    if (!result.data) {
+      throw {
+        data: null,
+        error: { code: "empty_response", message: "Auth config request succeeded but the server returned no data." },
+        correlation_id: result.correlation_id ?? "",
+        row_version: null,
+        conflict: null
+      } satisfies ApiEnvelope<null>;
+    }
+    return result.data;
   },
   async logout(): Promise<void> {
     await request<{ logged_out: boolean }>("/api/v1/auth/logout", {

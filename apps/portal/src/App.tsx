@@ -125,8 +125,13 @@ export function PortalApp(): React.JSX.Element {
   };
 
   async function refreshQueueCount(): Promise<void> {
-    const queue = await listQueuedMutations();
-    setQueueCount(queue.length);
+    try {
+      const queue = await listQueuedMutations();
+      setQueueCount(queue.length);
+    } catch (error) {
+      setQueueCount(0);
+      setFeedback(`Offline queue unavailable: ${errorMessage(error)}`);
+    }
   }
 
   async function refreshJobs(): Promise<void> {
@@ -190,10 +195,13 @@ export function PortalApp(): React.JSX.Element {
     window.addEventListener("offline", offline);
 
     void (async () => {
-      await refreshAuthConfig();
-      await refreshSession();
-      await refreshQueueCount();
-      setLoading(false);
+      try {
+        await refreshAuthConfig();
+        await refreshSession();
+        await refreshQueueCount();
+      } finally {
+        setLoading(false);
+      }
     })();
 
     return () => {

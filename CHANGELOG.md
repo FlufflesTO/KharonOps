@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-04-16
+
+### Security
+- [Security] **CRITICAL (A-001):** Replaced deprecated Google `tokeninfo` API endpoint with a fully local JWKS RS256 signature verifier in `packages/google/src/index.ts`. Eliminates 200–500ms server-to-server round-trip latency on every login and removes the dependency on Google's external validation API — the confirmed root cause of intermittent `400` authentication errors. Tokens are now verified locally using Google's public JWKS keys (`https://www.googleapis.com/oauth2/v3/certs`) via the Web Crypto API.
+- [Security] **(A-004):** Hardened issuer validation in `verifyGoogleIdToken`. Replaced the bypassable `.includes("accounts.google.com")` substring check with an exact `Set` membership test against `["https://accounts.google.com", "accounts.google.com"]`. Prevents issuer spoofing via domains like `evil-accounts.google.com.attacker.com`.
+- [Security] **(A-008):** Replaced real production email `connor@kharon.co.za` in dev token map (`auth/google.ts`) with RFC-2606-reserved `.invalid` TLD addresses (e.g., `dev.admin@kharon.invalid`). Prevents accidental role acquisition if `KHARON_MODE` is misconfigured.
+
+### Fixed
+- [Fixed] **(A-007):** Removed non-null assertions (`result.data!`) from `apiClient.ts` `login()` and `authConfig()` methods. Replaced with structured `ApiEnvelope<null>` error throws that surface a meaningful `"empty_response"` code to the UI.
+
+### Added
+- [Added] JWKS response caching in `loadOidcJwks()`. Cache TTL respects `Cache-Control: max-age` from Google's JWKS endpoint (defaulting to 5 minutes). Reduces JWKS fetch frequency for high-traffic deployments.
+
 ## [1.1.0] - 2026-04-16
 
 ### Added

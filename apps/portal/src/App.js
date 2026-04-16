@@ -105,8 +105,14 @@ export function PortalApp() {
         });
     };
     async function refreshQueueCount() {
-        const queue = await listQueuedMutations();
-        setQueueCount(queue.length);
+        try {
+            const queue = await listQueuedMutations();
+            setQueueCount(queue.length);
+        }
+        catch (error) {
+            setQueueCount(0);
+            setFeedback(`Offline queue unavailable: ${errorMessage(error)}`);
+        }
     }
     async function refreshJobs() {
         if (!session) {
@@ -168,10 +174,14 @@ export function PortalApp() {
         window.addEventListener("online", online);
         window.addEventListener("offline", offline);
         void (async () => {
-            await refreshAuthConfig();
-            await refreshSession();
-            await refreshQueueCount();
-            setLoading(false);
+            try {
+                await refreshAuthConfig();
+                await refreshSession();
+                await refreshQueueCount();
+            }
+            finally {
+                setLoading(false);
+            }
         })();
         return () => {
             window.removeEventListener("online", online);

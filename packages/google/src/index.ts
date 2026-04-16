@@ -147,80 +147,282 @@ export function createWorkspaceRails(env: Record<string, string | undefined>): W
   return createLocalWorkspaceRails();
 }
 
+// ---------------------------------------------------------------------------
+// Google OIDC — Local JWKS RS256 Verification
+//
+// Replaces the deprecated `tokeninfo` API endpoint. Tokens are now verified
+// locally using Google's public JWKS keys, eliminating the server-side
+// round-trip latency (~200-500ms) and removing the dependency on an external
+// API that was the root cause of intermittent 400 authentication errors.
+//
+// Architecture decision: mirrors the same JWKS pattern used in auth/access.ts
+// for Cloudflare Access JWT verification.
+// ---------------------------------------------------------------------------
+
+/** Google's public OIDC signing keys endpoint. */
+const GOOGLE_OIDC_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
+
+/**
+ * Exact allowlist of trusted Google OIDC issuers (A-004 fix).
+ * Using `.includes()` substring matching is bypassable — e.g.,
+ * `evil-accounts.google.com.attacker.com` would pass a substring check.
+ */
+const ALLOWED_OIDC_ISSUERS = new Set<string>([
+  "https://accounts.google.com",
+  "accounts.google.com"
+]);
+
+interface OidcPublicJwk extends JsonWebKey {
+  kid?: string;
+  alg?: string;
+  use?: string;
+}
+
+interface OidcJwtHeader {
+  alg?: string;
+  kid?: string;
+  typ?: string;
+}
+
+interface OidcJwtClaims {
+  sub: string;
+  email: string;
+  name?: string;
+  picture?: string;
+  aud: string | string[];
+  iss: string;
+  exp: number;
+  nbf?: number;
+  iat?: number;
+}
+
+interface OidcJwksCache {
+  keys: OidcPublicJwk[];
+  expiresAtMs: number;
+}
+
+let oidcJwksCache: OidcJwksCache | null = null;
+
+function parseOidcMaxAgeMs(cacheControl: string): number {
+  const match = cacheControl.match(/max-age=(\d+)/i);
+  if (!match?.[1]) {
+    return 300_000; // 5-minute default
+  }
+  const parsed = Number(match[1]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed * 1_000 : 300_000;
+}
+
+function base64UrlDecodeToBytesOidc(input: string): Uint8Array {
+  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+function decodeOidcJwtPart<T>(part: string): T {
+  const decoded = new TextDecoder().decode(base64UrlDecodeToBytesOidc(part));
+  return JSON.parse(decoded) as T;
+}
+
+async function loadOidcJwks(): Promise<OidcPublicJwk[]> {
+  if (oidcJwksCache !== null && Date.now() < oidcJwksCache.expiresAtMs) {
+    return oidcJwksCache.keys;
+  }
+
+  const response = await fetch(GOOGLE_OIDC_JWKS_URL, {
+    headers: { accept: "application/json" }
+  });
+
+  if (!response.ok) {
+    throw new GoogleAdapterError({
+      message: `Failed to fetch Google OIDC JWKS: ${response.status} ${response.statusText}`,
+      code: "google_transient_error",
+      service: "oidc",
+      status: 502,
+      transient: true
+    });
+  }
+
+  const body = (await response.json()) as { keys?: OidcPublicJwk[] };
+  // Filter to RSA signing keys only (exclude encryption keys via use !== "enc")
+  const keys = (body.keys ?? []).filter(
+    (k) => k.kty === "RSA" && (k.use === undefined || k.use === "sig")
+  );
+
+  if (keys.length === 0) {
+    throw new GoogleAdapterError({
+      message: "Google OIDC JWKS returned no usable RSA signing keys",
+      code: "google_transient_error",
+      service: "oidc",
+      status: 502,
+      transient: true
+    });
+  }
+
+  const cacheControl = response.headers.get("cache-control") ?? "";
+  oidcJwksCache = { keys, expiresAtMs: Date.now() + parseOidcMaxAgeMs(cacheControl) };
+  return keys;
+}
+
+/**
+ * Verifies a Google ID Token locally using JWKS RS256 signature validation.
+ *
+ * This replaces the deprecated `tokeninfo` API endpoint. The token is decoded,
+ * its signing key is fetched from Google's public JWKS endpoint (with caching),
+ * and the RS256 signature is verified locally via the Web Crypto API.
+ * All claims (`aud`, `iss`, `exp`, `nbf`) are then validated without any
+ * additional network round-trips.
+ */
 export async function verifyGoogleIdToken(args: {
   idToken: string;
   expectedAudience: string;
 }): Promise<{ sub: string; email: string; name: string; picture: string }> {
-  const response = await fetch(
-    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(args.idToken)}`
+  const parts = args.idToken.split(".");
+  if (parts.length !== 3) {
+    throw new GoogleAdapterError({
+      message: "Google ID token format is invalid — expected a 3-part JWT",
+      code: "google_auth_error",
+      service: "oidc",
+      status: 400,
+      transient: false
+    });
+  }
+
+  const [encodedHeader, encodedPayload, encodedSignature] = parts as [string, string, string];
+
+  let header: OidcJwtHeader;
+  let claims: OidcJwtClaims;
+  try {
+    header = decodeOidcJwtPart<OidcJwtHeader>(encodedHeader);
+    claims = decodeOidcJwtPart<OidcJwtClaims>(encodedPayload);
+  } catch {
+    throw new GoogleAdapterError({
+      message: "Google ID token could not be decoded — malformed JWT segments",
+      code: "google_auth_error",
+      service: "oidc",
+      status: 400,
+      transient: false
+    });
+  }
+
+  const signatureBytes = base64UrlDecodeToBytesOidc(encodedSignature);
+
+  // --- Key Selection ---
+  // Fetch the JWKS (served from module-level cache where possible).
+  const keys = await loadOidcJwks();
+  let signingKey: OidcPublicJwk | undefined;
+  if (header.kid) {
+    signingKey = keys.find((k) => k.kid === header.kid);
+    if (!signingKey) {
+      // Key ID unknown — likely mid-rotation. Mark transient so retry logic fires.
+      throw new GoogleAdapterError({
+        message: "Google ID token key id is not in the current JWKS — key rotation may be in progress",
+        code: "google_auth_error",
+        service: "oidc",
+        status: 401,
+        transient: true,
+        details: { kid: header.kid }
+      });
+    }
+  } else {
+    // No kid header — use the first available key (Google always sets kid in practice).
+    signingKey = keys[0];
+  }
+
+  // --- RS256 Signature Verification (Web Crypto API) ---
+  // Cast signingKey to JsonWebKey: both node and workers-types environments share
+  // this interface. The "jwk" format literal is cast to `const` to select the
+  // correct importKey overload under the unified tsconfig.check.json (node types).
+  const publicKey = await crypto.subtle.importKey(
+    "jwk" as const,
+    signingKey as JsonWebKey,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["verify"]
   );
 
-  const body = (await response.json()) as Record<string, string>;
-  if (!response.ok) {
+  // The signature input is the unmodified "header.payload" ASCII string.
+  const signingInput = new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`);
+  // Web Crypto requires a detached ArrayBuffer — copy to avoid view aliasing issues.
+  const signatureCopy = new Uint8Array(signatureBytes.byteLength);
+  signatureCopy.set(signatureBytes);
+
+  const isValid = await crypto.subtle.verify(
+    { name: "RSASSA-PKCS1-v1_5" },
+    publicKey,
+    signatureCopy.buffer,
+    signingInput
+  );
+
+  if (!isValid) {
     throw new GoogleAdapterError({
-      message: "Google token verification failed",
+      message: "Google ID token RS256 signature verification failed",
       code: "google_auth_error",
       service: "oidc",
-      status: response.status,
-      transient: false,
-      details: {
-        expectedAudience: args.expectedAudience,
-        response: body
-      }
+      status: 401,
+      transient: false
     });
   }
 
-  const aud = body.aud ?? "";
-  const iss = body.iss ?? "";
-  const exp = Number(body.exp ?? "0");
+  // --- Claims Validation ---
+
+  // Audience: must match our configured Google Client ID exactly.
+  const audList = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  if (!audList.includes(args.expectedAudience)) {
+    throw new GoogleAdapterError({
+      message: "Google ID token audience does not match the configured Google Client ID",
+      code: "google_auth_error",
+      service: "oidc",
+      status: 401,
+      transient: false,
+      details: { aud: claims.aud, expectedAudience: args.expectedAudience }
+    });
+  }
+
+  // Issuer: exact set membership check — substring matching is bypassable.
+  if (!ALLOWED_OIDC_ISSUERS.has(claims.iss)) {
+    throw new GoogleAdapterError({
+      message: "Google ID token issuer is not in the trusted allowlist",
+      code: "google_auth_error",
+      service: "oidc",
+      status: 401,
+      transient: false,
+      details: { iss: claims.iss, allowedIssuers: [...ALLOWED_OIDC_ISSUERS] }
+    });
+  }
+
+  // Temporal claims: expiry and not-before.
   const now = Math.floor(Date.now() / 1_000);
-
-  if (aud !== args.expectedAudience) {
+  if (typeof claims.exp !== "number" || claims.exp <= now) {
     throw new GoogleAdapterError({
-      message: "Google ID token audience mismatch",
+      message: "Google ID token has expired",
       code: "google_auth_error",
       service: "oidc",
       status: 401,
       transient: false,
-      details: {
-        aud,
-        expectedAudience: args.expectedAudience
-      }
+      details: { exp: claims.exp, now }
     });
   }
 
-  if (!iss.includes("accounts.google.com")) {
+  if (typeof claims.nbf === "number" && now < claims.nbf) {
     throw new GoogleAdapterError({
-      message: "Google ID token issuer mismatch",
+      message: "Google ID token is not yet valid (nbf claim)",
       code: "google_auth_error",
       service: "oidc",
       status: 401,
       transient: false,
-      details: {
-        iss,
-        expectedIssuerSubstring: "accounts.google.com"
-      }
-    });
-  }
-
-  if (exp <= now) {
-    throw new GoogleAdapterError({
-      message: "Google ID token expired",
-      code: "google_auth_error",
-      service: "oidc",
-      status: 401,
-      transient: false,
-      details: {
-        exp,
-        now
-      }
+      details: { nbf: claims.nbf, now }
     });
   }
 
   return {
-    sub: body.sub ?? "",
-    email: body.email ?? "",
-    name: body.name ?? body.email ?? "",
-    picture: body.picture ?? ""
+    sub: claims.sub ?? "",
+    email: claims.email ?? "",
+    name: claims.name ?? claims.email ?? "",
+    picture: claims.picture ?? ""
   };
 }

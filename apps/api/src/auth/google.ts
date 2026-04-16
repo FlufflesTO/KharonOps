@@ -6,11 +6,19 @@ export interface VerifiedIdentity {
   localUserUid?: string;
 }
 
+/**
+ * Dev token map for local development only.
+ *
+ * A-008 FIX: Real production emails have been replaced with RFC-2606-reserved
+ * `.invalid` domain addresses. This prevents accidental authentication as a
+ * real user if KHARON_MODE is misconfigured in a staging or production environment.
+ * The `.invalid` TLD cannot resolve and will never match a live user record.
+ */
 const localTokenMap: Record<string, VerifiedIdentity> = {
-  "dev-client": { localUserUid: "USR-CLIENT-1", email: "connor@kharon.co.za", displayName: "Client Operator" },
-  "dev-technician": { localUserUid: "USR-TECH-1", email: "connor@kharon.co.za", displayName: "Field Technician" },
-  "dev-dispatcher": { localUserUid: "USR-DISP-1", email: "connor@kharon.co.za", displayName: "Dispatch Controller" },
-  "dev-admin": { localUserUid: "USR-ADMIN-1", email: "connor@kharon.co.za", displayName: "Security Admin" }
+  "dev-client": { localUserUid: "USR-CLIENT-1", email: "dev.client@kharon.invalid", displayName: "Client Operator" },
+  "dev-technician": { localUserUid: "USR-TECH-1", email: "dev.technician@kharon.invalid", displayName: "Field Technician" },
+  "dev-dispatcher": { localUserUid: "USR-DISP-1", email: "dev.dispatcher@kharon.invalid", displayName: "Dispatch Controller" },
+  "dev-admin": { localUserUid: "USR-ADMIN-1", email: "dev.admin@kharon.invalid", displayName: "Security Admin" }
 };
 
 export async function verifyIdentity(args: {
