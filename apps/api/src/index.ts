@@ -111,7 +111,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
   const app = new Hono<AppBindings>();
   app.use("*", correlationMiddleware);
-  app.use("/api/v1/*", apiSecurityHeadersMiddleware());
+  app.use("*", apiSecurityHeadersMiddleware());
   app.use("/api/v1/*", accessMiddleware(config));
   app.use("*", sessionMiddleware(config));
 
@@ -244,19 +244,16 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
         googleClientId: config.googleClientId
       });
     } catch (error) {
-      if (error instanceof GoogleAdapterError) {
-        logApiEvent("error", "auth.google_login.verify_failed", {
-          correlationId,
-          backendClientId: config.googleClientId,
-          frontendClientId: frontendClientId || null,
-          tokenAudienceHint,
-          idTokenLength: body.id_token.length,
-          googleStatus: error.status,
-          googleCode: error.code,
-          googleMessage: error.message,
-          googleDetails: error.details
-        });
-      }
+      logApiEvent("error", "auth.google_login.failed", {
+        correlationId,
+        backendClientId: config.googleClientId,
+        frontendClientId: frontendClientId || null,
+        tokenAudienceHint,
+        error: String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        googleStatus: error instanceof GoogleAdapterError ? error.status : undefined,
+        googleCode: error instanceof GoogleAdapterError ? error.code : undefined
+      });
       throw error;
     }
 
@@ -1284,11 +1281,38 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
   app.route("/api/v1", api);
 
+  // Fallback to static assets for non-API routes
+  app.get("*", async (c) => {
+    // If it's an API route that reached here, it's a 404
+    if (c.req.path.startsWith("/api/")) {
+      return c.json(
+        envelopeError({
+          correlationId: c.get("correlationId"),
+          error: { code: "not_found", message: "API endpoint not found" }
+        }),
+        404
+      );
+    }
+
+    // Otherwise, try serving from Cloudflare Assets
+    return c.env.ASSETS.fetch(c.req.raw);
+  });
+
   return app;
 }
 
-const defaultApp = createApp(parseEnvBindings((globalThis as { process?: { env?: Record<string, string> } }).process?.env ?? {}));
 const runtimeAppCache = new Map<string, Hono<AppBindings>>();
+let processEnvApp: Hono<AppBindings> | null = null;
+
+function getProcessEnvApp(): Hono<AppBindings> {
+  if (processEnvApp) {
+    return processEnvApp;
+  }
+
+  const processEnv = parseEnvBindings((globalThis as { process?: { env?: Record<string, string> } }).process?.env ?? {});
+  processEnvApp = createApp(processEnv);
+  return processEnvApp;
+}
 
 function getRuntimeApp(runtimeEnv: Record<string, string | undefined>): Hono<AppBindings> {
   const key = envCacheKey(runtimeEnv);
@@ -1303,10 +1327,38 @@ function getRuntimeApp(runtimeEnv: Record<string, string | undefined>): Hono<App
 
 export default {
   fetch(request: Request, env: Record<string, unknown>) {
-    const runtimeEnv = parseEnvBindings(env);
-    if (Object.keys(runtimeEnv).length > 0) {
-      return getRuntimeApp(runtimeEnv).fetch(request, env);
+    try {
+      const runtimeEnv = parseEnvBindings(env);
+      if (Object.keys(runtimeEnv).length > 0) {
+        return getRuntimeApp(runtimeEnv).fetch(request, env);
+      }
+      return getProcessEnvApp().fetch(request, env);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          level: "error",
+          event: "api.bootstrap.failed",
+          message,
+          stack: error instanceof Error ? error.stack : undefined
+        })
+      );
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: {
+            code: "bootstrap_error",
+            message
+          }
+        }),
+        {
+          status: 500,
+          headers: {
+            "content-type": "application/json; charset=utf-8"
+          }
+        }
+      );
     }
-    return defaultApp.fetch(request, env);
   }
 };

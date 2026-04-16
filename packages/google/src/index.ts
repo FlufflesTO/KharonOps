@@ -9,8 +9,8 @@ export * from "./errors.js";
 
 function envValue(env: Record<string, string | undefined>, key: string): string {
   const value = String(env[key] ?? "").trim();
-  // Handle escaped newlines (\n) which often occur in .env files when not using a specialized loader
-  if (value.includes("\\n") && (key.includes("PRIVATE_KEY") || key.includes("JSON"))) {
+  // Handle escaped newlines (\n) for standalone private-key env vars.
+  if (value.includes("\\n") && key.includes("PRIVATE_KEY")) {
     return value.replace(/\\n/g, "\n");
   }
   return value;
@@ -33,9 +33,12 @@ function parseServiceAccountJson(raw: string): { email: string; privateKey: stri
 
   try {
     const parsed = JSON.parse(raw) as { client_email?: string; private_key?: string };
+    const privateKeyRaw = String(parsed.private_key ?? "");
     return {
       email: String(parsed.client_email ?? ""),
-      privateKey: String(parsed.private_key ?? "")
+      privateKey: privateKeyRaw.includes("\\n")
+        ? privateKeyRaw.replace(/\\n/g, "\n")
+        : privateKeyRaw
     };
   } catch {
     return { email: "", privateKey: "" };
@@ -131,7 +134,11 @@ export function createWorkspaceRails(env: Record<string, string | undefined>): W
     if (canUseProduction(config)) {
       return createProductionWorkspaceRails(config);
     }
-    throw new Error("GOOGLE_RAILS_MODE=production but production Google rails configuration is incomplete.");
+    const missing = listMissingGoogleProductionConfig(env);
+    const detail = missing.length > 0 ? missing.join(", ") : "unknown";
+    throw new Error(
+      `GOOGLE_RAILS_MODE=production but production Google rails configuration is incomplete. Missing: ${detail}.`
+    );
   }
 
   if (canUseProduction(config)) {
