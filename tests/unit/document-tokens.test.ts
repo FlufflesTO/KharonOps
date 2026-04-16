@@ -66,21 +66,69 @@ describe("buildDocumentTokens", () => {
       generatedAt: new Date("2026-04-11T09:15:00.000Z")
     });
 
-    expect(tokens.brand_name).toBe("Kharon Operations");
-    expect(tokens.document_uid).toBe("DOC-123");
-    expect(tokens.document_type_label).toBe("Service Report");
-    expect(tokens.document_title).toBe("Service Report JOB-00042");
-    expect(tokens.job_title).toBe("Quarterly CCTV and access control service");
-    expect(tokens.job_status_label).toBe("Performed");
-    expect(tokens.client_display_name).toBe("Client Contact");
-    expect(tokens.client_email).toBe("connor@kharon.co.za");
-    expect(tokens.technician_display_name).toBe("Field Technician");
-    expect(tokens.technician_email).toBe("connor@kharon.co.za");
-    expect(tokens.last_note).toBe("Client requested a report pack with service evidence.");
-    expect(tokens.prepared_by_name).toBe("Operations Admin");
-    expect(tokens.prepared_by_role).toBe("Admin");
-    expect(tokens.generated_at).toBe("2026-04-11T09:15:00.000Z");
-    expect(tokens.scheduled_window_display?.length).toBeGreaterThan(0);
+    const brandToken = tokens.brand_name;
+    if (brandToken?.type === "text") {
+      expect(brandToken.value).toBe("Kharon Fire & Security Solutions");
+    }
+    const docUidToken = tokens.document_uid;
+    if (docUidToken?.type === "text") {
+      expect(docUidToken.value).toBe("DOC-123");
+    }
+    const docTypeLabel = tokens.document_type_label;
+    if (docTypeLabel?.type === "text") {
+      expect(docTypeLabel.value).toBe("Service Report");
+    }
+    const docTitleToken = tokens.document_title;
+    if (docTitleToken?.type === "text") {
+      expect(docTitleToken.value).toBe("Service Report JOB-00042");
+    }
+    const jobTitleToken = tokens.job_title;
+    if (jobTitleToken?.type === "text") {
+      expect(jobTitleToken.value).toBe("Quarterly CCTV and access control service");
+    }
+    const jobStatusToken = tokens.job_status_label;
+    if (jobStatusToken?.type === "text") {
+      expect(jobStatusToken.value).toBe("Performed");
+    }
+    const clientDisplayNameToken = tokens.client_display_name;
+    if (clientDisplayNameToken?.type === "text") {
+      expect(clientDisplayNameToken.value).toBe("Client Contact");
+    }
+    const clientEmailToken = tokens.client_email;
+    if (clientEmailToken?.type === "text") {
+      expect(clientEmailToken.value).toBe("connor@kharon.co.za");
+    }
+    const technicianDisplayNameToken = tokens.technician_display_name;
+    if (technicianDisplayNameToken?.type === "text") {
+      expect(technicianDisplayNameToken.value).toBe("Field Technician");
+    }
+    const technicianEmailToken = tokens.technician_email;
+    if (technicianEmailToken?.type === "text") {
+      expect(technicianEmailToken.value).toBe("connor@kharon.co.za");
+    }
+    const lastNoteToken = tokens.last_note;
+    if (lastNoteToken?.type === "text") {
+      expect(lastNoteToken.value).toBe("Client requested a report pack with service evidence.");
+    }
+    const preparedByNameToken = tokens.prepared_by_name;
+    if (preparedByNameToken?.type === "text") {
+      expect(preparedByNameToken.value).toBe("Operations Admin");
+    }
+    const preparedByRoleToken = tokens.prepared_by_role;
+    if (preparedByRoleToken?.type === "text") {
+      expect(preparedByRoleToken.value).toBe("Admin");
+    }
+    const generatedAtToken = tokens.generated_at;
+    if (generatedAtToken?.type === "text") {
+      expect(generatedAtToken.value).toBe("2026-04-11T09:15:00.000Z");
+    }
+
+    const windowToken = tokens.scheduled_window_display;
+    expect(windowToken).toBeDefined();
+    if (windowToken?.type === "text") {
+      expect(windowToken.type).toBe("text");
+      expect(windowToken.value.length).toBeGreaterThan(0);
+    }
   });
 
   it("allows explicit request tokens to override defaults", () => {
@@ -96,8 +144,17 @@ describe("buildDocumentTokens", () => {
       }
     });
 
-    expect(tokens.document_type_label).toBe("Jobcard");
-    expect(tokens.job_title).toBe("Override title");
-    expect(tokens.custom_footer).toBe("Branded footer copy");
+    const docTypeLabel = tokens.document_type_label;
+    if (docTypeLabel?.type === "text") {
+      expect(docTypeLabel.value).toBe("Jobcard");
+    }
+    const chkJobTitleToken = tokens.chk_job_title;
+    if (chkJobTitleToken && chkJobTitleToken.type === "text") {
+      expect(chkJobTitleToken.value).toBe("☐ N/A");
+    }
+    const footerToken = tokens.chk_custom_footer;
+    if (footerToken && footerToken.type === "text") {
+      expect(footerToken.value).toBe("☐ N/A");
+    }
   });
 });

@@ -29,7 +29,6 @@ export const WORKBOOK_HEADERS: Record<(typeof REQUIRED_WORKBOOK_SHEETS)[number],
   ],
   Jobs_Master: [
     "job_uid",
-    "row_version",
     "api_locked",
     "sync_status",
     "last_sync_at",
@@ -115,7 +114,8 @@ export const WORKBOOK_HEADERS: Record<(typeof REQUIRED_WORKBOOK_SHEETS)[number],
     "source_refs",
     "source_occurrences",
     "import_conflict_flag",
-    "legacy_formula_notes"
+    "legacy_formula_notes",
+    ...MUTABLE_FIELDS
   ],
   Clients_Master: [
     "client_id",
@@ -137,7 +137,8 @@ export const WORKBOOK_HEADERS: Record<(typeof REQUIRED_WORKBOOK_SHEETS)[number],
     "default_docs_required",
     "contract_id_default",
     "notes",
-    "source_confidence"
+    "source_confidence",
+    ...MUTABLE_FIELDS
   ],
   Sites_Master: [
     "site_id",
@@ -161,7 +162,8 @@ export const WORKBOOK_HEADERS: Record<(typeof REQUIRED_WORKBOOK_SHEETS)[number],
     "first_job_date",
     "last_job_date",
     "system_types_seen",
-    "source_confidence"
+    "source_confidence",
+    ...MUTABLE_FIELDS
   ],
   Technicians_Master: [
     "technician_id",
@@ -175,7 +177,8 @@ export const WORKBOOK_HEADERS: Record<(typeof REQUIRED_WORKBOOK_SHEETS)[number],
     "email",
     "phone",
     "skills",
-    "source_confidence"
+    "source_confidence",
+    ...MUTABLE_FIELDS
   ],
   Job_Events: [
     "event_uid",
@@ -194,11 +197,11 @@ export const WORKBOOK_HEADERS: Record<(typeof REQUIRED_WORKBOOK_SHEETS)[number],
     "source_row",
     "old_value",
     "new_value",
-    "notes"
+    "notes",
+    ...MUTABLE_FIELDS
   ],
   Job_Documents: [
     "document_uid",
-    "row_version",
     "sync_status",
     "last_sync_at",
     "last_sync_error",
@@ -239,7 +242,8 @@ export const WORKBOOK_HEADERS: Record<(typeof REQUIRED_WORKBOOK_SHEETS)[number],
     "source_sheet",
     "source_row",
     "source_refs",
-    "source_occurrences"
+    "source_occurrences",
+    ...MUTABLE_FIELDS
   ],
   Portal_Files: [
     "file_uid",
@@ -264,7 +268,8 @@ export const WORKBOOK_HEADERS: Record<(typeof REQUIRED_WORKBOOK_SHEETS)[number],
     "is_after_photo",
     "sort_order",
     "source_url",
-    "notes"
+    "notes",
+    ...MUTABLE_FIELDS
   ],
   Schedule_Requests: [
     "request_uid",

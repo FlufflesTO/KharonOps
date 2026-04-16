@@ -44,8 +44,8 @@ export const scheduleRescheduleSchema = z.object({
 
 export const documentGenerateSchema = z.object({
   job_uid: z.string().trim().min(1),
-  document_type: z.enum(["jobcard", "service_report"]),
-  tokens: z.record(z.string(), z.string()).default({})
+  document_type: z.enum(["jobcard", "service_report", "certificate"]),
+  tokens: z.record(z.string(), z.unknown()).default({})
 });
 
 export const documentPublishSchema = z.object({
@@ -53,7 +53,7 @@ export const documentPublishSchema = z.object({
   row_version: z.number().int().nonnegative(),
   client_visible: z.boolean().default(true),
   job_uid: z.string().trim().min(1).optional(),
-  document_type: z.enum(["jobcard", "service_report"]).optional()
+  document_type: z.enum(["jobcard", "service_report", "certificate"]).optional()
 });
 
 export const syncMutationSchema = z.discriminatedUnion("kind", [

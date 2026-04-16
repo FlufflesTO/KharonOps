@@ -16,6 +16,7 @@ function createRails(seed: Record<string, RowRecord[]>): { rails: WorkspaceRails
 
   const rails: WorkspaceRails = {
     mode: "local",
+    driveRootFolderId: "root-id",
     sheets: {
       async ensureWorkbookSchema() {
         return;
@@ -40,6 +41,9 @@ function createRails(seed: Record<string, RowRecord[]>): { rails: WorkspaceRails
     docs: {
       async generateDocument() {
         return { drive_file_id: "unused", pdf_file_id: "unused" };
+      },
+      async listFiles() {
+        return [];
       }
     },
     drive: {

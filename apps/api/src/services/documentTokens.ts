@@ -59,7 +59,7 @@ export function buildDocumentTokens(args: {
   actor: SessionUser;
   users: UserRow[];
   generatedAt?: Date;
-  overrides?: Record<string, string>;
+  overrides?: Record<string, unknown>;
 }): Record<string, StructuralToken> {
   const generatedAt = args.generatedAt ?? new Date();
   const generatedAtIso = generatedAt.toISOString();
@@ -72,7 +72,7 @@ export function buildDocumentTokens(args: {
     Object.entries(args.overrides).forEach(([key, value]) => {
       checklistRows.push({
         requirement: formatLabel(key),
-        status: formatStatusIcon(value)
+        status: formatStatusIcon(String(value ?? ""))
       });
     });
   }
@@ -127,7 +127,7 @@ export function buildDocumentTokens(args: {
 
   if (args.overrides) {
     Object.entries(args.overrides).forEach(([key, value]) => {
-      tokens[`chk_${key}`] = { type: "text", value: formatStatusIcon(value) };
+      tokens[`chk_${key}`] = { type: "text", value: formatStatusIcon(String(value ?? "")) };
     });
   }
 

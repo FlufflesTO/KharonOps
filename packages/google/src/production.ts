@@ -304,14 +304,24 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       });
 
       const documentId = copyResponse.id;
-      const docData = await googleApiRequest<{ body: { content: any[] } }>({
+      // We use unknown for content since the full Google Docs body structure is massive
+      // and we only use batchUpdate to perform the actual replacements.
+      const docData = await googleApiRequest<{ body: { content: unknown[] } }>({
         config,
         service: "docs",
         url: `https://docs.googleapis.com/v1/documents/${documentId}`,
         scopes: ["https://www.googleapis.com/auth/documents.readonly"]
       });
 
-      const batchRequests: any[] = [];
+      interface GoogleDocsBatchRequest {
+        replaceAllText?: {
+          containsText: { text: string; matchCase: boolean };
+          replaceText: string;
+        };
+        // Add other properties as needed if we expand the document engine
+      }
+
+      const batchRequests: GoogleDocsBatchRequest[] = [];
 
       // Pass 1: Handle Scalars (Text)
       Object.entries(args.tokens).forEach(([token, metadata]) => {
