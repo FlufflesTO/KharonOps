@@ -1319,7 +1319,19 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
 
-    const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
+    let assetResponse = await c.env.ASSETS.fetch(c.req.raw);
+
+    // SPA Fallback routing for React apps (Site and Portal)
+    if (assetResponse.status === 404 && c.req.method === "GET") {
+      const isApi = c.req.path.startsWith("/api/");
+      if (!isApi) {
+        const fallbackUrl = new URL(c.req.url);
+        const isPortal = c.req.path.startsWith("/portal/");
+        fallbackUrl.pathname = isPortal ? "/portal/index.html" : "/index.html";
+        const fallbackReq = new Request(fallbackUrl.toString(), c.req.raw);
+        assetResponse = await c.env.ASSETS.fetch(fallbackReq);
+      }
+    }
 
     // IMPORTANT: The ASSETS binding returns a Response whose Headers object is
     // immutable (Web API spec). We must clone it and explicitly merge in the

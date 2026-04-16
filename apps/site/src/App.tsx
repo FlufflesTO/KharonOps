@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
 
 const heroSignals = [
   "South Africa service coverage",
@@ -122,23 +123,25 @@ const caseStudies = [
   }
 ];
 
-export function SiteApp(): React.JSX.Element {
-  // Smart sticky: hide nav on scroll-down, reveal on scroll-up.
-  // Uses a ref for the previous scroll position to avoid stale closures.
+// --- Layout Wrapper ---
+function Layout() {
   const [navHidden, setNavHidden] = useState(false);
   const lastScrollY = useRef(0);
+  const location = useLocation();
+
+  // Scroll to top when path changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   useEffect(() => {
     function onScroll(): void {
       const currentY = window.scrollY;
-      // Reveal immediately when within 60px of top (hysteresis guard)
       if (currentY < 60) {
         setNavHidden(false);
       } else if (currentY > lastScrollY.current + 4) {
-        // Scrolling down — hide
         setNavHidden(true);
       } else if (currentY < lastScrollY.current - 4) {
-        // Scrolling up — show
         setNavHidden(false);
       }
       lastScrollY.current = currentY;
@@ -150,7 +153,7 @@ export function SiteApp(): React.JSX.Element {
   return (
     <div className="site-shell">
       <header className={`site-nav${navHidden ? " site-nav--hidden" : ""}`}>
-        <a className="site-brand" href="#top">
+        <Link className="site-brand" to="/">
           <div className="site-brand__mark">
             <svg viewBox="0 0 100 100" width="32" height="32">
               <circle cx="50" cy="50" r="45" fill="none" stroke="var(--color-primary)" strokeWidth="8" />
@@ -162,214 +165,31 @@ export function SiteApp(): React.JSX.Element {
             <strong>KHARON</strong>
             <small>Fire &amp; Security Solutions</small>
           </span>
-        </a>
-
+        </Link>
         <nav className="site-links" aria-label="Command Navigation">
-          <a href="#solutions">Solutions</a>
-          <a href="#compliance">Compliance</a>
-          <a href="#operational-trail">Operational Trail</a>
+          <Link to="/solutions">Solutions</Link>
+          <Link to="/compliance">Compliance</Link>
+          <Link to="/operational-trail">Operational Trail</Link>
         </nav>
-
         <div className="site-nav__actions">
-          {/* Compact status indicator — replaces the large pill that consumed
-              excessive header real-estate on small screens */}
           <span className="nav-status-dot nav-status-dot--live" aria-label="Operational systems live" title="Operational systems live" />
         </div>
       </header>
 
       <main>
-        <section className="hero-section" id="top">
-          <div className="hero-grid">
-            <div className="hero-copy">
-              <p className="hero-kicker">SANS-ALIGNED OPERATIONAL COMMAND</p>
-              <h1>
-                <span className="hero-line">High-Stakes Fire</span>
-                <span className="hero-line hero-line--accent">&amp; Security Engineering</span>
-              </h1>
-              <p className="hero-summary">
-                Kharon provides the integrated operational command for your site's safety. From SANS 10139 fire detection to 
-                SANS 14520 gaseous suppression, we deliver documented, audit-ready evidence for environments where 
-                the margin for error is zero.
-              </p>
-
-              <div className="hero-actions">
-                <a className="site-button site-button--primary" href="mailto:admin@kharon.co.za?subject=Service%20Assessment%20Request">
-                  Request Command Audit
-                </a>
-                <a className="site-button site-button--secondary" href="/portal/">
-                  Personnel Access
-                </a>
-              </div>
-
-              <div className="hero-trust-strip">
-                {heroSignals.map((signal) => (
-                  <div key={signal} className="hero-trust-pill">
-                    <span className="hero-trust-pill__dot" />
-                    <span>{signal}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="hero-visual" aria-hidden="true">
-              <div className="hero-card-stack">
-                {heroCards.map((card) => (
-                  <article key={card.title} className="hero-card" data-tone={card.tone}>
-                    <div className="hero-card__header">
-                      <div>
-                        <span className="hero-card__title">{card.title}</span>
-                        <strong>{card.metric}</strong>
-                      </div>
-                      <span className={`hero-badge hero-badge--${card.tone}`}>{card.status}</span>
-                    </div>
-                    <div className="hero-card__bar">
-                      <span className="hero-card__bar-fill" />
-                    </div>
-                    <ul className="hero-card__list">
-                      {card.items.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="signal-band" aria-label="Engineering Standards">
-          <div className="signal-band__inner">
-            {marketMetrics.map((metric) => (
-              <div key={metric.label} className="signal-band__item">
-                <span>{metric.value}</span>
-                <small>{metric.label}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="site-section" id="solutions">
-          <div className="section-heading">
-            <p className="section-kicker">Engineering Solutions</p>
-            <h2>Total compliance across detection, suppression, and physical security.</h2>
-          </div>
-
-          <div className="service-grid">
-            {servicePrograms.map((program) => (
-              <article key={program.title} className="service-card">
-                <div className="service-card__header">
-                  <div className="service-card__code">{program.code}</div>
-                  <div>
-                    <span className="service-card__meta">{program.meta}</span>
-                    <h3>{program.title}</h3>
-                  </div>
-                  <span className="hero-badge hero-badge--blue">{program.status}</span>
-                </div>
-                <p>{program.body}</p>
-                <ul>
-                  {program.points.map((point) => (
-                    <li key={point}>{point}</li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="site-section site-section--split" id="compliance">
-          <div className="section-heading">
-            <p className="section-kicker">Compliance Engine</p>
-            <h2>Verifiable evidence. Precision execution.</h2>
-          </div>
-
-          <div className="operations-board">
-            <div className="operations-flow">
-              <div className="operations-flow__header">
-                <p className="section-kicker">Certification Flow</p>
-                <h3>Audit-ready reporting trail</h3>
-              </div>
-              <div className="operations-timeline">
-                {workflowSteps.map((item, index) => (
-                  <article key={item.step} className="operations-timeline__item">
-                    <span className="operations-timeline__index">0{index + 1}</span>
-                    <div>
-                      <h4>{item.step}</h4>
-                      <p>{item.body}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-
-            <aside className="assurance-panel">
-              <p className="section-kicker">Command Assurances</p>
-              <h3>Operational standards</h3>
-              <div className="assurance-list">
-                {assurancePanels.map((panel) => (
-                  <article key={panel.label} className="assurance-list__item">
-                    <span>{panel.label}</span>
-                    <p>{panel.detail}</p>
-                  </article>
-                ))}
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        <section className="site-section" id="operational-trail">
-          <div className="section-heading">
-            <p className="section-kicker">Operational Trail</p>
-            <h2>Immutable records of site integrity.</h2>
-          </div>
-
-          <div className="case-grid">
-            {caseStudies.map((study) => (
-              <article key={study.title} className="case-card">
-                <div className="case-card__visual">
-                  <span>{study.tag}</span>
-                  <strong>{study.stat}</strong>
-                </div>
-                <div className="case-card__body">
-                  <h3>{study.title}</h3>
-                  <p>{study.detail}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="site-section cta-section">
-          <div className="cta-panel">
-            <div className="cta-panel__copy">
-              <p className="section-kicker">Next Engagement</p>
-              <h2>Authorize a command audit of your security posture.</h2>
-              <p>
-                Align your site documentation with SANS requirements via the Kharon Command Centre. 
-                Move from fragmented reporting to a single, integrated evidence trail.
-              </p>
-            </div>
-            <div className="cta-panel__actions">
-              <a className="site-button site-button--primary" href="mailto:admin@kharon.co.za?subject=Command%20Centre%20Enquiry">
-                Request Service Partnership
-              </a>
-              <a className="site-button site-button--secondary" href="/portal/">
-                Access Command Centre
-              </a>
-            </div>
-          </div>
-        </section>
+        <Outlet />
       </main>
 
       <footer className="site-footer">
         <div className="site-footer__inner">
           <div className="site-footer__brand">
-            <strong>KHARON FIRE &amp; SECURITY SOLUTIONS</strong>
+            <strong>KHARON FIRE &amp; Security SOLUTIONS</strong>
             <span>Unit 58, M5 Freeway Park, Cnr Uppercamp &amp; Berkley Rd, Ndabeni, Maitland, 7405</span>
             <small>Reg: 2016/313076/07 • T: 061 545 8830 • E: admin@kharon.co.za</small>
           </div>
           <nav className="site-footer__links" aria-label="Compliance">
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
             <a href="/portal/">Portal Access</a>
           </nav>
         </div>
@@ -378,3 +198,233 @@ export function SiteApp(): React.JSX.Element {
   );
 }
 
+// --- Page Components ---
+function HomePage() {
+  return (
+    <>
+      <section className="hero-section" id="top">
+        <div className="hero-grid">
+          <div className="hero-copy">
+            <p className="hero-kicker">SANS-ALIGNED OPERATIONAL COMMAND</p>
+            <h1>
+              <span className="hero-line">High-Stakes Fire</span>
+              <span className="hero-line hero-line--accent">&amp; Security Engineering</span>
+            </h1>
+            <p className="hero-summary">
+              Kharon provides the integrated operational command for your site's safety. From SANS 10139 fire detection to 
+              SANS 14520 gaseous suppression, we deliver documented, audit-ready evidence for environments where 
+              the margin for error is zero.
+            </p>
+            <div className="hero-actions">
+              <a className="site-button site-button--primary" href="mailto:admin@kharon.co.za?subject=Service%20Assessment%20Request">
+                Request Command Audit
+              </a>
+              <a className="site-button site-button--secondary" href="/portal/">
+                Personnel Access
+              </a>
+            </div>
+            <div className="hero-trust-strip">
+              {heroSignals.map((signal) => (
+                <div key={signal} className="hero-trust-pill">
+                  <span className="hero-trust-pill__dot" />
+                  <span>{signal}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="hero-visual" aria-hidden="true">
+            <div className="hero-card-stack">
+              {heroCards.map((card) => (
+                <article key={card.title} className="hero-card" data-tone={card.tone}>
+                  <div className="hero-card__header">
+                    <div>
+                      <span className="hero-card__title">{card.title}</span>
+                      <strong>{card.metric}</strong>
+                    </div>
+                    <span className={`hero-badge hero-badge--${card.tone}`}>{card.status}</span>
+                  </div>
+                  <div className="hero-card__bar">
+                    <span className="hero-card__bar-fill" />
+                  </div>
+                  <ul className="hero-card__list">
+                    {card.items.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="signal-band" aria-label="Engineering Standards">
+        <div className="signal-band__inner">
+          {marketMetrics.map((metric) => (
+            <div key={metric.label} className="signal-band__item">
+              <span>{metric.value}</span>
+              <small>{metric.label}</small>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <CtaSection />
+    </>
+  );
+}
+
+function SolutionsPage() {
+  return (
+    <>
+      <section className="site-section">
+        <div className="section-heading">
+          <p className="section-kicker">Engineering Solutions</p>
+          <h2>Total compliance across detection, suppression, and physical security.</h2>
+        </div>
+        <div className="service-grid">
+          {servicePrograms.map((program) => (
+            <article key={program.title} className="service-card">
+              <div className="service-card__header">
+                <div className="service-card__code">{program.code}</div>
+                <div>
+                  <span className="service-card__meta">{program.meta}</span>
+                  <h3>{program.title}</h3>
+                </div>
+                <span className="hero-badge hero-badge--blue">{program.status}</span>
+              </div>
+              <p>{program.body}</p>
+              <ul>
+                {program.points.map((point) => <li key={point}>{point}</li>)}
+              </ul>
+            </article>
+          ))}
+        </div>
+      </section>
+      <CtaSection />
+    </>
+  );
+}
+
+function CompliancePage() {
+  return (
+    <>
+      <section className="site-section site-section--split">
+        <div className="section-heading">
+          <p className="section-kicker">Compliance Engine</p>
+          <h2>Verifiable evidence. Precision execution.</h2>
+        </div>
+        <div className="operations-board">
+          <div className="operations-flow">
+            <div className="operations-flow__header">
+              <p className="section-kicker">Certification Flow</p>
+              <h3>Audit-ready reporting trail</h3>
+            </div>
+            <div className="operations-timeline">
+              {workflowSteps.map((item, index) => (
+                <article key={item.step} className="operations-timeline__item">
+                  <span className="operations-timeline__index">0{index + 1}</span>
+                  <div>
+                    <h4>{item.step}</h4>
+                    <p>{item.body}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+          <aside className="assurance-panel">
+            <p className="section-kicker">Command Assurances</p>
+            <h3>Operational standards</h3>
+            <div className="assurance-list">
+              {assurancePanels.map((panel) => (
+                <article key={panel.label} className="assurance-list__item">
+                  <span>{panel.label}</span>
+                  <p>{panel.detail}</p>
+                </article>
+              ))}
+            </div>
+          </aside>
+        </div>
+      </section>
+      <CtaSection />
+    </>
+  );
+}
+
+function OperationalTrailPage() {
+  return (
+    <>
+      <section className="site-section">
+        <div className="section-heading">
+          <p className="section-kicker">Operational Trail</p>
+          <h2>Immutable records of site integrity.</h2>
+        </div>
+        <div className="case-grid">
+          {caseStudies.map((study) => (
+            <article key={study.title} className="case-card">
+              <div className="case-card__visual">
+                <span>{study.tag}</span>
+                <strong>{study.stat}</strong>
+              </div>
+              <div className="case-card__body">
+                <h3>{study.title}</h3>
+                <p>{study.detail}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+      <CtaSection />
+    </>
+  );
+}
+
+// Reusable CTA
+function CtaSection() {
+  return (
+    <section className="site-section cta-section">
+      <div className="cta-panel">
+        <div className="cta-panel__copy">
+          <p className="section-kicker">Next Engagement</p>
+          <h2>Authorize a command audit of your security posture.</h2>
+          <p>
+            Align your site documentation with SANS requirements via the Kharon Command Centre. 
+            Move from fragmented reporting to a single, integrated evidence trail.
+          </p>
+        </div>
+        <div className="cta-panel__actions">
+          <a className="site-button site-button--primary" href="mailto:admin@kharon.co.za?subject=Command%20Centre%20Enquiry">
+            Request Service Partnership
+          </a>
+          <a className="site-button site-button--secondary" href="/portal/">
+            Access Command Centre
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function NotFound() {
+  return (
+    <section className="site-section" style={{ minHeight: "60vh", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
+      <p className="section-kicker">Status 404</p>
+      <h2>Record Not Found</h2>
+      <p style={{ maxWidth: 500, margin: "1rem auto 2rem" }}>The requested page is not located in the public directory. If you are looking for an operational record, use the portal access.</p>
+      <Link to="/" className="site-button site-button--secondary">Return to Command Centre</Link>
+    </section>
+  );
+}
+
+// --- Main App Router ---
+export function SiteApp(): React.JSX.Element {
+  return (
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<HomePage />} />
+        <Route path="solutions" element={<SolutionsPage />} />
+        <Route path="compliance" element={<CompliancePage />} />
+        <Route path="operational-trail" element={<OperationalTrailPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
+  );
+}

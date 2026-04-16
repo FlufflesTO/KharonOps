@@ -70,12 +70,6 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
   );
 }
 
-// Default filter: "draft" (Open / Ready) — ensures the list opens showing only
-// immediately actionable jobs. Users must opt-in to see other statuses.
-// This is a deliberate UX decision: dispatchers and admins managing 200+ jobs
-// should land on work that needs action, not a wall of closed records.
-const DEFAULT_STATUS_FILTER: StatusFilter = "draft";
-
 // "all" is the sentinel value meaning no status filter is active.
 type StatusFilter = JobStatus | "all";
 

@@ -1,10 +1,9 @@
 /**
  * KharonOps Portal - DashboardView Component
  * Purpose: Role-specific landing dashboard that groups functional areas into
- *          action sections (Dispatch, Communication, People Sync, Admin,
- *          Documents, Jobs) rather than flat cards.
- *          Reduces information overload on login by surfacing only what is
- *          relevant to the active session role.
+ *          lean, purpose-specific sections. Each section contains only the
+ *          actions that belong to that function — no cross-contamination.
+ *          super_admin sees all sections from all roles in a single view.
  * Dependencies: apiClient (PortalSession), @kharon/domain (Role)
  * Structural Role: Rendered by App.tsx when portalView === "dashboard".
  */
@@ -21,16 +20,18 @@ function Icon({ d, size = 20 }: { d: string; size?: number }): React.JSX.Element
 }
 
 const ICONS = {
-  dispatch:      "M3 6h18M3 12h18M3 18h18",
-  comms:         "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
-  people:        "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
-  admin:         "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
-  documents:     "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z",
-  jobs:          "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
-  scheduling:    "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
-  compliance:    "M22 11.08V12a10 10 0 1 1-5.93-9.14",
-  audit:         "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7",
-  workspace:     "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z",
+  dispatch:   "M3 6h18M3 12h18M3 18h18",
+  comms:      "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  people:     "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+  admin:      "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  documents:  "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z",
+  jobs:       "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
+  scheduling: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+  compliance: "M22 11.08V12a10 10 0 1 1-5.93-9.14",
+  audit:      "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7",
+  workspace:  "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z",
+  checklist:  "M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 0 2-2h2a2 2 0 0 0 2 2m-6 9l2 2 4-4",
+  visibility: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
 };
 
 // ─── Action card ──────────────────────────────────────────────────────────────
@@ -83,11 +84,11 @@ function DashSection({ title, children }: SectionProps): React.JSX.Element {
 
 // ─── Role label map ────────────────────────────────────────────────────────────
 const ROLE_DISPLAY: Record<string, { label: string; sub: string }> = {
-  technician:  { label: "Field Technician",  sub: "FIELD OPERATIONS" },
-  dispatcher:  { label: "Dispatch Controller", sub: "SCHEDULING & COMMS" },
-  client:      { label: "Client Portal",      sub: "SERVICE VISIBILITY" },
-  admin:       { label: "Administration",     sub: "PLATFORM ADMIN" },
-  super_admin: { label: "Platform Command",   sub: "SUPER ADMIN — FULL ACCESS" },
+  technician:  { label: "Field Technician",     sub: "FIELD OPERATIONS" },
+  dispatcher:  { label: "Dispatch Controller",  sub: "SCHEDULING & COMMS" },
+  client:      { label: "Client Portal",        sub: "SERVICE VISIBILITY" },
+  admin:       { label: "Administration",       sub: "PLATFORM ADMIN" },
+  super_admin: { label: "Platform Command",     sub: "SUPER ADMIN — FULL ACCESS" },
 };
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
@@ -104,105 +105,275 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
   const meta = ROLE_DISPLAY[role] ?? { label: "Operations", sub: role.toUpperCase() };
 
   // ── TECHNICIAN ───────────────────────────────────────────────────────────────
+  // Purpose: Field execution. Show only the jobs they're assigned to and the
+  //          tools needed to execute and close them out on site. No admin noise.
   if (role === "technician") {
     return (
       <main className="dashboard-view">
         <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
-        <DashSection title="Jobs">
-          <ActionCard icon={ICONS.jobs} label="My Work Orders" description={`${openJobCount} active engagements assigned to you`} onClick={onEnterWorkspace} accent="green" badge={openJobCount} />
-          <ActionCard icon={ICONS.compliance} label="Closeout Checklist" description="Generate jobcard or service report before leaving site" onClick={onEnterWorkspace} accent="blue" />
+
+        <DashSection title="My Jobs">
+          <ActionCard
+            icon={ICONS.jobs}
+            label="Open Work Orders"
+            description={`${openJobCount} jobs assigned to you — open the workspace to begin or update`}
+            onClick={onEnterWorkspace}
+            accent="green"
+            badge={openJobCount}
+          />
         </DashSection>
-        <DashSection title="Field">
-          <ActionCard icon={ICONS.documents} label="Document History" description="View previously generated reports and evidence" onClick={onEnterWorkspace} accent="slate" />
+
+        <DashSection title="On-Site Closeout">
+          <ActionCard
+            icon={ICONS.checklist}
+            label="Generate Jobcard"
+            description="Capture readings, photos, and sign-off before leaving site"
+            onClick={onEnterWorkspace}
+            accent="blue"
+          />
+          <ActionCard
+            icon={ICONS.documents}
+            label="Prior Reports"
+            description="Review previously generated jobcards and service reports for reference"
+            onClick={onEnterWorkspace}
+            accent="slate"
+          />
         </DashSection>
       </main>
     );
   }
 
   // ── DISPATCHER ───────────────────────────────────────────────────────────────
+  // Purpose: Scheduling coordination and client-facing communication.
+  //          No job execution detail — that belongs to technicians.
   if (role === "dispatcher") {
     return (
       <main className="dashboard-view">
         <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
+
         <DashSection title="Dispatch">
-          <ActionCard icon={ICONS.dispatch} label="Job Queue" description={`${openJobCount} open engagements to coordinate`} onClick={onEnterWorkspace} accent="amber" badge={openJobCount} />
-          <ActionCard icon={ICONS.scheduling} label="Scheduling" description="Confirm and assign maintenance windows to technicians" onClick={onEnterWorkspace} accent="amber" />
+          <ActionCard
+            icon={ICONS.dispatch}
+            label="Job Queue"
+            description={`${openJobCount} open engagements awaiting schedule or technician assignment`}
+            onClick={onEnterWorkspace}
+            accent="amber"
+            badge={openJobCount}
+          />
+          <ActionCard
+            icon={ICONS.scheduling}
+            label="Scheduling"
+            description="Confirm, assign, or reschedule maintenance windows for open jobs"
+            onClick={onEnterWorkspace}
+            accent="amber"
+          />
         </DashSection>
+
         <DashSection title="Communication">
-          <ActionCard icon={ICONS.comms} label="Client Updates" description="Send Gmail or chat rail updates linked to a job record" onClick={onEnterWorkspace} accent="blue" />
+          <ActionCard
+            icon={ICONS.comms}
+            label="Client Updates"
+            description="Send Gmail or chat rail messages tied directly to a selected job record"
+            onClick={onEnterWorkspace}
+            accent="blue"
+          />
         </DashSection>
+
         <DashSection title="Documents">
-          <ActionCard icon={ICONS.documents} label="Document Control" description="Review and release controlled outputs per job" onClick={onEnterWorkspace} accent="slate" />
+          <ActionCard
+            icon={ICONS.documents}
+            label="Document Control"
+            description="Release or review controlled outputs — jobcards, service reports, certificates"
+            onClick={onEnterWorkspace}
+            accent="slate"
+          />
         </DashSection>
       </main>
     );
   }
 
   // ── CLIENT ───────────────────────────────────────────────────────────────────
+  // Purpose: Read-only visibility into active service records and published documents.
+  //          No scheduling, no job execution, no admin functions.
   if (role === "client") {
     return (
       <main className="dashboard-view">
         <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
-        <DashSection title="Jobs">
-          <ActionCard icon={ICONS.jobs} label="Active Service Records" description="Track live maintenance or callout status for your sites" onClick={onEnterWorkspace} accent="blue" badge={openJobCount} />
+
+        <DashSection title="Active Services">
+          <ActionCard
+            icon={ICONS.visibility}
+            label="Service Status"
+            description={`${openJobCount} active service records — track live job progress for your sites`}
+            onClick={onEnterWorkspace}
+            accent="blue"
+            badge={openJobCount}
+          />
         </DashSection>
-        <DashSection title="Documents">
-          <ActionCard icon={ICONS.compliance} label="Reports & Evidence" description="Review published jobcards and compliance documents" onClick={onEnterWorkspace} accent="green" />
+
+        <DashSection title="Compliance Documents">
+          <ActionCard
+            icon={ICONS.compliance}
+            label="Reports & Evidence"
+            description="Review published jobcards, service reports, and SANS compliance certificates"
+            onClick={onEnterWorkspace}
+            accent="green"
+          />
         </DashSection>
       </main>
     );
   }
 
   // ── ADMIN ────────────────────────────────────────────────────────────────────
+  // Purpose: Platform operations oversight — full job visibility, governance controls,
+  //          and document management. No on-site field execution functions.
   if (role === "admin") {
     return (
       <main className="dashboard-view">
         <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
+
         <DashSection title="Jobs">
-          <ActionCard icon={ICONS.jobs} label="Operational Engagements" description={`${openJobCount} open jobs across all technicians`} onClick={onEnterWorkspace} accent="blue" badge={openJobCount} />
+          <ActionCard
+            icon={ICONS.jobs}
+            label="All Engagements"
+            description={`${openJobCount} open jobs platform-wide — search, filter, and act on any record`}
+            onClick={onEnterWorkspace}
+            accent="blue"
+            badge={openJobCount}
+          />
         </DashSection>
-        <DashSection title="Admin">
-          <ActionCard icon={ICONS.admin} label="Platform Governance" description="Audit surface, health checks, and privileged recovery" onClick={onEnterWorkspace} accent="slate" />
-          <ActionCard icon={ICONS.audit} label="Audit Trail" description="Review document history and close-out posture by job" onClick={onEnterWorkspace} accent="slate" />
-        </DashSection>
+
         <DashSection title="Documents">
-          <ActionCard icon={ICONS.documents} label="Document Control" description="Review and control all generated outputs platform-wide" onClick={onEnterWorkspace} accent="purple" />
+          <ActionCard
+            icon={ICONS.documents}
+            label="Document Control"
+            description="Review, release, and manage all controlled outputs across every job"
+            onClick={onEnterWorkspace}
+            accent="purple"
+          />
+        </DashSection>
+
+        <DashSection title="Administration">
+          <ActionCard
+            icon={ICONS.admin}
+            label="Platform Governance"
+            description="Health checks, configuration audit, and privileged recovery actions"
+            onClick={onEnterWorkspace}
+            accent="slate"
+          />
+          <ActionCard
+            icon={ICONS.audit}
+            label="Audit Trail"
+            description="Forensic log of platform activity — certification posture and closeout verification"
+            onClick={onEnterWorkspace}
+            accent="slate"
+          />
         </DashSection>
       </main>
     );
   }
 
   // ── SUPER ADMIN ──────────────────────────────────────────────────────────────
+  // Purpose: Full-access view combining all role capabilities in labelled sections.
+  //          Each section is purpose-specific and scoped to one functional domain.
+  //          Technician | Dispatcher | Client | Admin — all visible, no overlap.
   return (
     <main className="dashboard-view">
       <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
 
-      <DashSection title="Dispatch">
-        <ActionCard icon={ICONS.dispatch} label="Job Queue" description={`${openJobCount} open engagements platform-wide`} onClick={onEnterWorkspace} accent="amber" badge={openJobCount} />
-        <ActionCard icon={ICONS.scheduling} label="Scheduling" description="Confirm, assign, and reschedule maintenance windows" onClick={onEnterWorkspace} accent="amber" />
+      {/* ── Field technician domain ── */}
+      <DashSection title="Field Operations">
+        <ActionCard
+          icon={ICONS.jobs}
+          label="Open Work Orders"
+          description={`${openJobCount} open jobs — technician job list with assign, note, and closeout`}
+          onClick={onEnterWorkspace}
+          accent="green"
+          badge={openJobCount}
+        />
+        <ActionCard
+          icon={ICONS.checklist}
+          label="Jobcard Generator"
+          description="Generate jobcards and service reports from the field execution workspace"
+          onClick={onEnterWorkspace}
+          accent="green"
+        />
       </DashSection>
 
-      <DashSection title="Communication">
-        <ActionCard icon={ICONS.comms} label="Client Outbound" description="Gmail and chat rails linked to selected job records" onClick={onEnterWorkspace} accent="blue" />
+      {/* ── Dispatcher domain ── */}
+      <DashSection title="Dispatch & Scheduling">
+        <ActionCard
+          icon={ICONS.dispatch}
+          label="Job Queue"
+          description="Assign technicians and confirm maintenance windows for open engagements"
+          onClick={onEnterWorkspace}
+          accent="amber"
+        />
+        <ActionCard
+          icon={ICONS.scheduling}
+          label="Schedule Control"
+          description="Confirm requests, adjust windows, and manage reschedule flows"
+          onClick={onEnterWorkspace}
+          accent="amber"
+        />
       </DashSection>
 
+      {/* ── Client-facing domain ── */}
+      <DashSection title="Client Visibility">
+        <ActionCard
+          icon={ICONS.comms}
+          label="Client Communications"
+          description="Send Gmail and chat rail updates — linked per job record"
+          onClick={onEnterWorkspace}
+          accent="blue"
+        />
+        <ActionCard
+          icon={ICONS.compliance}
+          label="Client-Facing Reports"
+          description="Review published compliance documents from the client view posture"
+          onClick={onEnterWorkspace}
+          accent="blue"
+        />
+      </DashSection>
+
+      {/* ── People & registry ── */}
       <DashSection title="People Sync">
-        <ActionCard icon={ICONS.people} label="People Registry" description="Sync technicians, clients, and users from the master sheet" onClick={onEnterWorkspace} accent="green" />
+        <ActionCard
+          icon={ICONS.people}
+          label="People Registry"
+          description="Sync technicians, clients, and provisioned users from the master roster"
+          onClick={onEnterWorkspace}
+          accent="purple"
+        />
       </DashSection>
 
-      <DashSection title="Jobs">
-        <ActionCard icon={ICONS.jobs} label="Operational Engagements" description="Full cross-role job list — search, filter, and act on any record" onClick={onEnterWorkspace} accent="blue" badge={openJobCount} />
-        <ActionCard icon={ICONS.compliance} label="Closeout & Compliance" description="Verify certified vs unclosed ratio across all sites" onClick={onEnterWorkspace} accent="green" />
-      </DashSection>
-
+      {/* ── Document control ── */}
       <DashSection title="Documents">
-        <ActionCard icon={ICONS.documents} label="Document Control" description="Platform-wide controlled output review and release" onClick={onEnterWorkspace} accent="purple" />
+        <ActionCard
+          icon={ICONS.documents}
+          label="Document Control"
+          description="Platform-wide controlled output review — release, publish, and audit"
+          onClick={onEnterWorkspace}
+          accent="slate"
+        />
       </DashSection>
 
-      <DashSection title="Admin">
-        <ActionCard icon={ICONS.admin} label="Platform Governance" description="Audit readiness, health checks, and privileged recovery" onClick={onEnterWorkspace} accent="slate" />
-        <ActionCard icon={ICONS.audit} label="Audit Trail" description="Forensic audit log and closeout posture verification" onClick={onEnterWorkspace} accent="slate" />
-        <ActionCard icon={ICONS.workspace} label="Workspace" description="Full operational workspace — all panels unlocked" onClick={onEnterWorkspace} accent="rose" />
+      {/* ── Platform administration ── */}
+      <DashSection title="Administration">
+        <ActionCard
+          icon={ICONS.admin}
+          label="Platform Governance"
+          description="Health checks, configuration audit, and privileged recovery"
+          onClick={onEnterWorkspace}
+          accent="rose"
+        />
+        <ActionCard
+          icon={ICONS.audit}
+          label="Forensic Audit Trail"
+          description="Immutable activity log — certification posture, closeout verification"
+          onClick={onEnterWorkspace}
+          accent="rose"
+        />
       </DashSection>
     </main>
   );
