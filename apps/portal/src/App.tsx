@@ -216,7 +216,6 @@ export function PortalApp(): React.JSX.Element {
     };
   }, []);
 
-  }, []);
 
   useEffect(() => {
     if (!session) {
@@ -514,9 +513,7 @@ export function PortalApp(): React.JSX.Element {
         setLoginToken={setLoginToken}
         onLogin={(token) => runAction(() => handleLogin(token))}
         onSupportTokenSubmit={() => runAction(handleSupportTokenSubmit)}
-        googleButtonStatus={googleButtonStatus}
         feedback={feedback}
-        googleButtonRef={googleButtonRef}
       />
     );
   }
