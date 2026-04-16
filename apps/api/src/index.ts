@@ -1281,9 +1281,14 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
   app.route("/api/v1", api);
 
-  // Fallback to static assets for non-API routes
+  // Fallback to static assets for non-API routes.
+  // run_worker_first = ["*"] in wrangler.toml means ALL requests now enter the
+  // worker. This catch-all proxies non-API GET requests to the Cloudflare Assets
+  // binding so the CDN continues to serve static files, while the middleware stack
+  // above (apiSecurityHeadersMiddleware) has already set the correct security
+  // headers including Cross-Origin-Opener-Policy: same-origin-allow-popups.
   app.get("*", async (c) => {
-    // If it's an API route that reached here, it's a 404
+    // API routes that reach this point have no registered handler — 404.
     if (c.req.path.startsWith("/api/")) {
       return c.json(
         envelopeError({
@@ -1294,8 +1299,24 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
 
-    // Otherwise, try serving from Cloudflare Assets
-    return c.env.ASSETS.fetch(c.req.raw);
+    // Fetch the static asset from the CDN binding.
+    const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
+
+    // IMPORTANT: The ASSETS binding returns a Response whose Headers object is
+    // immutable (Web API spec). We must clone it and explicitly merge in the
+    // security headers that apiSecurityHeadersMiddleware set via c.header().
+    // Without this clone, COOP and other security headers are silently dropped
+    // for all static asset responses including the portal index.html.
+    const mergedHeaders = new Headers(assetResponse.headers);
+    c.res.headers.forEach((value, key) => {
+      mergedHeaders.set(key, value);
+    });
+
+    return new Response(assetResponse.body, {
+      status: assetResponse.status,
+      statusText: assetResponse.statusText,
+      headers: mergedHeaders
+    });
   });
 
   return app;

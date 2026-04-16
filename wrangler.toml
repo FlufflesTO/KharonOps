@@ -8,7 +8,12 @@ keep_vars = false
 
 [assets]
 directory = "./dist/public"
-run_worker_first = ["/api/*"]
+# run_worker_first = ["/*"] ensures ALL requests (including GET / and GET /portal/)
+# pass through the Hono worker before the CDN serves static assets.
+# This is required for the global apiSecurityHeadersMiddleware to apply
+# Cross-Origin-Opener-Policy headers to the portal index.html entry point,
+# which is necessary for Google Identity Services popups to function (COOP fix).
+run_worker_first = ["/*"]
 
 [observability]
 enabled = true
@@ -73,7 +78,7 @@ CF_ACCESS_ISSUER = "https://kharonops-pages.cloudflareaccess.com"
 
 [env.public.assets]
 directory = "./dist/public"
-run_worker_first = ["/api/*"]
+run_worker_first = ["/*"]
 
 [[env.public.routes]]
 pattern = "tequit.co.za"
@@ -115,7 +120,7 @@ CF_ACCESS_ISSUER = ""
 
 [env.staging-public.assets]
 directory = "./dist/public"
-run_worker_first = ["/api/*"]
+run_worker_first = ["/*"]
 
 [env.staging-public.secrets]
 required = [

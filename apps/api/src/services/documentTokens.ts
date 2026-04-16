@@ -44,12 +44,20 @@ function formatScheduleWindow(job: JobRow): string {
   return `${formatTimeOnly(job.scheduled_start)} - ${formatTimeOnly(job.scheduled_end)}`;
 }
 
-function resolveClientUser(users: UserRow[], uid: string): UserRow | undefined {
-  return users.find(u => u.user_uid === uid);
+function resolveClientUser(users: UserRow[], clientUid: string): UserRow | undefined {
+  return (
+    users.find((u) => u.client_uid === clientUid && u.role === "client" && u.active === "true") ??
+    users.find((u) => u.client_uid === clientUid && u.active === "true") ??
+    users.find((u) => u.user_uid === clientUid)
+  );
 }
 
-function resolveTechnicianUser(users: UserRow[], uid: string): UserRow | undefined {
-  return users.find(u => u.user_uid === uid);
+function resolveTechnicianUser(users: UserRow[], technicianUid: string): UserRow | undefined {
+  return (
+    users.find((u) => u.technician_uid === technicianUid && u.role === "technician" && u.active === "true") ??
+    users.find((u) => u.technician_uid === technicianUid && u.active === "true") ??
+    users.find((u) => u.user_uid === technicianUid)
+  );
 }
 
 export function buildDocumentTokens(args: {
@@ -133,5 +141,4 @@ export function buildDocumentTokens(args: {
 
   return tokens;
 }
-
 
