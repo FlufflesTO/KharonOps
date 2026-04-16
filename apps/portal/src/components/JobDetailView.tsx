@@ -124,7 +124,6 @@ export function JobDetailView({
         <div className="control-block">
           <div className="control-block__head">
             <h3>Field controls</h3>
-            <p>Update execution state and add a job note from the active workspace.</p>
           </div>
 
           <div className="control-stack">
@@ -166,7 +165,6 @@ export function JobDetailView({
         <div className="control-block">
           <div className="control-block__head">
             <h3>Preferred slot request</h3>
-            <p>Submit a scheduling preference without leaving the selected job context.</p>
           </div>
           <div className="form-grid form-grid--three">
             <label className="field-stack">
@@ -201,7 +199,6 @@ export function JobDetailView({
         <div className="control-block">
           <div className="control-block__head">
             <h3>Controlled documents</h3>
-            <p>Generate the latest jobcard, service report, or certificate from the active job.</p>
           </div>
           <div className="button-row">
             <select

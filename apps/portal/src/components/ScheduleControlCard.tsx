@@ -87,7 +87,6 @@ export function ScheduleControlCard({
       <div className="control-block">
         <div className="control-block__head">
           <h3>Preferred slot request</h3>
-          <p>Submit a scheduling preference.</p>
         </div>
         <div className="form-grid form-grid--three">
           <label className="field-stack">
@@ -121,7 +120,6 @@ export function ScheduleControlCard({
       <div className="control-block">
         <div className="control-block__head">
           <h3>Confirm request</h3>
-          <p>Assign a technician and commit a slot.</p>
         </div>
         <div className="form-grid">
           <label className="field-stack">
@@ -183,7 +181,6 @@ export function ScheduleControlCard({
       <div className="control-block">
         <div className="control-block__head">
           <h3>Reschedule</h3>
-          <p>Move an existing schedule while preserving row-version control.</p>
         </div>
         <div className="form-grid">
           <label className="field-stack">
@@ -236,7 +233,6 @@ export function ScheduleControlCard({
       <div className="control-block">
         <div className="control-block__head">
           <h3>Publish document</h3>
-          <p>Move a generated record into the published state.</p>
         </div>
         <div className="button-row">
           <input

@@ -616,29 +616,31 @@ export function PortalApp(): React.JSX.Element {
           />
 
           <section className="workspace-grid">
-            <JobDetailView
-              selectedJob={selectedJob}
-              role={role}
-              selectableStatuses={selectableStatuses}
-              statusTarget={statusTarget}
-              setStatusTarget={setStatusTarget}
-              noteValue={noteValue}
-              setNoteValue={setNoteValue}
-              onStatusUpdate={() => runAction(handleStatusUpdate)}
-              onNote={() => runAction(handleNote)}
-              preferredStart={preferredStart}
-              setPreferredStart={setPreferredStart}
-              preferredEnd={preferredEnd}
-              setPreferredEnd={setPreferredEnd}
-              onScheduleRequest={() => runAction(handleScheduleRequest)}
-              documentType={documentType}
-              setDocumentType={setDocumentType}
-              onDocumentGenerate={() => runAction(handleDocumentGenerate)}
-              onChecklistChange={setChecklistData}
-              selectedJobTitle="Job Detail"
-            />
+            {activeWorkspaceTool === "jobs" && (
+              <JobDetailView
+                selectedJob={selectedJob}
+                role={role}
+                selectableStatuses={selectableStatuses}
+                statusTarget={statusTarget}
+                setStatusTarget={setStatusTarget}
+                noteValue={noteValue}
+                setNoteValue={setNoteValue}
+                onStatusUpdate={() => runAction(handleStatusUpdate)}
+                onNote={() => runAction(handleNote)}
+                preferredStart={preferredStart}
+                setPreferredStart={setPreferredStart}
+                preferredEnd={preferredEnd}
+                setPreferredEnd={setPreferredEnd}
+                onScheduleRequest={() => runAction(handleScheduleRequest)}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                onDocumentGenerate={() => runAction(handleDocumentGenerate)}
+                onChecklistChange={setChecklistData}
+                selectedJobTitle="Job Detail"
+              />
+            )}
 
-            {isDispatchRole && (
+            {activeWorkspaceTool === "schedule" && isDispatchRole && (
               <ScheduleControlCard
                 selectedJobUid={selectedJob?.job_uid ?? ""}
                 selectedJobRowVersion={selectedJob?.row_version ?? 1}
@@ -677,14 +679,14 @@ export function PortalApp(): React.JSX.Element {
               />
             )}
 
-            {isDispatchRole && (
+            {activeWorkspaceTool === "comms" && isDispatchRole && (
               <CommunicationRailsCard
                 selectedJobUid={selectedJob?.job_uid ?? ""}
                 onFeedback={setFeedback}
               />
             )}
 
-            {isAdmin && (
+            {activeWorkspaceTool === "admin" && isAdmin && (
               <AdminPanelCard
                 adminHealth={adminHealth}
                 adminAuditCount={adminAuditCount}
@@ -694,11 +696,27 @@ export function PortalApp(): React.JSX.Element {
               />
             )}
 
-            <DocumentHistoryCard
-              documents={documents}
-              selectedJobUid={selectedJob?.job_uid ?? ""}
-              onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_uid))}
-            />
+            {activeWorkspaceTool === "documents" && (
+              <DocumentHistoryCard
+                documents={documents}
+                selectedJobUid={selectedJob?.job_uid ?? ""}
+                onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_uid))}
+              />
+            )}
+
+            {activeWorkspaceTool === "people" && (
+              <div className="workspace-card">
+                <div className="panel-heading panel-heading--inline">
+                  <div>
+                    <p className="panel-eyebrow">Registry</p>
+                    <h2>People Sync</h2>
+                  </div>
+                </div>
+                <div style={{ padding: "1rem" }}>
+                  <p className="muted-copy">This functional domain is pending implementation.</p>
+                </div>
+              </div>
+            )}
           </section>
         </main>
       </div>

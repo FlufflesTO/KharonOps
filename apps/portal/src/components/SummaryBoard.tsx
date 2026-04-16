@@ -40,24 +40,24 @@ export function SummaryBoard({
     switch (role) {
       case "client":
         return [
-          { label: "Visible jobs", value: openJobCount, detail: "Service records available to this client context" },
-          { label: "Current status", value: selectedJobStatus, detail: "Live posture of the selected record" },
-          { label: "Reports", value: generatedDocumentCount, detail: "Published or generated rows currently in scope" },
-          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: "Scheduling and visibility posture for this session" }
+          { label: "Visible jobs", value: openJobCount, detail: "Service records in scope" },
+          { label: "Current status", value: selectedJobStatus, detail: "Live posture" },
+          { label: "Reports", value: generatedDocumentCount, detail: "Published documents" },
+          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: "Session availability" }
         ];
       case "admin":
         return [
-          { label: "Open jobs", value: openJobCount, detail: "Statuses excluding completed and cancelled" },
-          { label: "Queued mutations", value: queueCount, detail: "Offline-safe changes waiting for replay" },
-          { label: "Documents in scope", value: generatedDocumentCount, detail: "History rows loaded for current context" },
-          { label: "Loaded audits", value: adminAuditCount, detail: "Audit entries fetched into this session" }
+          { label: "Open jobs", value: openJobCount, detail: "Active records" },
+          { label: "Queued mutations", value: queueCount, detail: "Offline changes pending" },
+          { label: "Documents in scope", value: generatedDocumentCount, detail: "Loaded history" },
+          { label: "Loaded audits", value: adminAuditCount, detail: "Audit trail fetched" }
         ];
       default:
         return [
-          { label: "Open jobs", value: openJobCount, detail: "Statuses excluding completed and cancelled" },
-          { label: "Selected status", value: selectedJobStatus, detail: "Current state of the active job context" },
-          { label: "Queued mutations", value: queueCount, detail: "Offline-safe changes waiting for replay" },
-          { label: "Documents in scope", value: generatedDocumentCount, detail: "History rows loaded for current context" }
+          { label: "Open jobs", value: openJobCount, detail: "Active records" },
+          { label: "Selected status", value: selectedJobStatus, detail: "Current state" },
+          { label: "Queued mutations", value: queueCount, detail: "Offline changes pending" },
+          { label: "Documents in scope", value: generatedDocumentCount, detail: "Loaded history" }
         ];
     }
   }, [role, openJobCount, selectedJobStatus, queueCount, generatedDocumentCount, adminAuditCount, networkOnline]);

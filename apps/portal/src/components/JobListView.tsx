@@ -70,14 +70,11 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
   );
 }
 
-// "all" is the sentinel value meaning no status filter is active.
-type StatusFilter = JobStatus | "all";
+// "all" ensures no status filter is active. "open" shows active jobs (not cancelled/certified).
+type StatusFilter = JobStatus | "all" | "open";
 
-// Default filter: "draft" (Open / Ready) — ensures the list opens showing only
-// immediately actionable jobs. Users must opt-in to see other statuses.
-// This is a deliberate UX decision: dispatchers and admins managing 200+ jobs
-// should land on work that needs action, not a wall of closed records.
-const DEFAULT_STATUS_FILTER: StatusFilter = "draft";
+// Default filter: "open" — ensures the list opens showing all actionable jobs.
+const DEFAULT_STATUS_FILTER: StatusFilter = "open";
 
 interface JobListViewProps {
   jobs: JobRecord[];
@@ -93,8 +90,10 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
   const filtered = useMemo(() => {
     let result = jobs;
 
-    // Status filter — "all" bypasses the status check entirely
-    if (statusFilter !== "all") {
+    // Status filter
+    if (statusFilter === "open") {
+      result = result.filter((j) => j.status !== "cancelled" && j.status !== "certified");
+    } else if (statusFilter !== "all") {
       result = result.filter((j) => j.status === statusFilter);
     }
 
@@ -145,10 +144,13 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           aria-label="Filter by status"
         >
-          <option value="all">All statuses</option>
-          {(Object.keys(JOB_STATUS_LABELS) as JobStatus[]).map((s) => (
-            <option key={s} value={s}>{JOB_STATUS_LABELS[s]}</option>
-          ))}
+          <option value="open">Open Jobs</option>
+          <option value="all">All Statuses</option>
+          <optgroup label="Specific Status">
+            {(Object.keys(JOB_STATUS_LABELS) as JobStatus[]).map((s) => (
+              <option key={s} value={s}>{JOB_STATUS_LABELS[s]}</option>
+            ))}
+          </optgroup>
         </select>
       </div>
 
