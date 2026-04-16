@@ -17,15 +17,26 @@ interface DashboardCardProps {
 
 function DashboardCard({ title, description, icon, actionLabel, onClick, accent = "blue" }: DashboardCardProps): React.JSX.Element {
   return (
-    <article className={`dashboard-card dashboard-card--${accent}`}>
+    // The entire card is the interactive surface. The inner button is a visual affordance
+    // only and does not carry its own onClick to prevent double-firing.
+    // tabIndex and role make the article keyboard-navigable as a button.
+    <article
+      className={`dashboard-card dashboard-card--${accent}`}
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
+      role="button"
+      tabIndex={0}
+      aria-label={actionLabel}
+    >
       <div className="dashboard-card__icon">{icon}</div>
       <div className="dashboard-card__content">
         <h3>{title}</h3>
         <p>{description}</p>
       </div>
-      <button type="button" className="dashboard-card__action" onClick={onClick} aria-label={actionLabel}>
+      {/* Visual affordance — pointer-events disabled to prevent event double-fire */}
+      <span className="dashboard-card__action" aria-hidden="true">
         {actionLabel}
-      </button>
+      </span>
     </article>
   );
 }

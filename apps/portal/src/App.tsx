@@ -56,6 +56,18 @@ function errorCode(error: unknown): string {
   return typed.error?.code ?? "";
 }
 
+function formatApiFailure(error: unknown): string {
+  const typed = error as {
+    error?: { code?: string; message?: string; details?: unknown };
+    correlation_id?: string;
+  };
+  const message = typed.error?.message ?? "Request failed";
+  const code = typed.error?.code ? ` [${typed.error.code}]` : "";
+  const correlation = typed.correlation_id ? ` (corr: ${typed.correlation_id})` : "";
+  const details = typed.error?.details ? ` details=${JSON.stringify(typed.error.details)}` : "";
+  return `${message}${code}${correlation}${details}`;
+}
+
 function looksLikeJwt(token: string): boolean {
   const trimmed = token.trim();
   return trimmed.split(".").length === 3 && trimmed.length > 40;
@@ -241,8 +253,7 @@ export function PortalApp(): React.JSX.Element {
       await refreshJobs();
       setFeedback("Signed in.");
     } catch (error) {
-      const envelope = error as { error?: { message?: string } };
-      setFeedback(envelope.error?.message ?? "Login failed");
+      setFeedback(formatApiFailure(error));
     } finally {
       setLoading(false);
     }

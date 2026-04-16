@@ -252,7 +252,8 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
         error: String(error),
         stack: error instanceof Error ? error.stack : undefined,
         googleStatus: error instanceof GoogleAdapterError ? error.status : undefined,
-        googleCode: error instanceof GoogleAdapterError ? error.code : undefined
+        googleCode: error instanceof GoogleAdapterError ? error.code : undefined,
+        googleDetails: error instanceof GoogleAdapterError ? error.details : undefined
       });
       throw error;
     }

@@ -93,6 +93,12 @@ body::after {
   --role-glow: rgba(157, 167, 189, 0.24);
 }
 
+/* Super Admin gets a distinct gold accent to visually signal elevated platform access */
+.portal-shell--super_admin {
+  --role-accent: #f0c050;
+  --role-glow: rgba(240, 192, 80, 0.28);
+}
+
 .portal-shell {
   display: grid;
   grid-template-rows: auto auto 1fr auto;
@@ -238,11 +244,18 @@ body::after {
   border: 1px solid var(--line);
   cursor: pointer;
   transition: all 0.2s ease;
+  /* The action label is now a <span> on a fully-clickable <article>.
+     pointer-events: none prevents the span from consuming clicks before
+     the article's own onClick handler receives them. */
+  pointer-events: none;
+  user-select: none;
 }
 
 .dashboard-card:hover .dashboard-card__action {
   background: var(--text);
   color: var(--bg);
+  /* pointer-events: none is set on the span itself — this hover style still
+     applies to show the action label changing colour when the parent card is hovered */
 }
 
 /* Accents */
