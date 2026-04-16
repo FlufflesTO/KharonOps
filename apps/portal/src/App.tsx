@@ -513,8 +513,9 @@ export function PortalApp(): React.JSX.Element {
   }
 
   const role = session.session.role;
-  const isDispatchRole = role === "dispatcher" || role === "admin";
-  const isAdmin = role === "admin";
+  // super_admin inherits every workspace panel without restriction.
+  const isDispatchRole = role === "dispatcher" || role === "admin" || role === "super_admin";
+  const isAdmin = role === "admin" || role === "super_admin";
 
   if (portalView === "dashboard") {
     return (

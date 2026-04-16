@@ -106,5 +106,6 @@ export const peopleSyncSchema = z.object({
   name: z.string().trim().min(1),
   email: z.string().email(),
   phone: z.string().trim().min(6),
-  role_hint: z.enum(["client", "technician", "dispatcher", "admin"]).optional()
+  // super_admin is a valid hint; it is elevated at the auth layer and never stored in Users_Master.
+  role_hint: z.enum(["client", "technician", "dispatcher", "admin", "super_admin"]).optional()
 });

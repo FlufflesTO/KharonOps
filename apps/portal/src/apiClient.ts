@@ -1,4 +1,4 @@
-import type { ApiEnvelope, SyncMutation, SyncPushResult } from "@kharon/domain";
+import type { ApiEnvelope, SyncMutation, SyncPushResult, Role } from "@kharon/domain";
 
 const JSON_HEADERS = {
   "content-type": "application/json"
@@ -48,7 +48,9 @@ export interface PortalSession {
   session: {
     user_uid: string;
     email: string;
-    role: "client" | "technician" | "dispatcher" | "admin";
+    // Canonical Role type imported from @kharon/domain — GLOBAL-002 compliance.
+    // Do not re-define this union locally; update @kharon/domain/src/types.ts instead.
+    role: Role;
     display_name: string;
     client_uid: string;
     technician_uid: string;

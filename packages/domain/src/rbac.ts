@@ -1,7 +1,13 @@
 import type { JobRow, Role, SessionUser, JobStatus } from "./types.js";
 
+// super_admin bypasses all role gates — it has full-spectrum access by definition.
+// This helper centralises the check so adding a new gate never silently excludes super_admin.
+function isSuperAdmin(role: Role): boolean {
+  return role === "super_admin";
+}
+
 export function canReadJob(user: SessionUser, job: JobRow): boolean {
-  if (user.role === "admin" || user.role === "dispatcher") {
+  if (isSuperAdmin(user.role) || user.role === "admin" || user.role === "dispatcher") {
     return true;
   }
   if (user.role === "client") {
@@ -14,27 +20,27 @@ export function canReadJob(user: SessionUser, job: JobRow): boolean {
 }
 
 export function canRequestSchedule(role: Role): boolean {
-  return role === "client" || role === "dispatcher" || role === "admin";
+  return isSuperAdmin(role) || role === "client" || role === "dispatcher" || role === "admin";
 }
 
 export function canConfirmSchedule(role: Role): boolean {
-  return role === "dispatcher" || role === "admin";
+  return isSuperAdmin(role) || role === "dispatcher" || role === "admin";
 }
 
 export function canGenerateDocument(role: Role): boolean {
-  return role === "technician" || role === "dispatcher" || role === "admin";
+  return isSuperAdmin(role) || role === "technician" || role === "dispatcher" || role === "admin";
 }
 
 export function canPublishDocument(role: Role): boolean {
-  return role === "dispatcher" || role === "admin";
+  return isSuperAdmin(role) || role === "dispatcher" || role === "admin";
 }
 
 export function canUseAdmin(role: Role): boolean {
-  return role === "admin";
+  return isSuperAdmin(role) || role === "admin";
 }
 
 export function canUpdateJobStatus(user: SessionUser, job: JobRow, requestedStatus?: JobStatus): boolean {
-  if (user.role === "admin" || user.role === "dispatcher") {
+  if (isSuperAdmin(user.role) || user.role === "admin" || user.role === "dispatcher") {
     return true;
   }
   if (user.role === "technician") {

@@ -50,7 +50,7 @@ export function DashboardView({
       <header className="dashboard-header">
         <div className="dashboard-header__welcome">
           <h1>Welcome, {display_name}</h1>
-          <p className="role-tag">{role.toUpperCase()} COMMAND</p>
+          <p className="role-tag">{role === "super_admin" ? "SUPER ADMIN — FULL ACCESS" : `${role.toUpperCase()} COMMAND`}</p>
         </div>
         <button className="logout-button" onClick={onLogout}>Logout</button>
       </header>
@@ -136,6 +136,47 @@ export function DashboardView({
               actionLabel="Workspace"
               onClick={onEnterWorkspace}
               accent="blue"
+            />
+          </>
+        )}
+
+        {role === "super_admin" && (
+          <>
+            {/* Field Operations — mirrors technician view */}
+            <DashboardCard
+              title="Field Operations"
+              description={`${openJobCount} open jobs executing across all technician contexts.`}
+              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" /></svg>}
+              actionLabel="Open Jobcards"
+              onClick={onEnterWorkspace}
+              accent="blue"
+            />
+            {/* Scheduling — mirrors dispatcher view */}
+            <DashboardCard
+              title="Schedule Control"
+              description="Manage technician slots and confirm pending schedule requests."
+              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>}
+              actionLabel="Go to Scheduling"
+              onClick={onEnterWorkspace}
+              accent="purple"
+            />
+            {/* Client Compliance — mirrors client view */}
+            <DashboardCard
+              title="Compliance Vault"
+              description="Inspect all client jobcards, service reports, and certifications."
+              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" /></svg>}
+              actionLabel="View Reports"
+              onClick={onEnterWorkspace}
+              accent="green"
+            />
+            {/* System Governance — mirrors admin view */}
+            <DashboardCard
+              title="Platform Governance"
+              description="Full audit trail, user provisioning, and organizational health monitoring."
+              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>}
+              actionLabel="Admin Panel"
+              onClick={onEnterWorkspace}
+              accent="amber"
             />
           </>
         )}
