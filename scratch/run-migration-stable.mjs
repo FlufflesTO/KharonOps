@@ -2,10 +2,7 @@ import fs from 'node:fs';
 import { WORKBOOK_HEADERS } from '../packages/domain/dist/index.js';
 import { createWorkspaceRails } from '../packages/google/dist/index.js';
 
-// Helper to handle escaped newlines in keys
-function unescapeNewlines(val) {
-  return val.replace(/\\n/g, '\n');
-}
+
 
 async function main() {
   const envContent = fs.readFileSync('.env', 'utf8');

@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import crypto from 'node:crypto';
 
 function envValue(val, key) {
   const value = String(val ?? "").trim();

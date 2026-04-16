@@ -41,8 +41,8 @@ interface ScheduleControlCardProps {
 
 
 export function ScheduleControlCard({
-  _selectedJobUid,
-  _selectedJobRowVersion,
+  selectedJobUid: _selectedJobUid,
+  selectedJobRowVersion: _selectedJobRowVersion,
   preferredStart,
   setPreferredStart,
   preferredEnd,
@@ -69,12 +69,12 @@ export function ScheduleControlCard({
   setPublishDocumentUid,
   publishRowVersion,
   setPublishRowVersion,
-  _documentType,
+  documentType: _documentType,
   onScheduleRequest,
   onScheduleConfirm,
   onReschedule,
   onDocumentPublish,
-  _onFeedback,
+  onFeedback: _onFeedback,
 }: ScheduleControlCardProps): React.JSX.Element {
   return (
     <article className="workspace-card">

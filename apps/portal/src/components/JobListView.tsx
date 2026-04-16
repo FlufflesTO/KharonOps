@@ -1,6 +1,14 @@
 import React from "react";
 import type { JobStatus } from "@kharon/domain";
-import { JOB_STATUS_LABELS } from "@kharon/domain";
+
+const JOB_STATUS_LABELS: Record<JobStatus, string> = {
+  draft: "Ready / Open",
+  performed: "Work Performed",
+  rejected: "Correction Required",
+  approved: "Office Approved",
+  certified: "Legally Certified",
+  cancelled: "Cancelled / Void"
+};
 
 export interface JobRecord {
   job_uid: string;

@@ -4,7 +4,7 @@
  *          Provides role-specific "Command Cards" for quick navigation.
  */
 import React from "react";
-import type { Role, PortalSession } from "../apiClient";
+import type { PortalSession } from "../apiClient";
 
 interface DashboardCardProps {
   title: string;
@@ -43,7 +43,7 @@ export function DashboardView({
   onEnterWorkspace,
   onLogout
 }: DashboardViewProps): React.JSX.Element {
-  const { role, display_name } = session;
+  const { role, display_name } = session.session;
 
   return (
     <main className="dashboard-view">
