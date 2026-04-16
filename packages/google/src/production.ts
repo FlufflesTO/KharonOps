@@ -408,6 +408,21 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
         drive_file_id: documentId,
         pdf_file_id: upload.id
       };
+    },
+    async listFiles(args) {
+      const q = [`'${args.folderId}' in parents`, "trashed = false"];
+      if (args.query) {
+        q.push(args.query);
+      }
+
+      const response = await googleApiRequest<{ files: GoogleFile[] }>({
+        config,
+        service: "drive",
+        url: `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q.join(" and "))}&fields=files(id,name,webViewLink,createdTime,mimeType)&orderBy=createdTime desc`,
+        scopes: ["https://www.googleapis.com/auth/drive.readonly"]
+      });
+
+      return response.files ?? [];
     }
   };
 
@@ -560,6 +575,7 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
 
   return {
     mode: "production",
+    driveRootFolderId: config.driveRootFolderId,
     sheets,
     docs,
     drive,

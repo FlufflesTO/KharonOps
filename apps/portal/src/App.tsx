@@ -114,6 +114,7 @@ export function PortalApp(): React.JSX.Element {
   const [actionPending, setActionPending] = useState(false);
   const [checklistData, setChecklistData] = useState<Record<string, string>>({});
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const googleClientIdRef = useRef<string | null>(null);
 
 
   const selectedJob = useMemo(() => jobs.find((job) => job.job_uid === selectedJobUid) ?? null, [jobs, selectedJobUid]);
@@ -249,16 +250,20 @@ export function PortalApp(): React.JSX.Element {
 
       setGoogleButtonStatus("idle");
       googleButtonRef.current.replaceChildren();
-      googleIdentity.initialize({
-        client_id: authConfig.google_client_id,
-        callback: (response) => {
-          if (!response.credential) {
-            setFeedback("Google sign-in did not return an ID token.");
-            return;
+
+      if (googleClientIdRef.current !== authConfig.google_client_id) {
+        googleIdentity.initialize({
+          client_id: authConfig.google_client_id,
+          callback: (response) => {
+            if (!response.credential) {
+              setFeedback("Google sign-in did not return an ID token.");
+              return;
+            }
+            void handleLogin(response.credential);
           }
-          void handleLogin(response.credential);
-        }
-      });
+        });
+        googleClientIdRef.current = authConfig.google_client_id;
+      }
       googleIdentity.renderButton(googleButtonRef.current, {
         theme: "outline",
         size: "large",

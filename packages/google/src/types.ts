@@ -46,9 +46,18 @@ export interface DocsRail {
     subType?: "fire" | "gas";
     tokens: Record<string, StructuralToken>;
   }) => Promise<DocsGenerationResult>;
+  listFiles: (args: { folderId: string; query?: string }) => Promise<GoogleFile[]>;
 }
 
 
+
+export interface GoogleFile {
+  id: string;
+  name: string;
+  webViewLink?: string;
+  createdTime?: string;
+  mimeType?: string;
+}
 
 export interface DriveRail {
   publishFile: (args: { fileId: string; clientVisible: boolean }) => Promise<{ publishedUrl: string }>;
@@ -88,6 +97,7 @@ export interface PeopleRail {
 
 export interface WorkspaceRails {
   mode: "local" | "production";
+  driveRootFolderId: string;
   sheets: SheetsRail;
   docs: DocsRail;
   drive: DriveRail;
