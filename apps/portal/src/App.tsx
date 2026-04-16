@@ -76,10 +76,6 @@ function looksLikeJwt(token: string): boolean {
   return trimmed.split(".").length === 3 && trimmed.length > 40;
 }
 
-function hasRenderedGoogleButton(container: HTMLDivElement | null): boolean {
-  return Boolean(container?.querySelector("iframe, [role='button'], button"));
-}
-
 export function PortalApp(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<PortalSession | null>(null);
@@ -110,11 +106,8 @@ export function PortalApp(): React.JSX.Element {
   const [documents, setDocuments] = useState<Array<Record<string, unknown>>>([]);
   const [adminHealth, setAdminHealth] = useState<Record<string, unknown> | null>(null);
   const [adminAuditCount, setAdminAuditCount] = useState(0);
-  const [googleButtonStatus, setGoogleButtonStatus] = useState<"idle" | "ready" | "unavailable">("idle");
   const [actionPending, setActionPending] = useState(false);
   const [checklistData, setChecklistData] = useState<Record<string, string>>({});
-  const googleButtonRef = useRef<HTMLDivElement | null>(null);
-
 
   const selectedJob = useMemo(() => jobs.find((job) => job.job_uid === selectedJobUid) ?? null, [jobs, selectedJobUid]);
   const selectableStatuses = useMemo<JobStatus[]>(
@@ -223,110 +216,7 @@ export function PortalApp(): React.JSX.Element {
     };
   }, []);
 
-  useEffect(() => {
-    if (session || !authConfig || !productionAuth || authConfig.google_client_id === "") {
-      setGoogleButtonStatus("idle");
-      return;
-    }
-
-    let cancelled = false;
-    let renderCheckTimer: number | undefined;
-
-    const setButtonUnavailable = () => {
-      setGoogleButtonStatus("unavailable");
-      setFeedback((current) =>
-        current === "Ready."
-          ? "Google sign-in button did not render in this browser session. Hard refresh once, then retry in a private window with extensions disabled."
-          : current
-      );
-    };
-
-    const mountGoogleIdentity = () => {
-      const googleIdentity = window.google?.accounts?.id;
-      if (!googleIdentity || !googleButtonRef.current || cancelled) {
-        return;
-      }
-
-      setGoogleButtonStatus("idle");
-      googleButtonRef.current.replaceChildren();
-
-      googleIdentity.initialize({
-        client_id: authConfig.google_client_id,
-        callback: (response) => {
-          if (!response.credential) {
-            setFeedback("Google sign-in did not return an ID token.");
-            return;
-          }
-          void handleLogin(response.credential);
-        }
-      });
-      googleIdentity.renderButton(googleButtonRef.current, {
-        theme: "outline",
-        size: "large",
-        shape: "pill",
-        text: "signin_with",
-        width: 320
-      });
-
-      renderCheckTimer = window.setTimeout(() => {
-        if (cancelled) {
-          return;
-        }
-
-        if (hasRenderedGoogleButton(googleButtonRef.current)) {
-          setGoogleButtonStatus("ready");
-          return;
-        }
-
-        setButtonUnavailable();
-      }, 2500);
-    };
-
-    const handleScriptError = () => {
-      if (cancelled) {
-        return;
-      }
-      setButtonUnavailable();
-    };
-
-    if (window.google?.accounts?.id) {
-      mountGoogleIdentity();
-      return () => {
-        cancelled = true;
-        if (renderCheckTimer !== undefined) {
-          window.clearTimeout(renderCheckTimer);
-        }
-        window.google?.accounts?.id?.cancel?.();
-      };
-    }
-
-    const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-identity="true"]');
-    const script =
-      existingScript ??
-      Object.assign(document.createElement("script"), {
-        src: "https://accounts.google.com/gsi/client",
-        async: true,
-        defer: true
-      });
-
-    script.dataset.googleIdentity = "true";
-    script.addEventListener("load", mountGoogleIdentity, { once: true });
-    script.addEventListener("error", handleScriptError);
-
-    if (!existingScript) {
-      document.head.appendChild(script);
-    }
-
-    return () => {
-      cancelled = true;
-      if (renderCheckTimer !== undefined) {
-        window.clearTimeout(renderCheckTimer);
-      }
-      script.removeEventListener("load", mountGoogleIdentity);
-      script.removeEventListener("error", handleScriptError);
-      window.google?.accounts?.id?.cancel?.();
-    };
-  }, [authConfig, productionAuth, session]);
+  }, []);
 
   useEffect(() => {
     if (!session) {

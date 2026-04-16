@@ -1,5 +1,7 @@
-import React, { useRef, useEffect } from "react";
+import React from "react";
 import type { PortalAuthConfig } from "../apiClient";
+import { GoogleSignIn } from "./GoogleSignIn";
+
 
 interface PortalAuthProps {
   authConfig: PortalAuthConfig | null;
@@ -8,7 +10,6 @@ interface PortalAuthProps {
   setLoginToken: (token: string) => void;
   onLogin: (token: string) => void;
   onSupportTokenSubmit: () => void;
-  googleButtonStatus: "idle" | "ready" | "unavailable";
   feedback: string;
 }
 
@@ -27,10 +28,8 @@ export function PortalAuth({
   setLoginToken,
   onLogin,
   onSupportTokenSubmit,
-  googleButtonStatus,
-  feedback,
-  googleButtonRef
-}: PortalAuthProps & { googleButtonRef: React.RefObject<HTMLDivElement | null> }): React.JSX.Element {
+  feedback
+}: PortalAuthProps): React.JSX.Element {
   return (
     <div className="portal-auth-shell">
       <div className="portal-auth-stage">
@@ -68,13 +67,7 @@ export function PortalAuth({
           {productionAuth ? (
             <div className="field-stack">
               <span>Sign in with a provisioned Google account</span>
-              <div ref={googleButtonRef} className="google-signin-slot" />
-              {googleButtonStatus === "unavailable" ? (
-                <p className="google-signin-help">
-                  Google Sign-In did not render in this browser session. Hard refresh once, then retry in a private window with
-                  extensions disabled.
-                </p>
-              ) : null}
+              <GoogleSignIn clientId={authConfig?.google_client_id ?? ""} onLogin={onLogin} />
             </div>
           ) : null}
 
