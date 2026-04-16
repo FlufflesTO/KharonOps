@@ -46,7 +46,10 @@ export function listMissingGoogleProductionConfig(env: Record<string, string | u
     ["WORKBOOK_SPREADSHEET_ID", config.workbookSpreadsheetId],
     ["GOOGLE_DRIVE_ROOT_FOLDER_ID", config.driveRootFolderId],
     ["GOOGLE_JOBCARD_TEMPLATE_ID", config.jobcardTemplateId],
-    ["GOOGLE_SERVICE_REPORT_TEMPLATE_ID", config.serviceReportTemplateId],
+    ["GOOGLE_FIRE_SERVICE_REPORT_TEMPLATE_ID", config.serviceReportTemplateId],
+    ["GOOGLE_GAS_SERVICE_REPORT_TEMPLATE_ID", config.gasServiceReportTemplateId],
+    ["GOOGLE_FIRE_CERTIFICATE_TEMPLATE_ID", config.fireCertificateTemplateId],
+    ["GOOGLE_GAS_CERTIFICATE_TEMPLATE_ID", config.gasCertificateTemplateId],
     ["GMAIL_SENDER_ADDRESS", config.gmailSenderAddress],
     ["GOOGLE_CHAT_WEBHOOK_URL", config.chatWebhookUrl]
   ];
@@ -75,7 +78,10 @@ export function buildGoogleRuntimeConfig(env: Record<string, string | undefined>
     workbookSpreadsheetId: envFirst(env, ["WORKBOOK_SPREADSHEET_ID", "KHARON_JOBS_SPREADSHEET_ID"]),
     driveRootFolderId: envFirst(env, ["GOOGLE_DRIVE_ROOT_FOLDER_ID", "KHARON_DRIVE_ROOT_FOLDER_ID"]),
     jobcardTemplateId: envFirst(env, ["GOOGLE_JOBCARD_TEMPLATE_ID", "GOOGLE_DOCCARD_TEMPLATE_ID", "KHARON_DOC_TEMPLATE_JOBCARD_ID"]),
-    serviceReportTemplateId: envFirst(env, ["GOOGLE_SERVICE_REPORT_TEMPLATE_ID", "KHARON_DOC_TEMPLATE_SERVICE_REPORT_ID"]),
+    serviceReportTemplateId: envFirst(env, ["GOOGLE_FIRE_SERVICE_REPORT_TEMPLATE_ID", "GOOGLE_SERVICE_REPORT_TEMPLATE_ID", "KHARON_DOC_TEMPLATE_FIRE_REPORT_ID"]),
+    gasServiceReportTemplateId: envFirst(env, ["GOOGLE_GAS_SERVICE_REPORT_TEMPLATE_ID", "KHARON_DOC_TEMPLATE_GAS_REPORT_ID"]),
+    fireCertificateTemplateId: envFirst(env, ["GOOGLE_FIRE_CERTIFICATE_TEMPLATE_ID", "GOOGLE_CERTIFICATE_ID", "KHARON_DOC_TEMPLATE_FIRE_COC_ID"]),
+    gasCertificateTemplateId: envFirst(env, ["GOOGLE_GAS_CERTIFICATE_TEMPLATE_ID", "KHARON_DOC_TEMPLATE_GAS_COC_ID"]),
     calendarId: envFirst(env, ["GOOGLE_CALENDAR_ID", "KHARON_CALENDAR_ID"]) || "primary",
     gmailSenderAddress: envFirst(env, ["GMAIL_SENDER_ADDRESS", "KHARON_GMAIL_FROM", "SUPPORT_EMAIL"]),
     chatWebhookUrl: envFirst(env, ["GOOGLE_CHAT_WEBHOOK_URL", "KHARON_CHAT_WEBHOOK_URL"])

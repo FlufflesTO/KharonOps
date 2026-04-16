@@ -8,7 +8,7 @@ export type JobStatus =
   | "certified"   // Document generated and promoted to canon
   | "cancelled";  // Formal cancellation of intent
 
-export type DocumentType = "jobcard" | "service_report";
+export type DocumentType = "jobcard" | "service_report" | "certificate";
 
 export interface MutableMeta {
   row_version: number;

@@ -1,9 +1,14 @@
 name = "kharon-unified-api"
 main = "apps/api/src/index.ts"
 compatibility_date = "2026-04-10"
+compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 preview_urls = false
 keep_vars = false
+
+[assets]
+directory = "./dist/public"
+run_worker_first = ["/api/*"]
 
 [observability]
 enabled = true
@@ -12,6 +17,8 @@ head_sampling_rate = 1
 [vars]
 KHARON_MODE = "production"
 NODE_ENV = "production"
+STORE_BACKEND = "sheets"
+GOOGLE_RAILS_MODE = "production"
 SESSION_COOKIE_NAME = "kharon_session"
 SESSION_TTL_SECONDS = "28800"
 CF_ACCESS_ENABLED = "true"
@@ -38,8 +45,6 @@ required = [
   "GOOGLE_CLIENT_ID",
   "GOOGLE_SERVICE_ACCOUNT_EMAIL",
   "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
-  "GOOGLE_DELEGATED_SERVICE_ACCOUNT_EMAIL",
-  "GOOGLE_DELEGATED_SERVICE_ACCOUNT_PRIVATE_KEY",
   "GOOGLE_IMPERSONATED_USER",
   "WORKBOOK_SPREADSHEET_ID",
   "GOOGLE_DRIVE_ROOT_FOLDER_ID",
@@ -52,18 +57,19 @@ required = [
 
 [env.public]
 name = "kharon-unified-api-public"
+compatibility_flags = ["nodejs_compat"]
 
 [env.public.vars]
-KHARON_MODE = "local"
+KHARON_MODE = "production"
 NODE_ENV = "production"
-STORE_BACKEND = "local"
-GOOGLE_RAILS_MODE = "local"
+STORE_BACKEND = "sheets"
+GOOGLE_RAILS_MODE = "production"
 SESSION_COOKIE_NAME = "kharon_session"
 SESSION_TTL_SECONDS = "28800"
-CF_ACCESS_ENABLED = "false"
-CF_ACCESS_AUD = ""
-CF_ACCESS_JWKS_URL = ""
-CF_ACCESS_ISSUER = ""
+CF_ACCESS_ENABLED = "true"
+CF_ACCESS_AUD = "64026cae8eb5946cfaa9e0915a953b9bd0e84a4876babcb5a7834cba53cd172c"
+CF_ACCESS_JWKS_URL = "https://kharonops-pages.cloudflareaccess.com/cdn-cgi/access/certs"
+CF_ACCESS_ISSUER = "https://kharonops-pages.cloudflareaccess.com"
 
 [env.public.assets]
 directory = "./dist/public"
@@ -75,8 +81,6 @@ required = [
   "GOOGLE_CLIENT_ID",
   "GOOGLE_SERVICE_ACCOUNT_EMAIL",
   "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
-  "GOOGLE_DELEGATED_SERVICE_ACCOUNT_EMAIL",
-  "GOOGLE_DELEGATED_SERVICE_ACCOUNT_PRIVATE_KEY",
   "GOOGLE_IMPERSONATED_USER",
   "WORKBOOK_SPREADSHEET_ID",
   "GOOGLE_DRIVE_ROOT_FOLDER_ID",
@@ -112,8 +116,6 @@ required = [
   "GOOGLE_CLIENT_ID",
   "GOOGLE_SERVICE_ACCOUNT_EMAIL",
   "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
-  "GOOGLE_DELEGATED_SERVICE_ACCOUNT_EMAIL",
-  "GOOGLE_DELEGATED_SERVICE_ACCOUNT_PRIVATE_KEY",
   "GOOGLE_IMPERSONATED_USER",
   "WORKBOOK_SPREADSHEET_ID",
   "GOOGLE_DRIVE_ROOT_FOLDER_ID",
@@ -127,11 +129,10 @@ required = [
 [secrets]
 required = [
   "SESSION_KEYS",
+  "PORTAL_SESSION_SECRET",
   "GOOGLE_CLIENT_ID",
   "GOOGLE_SERVICE_ACCOUNT_EMAIL",
   "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
-  "GOOGLE_DELEGATED_SERVICE_ACCOUNT_EMAIL",
-  "GOOGLE_DELEGATED_SERVICE_ACCOUNT_PRIVATE_KEY",
   "GOOGLE_IMPERSONATED_USER",
   "WORKBOOK_SPREADSHEET_ID",
   "GOOGLE_DRIVE_ROOT_FOLDER_ID",

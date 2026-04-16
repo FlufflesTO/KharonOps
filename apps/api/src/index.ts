@@ -762,9 +762,14 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const documentUid = `DOC-${crypto.randomUUID()}`;
     const overrides = body.tokens ?? {};
     const users = await store.listUsers();
+    const isGas = job.title.toLowerCase().includes("gas");
+    const isFire = job.title.toLowerCase().includes("fire") || !isGas;
+    const subType = isGas ? "gas" : "fire";
+
     const generated = await config.rails.docs.generateDocument({
       jobUid: body.job_uid,
       documentType: body.document_type,
+      subType,
       tokens: buildDocumentTokens({
         documentUid,
         documentType: body.document_type,
@@ -1145,19 +1150,6 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   });
 
   app.route("/api/v1", api);
-
-  app.get("/", (c) => {
-    const correlationId = c.get("correlationId");
-    return c.json(
-      envelopeSuccess({
-        correlationId,
-        data: {
-          service: "kharon-unified-api",
-          version: "v1"
-        }
-      })
-    );
-  });
 
   return app;
 }

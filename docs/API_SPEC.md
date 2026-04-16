@@ -1,164 +1,279 @@
-# API Specification
+# API Specification — KharonOps (KharonWeb Worker)
 
-Base path: `/api/v1`
+Base URL: Depends on deployment (local dev: `http://localhost:8787`)
 
-When Cloudflare Access enforcement is enabled in runtime config, every `/api/v1/*` request must include a valid `Cf-Access-Jwt-Assertion` header.
+All endpoints live under `/api/*`. The worker enforces CORS preflight (`OPTIONS`) for all routes.
 
-All responses use:
+## Response Format
+
+All responses use the following envelope:
 
 ```json
 {
-  "data": {},
-  "error": null,
-  "correlation_id": "uuid",
-  "row_version": 3,
-  "conflict": null
+  "success": true,
+  "data": { ... },
+  "error": null
 }
 ```
+
+Error responses:
+
+```json
+{
+  "success": false,
+  "error": "Human-readable error message"
+}
+```
+
+Standard HTTP status codes: `200`, `204` (CORS preflight), `400`, `403`, `404`, `422`, `500`.
 
 ## Auth
 
-### POST `/auth/google-login`
-Body:
-```json
-{ "id_token": "..." }
-```
-Success `200`: session payload + mode metadata.
-
 ### GET `/auth/session`
-Requires session cookie.
-Success `200`: active session.
-Failure `401`: unauthorized.
 
-### POST `/auth/logout`
-Clears session cookie.
+> **Note:** Currently a scaffold endpoint. Returns session state when Cloudflare Access JWT assertion is present.
 
-## Jobs
+Requires: `Cf-Access-Jwt-Assertion` header (when Access enforcement is enabled).
 
-### GET `/jobs`
-Returns role-filtered job list.
-
-### GET `/jobs/:job_uid`
-Returns owned/authorized job detail.
-
-### POST `/jobs/:job_uid/status`
-Body:
+Success `200`:
 ```json
-{ "status": "on_site", "row_version": 2 }
+{ "success": true, "data": { "email": "tech@example.com", "role": "technician" } }
 ```
-- validates transition graph
-- enforces ownership and role
-- stale version => `409` + conflict payload
 
-### POST `/jobs/:job_uid/note`
-Body:
+Failure `401`:
 ```json
-{ "note": "text", "row_version": 2 }
+{ "success": false, "error": "Unauthorized" }
 ```
-- optimistic concurrency enforced
 
-## Schedules
+---
 
-### POST `/schedules/request-slot`
-Body:
+## Endpoints
+
+### GET `/api/health`  /  `/api/v1/health`
+
+Worker health-check. No auth required.
+
+Success `200`:
 ```json
 {
-  "job_uid": "JOB-1001",
-  "preferred_slots": [{ "start_at": "...", "end_at": "..." }],
-  "timezone": "Africa/Johannesburg",
-  "notes": "",
-  "row_version": 3
+  "success": true,
+  "data": {
+    "status": "ok",
+    "timestamp": "2026-04-15T12:00:00.000Z",
+    "ledger_configured": true
+  }
 }
 ```
-Client requests preferred slots only.
 
-### POST `/schedules/confirm`
-Dispatcher/admin confirms final booking.
+### POST `/api/submit-contact`
 
-### POST `/schedules/reschedule`
-Dispatcher/admin reschedules confirmed booking.
+Contact form submission.
 
-## Documents
-
-### POST `/documents/generate`
-Body:
-```json
-{ "job_uid": "JOB-1001", "document_type": "jobcard", "tokens": {} }
-```
-Supported `document_type`: `jobcard`, `service_report`.
-
-### POST `/documents/publish`
-Body:
-```json
-{ "document_uid": "DOC-...", "row_version": 1, "client_visible": true }
-```
-
-### GET `/documents/history?job_uid=JOB-1001`
-Returns document records filtered by role ownership.
-
-## Sync
-
-### GET `/sync/pull?since=ISO_DATE`
-Returns owned jobs + relevant sync queue entries.
-
-### POST `/sync/push`
 Body:
 ```json
 {
-  "mutations": [
-    {
-      "mutation_id": "MUT-1",
-      "kind": "job_status",
-      "job_uid": "JOB-1001",
-      "expected_row_version": 2,
-      "payload": { "status": "on_site" }
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "message": "Requesting a site visit.",
+  "phone": "0123456789",
+  "property_type": "commercial",
+  "service_required": "fire-alarm"
+}
+```
+
+Required fields: `name`, `email`, `message`.
+
+Success `200`:
+```json
+{ "success": true, "data": { "message": "Contact form submitted successfully" } }
+```
+
+### POST `/api/submit-job`
+
+Job card submission from technician portal.
+
+Body:
+```json
+{
+  "title": "SVR_SITE_INSPECTION",
+  "description": "Full fire alarm system audit completed.",
+  "site_name": "Acme Warehouse",
+  "status": "performed",
+  "priority": "normal",
+  "discipline": "fire",
+  "assigned_to": "tech@example.com",
+  "evidence_notes": "All zones passing."
+}
+```
+
+Required fields: `title`, `description`.
+
+Status taxonomy (canonical, from `packages/domain/src/status.ts`):
+`draft` → `performed` → `rejected` | `approved` → `certified`
+
+Additional terminal state: `cancelled`.
+
+Success `200`:
+```json
+{
+  "success": true,
+  "data": {
+    "job": {
+      "id": "uuid-v4",
+      "created_at": "2026-04-15T12:00:00.000Z",
+      "title": "SVR_SITE_INSPECTION",
+      "description": "Full fire alarm system audit completed.",
+      "status": "performed",
+      "site_name": "Acme Warehouse",
+      "determination_status": "PENDING"
     }
-  ]
+  }
 }
 ```
-- partial success supported
-- idempotent duplicate handling
-- conflicts returned with full conflict payload
 
-### POST `/sync/conflict/resolve`
+### GET `/api/get-jobs`
+
+Retrieve job list. Query params filter by `status` and `role`.
+
+Query: `?role=admin&status=performed`
+
+- Non-admin callers receive a reduced object: `{ id, created_at, title, status, priority }`.
+- Admin callers receive the full job record.
+
+Success `200`:
+```json
+{
+  "success": true,
+  "data": {
+    "jobs": [
+      {
+        "id": "uuid-v4",
+        "created_at": "2026-04-15T12:00:00.000Z",
+        "title": "SVR_SITE_INSPECTION",
+        "status": "performed",
+        "priority": "normal"
+      }
+    ]
+  }
+}
+```
+
+### POST `/api/submit-sla-request`
+
+SLA / fault request submission.
+
 Body:
 ```json
 {
-  "job_uid": "JOB-1001",
-  "strategy": "merge",
-  "server_row_version": 3,
-  "client_row_version": 2,
-  "merge_patch": { "last_note": "..." }
+  "clientCode": "CLI-001",
+  "contactName": "John Smith",
+  "contactEmail": "john@client.com",
+  "siteName": "Client HQ",
+  "faultDescription": "Intruder panel showing persistent fault code E-42.",
+  "priority": "high"
 }
 ```
 
-## Workspace
+Also accepts flat field names: `client_name`, `property`, `description`, `urgency`.
 
-### POST `/workspace/gmail/notify`
-Triggers Gmail notification.
+Required fields: `clientCode` (or `client_name`), `siteName` (or `property`), `faultDescription` (or `description`).
 
-### POST `/workspace/chat/alert`
-Triggers Chat alert.
+Success `200`:
+```json
+{ "success": true, "data": { "message": "SLA request submitted successfully" } }
+```
 
-### POST `/workspace/people/sync`
-Creates/syncs contact in People.
+### POST `/api/determine-job`
 
-## Admin
+Log a determination (approve / reject / certify) for a job.
 
-### GET `/admin/health`
-Admin-only health status.
+Body:
+```json
+{
+  "jobId": "uuid-v4",
+  "status": "approved",
+  "rationale": "All checks passed per SVR protocol.",
+  "determinedBy": "admin@example.com"
+}
+```
 
-### GET `/admin/audits`
-Admin-only privileged action audits.
+Required fields: `jobId`, `status`.
 
-### POST `/admin/retries/:automation_job_uid`
-Admin-only automation retry operation.
+Success `200`:
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Determination logged as approved",
+    "integrity_marker": "SVR_HASH:<sha256-hash>"
+  }
+}
+```
+
+### POST `/api/generate-report`
+
+Generate an audit-ready controlled document for a job.
+
+Body:
+```json
+{ "jobId": "uuid-v4" }
+```
+
+Required: job must have `determination_status === 'APPROVED'`, else `403`.
+
+Success `200`:
+```json
+{
+  "success": true,
+  "data": {
+    "report": {
+      "job_id": "uuid-v4",
+      "generated_at": "2026-04-15T12:00:00.000Z",
+      "title": "SVR_SITE_INSPECTION",
+      "status": "performed",
+      "determined_by": "admin@example.com",
+      "site_name": "Acme Warehouse",
+      "discipline": "fire"
+    }
+  }
+}
+```
+
+---
+
+## Sheet Column Layout (Jobs)
+
+| Col | Field                |
+|-----|----------------------|
+| A   | id                   |
+| B   | created_at           |
+| C   | title                |
+| D   | description          |
+| E   | assigned_to          |
+| F   | priority             |
+| G   | status               |
+| H   | notes                |
+| I   | site_name            |
+| J   | site_address         |
+| K   | discipline           |
+| L   | impairments          |
+| M   | arrival_at           |
+| N   | compliance_passed    |
+| O   | determination_status |
+| P   | determined_by        |
+| Q   | rationale            |
+| R   | integrity_marker     |
+
+---
 
 ## Error Semantics
 
-- `400` validation errors
-- `401` authentication required
-- `403` role/ownership forbidden
-- `404` missing entity
-- `409` optimistic concurrency conflict
-- `500` internal/runtime failures
+| Code | Meaning                         |
+|------|---------------------------------|
+| 400  | Bad request / not found         |
+| 401  | Auth required (Access JWT)      |
+| 403  | Role / ownership forbidden      |
+| 404  | Entity not found                |
+| 422  | Missing required fields         |
+| 409  | Optimistic concurrency conflict |
+| 500  | Internal / runtime failure      |

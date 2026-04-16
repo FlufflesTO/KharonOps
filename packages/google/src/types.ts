@@ -2,6 +2,11 @@ import type { DocumentType } from "@kharon/domain";
 
 export type RowRecord = Record<string, string>;
 
+export type StructuralToken =
+  | { type: "text"; value: string }
+  | { type: "matrix"; rows: Array<Record<string, string>> }
+  | { type: "image"; dataUri: string; width?: number; height?: number };
+
 export interface GoogleRuntimeConfig {
   mode: "local" | "production";
   googleClientId: string;
@@ -14,6 +19,9 @@ export interface GoogleRuntimeConfig {
   driveRootFolderId: string;
   jobcardTemplateId: string;
   serviceReportTemplateId: string;
+  gasServiceReportTemplateId: string;
+  fireCertificateTemplateId: string;
+  gasCertificateTemplateId: string;
   calendarId: string;
   gmailSenderAddress: string;
   chatWebhookUrl: string;
@@ -35,9 +43,12 @@ export interface DocsRail {
   generateDocument: (args: {
     jobUid: string;
     documentType: DocumentType;
-    tokens: Record<string, string>;
+    subType?: "fire" | "gas";
+    tokens: Record<string, StructuralToken>;
   }) => Promise<DocsGenerationResult>;
 }
+
+
 
 export interface DriveRail {
   publishFile: (args: { fileId: string; clientVisible: boolean }) => Promise<{ publishedUrl: string }>;

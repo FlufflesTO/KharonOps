@@ -10,6 +10,8 @@
   "dependencies": {
     "@kharon/domain": "*",
     "@kharon/google": "*",
-    "hono": "^4.7.6"
+    "@types/pg": "^8.20.0",
+    "hono": "^4.7.6",
+    "pg": "^8.20.0"
   }
 }

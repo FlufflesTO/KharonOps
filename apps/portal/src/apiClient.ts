@@ -194,16 +194,17 @@ export const apiClient = {
       })
     });
   },
-  async generateDocument(jobUid: string, documentType: "jobcard" | "service_report") {
+  async generateDocument(jobUid: string, documentType: "jobcard" | "service_report", tokens: Record<string, string> = {}) {
     return request<Record<string, unknown>>("/api/v1/documents/generate", {
       method: "POST",
       body: JSON.stringify({
         job_uid: jobUid,
         document_type: documentType,
-        tokens: {}
+        tokens
       })
     });
   },
+
   async publishDocument(
     documentUid: string,
     rowVersion: number,

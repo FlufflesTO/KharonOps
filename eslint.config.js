@@ -6,11 +6,10 @@ export default [
   {
     ignores: [
       "**/dist/**",
-      "build/**",
+      "**/build/**",
       "**/coverage/**",
-      "node_modules/**",
-      ".wrangler/**",
-      "kharonops/**"
+      "**/node_modules/**",
+      "**/.wrangler/**"
     ]
   },
   js.configs.recommended,

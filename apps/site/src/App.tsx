@@ -127,26 +127,32 @@ export function SiteApp(): React.JSX.Element {
     <div className="site-shell">
       <header className="site-nav">
         <a className="site-brand" href="#top">
-          <span className="site-brand__mark">K</span>
+          <div className="site-brand__mark">
+            <svg viewBox="0 0 100 100" width="32" height="32">
+              <circle cx="50" cy="50" r="45" fill="none" stroke="var(--color-primary)" strokeWidth="8" />
+              <circle cx="50" cy="50" r="25" fill="var(--color-primary)" opacity="0.3" />
+              <circle cx="50" cy="50" r="12" fill="var(--color-primary)" />
+            </svg>
+          </div>
           <span className="site-brand__copy">
-            <strong>Kharon Fire &amp; Security</strong>
-            <small>Integrated protection programmes</small>
+            <strong>KHARON</strong>
+            <small>Fire &amp; Security Solutions</small>
           </span>
         </a>
 
-        <nav className="site-links" aria-label="Primary">
-          <a href="#services">Services</a>
-          <a href="#delivery">Delivery</a>
-          <a href="#projects">Projects</a>
+        <nav className="site-links" aria-label="Command Navigation">
+          <a href="#solutions">Solutions</a>
+          <a href="#compliance">Compliance</a>
+          <a href="#operational-trail">Operational Trail</a>
         </nav>
 
         <div className="site-nav__actions">
           <div className="nav-status">
             <span className="nav-status__dot" />
-            Service desk live
+            Operational Command Live
           </div>
-          <a className="site-button site-button--quiet" href="/portal/">
-            Portal
+          <a className="site-button site-button--primary" href="/portal/">
+            Command Centre Login
           </a>
         </div>
       </header>
@@ -155,23 +161,23 @@ export function SiteApp(): React.JSX.Element {
         <section className="hero-section" id="top">
           <div className="hero-grid">
             <div className="hero-copy">
-              <p className="hero-kicker">South African fire, suppression, security, and compliance delivery</p>
+              <p className="hero-kicker">SANS-ALIGNED OPERATIONAL COMMAND</p>
               <h1>
-                <span className="hero-line">Mission-critical fire</span>
-                <span className="hero-line hero-line--accent">and security engineering</span>
+                <span className="hero-line">High-Stakes Fire</span>
+                <span className="hero-line hero-line--accent">&amp; Security Engineering</span>
               </h1>
               <p className="hero-summary">
-                Kharon delivers engineering-led fire detection, gaseous suppression, integrated security, planned maintenance, callouts,
-                and compliance reporting for sites where failure is not an option. The public face feels premium; the operational trail
-                behind it stays controlled, documented, and inspection-ready.
+                Kharon provides the integrated operational command for your site's safety. From SANS 10139 fire detection to 
+                SANS 14520 gaseous suppression, we deliver documented, audit-ready evidence for environments where 
+                the margin for error is zero.
               </p>
 
               <div className="hero-actions">
-                <a className="site-button site-button--primary" href="mailto:connor@kharon.co.za?subject=Kharon%20Site%20Assessment">
-                  Request Assessment
+                <a className="site-button site-button--primary" href="mailto:admin@kharon.co.za?subject=Service%20Assessment%20Request">
+                  Request Command Audit
                 </a>
                 <a className="site-button site-button--secondary" href="/portal/">
-                  Client and Technician Access
+                  Personnel Access
                 </a>
               </div>
 
@@ -211,7 +217,7 @@ export function SiteApp(): React.JSX.Element {
           </div>
         </section>
 
-        <section className="signal-band" aria-label="Proof points">
+        <section className="signal-band" aria-label="Engineering Standards">
           <div className="signal-band__inner">
             {marketMetrics.map((metric) => (
               <div key={metric.label} className="signal-band__item">
@@ -222,14 +228,10 @@ export function SiteApp(): React.JSX.Element {
           </div>
         </section>
 
-        <section className="site-section" id="services">
+        <section className="site-section" id="solutions">
           <div className="section-heading">
-            <p className="section-kicker">Service programmes</p>
-            <h2>Fire, security, and documented closeout handled as one operational stack.</h2>
-            <p className="section-subtitle">
-              This is the public-facing service surface. Underneath it, the same discipline applies every time: defined scope, logged
-              execution, evidence capture, and client handover that stays readable after the visit.
-            </p>
+            <p className="section-kicker">Engineering Solutions</p>
+            <h2>Total compliance across detection, suppression, and physical security.</h2>
           </div>
 
           <div className="service-grid">
@@ -254,17 +256,17 @@ export function SiteApp(): React.JSX.Element {
           </div>
         </section>
 
-        <section className="site-section site-section--split" id="delivery">
+        <section className="site-section site-section--split" id="compliance">
           <div className="section-heading">
-            <p className="section-kicker">Delivery model</p>
-            <h2>Scope, execute, document, maintain.</h2>
+            <p className="section-kicker">Compliance Engine</p>
+            <h2>Verifiable evidence. Precision execution.</h2>
           </div>
 
           <div className="operations-board">
             <div className="operations-flow">
               <div className="operations-flow__header">
-                <p className="section-kicker">Operational flow</p>
-                <h3>How work moves through Kharon</h3>
+                <p className="section-kicker">Certification Flow</p>
+                <h3>Audit-ready reporting trail</h3>
               </div>
               <div className="operations-timeline">
                 {workflowSteps.map((item, index) => (
@@ -280,8 +282,8 @@ export function SiteApp(): React.JSX.Element {
             </div>
 
             <aside className="assurance-panel">
-              <p className="section-kicker">Assurances</p>
-              <h3>What the service model actually guarantees</h3>
+              <p className="section-kicker">Command Assurances</p>
+              <h3>Operational standards</h3>
               <div className="assurance-list">
                 {assurancePanels.map((panel) => (
                   <article key={panel.label} className="assurance-list__item">
@@ -294,10 +296,10 @@ export function SiteApp(): React.JSX.Element {
           </div>
         </section>
 
-        <section className="site-section" id="projects">
+        <section className="site-section" id="operational-trail">
           <div className="section-heading">
-            <p className="section-kicker">Project patterns</p>
-            <h2>Typical engagement shapes already inside the Kharon stack.</h2>
+            <p className="section-kicker">Operational Trail</p>
+            <h2>Immutable records of site integrity.</h2>
           </div>
 
           <div className="case-grid">
@@ -319,19 +321,19 @@ export function SiteApp(): React.JSX.Element {
         <section className="site-section cta-section">
           <div className="cta-panel">
             <div className="cta-panel__copy">
-              <p className="section-kicker">Next step</p>
-              <h2>Start with assessment. Move through execution. Finish with evidence.</h2>
+              <p className="section-kicker">Next Engagement</p>
+              <h2>Authorize a command audit of your security posture.</h2>
               <p>
-                Use the public site to position Kharon around real disciplines already visible in the service stack, then route
-                authorised clients, technicians, dispatchers, and administrators into a cleaner corporate workspace.
+                Align your site documentation with SANS requirements via the Kharon Command Centre. 
+                Move from fragmented reporting to a single, integrated evidence trail.
               </p>
             </div>
             <div className="cta-panel__actions">
-              <a className="site-button site-button--primary" href="mailto:connor@kharon.co.za?subject=Kharon%20Programme%20Enquiry">
-                Start a Programme Conversation
+              <a className="site-button site-button--primary" href="mailto:admin@kharon.co.za?subject=Command%20Centre%20Enquiry">
+                Request Service Partnership
               </a>
               <a className="site-button site-button--secondary" href="/portal/">
-                Open Portal
+                Access Command Centre
               </a>
             </div>
           </div>
@@ -341,16 +343,18 @@ export function SiteApp(): React.JSX.Element {
       <footer className="site-footer">
         <div className="site-footer__inner">
           <div className="site-footer__brand">
-            <strong>Kharon Fire &amp; Security</strong>
-            <span>Interim public domain currently served on tequit.co.za for controlled rollout and testing.</span>
+            <strong>KHARON FIRE &amp; SECURITY SOLUTIONS</strong>
+            <span>Unit 58, M5 Freeway Park, Cnr Uppercamp &amp; Berkley Rd, Ndabeni, Maitland, 7405</span>
+            <small>Reg: 2016/313076/07 • T: 061 545 8830 • E: admin@kharon.co.za</small>
           </div>
-          <nav className="site-footer__links" aria-label="Legal">
+          <nav className="site-footer__links" aria-label="Compliance">
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>
-            <a href="/portal/">Portal</a>
+            <a href="/portal/">Portal Access</a>
           </nav>
         </div>
       </footer>
     </div>
   );
 }
+
