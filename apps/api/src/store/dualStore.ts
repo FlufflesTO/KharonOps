@@ -435,6 +435,7 @@ export class DualWorkbookStore implements WorkbookStore {
     action: string;
     payload: Record<string, unknown>;
     ctx: StoreContext;
+    entry_type?: string;
   }): Promise<void> {
     await this.primary.appendAudit(args);
     await this._mirrorWrite(

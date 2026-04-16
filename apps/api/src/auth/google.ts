@@ -26,13 +26,20 @@ export async function verifyIdentity(args: {
     return mapped;
   }
 
-  const verified = await verifyGoogleIdToken({
-    idToken: args.idToken,
-    expectedAudience: args.googleClientId
-  });
+  console.log(`[verifyIdentity] Attempting production verification for client: ${args.googleClientId}`);
+  try {
+    const verified = await verifyGoogleIdToken({
+      idToken: args.idToken,
+      expectedAudience: args.googleClientId
+    });
 
-  return {
-    email: verified.email,
-    displayName: verified.name || verified.email
-  };
+    console.log(`[verifyIdentity] Verification successful for: ${verified.email}`);
+    return {
+      email: verified.email,
+      displayName: verified.name || verified.email
+    };
+  } catch (error) {
+    console.error(`[verifyIdentity] Verification failed:`, error);
+    throw error;
+  }
 }

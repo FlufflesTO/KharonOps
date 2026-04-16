@@ -710,10 +710,15 @@ export class SheetsWorkbookStore implements WorkbookStore {
     action: string;
     payload: Record<string, unknown>;
     ctx: { correlationId: string; actorUserUid: string };
+    entry_type?: string;
   }): Promise<void> {
-    await this.rails.sheets.appendRow("System_Config", {
-      config_key: `AUDIT_${Date.now()}_${crypto.randomUUID()}`,
-      config_value: JSON.stringify({ action: args.action, payload: args.payload }),
+    await this.rails.sheets.appendRow("Ledger", {
+      ledger_uid: `AUD-${crypto.randomUUID()}`,
+      entry_type: args.entry_type || "system_audit",
+      action: args.action,
+      entity_type: String(args.payload.entity || "system"),
+      entity_id: String(args.payload.id || args.payload.job_uid || ""),
+      payload_json: JSON.stringify(args.payload),
       row_version: "1",
       updated_at: nowIso(),
       updated_by: args.ctx.actorUserUid,
@@ -722,7 +727,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async listAudits(): Promise<Array<Record<string, string>>> {
-    return (await this.rows("System_Config")).filter((row) => field(row, "config_key").startsWith("AUDIT_"));
+    return this.rows("Ledger");
   }
 
   async upsertAutomationJob(row: AutomationJobRow): Promise<void> {

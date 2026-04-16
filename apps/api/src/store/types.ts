@@ -47,7 +47,12 @@ export interface WorkbookStore {
   getDocument(documentUid: string): Promise<JobDocumentRow | null>;
   upsertDocument(row: JobDocumentRow): Promise<void>;
   listDocuments(jobUid?: string): Promise<JobDocumentRow[]>;
-  appendAudit(args: { action: string; payload: Record<string, unknown>; ctx: StoreContext }): Promise<void>;
+  appendAudit(args: {
+    action: string;
+    payload: Record<string, unknown>;
+    ctx: StoreContext;
+    entry_type?: string;
+  }): Promise<void>;
   listAudits(): Promise<Array<Record<string, string>>>;
   upsertAutomationJob(row: AutomationJobRow): Promise<void>;
   getAutomationJob(automationJobUid: string): Promise<AutomationJobRow | null>;

@@ -72,6 +72,38 @@ function envCacheKey(env: Record<string, string | undefined>): string {
   return JSON.stringify(entries);
 }
 
+function logApiEvent(level: "info" | "warn" | "error", event: string, details: Record<string, unknown>): void {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    level,
+    event,
+    ...details
+  };
+  const line = JSON.stringify(payload);
+  if (level === "error") {
+    console.error(line);
+  } else if (level === "warn") {
+    console.warn(line);
+  } else {
+    console.log(line);
+  }
+}
+
+function parseGoogleTokenAudienceFromJwt(idToken: string): string | null {
+  const parts = idToken.split(".");
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  try {
+    const payloadRaw = Buffer.from(parts[1] ?? "", "base64url").toString("utf8");
+    const payload = JSON.parse(payloadRaw) as { aud?: unknown };
+    return typeof payload.aud === "string" ? payload.aud : null;
+  } catch {
+    return null;
+  }
+}
+
 export function createApp(env: Record<string, string | undefined> = {}): Hono<AppBindings> {
   const config = createRuntimeConfig(env);
   const store = createWorkbookStore(config);
@@ -185,12 +217,48 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   api.post("/auth/google-login", async (c) => {
     const correlationId = c.get("correlationId");
     const body = await parseJsonBody(c.req.raw, googleLoginSchema);
+    const frontendClientId = (c.req.header("x-gsi-client-id") ?? "").trim();
+    const tokenAudienceHint = parseGoogleTokenAudienceFromJwt(body.id_token);
 
-    const identity = await verifyIdentity({
-      mode: config.mode,
-      idToken: body.id_token,
-      googleClientId: config.googleClientId
-    });
+    if (frontendClientId !== "" && frontendClientId !== config.googleClientId) {
+      logApiEvent("warn", "auth.google_login.frontend_client_id_mismatch", {
+        correlationId,
+        frontendClientId,
+        backendClientId: config.googleClientId
+      });
+    }
+
+    if (tokenAudienceHint && tokenAudienceHint !== config.googleClientId) {
+      logApiEvent("warn", "auth.google_login.token_audience_mismatch_hint", {
+        correlationId,
+        tokenAudienceHint,
+        backendClientId: config.googleClientId
+      });
+    }
+
+    let identity: Awaited<ReturnType<typeof verifyIdentity>>;
+    try {
+      identity = await verifyIdentity({
+        mode: config.mode,
+        idToken: body.id_token,
+        googleClientId: config.googleClientId
+      });
+    } catch (error) {
+      if (error instanceof GoogleAdapterError) {
+        logApiEvent("error", "auth.google_login.verify_failed", {
+          correlationId,
+          backendClientId: config.googleClientId,
+          frontendClientId: frontendClientId || null,
+          tokenAudienceHint,
+          idTokenLength: body.id_token.length,
+          googleStatus: error.status,
+          googleCode: error.code,
+          googleMessage: error.message,
+          googleDetails: error.details
+        });
+      }
+      throw error;
+    }
 
     let userRow: Awaited<ReturnType<typeof store.getUserByEmail>> = null;
 
@@ -204,7 +272,18 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     if (!userRow) {
       userRow = await store.getUserByEmail(identity.email);
     }
+
     if (!userRow) {
+      await store.appendAudit({
+        action: "auth.login.denied",
+        entry_type: "auth_audit",
+        payload: {
+          email: identity.email,
+          reason: "not_provisioned"
+        },
+        ctx: createStoreContext("system:unauthenticated", correlationId)
+      });
+
       return c.json(
         envelopeError({
           correlationId,
@@ -237,6 +316,17 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       cookieName: config.sessionCookieName,
       token,
       ttlSeconds: config.sessionTtlSeconds
+    });
+
+    await store.appendAudit({
+      action: "auth.login.success",
+      entry_type: "auth_audit",
+      payload: {
+        user_uid: sessionUser.user_uid,
+        email: sessionUser.email,
+        role: sessionUser.role
+      },
+      ctx: createStoreContext(sessionUser.user_uid, correlationId)
     });
 
     return c.json(
@@ -284,6 +374,20 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
   api.post("/auth/logout", async (c) => {
     const correlationId = c.get("correlationId");
+    const user = c.get("sessionUser");
+    
+    if (user) {
+      await store.appendAudit({
+        action: "auth.logout",
+        entry_type: "auth_audit",
+        payload: {
+          user_uid: user.user_uid,
+          email: user.email
+        },
+        ctx: createStoreContext(user.user_uid, correlationId)
+      });
+    }
+
     clearSessionCookie({ c, cookieName: config.sessionCookieName });
     return c.json(
       envelopeSuccess({
@@ -471,6 +575,15 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       return c.json(rowVersionConflictResponse(correlationId, update.job.row_version, update.conflict), 409);
     }
 
+    await store.appendAudit({
+      action: "jobs.note.create",
+      payload: {
+        job_uid: jobUid,
+        note_length: body.note.length
+      },
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
     return c.json(
       envelopeSuccess({
         correlationId,
@@ -534,6 +647,15 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     };
 
     await store.createScheduleRequest(row);
+
+    await store.appendAudit({
+      action: "schedules.request",
+      payload: {
+        job_uid: body.job_uid,
+        request_uid: row.request_uid
+      },
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
 
     return c.json(
       envelopeSuccess({
@@ -793,6 +915,16 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     };
 
     await store.createDocument(document);
+
+    await store.appendAudit({
+      action: "documents.generate",
+      payload: {
+        job_uid: body.job_uid,
+        document_uid: documentUid,
+        document_type: body.document_type
+      },
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
 
     return c.json(
       envelopeSuccess({

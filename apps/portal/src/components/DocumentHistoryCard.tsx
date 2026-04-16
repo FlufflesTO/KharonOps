@@ -9,7 +9,7 @@ interface DocumentHistoryCardProps {
 
 export function DocumentHistoryCard({
   documents,
-  selectedJobUid,
+  _selectedJobUid,
   onRefresh,
 }: DocumentHistoryCardProps): React.JSX.Element {
   return (

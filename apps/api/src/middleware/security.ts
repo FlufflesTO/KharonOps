@@ -21,14 +21,16 @@ function mergeVary(existing: string | null, incoming: string): string {
 
 export function apiSecurityHeadersMiddleware() {
   return createMiddleware<AppBindings>(async (c, next) => {
-    await next();
-
-    c.header("Cache-Control", "no-store, private");
-    c.header("Pragma", "no-cache");
-    c.header("X-Content-Type-Options", "nosniff");
-    c.header("X-Frame-Options", "DENY");
-    c.header("Referrer-Policy", "strict-origin-when-cross-origin");
-    c.header("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-    c.header("Vary", mergeVary(c.res.headers.get("Vary"), "Cookie, Cf-Access-Jwt-Assertion"));
+    try {
+      await next();
+    } finally {
+      c.header("Cache-Control", "no-store, private");
+      c.header("Pragma", "no-cache");
+      c.header("X-Content-Type-Options", "nosniff");
+      c.header("X-Frame-Options", "DENY");
+      c.header("Referrer-Policy", "strict-origin-when-cross-origin");
+      c.header("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+      c.header("Vary", mergeVary(c.res.headers.get("Vary"), "Cookie, Cf-Access-Jwt-Assertion"));
+    }
   });
 }

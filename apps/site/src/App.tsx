@@ -151,9 +151,6 @@ export function SiteApp(): React.JSX.Element {
             <span className="nav-status__dot" />
             Operational Command Live
           </div>
-          <a className="site-button site-button--primary" href="/portal/">
-            Command Centre Login
-          </a>
         </div>
       </header>
 

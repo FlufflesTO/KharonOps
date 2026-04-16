@@ -344,10 +344,12 @@ export class LocalWorkbookStore implements WorkbookStore {
     action: string;
     payload: Record<string, unknown>;
     ctx: { correlationId: string; actorUserUid: string };
+    entry_type?: string;
   }): Promise<void> {
     this.data.audits.push({
       audit_uid: `AUD-${crypto.randomUUID()}`,
       action: args.action,
+      entry_type: args.entry_type ?? "system_audit",
       payload_json: JSON.stringify(args.payload),
       actor_user_uid: args.ctx.actorUserUid,
       correlation_id: args.ctx.correlationId,

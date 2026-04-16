@@ -15,6 +15,7 @@ import { ScheduleControlCard } from "./components/ScheduleControlCard";
 import { CommunicationRailsCard } from "./components/CommunicationRailsCard";
 import { AdminPanelCard } from "./components/AdminPanelCard";
 import { DocumentHistoryCard } from "./components/DocumentHistoryCard";
+import { DashboardView } from "./components/DashboardView";
 
 
 
@@ -66,6 +67,7 @@ export function PortalApp(): React.JSX.Element {
   const [authConfig, setAuthConfig] = useState<PortalAuthConfig | null>(null);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [selectedJobUid, setSelectedJobUid] = useState("");
+  const [portalView, setPortalView] = useState<"dashboard" | "workspace">("dashboard");
   const [statusTarget, setStatusTarget] = useState<JobStatus>("draft");
   const [noteValue, setNoteValue] = useState("");
   const [loginToken, setLoginToken] = useState("dev-client");
@@ -226,7 +228,7 @@ export function PortalApp(): React.JSX.Element {
   async function handleLogin(token: string): Promise<void> {
     try {
       setLoading(true);
-      await apiClient.login(token);
+      await apiClient.login(token, productionAuth ? { gsiClientId: authConfig?.google_client_id ?? "" } : undefined);
       await refreshSession();
       await refreshJobs();
       setFeedback("Signed in.");
@@ -506,6 +508,25 @@ export function PortalApp(): React.JSX.Element {
   const isDispatchRole = role === "dispatcher" || role === "admin";
   const isAdmin = role === "admin";
 
+  if (portalView === "dashboard") {
+    return (
+      <div className={`portal-shell portal-shell--${role}`}>
+        <DashboardView
+          session={session}
+          openJobCount={openJobCount}
+          onEnterWorkspace={() => setPortalView("workspace")}
+          onLogout={() => runAction(handleLogout)}
+        />
+        <footer className="portal-statusbar">
+          <div className="feedback-line">
+            <span>Feedback</span>
+            <pre>{feedback}</pre>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
   return (
     <div className={`portal-shell portal-shell--${role}`}>
       <header className="portal-topbar">
@@ -536,6 +557,9 @@ export function PortalApp(): React.JSX.Element {
             Force queue mode
           </label>
           <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`}>{networkOnline ? "Online" : "Offline"}</span>
+          <button className="button button--secondary" onClick={() => setPortalView("dashboard")}>
+            Dashboard
+          </button>
           <button className="button button--secondary" onClick={() => runAction(handleReplay)}>
             Execute Queue ({queueCount})
           </button>

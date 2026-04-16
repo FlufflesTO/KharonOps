@@ -1,5 +1,6 @@
 import React from "react";
 import type { JobStatus } from "@kharon/domain";
+import { JOB_STATUS_LABELS } from "@kharon/domain";
 
 export interface JobRecord {
   job_uid: string;
@@ -41,7 +42,7 @@ export function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Ele
     >
       <div className="job-item__top">
         <strong>{job.job_uid}</strong>
-        <span className={`status-chip status-chip--${statusTone(job.status)}`}>{job.status}</span>
+        <span className={`status-chip status-chip--${statusTone(job.status)}`}>{JOB_STATUS_LABELS[job.status]}</span>
       </div>
       <span className="job-item__title">{job.title}</span>
       <span className="job-item__meta">

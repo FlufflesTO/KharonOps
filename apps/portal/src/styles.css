@@ -98,6 +98,203 @@ body::after {
   grid-template-rows: auto auto 1fr auto;
 }
 
+/* Dashboard View */
+.dashboard-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  min-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1.5rem;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  background: linear-gradient(to bottom right, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dashboard-header .role-tag {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-header .role-tag::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--role-accent);
+  box-shadow: 0 0 10px var(--role-glow);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.dashboard-card {
+  background: rgba(21, 27, 43, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  background: rgba(21, 27, 43, 0.6);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-lg);
+}
+
+.dashboard-card:hover::before {
+  opacity: 1;
+}
+
+.dashboard-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  border: 1px solid var(--line);
+  transition: transform 0.3s ease;
+}
+
+.dashboard-card:hover .dashboard-card__icon {
+  transform: scale(1.1) rotate(5deg);
+  background: var(--surface-strong);
+  color: #fff;
+}
+
+.dashboard-card h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.dashboard-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.dashboard-card__action {
+  margin-top: auto;
+  align-self: flex-start;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dashboard-card:hover .dashboard-card__action {
+  background: var(--text);
+  color: var(--bg);
+}
+
+/* Accents */
+.dashboard-card--blue:hover { border-color: rgba(78, 132, 238, 0.4); }
+.dashboard-card--blue .dashboard-card__icon { color: #4e84ee; }
+.dashboard-card--green:hover { border-color: rgba(55, 192, 137, 0.4); }
+.dashboard-card--green .dashboard-card__icon { color: #37c089; }
+.dashboard-card--amber:hover { border-color: rgba(240, 170, 74, 0.4); }
+.dashboard-card--amber .dashboard-card__icon { color: #f0aa4a; }
+.dashboard-card--purple:hover { border-color: rgba(139, 92, 246, 0.4); }
+.dashboard-card--purple .dashboard-card__icon { color: #8b5cf6; }
+
+.dashboard-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dashboard-footer p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-soft);
+}
+
+.dashboard-footer small {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.logout-button {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+  background: var(--critical);
+  border-color: var(--critical);
+  color: #fff;
+}
+
 .portal-shell--loading {
   display: grid;
   place-items: center;

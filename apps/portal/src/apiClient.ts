@@ -71,9 +71,12 @@ export interface PortalAuthConfig {
 }
 
 export const apiClient = {
-  async login(idToken: string): Promise<PortalSession> {
+  async login(idToken: string, options?: { gsiClientId?: string }): Promise<PortalSession> {
     const result = await request<PortalSession>("/api/v1/auth/google-login", {
       method: "POST",
+      headers: {
+        ...(options?.gsiClientId ? { "x-gsi-client-id": options.gsiClientId } : {})
+      },
       body: JSON.stringify({ id_token: idToken })
     });
     return result.data!;

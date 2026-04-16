@@ -8,7 +8,12 @@ export * from "./retry.js";
 export * from "./errors.js";
 
 function envValue(env: Record<string, string | undefined>, key: string): string {
-  return String(env[key] ?? "").trim();
+  const value = String(env[key] ?? "").trim();
+  // Handle escaped newlines (\n) which often occur in .env files when not using a specialized loader
+  if (value.includes("\\n") && (key.includes("PRIVATE_KEY") || key.includes("JSON"))) {
+    return value.replace(/\\n/g, "\n");
+  }
+  return value;
 }
 
 function envFirst(env: Record<string, string | undefined>, keys: string[]): string {
@@ -151,7 +156,10 @@ export async function verifyGoogleIdToken(args: {
       service: "oidc",
       status: response.status,
       transient: false,
-      details: { response: body }
+      details: {
+        expectedAudience: args.expectedAudience,
+        response: body
+      }
     });
   }
 
@@ -167,7 +175,10 @@ export async function verifyGoogleIdToken(args: {
       service: "oidc",
       status: 401,
       transient: false,
-      details: { aud }
+      details: {
+        aud,
+        expectedAudience: args.expectedAudience
+      }
     });
   }
 
@@ -178,7 +189,10 @@ export async function verifyGoogleIdToken(args: {
       service: "oidc",
       status: 401,
       transient: false,
-      details: { iss }
+      details: {
+        iss,
+        expectedIssuerSubstring: "accounts.google.com"
+      }
     });
   }
 
@@ -189,7 +203,10 @@ export async function verifyGoogleIdToken(args: {
       service: "oidc",
       status: 401,
       transient: false,
-      details: { exp }
+      details: {
+        exp,
+        now
+      }
     });
   }
 

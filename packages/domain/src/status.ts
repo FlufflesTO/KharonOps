@@ -1,5 +1,14 @@
 import type { JobStatus } from "./types.js";
 
+export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
+  draft: "Ready / Open",
+  performed: "Work Performed",
+  rejected: "Correction Required",
+  approved: "Office Approved",
+  certified: "Legally Certified",
+  cancelled: "Cancelled / Void"
+};
+
 const transitions: Record<JobStatus, JobStatus[]> = {
   draft: ["performed", "cancelled"],
   performed: ["approved", "rejected", "cancelled"],

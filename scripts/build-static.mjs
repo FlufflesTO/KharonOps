@@ -31,10 +31,16 @@ function buildHeaders() {
       "  X-Frame-Options: DENY",
       "  X-Content-Type-Options: nosniff",
       "  Referrer-Policy: strict-origin-when-cross-origin",
+      "  Cross-Origin-Opener-Policy: same-origin-allow-popups",
       "  Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()",
       "  Cross-Origin-Resource-Policy: same-origin",
       "  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload",
       `  Content-Security-Policy: ${contentSecurityPolicy}`
+    ].join("\n"),
+    [
+      "/portal",
+      "  Cache-Control: no-store",
+      "  X-Robots-Tag: noindex, nofollow, noarchive"
     ].join("\n"),
     [
       "/",
@@ -51,13 +57,11 @@ function buildHeaders() {
     [
       "/portal/",
       "  Cache-Control: no-store",
-      "  Cross-Origin-Opener-Policy: same-origin-allow-popups",
       "  X-Robots-Tag: noindex, nofollow, noarchive"
     ].join("\n"),
     [
       "/portal/index.html",
       "  Cache-Control: no-store",
-      "  Cross-Origin-Opener-Policy: same-origin-allow-popups",
       "  X-Robots-Tag: noindex, nofollow, noarchive"
     ].join("\n"),
     [

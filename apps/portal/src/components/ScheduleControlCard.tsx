@@ -38,17 +38,11 @@ interface ScheduleControlCardProps {
   onFeedback: (msg: string) => void;
 }
 
-function toIsoOrNull(value: string): string | null {
-  const parsed = Date.parse(value);
-  if (Number.isNaN(parsed)) {
-    return null;
-  }
-  return new Date(parsed).toISOString();
-}
+
 
 export function ScheduleControlCard({
-  selectedJobUid,
-  selectedJobRowVersion,
+  _selectedJobUid,
+  _selectedJobRowVersion,
   preferredStart,
   setPreferredStart,
   preferredEnd,
@@ -75,12 +69,12 @@ export function ScheduleControlCard({
   setPublishDocumentUid,
   publishRowVersion,
   setPublishRowVersion,
-  documentType,
+  _documentType,
   onScheduleRequest,
   onScheduleConfirm,
   onReschedule,
   onDocumentPublish,
-  onFeedback,
+  _onFeedback,
 }: ScheduleControlCardProps): React.JSX.Element {
   return (
     <article className="workspace-card">

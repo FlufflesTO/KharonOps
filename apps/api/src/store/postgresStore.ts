@@ -350,6 +350,7 @@ CREATE TABLE IF NOT EXISTS svr_sync_queue (
 CREATE TABLE IF NOT EXISTS svr_audit_log (
   audit_uid       TEXT PRIMARY KEY,
   action          TEXT NOT NULL,
+  entry_type      TEXT NOT NULL DEFAULT 'system_audit',
   payload_json    TEXT NOT NULL,
   actor_user_uid  TEXT NOT NULL,
   correlation_id  TEXT NOT NULL,
@@ -775,15 +776,17 @@ export class PostgresWorkbookStore implements WorkbookStore {
     action: string;
     payload: Record<string, unknown>;
     ctx: StoreContext;
+    entry_type?: string;
   }): Promise<void> {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_audit_log
-       (audit_uid, action, payload_json, actor_user_uid, correlation_id, at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+       (audit_uid, action, entry_type, payload_json, actor_user_uid, correlation_id, at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         `AUD-${crypto.randomUUID()}`,
         args.action,
+        args.entry_type ?? "system_audit",
         JSON.stringify(args.payload),
         args.ctx.actorUserUid,
         args.ctx.correlationId,
@@ -795,13 +798,14 @@ export class PostgresWorkbookStore implements WorkbookStore {
   async listAudits(): Promise<Array<Record<string, string>>> {
     const pool = await this.getPool();
     const result = await pool.query(
-      `SELECT audit_uid, action, payload_json, actor_user_uid, correlation_id, at
+      `SELECT audit_uid, action, entry_type, payload_json, actor_user_uid, correlation_id, at
        FROM ${this.schema}.svr_audit_log
        ORDER BY at DESC`
     );
     return result.rows.map((row) => ({
       audit_uid: String(row.audit_uid),
       action: String(row.action),
+      entry_type: String(row.entry_type),
       payload_json: String(row.payload_json),
       actor_user_uid: String(row.actor_user_uid),
       correlation_id: String(row.correlation_id),

@@ -11,7 +11,8 @@ export const REQUIRED_WORKBOOK_SHEETS = [
   "Schedules_Master",
   "Automation_Jobs",
   "Sync_Queue",
-  "System_Config"
+  "System_Config",
+  "Ledger"
 ] as const;
 
 export const MUTABLE_FIELDS = ["row_version", "updated_at", "updated_by", "correlation_id"] as const;
@@ -310,5 +311,14 @@ export const WORKBOOK_HEADERS: Record<(typeof REQUIRED_WORKBOOK_SHEETS)[number],
     "last_result",
     ...MUTABLE_FIELDS
   ],
-  System_Config: ["config_key", "config_value", ...MUTABLE_FIELDS]
+  System_Config: ["config_key", "config_value", ...MUTABLE_FIELDS],
+  Ledger: [
+    "ledger_uid",
+    "entry_type",
+    "action",
+    "entity_type",
+    "entity_id",
+    "payload_json",
+    ...MUTABLE_FIELDS
+  ]
 };

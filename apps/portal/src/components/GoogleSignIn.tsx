@@ -1,17 +1,9 @@
 /**
  * KharonOps Portal - GoogleSignIn Component
  * Purpose: Self-contained Google Identity Services (GSI) sign-in button.
- *          Manages its own script injection lifecycle to prevent de-sync on
- *          React re-renders that plagued the previous App.tsx-level approach.
- * Dependencies: Google Identity Services (GSI) loaded on demand.
- * Structural Role: Leaf component rendered inside PortalAuth.
+ *          Manages script injection and prevents duplicate initialize calls.
  */
 import React, { useEffect, useRef } from "react";
-
-// ─── Ambient type declarations for GSI SDK ────────────────────────────────────
-// These are not shipped as a first-party @types package. We declare the minimal
-// surface we consume rather than installing an unofficial third-party typings
-// package, keeping the type surface explicit and auditable.
 
 interface GsiCredentialResponse {
   credential?: string;
@@ -49,32 +41,96 @@ declare global {
   }
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 interface GoogleSignInProps {
   clientId: string;
   onLogin: (token: string) => void;
 }
 
+let gsiScriptLoadPromise: Promise<void> | null = null;
+
+function ensureGsiScriptLoaded(): Promise<void> {
+  if (window.google?.accounts?.id) {
+    return Promise.resolve();
+  }
+
+  if (gsiScriptLoadPromise) {
+    return gsiScriptLoadPromise;
+  }
+
+  gsiScriptLoadPromise = new Promise<void>((resolve, reject) => {
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[src="https://accounts.google.com/gsi/client"]'
+    );
+    const script = existingScript ?? document.createElement("script");
+
+    const onLoad = () => {
+      resolve();
+    };
+
+    const onError = () => {
+      gsiScriptLoadPromise = null;
+      reject(new Error("Failed to load Google Identity Services script."));
+    };
+
+    script.addEventListener("load", onLoad, { once: true });
+    script.addEventListener("error", onError, { once: true });
+
+    if (!existingScript) {
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+  });
+
+  return gsiScriptLoadPromise;
+}
+
+let initializedClientIdForSession: string | null = null;
+
 export function GoogleSignIn({ clientId, onLogin }: GoogleSignInProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const initializationLockRef = useRef(false);
+  const onLoginRef = useRef(onLogin);
 
   useEffect(() => {
-    if (!containerRef.current || !clientId) return;
+    onLoginRef.current = onLogin;
+  }, [onLogin]);
 
-    const container = containerRef.current;
+  useEffect(() => {
+    if (!clientId) {
+      return;
+    }
 
-    const mountButton = () => {
+    let active = true;
+
+    const mountButton = async () => {
+      await ensureGsiScriptLoaded();
+      if (!active) {
+        return;
+      }
+
       const gsi = window.google?.accounts?.id;
-      if (!gsi || !container) return;
+      const container = containerRef.current;
+      if (!gsi || !container) {
+        return;
+      }
 
-      gsi.initialize({
-        client_id: clientId,
-        callback: (res: GsiCredentialResponse) => {
-          if (res.credential) onLogin(res.credential);
-        }
-      });
+      // Guard against duplicate initialize calls from parent re-renders or multiple instances.
+      if (!initializationLockRef.current || initializedClientIdForSession !== clientId) {
+        gsi.initialize({
+          client_id: clientId,
+          callback: (res: GsiCredentialResponse) => {
+            if (res.credential) {
+              onLoginRef.current(res.credential);
+            }
+          }
+        });
+        initializationLockRef.current = true;
+        initializedClientIdForSession = clientId;
+      }
 
+      container.replaceChildren();
       gsi.renderButton(container, {
         theme: "outline",
         size: "large",
@@ -84,33 +140,11 @@ export function GoogleSignIn({ clientId, onLogin }: GoogleSignInProps): React.JS
       });
     };
 
-    const existingScript = document.querySelector<HTMLScriptElement>(
-      'script[src="https://accounts.google.com/gsi/client"]'
-    );
+    void mountButton();
 
-    if (existingScript) {
-      // Script already in DOM — GSI may or may not have initialised yet.
-      if (window.google?.accounts?.id) {
-        mountButton();
-      } else {
-        existingScript.addEventListener("load", mountButton);
-        return () => {
-          existingScript.removeEventListener("load", mountButton);
-        };
-      }
-    } else {
-      // Inject the GSI script for the first time.
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-      script.addEventListener("load", mountButton);
-      return () => {
-        script.removeEventListener("load", mountButton);
-      };
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      active = false;
+    };
   }, [clientId]);
 
   return <div ref={containerRef} className="google-signin-slot" style={{ minHeight: "44px" }} />;
