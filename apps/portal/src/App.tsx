@@ -589,13 +589,9 @@ export function PortalApp(): React.JSX.Element {
         </div>
       </header>
 
-      <WorkspaceInfo
-        role={role}
-        selectedJob={selectedJob}
-        queueCount={queueCount}
-        generatedDocumentCount={generatedDocumentCount}
-        networkOnline={networkOnline}
-      />
+      {/* WorkspaceInfo removed: the role-contextual essay copy added bulk without
+          operational value. The SummaryBoard already surfaces the key live metrics
+          (open jobs, queue depth, doc count) in a compact, scannable format. */}
 
       <div className="portal-layout">
         <aside className="portal-sidebar">

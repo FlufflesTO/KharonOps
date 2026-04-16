@@ -1,46 +1,96 @@
 /**
  * KharonOps Portal - DashboardView Component
- * Purpose: High-level landing page to reduce information density upon login.
- *          Provides role-specific "Command Cards" for quick navigation.
+ * Purpose: Role-specific landing dashboard that groups functional areas into
+ *          action sections (Dispatch, Communication, People Sync, Admin,
+ *          Documents, Jobs) rather than flat cards.
+ *          Reduces information overload on login by surfacing only what is
+ *          relevant to the active session role.
+ * Dependencies: apiClient (PortalSession), @kharon/domain (Role)
+ * Structural Role: Rendered by App.tsx when portalView === "dashboard".
  */
 import React from "react";
 import type { PortalSession } from "../apiClient";
 
-interface DashboardCardProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  actionLabel: string;
-  onClick: () => void;
-  accent?: "blue" | "green" | "amber" | "purple";
+// ─── Icon primitives ──────────────────────────────────────────────────────────
+function Icon({ d, size = 20 }: { d: string; size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
 }
 
-function DashboardCard({ title, description, icon, actionLabel, onClick, accent = "blue" }: DashboardCardProps): React.JSX.Element {
+const ICONS = {
+  dispatch:      "M3 6h18M3 12h18M3 18h18",
+  comms:         "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  people:        "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+  admin:         "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  documents:     "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z",
+  jobs:          "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
+  scheduling:    "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+  compliance:    "M22 11.08V12a10 10 0 1 1-5.93-9.14",
+  audit:         "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7",
+  workspace:     "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z",
+};
+
+// ─── Action card ──────────────────────────────────────────────────────────────
+interface ActionCardProps {
+  icon: string;
+  label: string;
+  description: string;
+  onClick: () => void;
+  accent?: "blue" | "green" | "amber" | "purple" | "slate" | "rose";
+  badge?: string | number;
+}
+
+function ActionCard({ icon, label, description, onClick, accent = "blue", badge }: ActionCardProps): React.JSX.Element {
   return (
-    // The entire card is the interactive surface. The inner button is a visual affordance
-    // only and does not carry its own onClick to prevent double-firing.
-    // tabIndex and role make the article keyboard-navigable as a button.
     <article
-      className={`dashboard-card dashboard-card--${accent}`}
+      className={`action-card action-card--${accent}`}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
       role="button"
       tabIndex={0}
-      aria-label={actionLabel}
+      aria-label={label}
     >
-      <div className="dashboard-card__icon">{icon}</div>
-      <div className="dashboard-card__content">
-        <h3>{title}</h3>
-        <p>{description}</p>
+      <div className="action-card__icon">
+        <Icon d={icon} size={18} />
+        {badge !== undefined && <span className="action-card__badge">{badge}</span>}
       </div>
-      {/* Visual affordance — pointer-events disabled to prevent event double-fire */}
-      <span className="dashboard-card__action" aria-hidden="true">
-        {actionLabel}
-      </span>
+      <div className="action-card__body">
+        <span className="action-card__label">{label}</span>
+        <span className="action-card__desc">{description}</span>
+      </div>
+      <span className="action-card__arrow" aria-hidden="true">→</span>
     </article>
   );
 }
 
+// ─── Section group ─────────────────────────────────────────────────────────────
+interface SectionProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+function DashSection({ title, children }: SectionProps): React.JSX.Element {
+  return (
+    <section className="dash-section">
+      <h2 className="dash-section__title">{title}</h2>
+      <div className="dash-section__grid">{children}</div>
+    </section>
+  );
+}
+
+// ─── Role label map ────────────────────────────────────────────────────────────
+const ROLE_DISPLAY: Record<string, { label: string; sub: string }> = {
+  technician:  { label: "Field Technician",  sub: "FIELD OPERATIONS" },
+  dispatcher:  { label: "Dispatch Controller", sub: "SCHEDULING & COMMS" },
+  client:      { label: "Client Portal",      sub: "SERVICE VISIBILITY" },
+  admin:       { label: "Administration",     sub: "PLATFORM ADMIN" },
+  super_admin: { label: "Platform Command",   sub: "SUPER ADMIN — FULL ACCESS" },
+};
+
+// ─── Props ─────────────────────────────────────────────────────────────────────
 interface DashboardViewProps {
   session: PortalSession;
   openJobCount: number;
@@ -48,155 +98,126 @@ interface DashboardViewProps {
   onLogout: () => void;
 }
 
-export function DashboardView({
-  session,
-  openJobCount,
-  onEnterWorkspace,
-  onLogout
-}: DashboardViewProps): React.JSX.Element {
-  const { role, display_name } = session.session;
+// ─── Main component ────────────────────────────────────────────────────────────
+export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogout }: DashboardViewProps): React.JSX.Element {
+  const role = session.session.role;
+  const meta = ROLE_DISPLAY[role] ?? { label: "Operations", sub: role.toUpperCase() };
 
+  // ── TECHNICIAN ───────────────────────────────────────────────────────────────
+  if (role === "technician") {
+    return (
+      <main className="dashboard-view">
+        <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
+        <DashSection title="Jobs">
+          <ActionCard icon={ICONS.jobs} label="My Work Orders" description={`${openJobCount} active engagements assigned to you`} onClick={onEnterWorkspace} accent="green" badge={openJobCount} />
+          <ActionCard icon={ICONS.compliance} label="Closeout Checklist" description="Generate jobcard or service report before leaving site" onClick={onEnterWorkspace} accent="blue" />
+        </DashSection>
+        <DashSection title="Field">
+          <ActionCard icon={ICONS.documents} label="Document History" description="View previously generated reports and evidence" onClick={onEnterWorkspace} accent="slate" />
+        </DashSection>
+      </main>
+    );
+  }
+
+  // ── DISPATCHER ───────────────────────────────────────────────────────────────
+  if (role === "dispatcher") {
+    return (
+      <main className="dashboard-view">
+        <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
+        <DashSection title="Dispatch">
+          <ActionCard icon={ICONS.dispatch} label="Job Queue" description={`${openJobCount} open engagements to coordinate`} onClick={onEnterWorkspace} accent="amber" badge={openJobCount} />
+          <ActionCard icon={ICONS.scheduling} label="Scheduling" description="Confirm and assign maintenance windows to technicians" onClick={onEnterWorkspace} accent="amber" />
+        </DashSection>
+        <DashSection title="Communication">
+          <ActionCard icon={ICONS.comms} label="Client Updates" description="Send Gmail or chat rail updates linked to a job record" onClick={onEnterWorkspace} accent="blue" />
+        </DashSection>
+        <DashSection title="Documents">
+          <ActionCard icon={ICONS.documents} label="Document Control" description="Review and release controlled outputs per job" onClick={onEnterWorkspace} accent="slate" />
+        </DashSection>
+      </main>
+    );
+  }
+
+  // ── CLIENT ───────────────────────────────────────────────────────────────────
+  if (role === "client") {
+    return (
+      <main className="dashboard-view">
+        <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
+        <DashSection title="Jobs">
+          <ActionCard icon={ICONS.jobs} label="Active Service Records" description="Track live maintenance or callout status for your sites" onClick={onEnterWorkspace} accent="blue" badge={openJobCount} />
+        </DashSection>
+        <DashSection title="Documents">
+          <ActionCard icon={ICONS.compliance} label="Reports & Evidence" description="Review published jobcards and compliance documents" onClick={onEnterWorkspace} accent="green" />
+        </DashSection>
+      </main>
+    );
+  }
+
+  // ── ADMIN ────────────────────────────────────────────────────────────────────
+  if (role === "admin") {
+    return (
+      <main className="dashboard-view">
+        <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
+        <DashSection title="Jobs">
+          <ActionCard icon={ICONS.jobs} label="Operational Engagements" description={`${openJobCount} open jobs across all technicians`} onClick={onEnterWorkspace} accent="blue" badge={openJobCount} />
+        </DashSection>
+        <DashSection title="Admin">
+          <ActionCard icon={ICONS.admin} label="Platform Governance" description="Audit surface, health checks, and privileged recovery" onClick={onEnterWorkspace} accent="slate" />
+          <ActionCard icon={ICONS.audit} label="Audit Trail" description="Review document history and close-out posture by job" onClick={onEnterWorkspace} accent="slate" />
+        </DashSection>
+        <DashSection title="Documents">
+          <ActionCard icon={ICONS.documents} label="Document Control" description="Review and control all generated outputs platform-wide" onClick={onEnterWorkspace} accent="purple" />
+        </DashSection>
+      </main>
+    );
+  }
+
+  // ── SUPER ADMIN ──────────────────────────────────────────────────────────────
   return (
     <main className="dashboard-view">
-      <header className="dashboard-header">
-        <div className="dashboard-header__welcome">
-          <h1>Welcome, {display_name}</h1>
-          <p className="role-tag">{role === "super_admin" ? "SUPER ADMIN — FULL ACCESS" : `${role.toUpperCase()} COMMAND`}</p>
-        </div>
-        <button className="logout-button" onClick={onLogout}>Logout</button>
-      </header>
+      <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
 
-      <section className="dashboard-grid">
-        {role === "technician" && (
-          <>
-            <DashboardCard
-              title="Current Field Work"
-              description={`You have ${openJobCount} open jobs requiring field execution or sign-off.`}
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" /></svg>}
-              actionLabel="Open Jobcards"
-              onClick={onEnterWorkspace}
-              accent="blue"
-            />
-            <DashboardCard
-              title="Capture Evidence"
-              description="Quickly upload photos and notes for active site surveys."
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>}
-              actionLabel="New Entry"
-              onClick={onEnterWorkspace}
-              accent="amber"
-            />
-          </>
-        )}
+      <DashSection title="Dispatch">
+        <ActionCard icon={ICONS.dispatch} label="Job Queue" description={`${openJobCount} open engagements platform-wide`} onClick={onEnterWorkspace} accent="amber" badge={openJobCount} />
+        <ActionCard icon={ICONS.scheduling} label="Scheduling" description="Confirm, assign, and reschedule maintenance windows" onClick={onEnterWorkspace} accent="amber" />
+      </DashSection>
 
-        {role === "dispatcher" && (
-          <>
-            <DashboardCard
-              title="Schedule Control"
-              description="Manage technician slots and confirm pending schedule requests."
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>}
-              actionLabel="Go to Scheduling"
-              onClick={onEnterWorkspace}
-              accent="purple"
-            />
-            <DashboardCard
-              title="Job List Overview"
-              description={`${openJobCount} active jobs across all technician contexts.`}
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>}
-              actionLabel="View All Jobs"
-              onClick={onEnterWorkspace}
-              accent="blue"
-            />
-          </>
-        )}
+      <DashSection title="Communication">
+        <ActionCard icon={ICONS.comms} label="Client Outbound" description="Gmail and chat rails linked to selected job records" onClick={onEnterWorkspace} accent="blue" />
+      </DashSection>
 
-        {role === "client" && (
-          <>
-            <DashboardCard
-              title="Site Status"
-              description={`Monitor the live posture of your ${openJobCount} active service records.`}
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>}
-              actionLabel="Check Status"
-              onClick={onEnterWorkspace}
-              accent="green"
-            />
-            <DashboardCard
-              title="Compliance Vault"
-              description="Access your historical jobcards, service reports, and certifications."
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" /></svg>}
-              actionLabel="Download Reports"
-              onClick={onEnterWorkspace}
-              accent="blue"
-            />
-          </>
-        )}
+      <DashSection title="People Sync">
+        <ActionCard icon={ICONS.people} label="People Registry" description="Sync technicians, clients, and users from the master sheet" onClick={onEnterWorkspace} accent="green" />
+      </DashSection>
 
-        {role === "admin" && (
-          <>
-            <DashboardCard
-              title="System Governance"
-              description="Monitor audit logs, user provisioning, and organizational health."
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>}
-              actionLabel="Admin Panel"
-              onClick={onEnterWorkspace}
-              accent="purple"
-            />
-            <DashboardCard
-              title="Operational Overview"
-              description={`Total ${openJobCount} jobs currently executing in the system.`}
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z" /></svg>}
-              actionLabel="Workspace"
-              onClick={onEnterWorkspace}
-              accent="blue"
-            />
-          </>
-        )}
+      <DashSection title="Jobs">
+        <ActionCard icon={ICONS.jobs} label="Operational Engagements" description="Full cross-role job list — search, filter, and act on any record" onClick={onEnterWorkspace} accent="blue" badge={openJobCount} />
+        <ActionCard icon={ICONS.compliance} label="Closeout & Compliance" description="Verify certified vs unclosed ratio across all sites" onClick={onEnterWorkspace} accent="green" />
+      </DashSection>
 
-        {role === "super_admin" && (
-          <>
-            {/* Field Operations — mirrors technician view */}
-            <DashboardCard
-              title="Field Operations"
-              description={`${openJobCount} open jobs executing across all technician contexts.`}
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" /></svg>}
-              actionLabel="Open Jobcards"
-              onClick={onEnterWorkspace}
-              accent="blue"
-            />
-            {/* Scheduling — mirrors dispatcher view */}
-            <DashboardCard
-              title="Schedule Control"
-              description="Manage technician slots and confirm pending schedule requests."
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>}
-              actionLabel="Go to Scheduling"
-              onClick={onEnterWorkspace}
-              accent="purple"
-            />
-            {/* Client Compliance — mirrors client view */}
-            <DashboardCard
-              title="Compliance Vault"
-              description="Inspect all client jobcards, service reports, and certifications."
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" /></svg>}
-              actionLabel="View Reports"
-              onClick={onEnterWorkspace}
-              accent="green"
-            />
-            {/* System Governance — mirrors admin view */}
-            <DashboardCard
-              title="Platform Governance"
-              description="Full audit trail, user provisioning, and organizational health monitoring."
-              icon={<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>}
-              actionLabel="Admin Panel"
-              onClick={onEnterWorkspace}
-              accent="amber"
-            />
-          </>
-        )}
-      </section>
+      <DashSection title="Documents">
+        <ActionCard icon={ICONS.documents} label="Document Control" description="Platform-wide controlled output review and release" onClick={onEnterWorkspace} accent="purple" />
+      </DashSection>
 
-      <footer className="dashboard-footer">
-        <p>KharonOps Command Centre &copy; 2026</p>
-        <small>Proprietary Fire &amp; Security Governance Substrate</small>
-      </footer>
+      <DashSection title="Admin">
+        <ActionCard icon={ICONS.admin} label="Platform Governance" description="Audit readiness, health checks, and privileged recovery" onClick={onEnterWorkspace} accent="slate" />
+        <ActionCard icon={ICONS.audit} label="Audit Trail" description="Forensic audit log and closeout posture verification" onClick={onEnterWorkspace} accent="slate" />
+        <ActionCard icon={ICONS.workspace} label="Workspace" description="Full operational workspace — all panels unlocked" onClick={onEnterWorkspace} accent="rose" />
+      </DashSection>
     </main>
+  );
+}
+
+// ─── Shared header ─────────────────────────────────────────────────────────────
+function DashHeader({ name, label, sub, onLogout }: { name: string; label: string; sub: string; onLogout: () => void }): React.JSX.Element {
+  return (
+    <header className="dashboard-header">
+      <div>
+        <h1>{label}</h1>
+        <p className="role-tag">{sub}</p>
+        <p className="dashboard-header__welcome">Welcome back, {name}</p>
+      </div>
+      <button type="button" className="logout-button" onClick={onLogout}>Sign out</button>
+    </header>
   );
 }

@@ -1179,3 +1179,249 @@ summary:focus-visible {
   color: var(--critical) !important;
 }
 
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DASHBOARD v2 — Sectioned Action Cards
+   Replaces flat DashboardCard with ActionCard + DashSection layout.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Dashboard welcome header */
+.dashboard-header__welcome {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Section group */
+.dash-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dash-section__title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.5rem;
+}
+
+.dash-section__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.625rem;
+}
+
+/* Action card — compact horizontal layout */
+.action-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(21, 27, 43, 0.35);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+  position: relative;
+  text-align: left;
+  outline: none;
+}
+
+.action-card:hover,
+.action-card:focus-visible {
+  background: rgba(30, 40, 65, 0.65);
+  transform: translateY(-2px);
+}
+
+.action-card:focus-visible {
+  border-color: var(--role-accent);
+  box-shadow: 0 0 0 2px var(--role-glow);
+}
+
+.action-card__icon {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--role-accent);
+  transition: background 0.18s ease;
+}
+
+.action-card:hover .action-card__icon {
+  background: var(--surface-strong);
+}
+
+/* Colour accent variants */
+.action-card--blue:hover   { border-color: rgba(78,132,238,0.35); }
+.action-card--blue .action-card__icon   { color: #4e84ee; }
+.action-card--green:hover  { border-color: rgba(55,192,137,0.35); }
+.action-card--green .action-card__icon  { color: #37c089; }
+.action-card--amber:hover  { border-color: rgba(240,170,74,0.35); }
+.action-card--amber .action-card__icon  { color: #f0aa4a; }
+.action-card--purple:hover { border-color: rgba(139,92,246,0.35); }
+.action-card--purple .action-card__icon { color: #8b5cf6; }
+.action-card--slate:hover  { border-color: rgba(148,163,184,0.25); }
+.action-card--slate .action-card__icon  { color: #94a3b8; }
+.action-card--rose:hover   { border-color: rgba(244,63,94,0.35); }
+.action-card--rose .action-card__icon   { color: #f43f5e; }
+
+/* Badge counter on icon */
+.action-card__badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--role-accent);
+  color: var(--bg);
+  font-size: 0.6rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.action-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.action-card__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.action-card__desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.action-card__arrow {
+  flex-shrink: 0;
+  color: var(--text-soft);
+  font-size: 0.875rem;
+  transition: transform 0.15s ease, color 0.15s ease;
+  pointer-events: none;
+}
+
+.action-card:hover .action-card__arrow,
+.action-card:focus-visible .action-card__arrow {
+  transform: translateX(3px);
+  color: var(--role-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   JOB LIST FILTER CONTROLS
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.job-list-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.job-list-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(0,0,0,0.12);
+}
+
+.job-list-filters__search {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-family: var(--font-main);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.job-list-filters__search:focus {
+  border-color: var(--role-accent);
+}
+
+.job-list-filters__search::placeholder {
+  color: var(--text-soft);
+}
+
+/* Webkit search cancel button styling */
+.job-list-filters__search::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.job-list-filters__select {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-family: var(--font-main);
+  outline: none;
+  cursor: pointer;
+}
+
+.job-list-filters__select:focus {
+  border-color: var(--role-accent);
+}
+
+.job-list-filters__toggle {
+  align-self: flex-start;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.job-list-filters__toggle--active {
+  border-color: var(--role-accent);
+  color: var(--role-accent);
+  background: var(--role-glow);
+}
+
+/* Count pill partial — shows filtered / total */
+.count-pill__total {
+  opacity: 0.55;
+  font-weight: 400;
+}
+
