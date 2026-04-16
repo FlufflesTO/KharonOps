@@ -5,6 +5,7 @@ import type {
   DocsRail,
   DriveRail,
   GmailRail,
+  GoogleFile,
   PeopleRail,
   RowRecord,
   SheetsRail,
@@ -54,6 +55,9 @@ const docs: DocsRail = {
       drive_file_id: localId("doc"),
       pdf_file_id: localId("pdf")
     };
+  },
+  async listFiles(): Promise<GoogleFile[]> {
+    return [];
   }
 };
 
@@ -98,6 +102,7 @@ const people: PeopleRail = {
 export function createLocalWorkspaceRails(): WorkspaceRails {
   return {
     mode: "local",
+    driveRootFolderId: localId("local-drive-root"),
     sheets,
     docs,
     drive,

@@ -5,6 +5,7 @@ import type {
   DocsRail,
   DriveRail,
   GmailRail,
+  GoogleFile,
   GoogleRuntimeConfig,
   PeopleRail,
   RowRecord,
@@ -418,7 +419,7 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       const response = await googleApiRequest<{ files: GoogleFile[] }>({
         config,
         service: "drive",
-        url: `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q.join(" and "))}&fields=files(id,name,webViewLink,createdTime,mimeType)&orderBy=createdTime desc`,
+        url: `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q.join(" and "))}&fields=files(id,name,webViewLink,createdTime,mimeType)&orderBy=createdTime%20desc`,
         scopes: ["https://www.googleapis.com/auth/drive.readonly"]
       });
 

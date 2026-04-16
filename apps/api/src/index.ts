@@ -308,9 +308,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     return c.json(
       envelopeSuccess({
         correlationId,
-        data: {
-          entries: history
-        }
+        data: history
       })
     );
   });
