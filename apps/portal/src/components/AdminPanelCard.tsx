@@ -62,7 +62,7 @@ export function AdminPanelCard({
 
         <section className="admin-section">
           <h3>Automation Jobs</h3>
-          <div className="automation-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="automation-list">
             {adminAutomationJobs.length === 0 ? (
               <p className="muted-copy">No automation jobs loaded.</p>
             ) : (

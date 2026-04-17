@@ -49,9 +49,11 @@ export function canUpdateJobStatus(user: SessionUser, job: JobRow, requestedStat
       return false;
     }
     // Technician can only transition to 'performed' or 'cancelled'
-    if (requestedStatus && !["performed", "cancelled"].includes(requestedStatus)) {
-      return false;
+    if (requestedStatus) {
+      return ["performed", "cancelled"].includes(requestedStatus);
     }
+    // If no requestedStatus is provided, this might be a generic "can I see/edit this job" call (like for notes).
+    // In that case, we allow it if they are the assigned technician.
     return true;
   }
   return false;
