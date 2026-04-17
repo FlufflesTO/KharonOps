@@ -1463,7 +1463,8 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       action: "admin.automation.retry",
       payload: {
         automation_job_uid: automationJobUid,
-        retry_count: updated.retry_count
+        retry_count: updated.retry_count,
+        trigger_user_uid: user.user_uid
       },
       ctx: createStoreContext(user.user_uid, correlationId)
     });

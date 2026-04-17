@@ -754,11 +754,55 @@ summary:focus-visible {
 .workspace-grid,
 .summary-grid,
 .fact-list,
-.job-list,
-.control-stack,
-.history-table {
+.control-stack {
   display: grid;
   gap: 0.9rem;
+}
+
+.job-list,
+.history-table,
+.automation-list,
+.checklist-grid {
+  display: grid;
+  gap: 0.9rem;
+  overflow-y: auto;
+  padding-right: 0.5rem; /* Space for scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.job-list {
+  max-height: 480px;
+}
+
+.history-table {
+  max-height: 380px;
+}
+
+.automation-list {
+  max-height: 380px;
+  display: flex;
+  flex-direction: column;
+}
+
+.checklist-grid {
+  max-height: 320px;
+}
+
+/* Custom scrollbar for webkit */
+.job-list::-webkit-scrollbar,
+.history-table::-webkit-scrollbar,
+.automation-list::-webkit-scrollbar,
+.checklist-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.job-list::-webkit-scrollbar-thumb,
+.history-table::-webkit-scrollbar-thumb,
+.automation-list::-webkit-scrollbar-thumb,
+.checklist-grid::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 10px;
 }
 
 .portal-sidebar,
