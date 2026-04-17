@@ -100,7 +100,7 @@ export function JobDetailView({
 
       <details className="support-details">
         <summary>Technical metadata</summary>
-        <dl className="detail-grid" style={{ marginTop: '0.8rem' }}>
+        <dl className="detail-grid" style={{ marginTop: 'var(--space-3)' }}>
           <div>
             <dt>Job UID</dt>
             <dd>{selectedJob.job_uid}</dd>
