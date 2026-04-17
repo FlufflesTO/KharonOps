@@ -320,20 +320,23 @@ function findPortalFileForDocument(documentRow: Row, portalFiles: Row[]): Row | 
 }
 
 function parseDocument(row: Row, portalFile?: Row | null): JobDocumentRow {
+  const status = parseDocumentStatus(row, portalFile);
   return {
     document_uid: field(row, "document_uid"),
     job_uid: field(row, "job_uid"),
     document_type: parseDocumentType(field(row, "document_type")),
-    status: parseDocumentStatus(row, portalFile),
+    status,
     drive_file_id: field(row, "drive_file_id"),
     pdf_file_id: firstNonEmpty(field(portalFile, "drive_file_id"), field(row, "pdf_file_id")),
     published_url: firstNonEmpty(field(portalFile, "source_url"), field(row, "published_url")),
+    client_visible: status === "published" || parseBoolean(field(portalFile, "visible_to_client", "portal_visible")),
     row_version: Math.max(1, toNum(field(row, "row_version"))),
     updated_at: firstNonEmpty(field(row, "updated_at"), field(row, "last_sync_at"), field(row, "sent_at"), field(row, "requested_at")),
     updated_by: firstNonEmpty(field(row, "updated_by"), field(row, "assigned_to"), field(row, "requested_by"), field(row, "job_owner")),
     correlation_id: firstNonEmpty(field(row, "correlation_id"), field(row, "source_refs"), field(row, "legacy_document_id"), field(row, "document_uid"))
   };
 }
+
 
 function parseAutomation(row: Row): AutomationJobRow {
   return {

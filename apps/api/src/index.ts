@@ -998,8 +998,10 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       drive_file_id: generated.drive_file_id,
       pdf_file_id: generated.pdf_file_id,
       published_url: "",
+      client_visible: false,
       ...createMutable(user.user_uid, correlationId)
     };
+
 
     await store.createDocument(document);
 
@@ -1043,8 +1045,10 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
         drive_file_id: body.document_uid,
         pdf_file_id: body.document_uid,
         published_url: "",
+        client_visible: body.client_visible ?? false,
         ...createMutable(user.user_uid, correlationId)
       };
+
     }
 
     if (!document) {

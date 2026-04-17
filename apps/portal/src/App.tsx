@@ -907,14 +907,8 @@ export function PortalApp(): React.JSX.Element {
                 setRescheduleStart={setRescheduleStart}
                 rescheduleEnd={rescheduleEnd}
                 setRescheduleEnd={setRescheduleEnd}
-<<<<<<< HEAD
                 rescheduleRowVersion={rescheduleRowVersion}
                 setRescheduleRowVersion={setRescheduleRowVersion}
-                onScheduleRequest={() => runAction(handleScheduleRequest)}
-                onScheduleConfirm={() => runAction(handleScheduleConfirm)}
-                onReschedule={() => runAction(handleReschedule)}
-                onFeedback={setFeedback}
-=======
                 documents={dispatchDocuments}
                 selectedDocumentUid={selectedDocumentUid}
                 setSelectedDocumentUid={setSelectedDocumentUid}
@@ -922,7 +916,8 @@ export function PortalApp(): React.JSX.Element {
                 onScheduleConfirm={() => runAction(handleScheduleConfirm)}
                 onReschedule={() => runAction(handleReschedule)}
                 onDocumentPublish={() => runAction(handleDocumentPublish)}
->>>>>>> 3e57d37 (chore: local sync with remote main)
+                onFeedback={setFeedback}
+
               />
             ) : null}
 
@@ -944,14 +939,10 @@ export function PortalApp(): React.JSX.Element {
                 setSelectedAutomationJobUid={setSelectedAutomationJobUid}
                 onLoadHealth={() => runAction(loadAdminHealth)}
                 onLoadAudits={() => runAction(loadAdminAudits)}
-<<<<<<< HEAD
                 onLoadAutomationJobs={() => runAction(loadAdminAutomationJobs)}
                 onRetryAutomation={(uid) => runAction(() => handleRetryAutomation(uid))}
                 onFeedback={setFeedback}
-=======
-                onLoadAutomationJobs={() => runAction(refreshAutomationJobs)}
-                onRetryAutomation={(automationJobUid) => runAction(() => handleAutomationRetry(automationJobUid))}
->>>>>>> 3e57d37 (chore: local sync with remote main)
+
               />
             ) : null}
 
@@ -965,11 +956,6 @@ export function PortalApp(): React.JSX.Element {
               />
             ) : null}
 
-<<<<<<< HEAD
-            {activeWorkspaceTool === "people" && (isAdmin || role === "super_admin") && (
-              <RegistryCard onFeedback={setFeedback} />
-            )}
-=======
             {activeWorkspaceTool === "people" && isDispatchRole ? (
               <PeopleDirectoryCard
                 people={peopleDirectory}
@@ -977,7 +963,7 @@ export function PortalApp(): React.JSX.Element {
                 onFeedback={setFeedback}
               />
             ) : null}
->>>>>>> 3e57d37 (chore: local sync with remote main)
+
           </section>
         </main>
       </div>

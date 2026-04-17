@@ -173,9 +173,11 @@ function jobDocumentRowFromPg(row: PgRow | undefined): JobDocumentRow {
     drive_file_id: String(row.drive_file_id ?? ""),
     pdf_file_id: String(row.pdf_file_id ?? ""),
     published_url: String(row.published_url ?? ""),
+    client_visible: Boolean(row.client_visible ?? false),
     ...rowToMutableMeta(row)
   };
 }
+
 
 function automationJobRowFromPg(row: PgRow | undefined): AutomationJobRow {
   if (!row) throw new Error("Missing row for AutomationJobRow mapping");
@@ -315,11 +317,13 @@ CREATE TABLE IF NOT EXISTS svr_job_documents (
   drive_file_id   TEXT NOT NULL DEFAULT '',
   pdf_file_id     TEXT NOT NULL DEFAULT '',
   published_url   TEXT NOT NULL DEFAULT '',
+  client_visible  BOOLEAN NOT NULL DEFAULT FALSE,
   row_version     INTEGER NOT NULL DEFAULT 1,
   updated_at      TEXT NOT NULL,
   updated_by      TEXT NOT NULL,
   correlation_id  TEXT NOT NULL
 );
+
 
 CREATE TABLE IF NOT EXISTS svr_automation_jobs (
   automation_job_uid TEXT PRIMARY KEY,
@@ -750,16 +754,17 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_job_documents
-       (document_uid, job_uid, document_type, status, drive_file_id, pdf_file_id, published_url,
+       (document_uid, job_uid, document_type, status, drive_file_id, pdf_file_id, published_url, client_visible,
         row_version, updated_at, updated_by, correlation_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
         row.document_uid, row.job_uid, row.document_type, row.status,
-        row.drive_file_id, row.pdf_file_id, row.published_url,
+        row.drive_file_id, row.pdf_file_id, row.published_url, row.client_visible,
         row.row_version, row.updated_at, row.updated_by, row.correlation_id
       ]
     );
   }
+
 
   async getDocument(documentUid: string): Promise<JobDocumentRow | null> {
     const pool = await this.getPool();
@@ -775,9 +780,9 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_job_documents
-       (document_uid, job_uid, document_type, status, drive_file_id, pdf_file_id, published_url,
+       (document_uid, job_uid, document_type, status, drive_file_id, pdf_file_id, published_url, client_visible,
         row_version, updated_at, updated_by, correlation_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        ON CONFLICT (document_uid) DO UPDATE SET
          job_uid = EXCLUDED.job_uid,
          document_type = EXCLUDED.document_type,
@@ -785,17 +790,19 @@ export class PostgresWorkbookStore implements WorkbookStore {
          drive_file_id = EXCLUDED.drive_file_id,
          pdf_file_id = EXCLUDED.pdf_file_id,
          published_url = EXCLUDED.published_url,
+         client_visible = EXCLUDED.client_visible,
          row_version = EXCLUDED.row_version,
          updated_at = EXCLUDED.updated_at,
          updated_by = EXCLUDED.updated_by,
          correlation_id = EXCLUDED.correlation_id`,
       [
         row.document_uid, row.job_uid, row.document_type, row.status,
-        row.drive_file_id, row.pdf_file_id, row.published_url,
+        row.drive_file_id, row.pdf_file_id, row.published_url, row.client_visible,
         row.row_version, row.updated_at, row.updated_by, row.correlation_id
       ]
     );
   }
+
 
   async listDocuments(jobUid?: string): Promise<JobDocumentRow[]> {
     const pool = await this.getPool();
