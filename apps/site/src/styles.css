@@ -1,15 +1,16 @@
 :root {
-  --color-bg: #0b0f1a;
-  --color-surface: #151b2b;
-  --color-surface-hover: #1e293b;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-primary: #4f46e5;
-  --color-secondary: #0ea5e9;
-  --color-text: #f8fafc;
-  --color-text-muted: #94a3b8;
-  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --color-bg: #07090e;
+  --color-surface: #0e121b;
+  --color-surface-hover: #161c28;
+  --color-border: rgba(255, 255, 255, 0.05);
+  --color-primary: #6366f1; /* More purple-blue */
+  --color-secondary: #3b82f6;
+  --color-accent: #818cf8;
+  --color-text: #f1f5f9;
+  --color-text-muted: #64748b;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Space Mono", monospace;
+  --spacing-section: 4rem; /* Reduced from 5.4rem */
 }
 
 body {
@@ -47,15 +48,44 @@ body {
 .site-nav {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: rgba(7, 9, 14, 0.85);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(24px);
+}
+
+.site-nav__utility {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.5rem 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.site-nav__utility a {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 150ms ease;
+}
+
+.site-nav__utility a:hover {
+  color: var(--color-text);
+}
+
+.site-nav__main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
-  padding: 1rem 2rem;
-  background: rgba(8, 14, 22, 0.78);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(22px);
+  gap: 2rem;
+  padding: 0.85rem 2rem;
 }
 
 .site-brand {
@@ -115,15 +145,17 @@ body {
 }
 
 .site-links a {
-  color: rgba(232, 237, 244, 0.72);
-  font-size: 0.8rem;
-  letter-spacing: 0.12em;
+  color: rgba(232, 237, 244, 0.7);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-decoration: none;
   text-transform: uppercase;
 }
 
-.site-links a:hover {
-  color: #ffffff;
+.site-links a:hover,
+.site-links a.active {
+  color: var(--color-primary);
 }
 
 .nav-status {
