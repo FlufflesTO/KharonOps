@@ -261,8 +261,10 @@ button {
 
 .hero-section {
   position: relative;
-  padding: 5.2rem 2rem 4rem;
+  padding: 3.2rem 2rem 2rem;
 }
+
+
 
 .hero-grid,
 .site-section,
@@ -591,17 +593,22 @@ button.site-button {
 }
 
 .site-section {
-  padding: 5rem 2rem 0;
+  padding: 2.2rem 2rem 0;
 }
+
+
 
 .section-heading {
   max-width: 60rem;
+  margin-bottom: 1.5rem;
 }
 
 .section-heading h2 {
-  font-size: clamp(1.95rem, 4vw, 3.3rem);
-  line-height: 1.04;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  line-height: 1.1;
+  margin: 0;
 }
+
 
 .section-subtitle {
   margin: 0.95rem 0 0;
@@ -675,13 +682,44 @@ button.site-button {
 .operations-board {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: 2rem;
+.site-section--ultra-compact {
+  padding: 1.5rem 2rem;
 }
 
-.detail-grid {
-  margin-top: 2rem;
+.service-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
 }
+
+.feature-pill-link {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.feature-pill-link:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-accent);
+}
+
+.feature-pill-link strong {
+  color: var(--color-text);
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.feature-pill-link span {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
 
 .detail-grid--single {
   grid-template-columns: minmax(0, 1fr);

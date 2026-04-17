@@ -148,6 +148,12 @@ export function PortalApp(): React.JSX.Element {
   const [selectedAutomationJobUid, setSelectedAutomationJobUid] = useState("");
   const [actionPending, setActionPending] = useState(false);
   const [checklistData, setChecklistData] = useState<Record<string, string>>({});
+  const [confirmRequestUid, setConfirmRequestUid] = useState("");
+  const [publishDocumentUid, setPublishDocumentUid] = useState("");
+  const [confirmRowVersion, setConfirmRowVersion] = useState(0);
+  const [publishRowVersion, setPublishRowVersion] = useState(0);
+  const [rescheduleRowVersion, setRescheduleRowVersion] = useState(0);
+
 
   const role = session?.session.role ?? null;
   const isDispatchRole = role === "dispatcher" || role === "admin" || role === "super_admin";
@@ -848,15 +854,16 @@ export function PortalApp(): React.JSX.Element {
         </aside>
 
         <main className="portal-main">
-          <SummaryBoard
-            role={role ?? "client"}
-            openJobCount={openJobCount}
-            selectedJobStatus={selectedJobStatus}
-            queueCount={queueCount}
-            generatedDocumentCount={generatedDocumentCount}
-            adminAuditCount={adminAuditCount}
-            networkOnline={networkOnline}
-          />
+            <SummaryBoard
+              role={role || "client"}
+              openJobCount={openJobCount}
+              selectedJobStatus={selectedJobStatus}
+              queueCount={queueCount}
+              generatedDocumentCount={generatedDocumentCount}
+              adminAuditCount={adminAuditCount}
+              networkOnline={networkOnline}
+            />
+
 
           <section className="workspace-grid">
             {activeWorkspaceTool === "jobs" ? (
