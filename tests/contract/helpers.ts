@@ -1,4 +1,6 @@
 import { createApp } from "../../apps/api/src/index";
+import { createSessionToken } from "../../apps/api/src/auth/session";
+import type { SessionUser } from "@kharon/domain";
 
 export const testEnv = {
   KHARON_MODE: "local",
@@ -26,4 +28,19 @@ export async function loginAs(app: ReturnType<typeof makeTestApp>, token: string
   }
 
   return cookie.split(";")[0] ?? "";
+}
+
+export async function issueSessionCookie(user: SessionUser): Promise<string> {
+  const signingKey = testEnv.SESSION_KEYS.split(",")[0];
+  if (!signingKey) {
+    throw new Error("Missing test signing key");
+  }
+
+  const token = await createSessionToken({
+    user,
+    ttlSeconds: Number(testEnv.SESSION_TTL_SECONDS),
+    signingKey
+  });
+
+  return `${testEnv.SESSION_COOKIE_NAME}=${token}`;
 }

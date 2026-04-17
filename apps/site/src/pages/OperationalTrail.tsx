@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { CtaSection } from "../components/CtaSection";
@@ -8,17 +8,21 @@ export function OperationalTrailPage(): React.JSX.Element {
   return (
     <>
       <Helmet>
-        <title>Projects and Case Studies | Kharon</title>
+        <title>Projects and Delivery Patterns | Kharon</title>
         <meta
           name="description"
-          content="Case studies showing environment constraints, execution scope, and compliance documentation delivered."
+          content="Representative delivery patterns showing environment constraints, execution scope, and compliance documentation outcomes."
         />
       </Helmet>
 
       <section className="site-section">
         <div className="section-heading">
           <p className="section-kicker">Projects</p>
-          <h2>Execution records across high-accountability environments.</h2>
+          <h2>Representative delivery patterns across high-accountability environments.</h2>
+          <p className="section-subtitle">
+            The profiles below are anonymised, representative patterns drawn from real delivery conditions. They are shown to
+            illustrate scope, constraints, and documentation posture without disclosing client-sensitive detail.
+          </p>
         </div>
         <div className="case-grid">
           {caseStudies.map((study) => (
@@ -42,7 +46,7 @@ export function OperationalTrailPage(): React.JSX.Element {
           ))}
         </div>
         <div className="detail-actions">
-          <Link className="site-button site-button--primary" to="/contact">
+          <Link className="site-button site-button--primary" to="/contact?intent=project">
             Discuss your project
           </Link>
         </div>

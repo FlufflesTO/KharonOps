@@ -304,6 +304,13 @@ export class LocalWorkbookStore implements WorkbookStore {
     return row ? immutableClone(row) : null;
   }
 
+  async listScheduleRequests(jobUid?: string): Promise<ScheduleRequestRow[]> {
+    return [...this.data.scheduleRequests.values()]
+      .filter((row) => !jobUid || row.job_uid === jobUid)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+      .map((row) => immutableClone(row));
+  }
+
   async upsertScheduleRequest(row: ScheduleRequestRow): Promise<void> {
     this.data.scheduleRequests.set(row.request_uid, immutableClone(row));
   }
@@ -315,6 +322,13 @@ export class LocalWorkbookStore implements WorkbookStore {
   async getSchedule(scheduleUid: string): Promise<ScheduleRow | null> {
     const row = this.data.schedules.get(scheduleUid);
     return row ? immutableClone(row) : null;
+  }
+
+  async listSchedules(jobUid?: string): Promise<ScheduleRow[]> {
+    return [...this.data.schedules.values()]
+      .filter((row) => !jobUid || row.job_uid === jobUid)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+      .map((row) => immutableClone(row));
   }
 
   async upsertSchedule(row: ScheduleRow): Promise<void> {
@@ -368,6 +382,12 @@ export class LocalWorkbookStore implements WorkbookStore {
   async getAutomationJob(automationJobUid: string): Promise<AutomationJobRow | null> {
     const row = this.data.automationJobs.get(automationJobUid);
     return row ? immutableClone(row) : null;
+  }
+
+  async listAutomationJobs(): Promise<AutomationJobRow[]> {
+    return [...this.data.automationJobs.values()]
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+      .map((row) => immutableClone(row));
   }
 
   async upsertSyncQueue(row: SyncQueueRow): Promise<void> {

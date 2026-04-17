@@ -640,6 +640,19 @@ export class PostgresWorkbookStore implements WorkbookStore {
     return scheduleRequestRowFromPg(result.rows[0]);
   }
 
+  async listScheduleRequests(jobUid?: string): Promise<ScheduleRequestRow[]> {
+    const pool = await this.getPool();
+    let sql = `SELECT * FROM ${this.schema}.svr_schedule_requests`;
+    const params: unknown[] = [];
+    if (jobUid) {
+      sql += ` WHERE job_uid = $1`;
+      params.push(jobUid);
+    }
+    sql += ` ORDER BY updated_at DESC`;
+    const result = await pool.query(sql, params);
+    return result.rows.map(scheduleRequestRowFromPg);
+  }
+
   async upsertScheduleRequest(row: ScheduleRequestRow): Promise<void> {
     const pool = await this.getPool();
     await pool.query(
@@ -689,6 +702,19 @@ export class PostgresWorkbookStore implements WorkbookStore {
     );
     if (result.rows.length === 0) return null;
     return scheduleRowFromPg(result.rows[0]);
+  }
+
+  async listSchedules(jobUid?: string): Promise<ScheduleRow[]> {
+    const pool = await this.getPool();
+    let sql = `SELECT * FROM ${this.schema}.svr_schedules`;
+    const params: unknown[] = [];
+    if (jobUid) {
+      sql += ` WHERE job_uid = $1`;
+      params.push(jobUid);
+    }
+    sql += ` ORDER BY updated_at DESC`;
+    const result = await pool.query(sql, params);
+    return result.rows.map(scheduleRowFromPg);
   }
 
   async upsertSchedule(row: ScheduleRow): Promise<void> {
@@ -862,6 +888,14 @@ export class PostgresWorkbookStore implements WorkbookStore {
     );
     if (result.rows.length === 0) return null;
     return automationJobRowFromPg(result.rows[0]);
+  }
+
+  async listAutomationJobs(): Promise<AutomationJobRow[]> {
+    const pool = await this.getPool();
+    const result = await pool.query(
+      `SELECT * FROM ${this.schema}.svr_automation_jobs ORDER BY updated_at DESC`
+    );
+    return result.rows.map(automationJobRowFromPg);
   }
 
   // -- Sync queue operations -----------------------------------------------

@@ -52,9 +52,15 @@ export function Layout(): React.JSX.Element {
         <script type="application/ld+json">{JSON.stringify(localBusinessSchema)}</script>
       </Helmet>
 
+      <a className="skip-link" href="#site-main">
+        Skip to main content
+      </a>
+
       <header className={`site-nav${navHidden ? " site-nav--hidden" : ""}${menuOpen ? " site-nav--open" : ""}`}>
+
         <div className="site-nav__utility">
-          <Link to="/contact">Callout and Service</Link>
+          <Link to="/contact?intent=urgent_callout">Emergency callout</Link>
+          <Link to="/contact?intent=maintenance">Maintenance</Link>
           <Link to="/contact">Contact</Link>
           <a href="/portal/">Portal</a>
         </div>
@@ -72,7 +78,6 @@ export function Layout(): React.JSX.Element {
               <small>Fire and Security Solutions</small>
             </span>
           </Link>
-
           <button
             className={`nav-toggle ${menuOpen ? "nav-toggle--active" : ""}`}
             onClick={() => setMenuOpen(!menuOpen)}
@@ -104,6 +109,7 @@ export function Layout(): React.JSX.Element {
               Resources
             </NavLink>
             <a href="/portal/" className="nav-portal-button">Portal Login</a>
+
           </nav>
 
           <div className="site-nav__actions">
@@ -112,7 +118,7 @@ export function Layout(): React.JSX.Element {
         </div>
       </header>
 
-      <main>
+      <main id="site-main">
         <Outlet />
       </main>
 
@@ -133,12 +139,8 @@ export function Layout(): React.JSX.Element {
             <small>{standards.join(" | ")}</small>
           </div>
           <nav className="site-footer__links" aria-label="Footer links">
-            <NavLink to="/privacy" className={({ isActive }) => (isActive ? "active" : "")}>
-              Privacy
-            </NavLink>
-            <NavLink to="/terms" className={({ isActive }) => (isActive ? "active" : "")}>
-              Terms
-            </NavLink>
+            <NavLink to="/privacy" className={({ isActive }) => (isActive ? "active" : "")}>Privacy</NavLink>
+            <NavLink to="/terms" className={({ isActive }) => (isActive ? "active" : "")}>Terms</NavLink>
             <a href="/portal/">Portal</a>
           </nav>
         </div>

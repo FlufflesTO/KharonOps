@@ -1,5 +1,6 @@
-import React from "react";
+﻿import React from "react";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import { CtaSection } from "../components/CtaSection";
 import { resourceCards } from "../constants/siteData";
 
@@ -7,17 +8,17 @@ const faqs = [
   {
     question: "How often should fire systems be serviced?",
     answer:
-      "Service cadence depends on site class and insurer requirements, but PH30 and PH120 schedules are common for managed commercial environments."
+      "Service cadence depends on site class, asset type, insurer requirements, and the maintenance plan adopted for the facility. PH30 and PH120 patterns are common reference points, but the actual schedule should be set for the specific estate."
   },
   {
     question: "What is included in a compliance closeout pack?",
     answer:
-      "Typical contents include service reports, test records, certificates, as-built references, and a clearly prioritized remedial actions register."
+      "Typical contents include service reports, test records, certificates, as-built references, and a clearly prioritised remedial actions register. The required evidence set can expand where leases, tenders, insurers, or site-specific rules apply."
   },
   {
     question: "Can Kharon support multi-site portfolios?",
     answer:
-      "Yes. Kharon supports distributed estates with standardized reporting, service governance, and cross-site visibility for leadership teams."
+      "Yes. Kharon supports distributed estates with standardised reporting, service governance, and cross-site visibility for leadership teams."
   }
 ];
 
@@ -36,6 +37,10 @@ export function ResourcesPage(): React.JSX.Element {
         <div className="section-heading">
           <p className="section-kicker">Resources</p>
           <h2>Guidance designed to improve operational and compliance outcomes.</h2>
+          <p className="section-subtitle">
+            Each resource request routes into a structured intake flow so Kharon can respond with the relevant reference,
+            follow-up context, and next-step recommendation.
+          </p>
         </div>
         <div className="case-grid">
           {resourceCards.map((card) => (
@@ -46,6 +51,14 @@ export function ResourcesPage(): React.JSX.Element {
               <div className="case-card__body">
                 <h3>{card.title}</h3>
                 <p>{card.description}</p>
+                <div className="detail-actions">
+                  <Link
+                    className="site-button site-button--secondary"
+                    to={`/contact?intent=${encodeURIComponent(card.intent)}&resource=${encodeURIComponent(card.title)}`}
+                  >
+                    {card.ctaLabel}
+                  </Link>
+                </div>
               </div>
             </article>
           ))}

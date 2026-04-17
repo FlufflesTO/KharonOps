@@ -109,3 +109,22 @@ export const peopleSyncSchema = z.object({
   // super_admin is a valid hint; it is elevated at the auth layer and never stored in Users_Master.
   role_hint: z.enum(["client", "technician", "dispatcher", "admin", "super_admin"]).optional()
 });
+
+export const publicContactRequestSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  email: z.string().email(),
+  phone: z.string().trim().min(7).max(40),
+  company: z.string().trim().max(160).default(""),
+  site_location: z.string().trim().max(160).default(""),
+  enquiry_type: z.enum([
+    "project",
+    "maintenance",
+    "urgent_callout",
+    "compliance",
+    "resource",
+    "general"
+  ]),
+  message: z.string().trim().min(12).max(4000),
+  company_size: z.string().trim().max(80).default(""),
+  honey: z.string().trim().max(200).default("")
+});

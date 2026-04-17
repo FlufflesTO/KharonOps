@@ -18,6 +18,7 @@ export interface RuntimeConfig {
   sessionCookieName: string;
   sessionTtlSeconds: number;
   googleClientId: string;
+  gmailSenderAddress: string;
   cloudflareAccess: {
     enabled: boolean;
     audience: string;
@@ -148,6 +149,7 @@ export function createRuntimeConfig(env: Record<string, string | undefined>): Ru
     sessionCookieName: envFirst(env, ["SESSION_COOKIE_NAME"]) || "kharon_session",
     sessionTtlSeconds: Number(envFirst(env, ["SESSION_TTL_SECONDS"]) || 28_800),
     googleClientId,
+    gmailSenderAddress: envFirst(env, ["GMAIL_SENDER_ADDRESS", "KHARON_GMAIL_FROM", "SUPPORT_EMAIL"]),
     cloudflareAccess: {
       enabled: accessEnabled,
       audience: accessAudience,

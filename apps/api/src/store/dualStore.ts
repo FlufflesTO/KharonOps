@@ -370,6 +370,10 @@ export class DualWorkbookStore implements WorkbookStore {
     return this.primary.getScheduleRequest(requestUid);
   }
 
+  async listScheduleRequests(jobUid?: string): Promise<ScheduleRequestRow[]> {
+    return this.primary.listScheduleRequests(jobUid);
+  }
+
   async upsertScheduleRequest(row: ScheduleRequestRow): Promise<void> {
     await this.primary.upsertScheduleRequest(row);
     await this._mirrorWrite(
@@ -390,6 +394,10 @@ export class DualWorkbookStore implements WorkbookStore {
 
   async getSchedule(scheduleUid: string): Promise<ScheduleRow | null> {
     return this.primary.getSchedule(scheduleUid);
+  }
+
+  async listSchedules(jobUid?: string): Promise<ScheduleRow[]> {
+    return this.primary.listSchedules(jobUid);
   }
 
   async upsertSchedule(row: ScheduleRow): Promise<void> {
@@ -462,6 +470,10 @@ export class DualWorkbookStore implements WorkbookStore {
 
   async getAutomationJob(automationJobUid: string): Promise<AutomationJobRow | null> {
     return this.primary.getAutomationJob(automationJobUid);
+  }
+
+  async listAutomationJobs(): Promise<AutomationJobRow[]> {
+    return this.primary.listAutomationJobs();
   }
 
   // -- Sync queue operations -----------------------------------------------

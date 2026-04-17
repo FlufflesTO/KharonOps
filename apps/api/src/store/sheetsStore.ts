@@ -676,6 +676,13 @@ export class SheetsWorkbookStore implements WorkbookStore {
     return row ? parseScheduleRequest(row) : null;
   }
 
+  async listScheduleRequests(jobUid?: string): Promise<ScheduleRequestRow[]> {
+    return (await this.rows("Schedule_Requests"))
+      .map(parseScheduleRequest)
+      .filter((row) => (jobUid ? row.job_uid === jobUid : true))
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  }
+
   async upsertScheduleRequest(row: ScheduleRequestRow): Promise<void> {
     await this.rails.sheets.upsertRow("Schedule_Requests", "request_uid", stringifyRow(row));
   }
@@ -687,6 +694,13 @@ export class SheetsWorkbookStore implements WorkbookStore {
   async getSchedule(scheduleUid: string): Promise<ScheduleRow | null> {
     const row = await this.findRow("Schedules_Master", "schedule_uid", scheduleUid);
     return row ? parseSchedule(row) : null;
+  }
+
+  async listSchedules(jobUid?: string): Promise<ScheduleRow[]> {
+    return (await this.rows("Schedules_Master"))
+      .map(parseSchedule)
+      .filter((row) => (jobUid ? row.job_uid === jobUid : true))
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   }
 
   async upsertSchedule(row: ScheduleRow): Promise<void> {
@@ -761,6 +775,12 @@ export class SheetsWorkbookStore implements WorkbookStore {
   async getAutomationJob(automationJobUid: string): Promise<AutomationJobRow | null> {
     const row = await this.findRow("Automation_Jobs", "automation_job_uid", automationJobUid);
     return row ? parseAutomation(row) : null;
+  }
+
+  async listAutomationJobs(): Promise<AutomationJobRow[]> {
+    return (await this.rows("Automation_Jobs"))
+      .map(parseAutomation)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   }
 
   async upsertSyncQueue(row: SyncQueueRow): Promise<void> {

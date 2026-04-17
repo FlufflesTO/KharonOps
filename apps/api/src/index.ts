@@ -21,6 +21,7 @@ import {
   googleLoginSchema,
   noteSchema,
   peopleSyncSchema,
+  publicContactRequestSchema,
   resolveConflictSchema,
   scheduleConfirmSchema,
   scheduleRequestSchema,
@@ -101,6 +102,23 @@ function parseGoogleTokenAudienceFromJwt(idToken: string): string | null {
     return typeof payload.aud === "string" ? payload.aud : null;
   } catch {
     return null;
+  }
+}
+
+function enquiryTypeLabel(type: "project" | "maintenance" | "urgent_callout" | "compliance" | "resource" | "general"): string {
+  switch (type) {
+    case "project":
+      return "New Project";
+    case "maintenance":
+      return "Maintenance Contract";
+    case "urgent_callout":
+      return "Urgent Callout";
+    case "compliance":
+      return "Compliance Request";
+    case "resource":
+      return "Resource Request";
+    default:
+      return "General Enquiry";
   }
 }
 
@@ -392,6 +410,77 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
         correlationId,
         data: {
           logged_out: true
+        }
+      })
+    );
+  });
+
+  api.post("/public/contact", async (c) => {
+    const correlationId = c.get("correlationId");
+    const body = await parseJsonBody(c.req.raw, publicContactRequestSchema);
+
+    if (body.honey !== "") {
+      logApiEvent("warn", "public.contact.honeypot_triggered", {
+        correlationId,
+        email: body.email
+      });
+
+      return c.json(
+        envelopeSuccess({
+          correlationId,
+          data: {
+            submitted: true
+          }
+        })
+      );
+    }
+
+    const subject = `[Website] ${enquiryTypeLabel(body.enquiry_type)} | ${body.name}`;
+    const message = [
+      `Name: ${body.name}`,
+      `Email: ${body.email}`,
+      `Phone: ${body.phone}`,
+      `Company: ${body.company || "Not provided"}`,
+      `Site Location: ${body.site_location || "Not provided"}`,
+      `Company Size: ${body.company_size || "Not provided"}`,
+      `Enquiry Type: ${enquiryTypeLabel(body.enquiry_type)}`,
+      "",
+      "Message:",
+      body.message
+    ].join("\n");
+
+    await config.rails.gmail.sendNotification({
+      to: config.gmailSenderAddress,
+      subject,
+      body: message
+    });
+
+    if (body.enquiry_type === "urgent_callout") {
+      await config.rails.chat.sendAlert({
+        severity: "critical",
+        message: `Urgent website enquiry from ${body.name} (${body.phone})`
+      });
+    }
+
+    await store.appendAudit({
+      action: "public.contact.submit",
+      entry_type: "public_contact",
+      payload: {
+        name: body.name,
+        email: body.email,
+        phone: body.phone,
+        company: body.company,
+        site_location: body.site_location,
+        enquiry_type: body.enquiry_type
+      },
+      ctx: createStoreContext("public:web", correlationId)
+    });
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          submitted: true
         }
       })
     );
@@ -1200,6 +1289,90 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       envelopeSuccess({
         correlationId,
         data: result
+      })
+    );
+  });
+
+  api.get("/workspace/people", requireSession(), requireRoles("dispatcher", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const users = await store.listUsers();
+    const activeUsers = users
+      .filter((row) => row.active === "true")
+      .sort((a, b) => a.display_name.localeCompare(b.display_name));
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: activeUsers
+      })
+    );
+  });
+
+  api.get("/workspace/dispatch-context", requireSession(), requireRoles("dispatcher", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const jobUid = (c.req.query("job_uid") ?? "").trim();
+
+    if (jobUid === "") {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "validation_error",
+            message: "job_uid query parameter is required"
+          }
+        }),
+        400
+      );
+    }
+
+    const job = await store.getJob(jobUid);
+    if (!job) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "not_found",
+            message: "Job not found"
+          }
+        }),
+        404
+      );
+    }
+
+    if (!canReadJob(user, job)) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "forbidden",
+            message: "Ownership check failed"
+          }
+        }),
+        403
+      );
+    }
+
+    const [requests, schedules, documents, users] = await Promise.all([
+      store.listScheduleRequests(jobUid),
+      store.listSchedules(jobUid),
+      store.listDocuments(jobUid),
+      store.listUsers()
+    ]);
+
+    const technicians = users
+      .filter((row) => row.active === "true" && row.role === "technician")
+      .sort((a, b) => a.display_name.localeCompare(b.display_name));
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          requests,
+          schedules,
+          documents,
+          technicians
+        }
       })
     );
   });

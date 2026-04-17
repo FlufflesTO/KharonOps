@@ -1,7 +1,6 @@
-import React from "react";
+﻿import React from "react";
 import type { PortalAuthConfig } from "../apiClient";
 import { GoogleSignIn } from "./GoogleSignIn";
-
 
 interface PortalAuthProps {
   authConfig: PortalAuthConfig | null;
@@ -15,7 +14,7 @@ interface PortalAuthProps {
 
 function QuickLoginButton({ label, token, onClick }: { label: string; token: string; onClick: (token: string) => void }): React.JSX.Element {
   return (
-    <button className="button button--ghost" onClick={() => onClick(token)}>
+    <button className="button button--ghost" type="button" onClick={() => onClick(token)}>
       {label}
     </button>
   );
@@ -32,35 +31,32 @@ export function PortalAuth({
 }: PortalAuthProps): React.JSX.Element {
   return (
     <div className="portal-auth-shell">
-      {/* Back to website — minimal top-left link so users can exit without a hard back navigation */}
-      <a href="/" className="portal-auth-back" aria-label="Back to Kharon website">
-        ← kharon.co.za
+      <a href="/" className="portal-auth-back" aria-label="Back to the website">
+        Back to website
       </a>
       <div className="portal-auth-stage">
         <section className="portal-auth-copy">
           <p className="portal-auth-kicker">KHARON OPERATIONAL COMMAND</p>
           <h1>Unified engineering control and compliance workspace.</h1>
           <p>
-            This secure environment provides the authoritative operational trail for fire detection, suppression, 
-            and security installations. Identity and role-based access are strictly enforced to ensure the 
-            integrity of every SANS-aligned certification.
+            This secure environment holds the operational trail for fire detection, suppression, and security work.
+            Identity and role-based access protect every schedule, jobcard, report, and published certificate.
           </p>
           <div className="portal-auth-points">
             <div>
-              <strong>Formal Verification</strong>
-              <span>Every session is anchored to verified identity to ensure the fidelity of audit logs and certificates.</span>
+              <strong>Verified identity</strong>
+              <span>Every session is tied to a provisioned operator profile before any record can be changed.</span>
             </div>
             <div>
-              <strong>Governed Operational Flow</strong>
-              <span>Schedules, jobcards, reports, and site evidence are managed within a single mission-critical trail.</span>
+              <strong>Controlled workflow</strong>
+              <span>Scheduling, closeout, evidence capture, and release stay in one governed operational trail.</span>
             </div>
             <div>
-              <strong>Strategic Workspaces</strong>
-              <span>Tailored command interfaces for Clients (visibility), Technicians (execution), and Dispatch (oversight).</span>
+              <strong>Role-specific access</strong>
+              <span>Clients, technicians, dispatch, and admin each see the controls that match their responsibility.</span>
             </div>
           </div>
         </section>
-
 
         <section className="portal-auth-card">
           <div className="panel-heading">
@@ -72,10 +68,9 @@ export function PortalAuth({
             <div className="field-stack">
               <span>Sign in with a provisioned Google account</span>
               <GoogleSignIn clientId={authConfig?.google_client_id ?? ""} onLogin={onLogin} />
+              <p className="muted-copy">If Google sign-in fails, capture the error and contact the platform administrator.</p>
             </div>
-          ) : null}
-
-          {!productionAuth ? (
+          ) : (
             <>
               <label className="field-stack">
                 <span>Google ID token or local development token</span>
@@ -89,8 +84,11 @@ export function PortalAuth({
               </label>
 
               <div className="button-row">
-                <button className="button button--primary" onClick={() => onLogin(loginToken)}>
+                <button className="button button--primary" type="button" onClick={() => onLogin(loginToken)}>
                   Sign in
+                </button>
+                <button className="button button--secondary" type="button" onClick={onSupportTokenSubmit}>
+                  Validate token
                 </button>
               </div>
 
@@ -101,31 +99,9 @@ export function PortalAuth({
                 <QuickLoginButton label="dev-admin" token="dev-admin" onClick={onLogin} />
               </div>
             </>
-          ) : (
-            <details className="support-details">
-              <summary>Diagnostic token input</summary>
-              <label className="field-stack">
-                <span>Paste a raw Google ID token JWT for diagnostics only</span>
-                <input
-                  id="portal-support-token"
-                  name="portal_support_token"
-                  value={loginToken}
-                  onChange={(event) => setLoginToken(event.target.value)}
-                  placeholder="eyJhbGciOiJSUzI1NiIs..."
-                />
-              </label>
-              <p className="muted-copy">
-                This is not your Google account email or session. Production login should happen from the Google button above.
-              </p>
-              <div className="button-row">
-                <button className="button button--secondary" onClick={onSupportTokenSubmit}>
-                  Submit token
-                </button>
-              </div>
-            </details>
           )}
 
-          <div className="feedback-panel">
+          <div className="feedback-panel" aria-live="polite">
             <pre>{feedback}</pre>
           </div>
         </section>
@@ -133,3 +109,4 @@ export function PortalAuth({
     </div>
   );
 }
+

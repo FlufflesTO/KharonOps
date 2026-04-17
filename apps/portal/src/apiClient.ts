@@ -1,4 +1,14 @@
-import type { ApiEnvelope, SyncMutation, SyncPushResult, Role } from "@kharon/domain";
+import type {
+  ApiEnvelope,
+  AutomationJobRow,
+  JobDocumentRow,
+  Role,
+  ScheduleRequestRow,
+  ScheduleRow,
+  SyncMutation,
+  SyncPushResult,
+  UserRow
+} from "@kharon/domain";
 
 const JSON_HEADERS = {
   "content-type": "application/json"
@@ -44,12 +54,24 @@ async function request<T>(path: string, init?: RequestInit): Promise<ApiEnvelope
   return body;
 }
 
+function requireData<T>(result: ApiEnvelope<T>, message: string): T {
+  if (result.data == null) {
+    throw {
+      data: null,
+      error: { code: "empty_response", message },
+      correlation_id: result.correlation_id ?? "",
+      row_version: null,
+      conflict: null
+    } satisfies ApiEnvelope<null>;
+  }
+
+  return result.data;
+}
+
 export interface PortalSession {
   session: {
     user_uid: string;
     email: string;
-    // Canonical Role type imported from @kharon/domain — GLOBAL-002 compliance.
-    // Do not re-define this union locally; update @kharon/domain/src/types.ts instead.
     role: Role;
     display_name: string;
     client_uid: string;
@@ -72,6 +94,16 @@ export interface PortalAuthConfig {
   dev_tokens_enabled: boolean;
 }
 
+export interface PortalDispatchContext {
+  requests: ScheduleRequestRow[];
+  schedules: ScheduleRow[];
+  documents: JobDocumentRow[];
+  technicians: UserRow[];
+}
+
+export type PeopleDirectoryEntry = UserRow;
+export type AutomationJobEntry = AutomationJobRow;
+
 export const apiClient = {
   async login(idToken: string, options?: { gsiClientId?: string }): Promise<PortalSession> {
     const result = await request<PortalSession>("/api/v1/auth/google-login", {
@@ -81,16 +113,7 @@ export const apiClient = {
       },
       body: JSON.stringify({ id_token: idToken })
     });
-    if (!result.data) {
-      throw {
-        data: null,
-        error: { code: "empty_response", message: "Login succeeded but the server returned no session data." },
-        correlation_id: result.correlation_id ?? "",
-        row_version: null,
-        conflict: null
-      } satisfies ApiEnvelope<null>;
-    }
-    return result.data;
+    return requireData(result, "Login succeeded but the server returned no session data.");
   },
   async session(): Promise<PortalSession> {
     const result = await request<PortalSessionState>("/api/v1/auth/session", {
@@ -119,16 +142,7 @@ export const apiClient = {
     const result = await request<PortalAuthConfig>("/api/v1/auth/config", {
       method: "GET"
     });
-    if (!result.data) {
-      throw {
-        data: null,
-        error: { code: "empty_response", message: "Auth config request succeeded but the server returned no data." },
-        correlation_id: result.correlation_id ?? "",
-        row_version: null,
-        conflict: null
-      } satisfies ApiEnvelope<null>;
-    }
-    return result.data;
+    return requireData(result, "Auth config request succeeded but the server returned no data.");
   },
   async logout(): Promise<void> {
     await request<{ logged_out: boolean }>("/api/v1/auth/logout", {
@@ -227,7 +241,6 @@ export const apiClient = {
       })
     });
   },
-
   async publishDocument(
     documentUid: string,
     rowVersion: number,
@@ -250,6 +263,12 @@ export const apiClient = {
       method: "GET"
     });
   },
+  async dispatchContext(jobUid: string): Promise<PortalDispatchContext> {
+    const result = await request<PortalDispatchContext>(`/api/v1/workspace/dispatch-context?job_uid=${encodeURIComponent(jobUid)}`, {
+      method: "GET"
+    });
+    return requireData(result, "Dispatch context request succeeded but the server returned no data.");
+  },
   async sendGmailNotification(to: string, subject: string, body: string, jobUid: string) {
     return request<Record<string, unknown>>("/api/v1/workspace/gmail/notify", {
       method: "POST",
@@ -268,6 +287,12 @@ export const apiClient = {
       body: JSON.stringify({ name, email, phone, role_hint: roleHint })
     });
   },
+  async listPeople(): Promise<PeopleDirectoryEntry[]> {
+    const result = await request<PeopleDirectoryEntry[]>("/api/v1/workspace/people", {
+      method: "GET"
+    });
+    return result.data ?? [];
+  },
   async adminHealth() {
     return request<Record<string, unknown>>("/api/v1/admin/health", {
       method: "GET"
@@ -283,6 +308,12 @@ export const apiClient = {
       method: "GET"
     });
   },
+  async listAutomationJobs(): Promise<AutomationJobEntry[]> {
+    const result = await request<AutomationJobEntry[]>("/api/v1/admin/automation-jobs", {
+      method: "GET"
+    });
+    return result.data ?? [];
+  },
   async retryAutomation(automationJobUid: string) {
     return request<Record<string, unknown>>(`/api/v1/admin/retries/${automationJobUid}`, {
       method: "POST"
@@ -295,3 +326,4 @@ export const apiClient = {
     });
   }
 };
+

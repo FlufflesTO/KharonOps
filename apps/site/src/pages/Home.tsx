@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { CtaSection } from "../components/CtaSection";
@@ -37,7 +37,7 @@ export function HomePage(): React.JSX.Element {
               sites, inspection cycles, and multi-stakeholder accountability.
             </p>
             <div className="hero-actions">
-              <Link className="site-button site-button--primary" to="/contact">
+              <Link className="site-button site-button--primary" to="/contact?intent=project">
                 Request site assessment
               </Link>
               <a className="site-button site-button--secondary" href="/portal/">
@@ -171,8 +171,12 @@ export function HomePage(): React.JSX.Element {
 
       <section className="site-section">
         <div className="section-heading">
-          <p className="section-kicker">Project proof</p>
-          <h2>Case studies that show execution constraints, decisions, and outcomes.</h2>
+          <p className="section-kicker">Representative delivery patterns</p>
+          <h2>Execution patterns that show scope, constraints, and closeout posture.</h2>
+          <p className="section-subtitle">
+            These anonymised profiles illustrate how Kharon approaches complex delivery environments without presenting
+            illustrative work as literal named case studies.
+          </p>
         </div>
         <div className="case-grid">
           {caseStudies.map((study) => (

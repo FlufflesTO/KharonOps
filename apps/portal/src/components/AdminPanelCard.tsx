@@ -1,27 +1,38 @@
 import React from "react";
-import { apiClient } from "../apiClient";
+import type { AutomationJobEntry } from "../apiClient";
 
 interface AdminPanelCardProps {
   adminHealth: Record<string, unknown> | null;
   adminAutomationJobs: Array<Record<string, unknown>>;
   adminAuditCount: number;
+  automationJobs: AutomationJobEntry[];
+  selectedAutomationJobUid: string;
+  setSelectedAutomationJobUid: (uid: string) => void;
   onLoadHealth: () => void;
   onLoadAudits: () => void;
   onLoadAutomationJobs: () => void;
   onRetryAutomation: (uid: string) => void;
   onFeedback: (msg: string) => void;
+
 }
 
 export function AdminPanelCard({
   adminHealth,
   adminAutomationJobs,
   adminAuditCount,
+  automationJobs,
+  selectedAutomationJobUid,
+  setSelectedAutomationJobUid,
   onLoadHealth,
   onLoadAudits,
   onLoadAutomationJobs,
   onRetryAutomation,
   onFeedback: _onFeedback,
+
 }: AdminPanelCardProps): React.JSX.Element {
+  const selectedAutomationJob =
+    automationJobs.find((job) => job.automation_job_uid === selectedAutomationJobUid) ?? null;
+
   return (
     <article className="workspace-card">
       <div className="panel-heading">
@@ -96,3 +107,4 @@ export function AdminPanelCard({
     </article>
   );
 }
+

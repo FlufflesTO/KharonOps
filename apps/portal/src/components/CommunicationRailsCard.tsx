@@ -1,23 +1,42 @@
-import React, { useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { apiClient } from "../apiClient";
+
+function errorMessage(error: unknown): string {
+  const typed = error as { error?: { message?: string } };
+  return typed.error?.message ?? String(error);
+}
 
 interface CommunicationRailsCardProps {
   selectedJobUid: string;
+  selectedJobTitle: string;
   onFeedback: (msg: string) => void;
 }
 
 export function CommunicationRailsCard({
   selectedJobUid,
-  onFeedback,
+  selectedJobTitle,
+  onFeedback
 }: CommunicationRailsCardProps): React.JSX.Element {
-  const [gmailTo, setGmailTo] = useState("connor@kharon.co.za");
-  const [gmailSubject, setGmailSubject] = useState("Kharon service update");
-  const [gmailBody, setGmailBody] = useState("Service team update attached.");
-  const [chatMessage, setChatMessage] = useState("Dispatcher alert test");
+  const [gmailTo, setGmailTo] = useState("");
+  const [gmailSubject, setGmailSubject] = useState("");
+  const [gmailBody, setGmailBody] = useState("");
+  const [chatMessage, setChatMessage] = useState("");
   const [chatSeverity, setChatSeverity] = useState<"info" | "warning" | "critical">("info");
-  const [personName, setPersonName] = useState("New Contact");
-  const [personEmail, setPersonEmail] = useState("connor@kharon.co.za");
-  const [personPhone, setPersonPhone] = useState("+27110000000");
+
+  useEffect(() => {
+    if (selectedJobUid === "") {
+      setGmailSubject("");
+      setGmailBody("");
+      setChatMessage("");
+      return;
+    }
+
+    setGmailSubject(`Service update | ${selectedJobUid}`);
+    setGmailBody(selectedJobTitle ? `Update for ${selectedJobTitle}.` : "");
+    setChatMessage(`Dispatch update for ${selectedJobUid}.`);
+  }, [selectedJobTitle, selectedJobUid]);
+
+  const disabled = selectedJobUid === "";
 
   return (
     <article className="workspace-card">
@@ -26,113 +45,125 @@ export function CommunicationRailsCard({
         <h2>Outbound actions</h2>
       </div>
 
-      {/* Gmail Notify */}
+      <p className="muted-copy">
+        {disabled
+          ? "Select a job before sending Gmail or Chat notifications."
+          : `Linked to ${selectedJobUid}${selectedJobTitle ? ` | ${selectedJobTitle}` : ""}.`}
+      </p>
+
       <div className="control-block">
         <div className="control-block__head">
           <h3>Gmail notify</h3>
-          <p>Send an update linked to the selected job.</p>
+          <p>Send a job-linked service update to the client or internal stakeholder.</p>
         </div>
         <div className="form-grid">
           <label className="field-stack">
             <span>To</span>
-            <input name="gmail_to" value={gmailTo} onChange={(event) => setGmailTo(event.target.value)} placeholder="to" />
+            <input
+              name="gmail_to"
+              type="email"
+              autoComplete="email"
+              spellCheck={false}
+              value={gmailTo}
+              onChange={(event) => setGmailTo(event.target.value)}
+              placeholder="client@example.com"
+            />
           </label>
           <label className="field-stack">
             <span>Subject</span>
             <input
               name="gmail_subject"
+              autoComplete="off"
               value={gmailSubject}
               onChange={(event) => setGmailSubject(event.target.value)}
-              placeholder="subject"
+              placeholder="Service update for JOB-1001…"
             />
           </label>
           <label className="field-stack field-stack--full">
             <span>Body</span>
-            <input name="gmail_body" value={gmailBody} onChange={(event) => setGmailBody(event.target.value)} placeholder="body" />
+            <textarea
+              name="gmail_body"
+              rows={4}
+              value={gmailBody}
+              onChange={(event) => setGmailBody(event.target.value)}
+              placeholder="Summarise the current service status, next step, and timing…"
+            />
           </label>
-          <div className="field-stack field-stack--action">
+          <div className="field-stack field-stack--action field-stack--full">
             <span>&nbsp;</span>
             <button
               className="button button--secondary"
+              type="button"
+              disabled={disabled}
               onClick={async () => {
-                await apiClient.sendGmailNotification(gmailTo, gmailSubject, gmailBody, selectedJobUid);
-                onFeedback("Gmail notification sent.");
+                if (gmailTo.trim() === "" || gmailSubject.trim() === "" || gmailBody.trim() === "") {
+                  onFeedback("Complete the Gmail recipient, subject, and body before sending.");
+                  return;
+                }
+
+                try {
+                  await apiClient.sendGmailNotification(gmailTo.trim(), gmailSubject.trim(), gmailBody.trim(), selectedJobUid);
+                  onFeedback("Gmail notification sent.");
+                } catch (error) {
+                  onFeedback(errorMessage(error));
+                }
               }}
             >
-              Send
+              Send Gmail
             </button>
           </div>
         </div>
       </div>
 
-      {/* Chat Alert */}
       <div className="control-block">
         <div className="control-block__head">
           <h3>Chat alert</h3>
-          <p>Escalate a dispatch message for the selected job.</p>
-        </div>
-        <div className="button-row">
-          <select
-            name="chat_severity"
-            value={chatSeverity}
-            onChange={(event) => setChatSeverity(event.target.value as "info" | "warning" | "critical")}
-          >
-            <option value="info">info</option>
-            <option value="warning">warning</option>
-            <option value="critical">critical</option>
-          </select>
-          <input name="chat_message" value={chatMessage} onChange={(event) => setChatMessage(event.target.value)} placeholder="message" />
-          <button
-            className="button button--secondary"
-            onClick={async () => {
-              await apiClient.sendChatAlert(chatMessage, chatSeverity, selectedJobUid);
-              onFeedback("Chat alert sent.");
-            }}
-          >
-            Alert
-          </button>
-        </div>
-      </div>
-
-      {/* People Sync */}
-      <div className="control-block">
-        <div className="control-block__head">
-          <h3>People sync</h3>
-          <p>Push a contact update into the shared people surface.</p>
+          <p>Escalate a dispatch message without leaving the selected job context.</p>
         </div>
         <div className="form-grid">
           <label className="field-stack">
-            <span>Name</span>
-            <input name="person_name" value={personName} onChange={(event) => setPersonName(event.target.value)} placeholder="name" />
+            <span>Severity</span>
+            <select
+              name="chat_severity"
+              value={chatSeverity}
+              onChange={(event) => setChatSeverity(event.target.value as "info" | "warning" | "critical")}
+            >
+              <option value="info">Info</option>
+              <option value="warning">Warning</option>
+              <option value="critical">Critical</option>
+            </select>
           </label>
-          <label className="field-stack">
-            <span>Email</span>
-            <input
-              name="person_email"
-              value={personEmail}
-              onChange={(event) => setPersonEmail(event.target.value)}
-              placeholder="email"
+          <label className="field-stack field-stack--full">
+            <span>Message</span>
+            <textarea
+              name="chat_message"
+              rows={3}
+              value={chatMessage}
+              onChange={(event) => setChatMessage(event.target.value)}
+              placeholder="Describe the issue, operator action, and expected response…"
             />
           </label>
-          <label className="field-stack">
-            <span>Phone</span>
-            <input
-              name="person_phone"
-              value={personPhone}
-              onChange={(event) => setPersonPhone(event.target.value)}
-              placeholder="phone"
-            />
-          </label>
-          <div className="field-stack field-stack--action">
+          <div className="field-stack field-stack--action field-stack--full">
             <span>&nbsp;</span>
             <button
               className="button button--secondary"
+              type="button"
+              disabled={disabled}
               onClick={async () => {
-                await apiClient.syncPerson(personName, personEmail, personPhone, "client");
-                onFeedback("People sync executed.");
+                if (chatMessage.trim() === "") {
+                  onFeedback("Enter the Chat alert message before sending.");
+                  return;
+                }
+
+                try {
+                  await apiClient.sendChatAlert(chatMessage.trim(), chatSeverity, selectedJobUid);
+                  onFeedback("Chat alert sent.");
+                } catch (error) {
+                  onFeedback(errorMessage(error));
+                }
               }}
             >
-              Sync
+              Send alert
             </button>
           </div>
         </div>
@@ -140,3 +171,4 @@ export function CommunicationRailsCard({
     </article>
   );
 }
+

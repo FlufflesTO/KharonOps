@@ -317,8 +317,8 @@ export const compliancePillars = [
 export const caseStudies: CaseStudy[] = [
   {
     slug: "nuclear-facility-audit",
-    title: "Nuclear Facility Fire Audit Program",
-    environment: "High-stakes industrial environment",
+    title: "Representative Industrial Fire Audit Program",
+    environment: "Representative high-accountability industrial estate",
     problem: "Legacy detection records and test history were fragmented across teams and contractors.",
     scope: [
       "Conducted detailed compliance survey against SANS 10139 baseline",
@@ -326,13 +326,13 @@ export const caseStudies: CaseStudy[] = [
       "Prioritized remediation sequencing for audit-readiness"
     ],
     outcome:
-      "Client moved from fragmented evidence to a unified, inspection-ready compliance set with clear remediation ownership.",
+      "The client-side team moved from fragmented evidence to a unified, inspection-ready compliance set with clear remediation ownership.",
     complianceDelivered: ["Audit pack", "Defect register", "Management closeout summary"]
   },
   {
     slug: "server-room-suppression-upgrade",
-    title: "Server Room Suppression Upgrade",
-    environment: "Mission-critical data environment",
+    title: "Representative Server Room Suppression Upgrade",
+    environment: "Representative mission-critical data environment",
     problem: "Suppression discharge confidence was low due to uncertain room retention and undocumented logic behavior.",
     scope: [
       "Upgraded inert-gas suppression configuration",
@@ -340,13 +340,13 @@ export const caseStudies: CaseStudy[] = [
       "Verified pre-discharge sequences and alarm integration"
     ],
     outcome:
-      "The facility received validated retention performance, improved suppression confidence, and a complete commissioning dossier.",
+      "The site team received validated retention performance, improved suppression confidence, and a complete commissioning dossier.",
     complianceDelivered: ["Integrity test certificate", "Pre-discharge verification report", "Service handover pack"]
   },
   {
     slug: "multi-site-access-rollout",
-    title: "Multi-Site Access and CCTV Rollout",
-    environment: "Distributed commercial and industrial portfolio",
+    title: "Representative Multi-Site Access and CCTV Rollout",
+    environment: "Representative distributed commercial and industrial portfolio",
     problem: "Inconsistent site-level controls and weak event traceability slowed incident response and governance reviews.",
     scope: [
       "Standardized access and CCTV architecture across sites",
@@ -364,18 +364,24 @@ export const resourceCards = [
     title: "Maintenance Planning Checklist",
     description:
       "A practical checklist for preparing planned preventative maintenance programs that remain inspection-ready.",
-    format: "Checklist"
+    format: "Checklist",
+    ctaLabel: "Request the checklist",
+    intent: "resource"
   },
   {
     title: "Suppression Integrity Primer",
     description:
       "A concise guide to room integrity testing, retention time expectations, and pre-discharge verification.",
-    format: "Technical note"
+    format: "Technical note",
+    ctaLabel: "Request the primer",
+    intent: "resource"
   },
   {
     title: "Compliance Pack Contents",
     description:
       "A model structure for service certificates, logs, as-builts, O and M notes, and corrective action records.",
-    format: "Reference"
+    format: "Reference",
+    ctaLabel: "Request the reference",
+    intent: "resource"
   }
 ];

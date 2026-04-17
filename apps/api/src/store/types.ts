@@ -39,9 +39,11 @@ export interface WorkbookStore {
   appendJobEvent(event: JobEventRow): Promise<void>;
   createScheduleRequest(row: ScheduleRequestRow): Promise<void>;
   getScheduleRequest(requestUid: string): Promise<ScheduleRequestRow | null>;
+  listScheduleRequests(jobUid?: string): Promise<ScheduleRequestRow[]>;
   upsertScheduleRequest(row: ScheduleRequestRow): Promise<void>;
   createSchedule(row: ScheduleRow): Promise<void>;
   getSchedule(scheduleUid: string): Promise<ScheduleRow | null>;
+  listSchedules(jobUid?: string): Promise<ScheduleRow[]>;
   upsertSchedule(row: ScheduleRow): Promise<void>;
   createDocument(row: JobDocumentRow): Promise<void>;
   getDocument(documentUid: string): Promise<JobDocumentRow | null>;
@@ -56,6 +58,7 @@ export interface WorkbookStore {
   listAudits(): Promise<Array<Record<string, string>>>;
   upsertAutomationJob(row: AutomationJobRow): Promise<void>;
   getAutomationJob(automationJobUid: string): Promise<AutomationJobRow | null>;
+  listAutomationJobs(): Promise<AutomationJobRow[]>;
   upsertSyncQueue(row: SyncQueueRow): Promise<void>;
   getSyncQueue(mutationUid: string): Promise<SyncQueueRow | null>;
   listSyncQueueByJob(jobUid: string): Promise<SyncQueueRow[]>;

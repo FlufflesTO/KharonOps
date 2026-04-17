@@ -1,14 +1,20 @@
-import React, { startTransition, useEffect, useMemo, useRef, useState } from "react";
-import type { OfflineQueueItem, JobStatus, Role } from "@kharon/domain";
+import React, { startTransition, useEffect, useMemo, useState } from "react";
+import type { JobDocumentRow, OfflineQueueItem, ScheduleRequestRow, ScheduleRow, UserRow, JobStatus } from "@kharon/domain";
 import { listAllowedStatusTransitions } from "@kharon/domain";
-import { apiClient, type PortalAuthConfig, type PortalSession } from "./apiClient";
+import {
+  apiClient,
+  type AutomationJobEntry,
+  type PeopleDirectoryEntry,
+  type PortalAuthConfig,
+  type PortalDispatchContext,
+  type PortalSession
+} from "./apiClient";
 import { enqueueMutation, listQueuedMutations } from "./offline/queue";
 import { replayQueuedMutations } from "./offline/replay";
 
 import { SummaryBoard } from "./components/SummaryBoard";
-import { WorkspaceInfo } from "./components/WorkspaceInfo";
 import { OfflineBanner } from "./components/OfflineBanner";
-import { JobListView, statusTone, type JobRecord } from "./components/JobListView";
+import { JobListView, type JobRecord } from "./components/JobListView";
 import { JobDetailView } from "./components/JobDetailView";
 import { PortalAuth } from "./components/PortalAuth";
 import { ScheduleControlCard } from "./components/ScheduleControlCard";
@@ -17,7 +23,7 @@ import { AdminPanelCard } from "./components/AdminPanelCard";
 import { DocumentHistoryCard } from "./components/DocumentHistoryCard";
 import { DashboardView } from "./components/DashboardView";
 import { RegistryCard } from "./components/RegistryCard";
-
+import { PeopleDirectoryCard } from "./components/PeopleDirectoryCard";
 
 
 function asJob(record: Record<string, unknown>): JobRecord {
@@ -51,6 +57,14 @@ function toIsoOrNull(value: string): string | null {
   return new Date(parsed).toISOString();
 }
 
+function toLocalInputValue(value: string): string {
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) {
+    return nowPlusHours(1);
+  }
+  return new Date(parsed).toISOString().slice(0, 16);
+}
+
 function errorMessage(error: unknown): string {
   const typed = error as { error?: { message?: string } };
   return typed.error?.message ?? String(error);
@@ -78,6 +92,26 @@ function looksLikeJwt(token: string): boolean {
   return trimmed.split(".").length === 3 && trimmed.length > 40;
 }
 
+function firstRequestedSlot(request: ScheduleRequestRow | null): { start_at: string; end_at: string } | null {
+  if (!request) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(request.preferred_slots_json) as Array<{ start_at?: string; end_at?: string }>;
+    const first = parsed[0];
+    if (!first?.start_at || !first?.end_at) {
+      return null;
+    }
+    return {
+      start_at: first.start_at,
+      end_at: first.end_at
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function PortalApp(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<PortalSession | null>(null);
@@ -85,34 +119,40 @@ export function PortalApp(): React.JSX.Element {
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [selectedJobUid, setSelectedJobUid] = useState("");
   const [portalView, setPortalView] = useState<"dashboard" | "workspace">("dashboard");
-  const [activeWorkspaceTool, setActiveWorkspaceTool] = useState<string>("jobs");
+  const [activeWorkspaceTool, setActiveWorkspaceTool] = useState("jobs");
   const [statusTarget, setStatusTarget] = useState<JobStatus>("draft");
   const [noteValue, setNoteValue] = useState("");
   const [loginToken, setLoginToken] = useState("dev-client");
   const [preferredStart, setPreferredStart] = useState(nowPlusHours(4));
   const [preferredEnd, setPreferredEnd] = useState(nowPlusHours(5));
-  const [confirmRequestUid, setConfirmRequestUid] = useState("");
+  const [selectedRequestUid, setSelectedRequestUid] = useState("");
   const [confirmStart, setConfirmStart] = useState(nowPlusHours(6));
   const [confirmEnd, setConfirmEnd] = useState(nowPlusHours(7));
-  const [confirmTechUid, setConfirmTechUid] = useState("TECH-001");
-  const [confirmRowVersion, setConfirmRowVersion] = useState(1);
-  const [rescheduleUid, setRescheduleUid] = useState("");
+  const [confirmTechUid, setConfirmTechUid] = useState("");
+  const [selectedScheduleUid, setSelectedScheduleUid] = useState("");
   const [rescheduleStart, setRescheduleStart] = useState(nowPlusHours(8));
   const [rescheduleEnd, setRescheduleEnd] = useState(nowPlusHours(9));
-  const [rescheduleRowVersion, setRescheduleRowVersion] = useState(1);
   const [documentType, setDocumentType] = useState<"jobcard" | "service_report" | "certificate">("jobcard");
-  const [publishDocumentUid, setPublishDocumentUid] = useState("");
-  const [publishRowVersion, setPublishRowVersion] = useState(1);
+  const [selectedDocumentUid, setSelectedDocumentUid] = useState("");
   const [offlineEnabled, setOfflineEnabled] = useState(false);
   const [networkOnline, setNetworkOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [queueCount, setQueueCount] = useState(0);
   const [feedback, setFeedback] = useState("Ready.");
   const [documents, setDocuments] = useState<Array<Record<string, unknown>>>([]);
+  const [dispatchContext, setDispatchContext] = useState<PortalDispatchContext | null>(null);
+  const [peopleDirectory, setPeopleDirectory] = useState<PeopleDirectoryEntry[]>([]);
   const [adminHealth, setAdminHealth] = useState<Record<string, unknown> | null>(null);
   const [adminAutomationJobs, setAdminAutomationJobs] = useState<Array<Record<string, unknown>>>([]);
   const [adminAuditCount, setAdminAuditCount] = useState(0);
+  const [automationJobs, setAutomationJobs] = useState<AutomationJobEntry[]>([]);
+  const [selectedAutomationJobUid, setSelectedAutomationJobUid] = useState("");
   const [actionPending, setActionPending] = useState(false);
   const [checklistData, setChecklistData] = useState<Record<string, string>>({});
+
+  const role = session?.session.role ?? null;
+  const isDispatchRole = role === "dispatcher" || role === "admin" || role === "super_admin";
+  const isAdmin = role === "admin" || role === "super_admin";
+  const isSuperAdmin = role === "super_admin";
 
   const selectedJob = useMemo(() => jobs.find((job) => job.job_uid === selectedJobUid) ?? null, [jobs, selectedJobUid]);
   const selectableStatuses = useMemo<JobStatus[]>(
@@ -127,9 +167,27 @@ export function PortalApp(): React.JSX.Element {
     [selectedJob, session?.session.role]
   );
 
+  const dispatchRequests = dispatchContext?.requests ?? [];
+  const dispatchSchedules = dispatchContext?.schedules ?? [];
+  const dispatchDocuments = dispatchContext?.documents ?? [];
+  const technicians = dispatchContext?.technicians ?? [];
+
+  const selectedRequest = useMemo(
+    () => dispatchRequests.find((request) => request.request_uid === selectedRequestUid) ?? null,
+    [dispatchRequests, selectedRequestUid]
+  );
+  const selectedSchedule = useMemo(
+    () => dispatchSchedules.find((schedule) => schedule.schedule_uid === selectedScheduleUid) ?? null,
+    [dispatchSchedules, selectedScheduleUid]
+  );
+  const selectedDispatchDocument = useMemo(
+    () => dispatchDocuments.find((document) => document.document_uid === selectedDocumentUid) ?? null,
+    [dispatchDocuments, selectedDocumentUid]
+  );
+
   const openJobCount = jobs.filter((job) => job.status !== "certified" && job.status !== "cancelled").length;
   const generatedDocumentCount = documents.length;
-  const selectedJobStatus = selectedJob?.status ?? "no selection";
+  const selectedJobStatus = selectedJob?.status ?? "No selection";
   const productionAuth = authConfig?.mode === "production";
 
   const runAction = (action: () => Promise<void>): void => {
@@ -138,16 +196,18 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
     setActionPending(true);
-    void action().catch((error) => {
-      const code = errorCode(error);
-      if (code === "google_transient_error") {
-        setFeedback("Google API rate limit reached (429). Wait 30-60 seconds and retry one action at a time.");
-        return;
-      }
-      setFeedback(errorMessage(error));
-    }).finally(() => {
-      setActionPending(false);
-    });
+    void action()
+      .catch((error) => {
+        const code = errorCode(error);
+        if (code === "google_transient_error") {
+          setFeedback("Google API rate limit reached (429). Wait 30-60 seconds and retry one action at a time.");
+          return;
+        }
+        setFeedback(errorMessage(error));
+      })
+      .finally(() => {
+        setActionPending(false);
+      });
   };
 
   async function refreshQueueCount(): Promise<void> {
@@ -169,11 +229,8 @@ export function PortalApp(): React.JSX.Element {
       const mapped = data.map(asJob);
       startTransition(() => {
         setJobs(mapped);
-        if (!selectedJobUid && mapped.length > 0) {
-          const first = mapped[0];
-          if (first) {
-            setSelectedJobUid(first.job_uid);
-          }
+        if (!mapped.some((job) => job.job_uid === selectedJobUid)) {
+          setSelectedJobUid(mapped[0]?.job_uid ?? "");
         }
       });
     } catch (error) {
@@ -207,6 +264,39 @@ export function PortalApp(): React.JSX.Element {
       });
     } catch (error) {
       setFeedback(`Document history load failed: ${errorMessage(error)}`);
+    }
+  }
+
+  async function refreshDispatchContext(jobUid: string): Promise<void> {
+    try {
+      const data = await apiClient.dispatchContext(jobUid);
+      startTransition(() => {
+        setDispatchContext(data);
+      });
+    } catch (error) {
+      setFeedback(`Dispatch context load failed: ${errorMessage(error)}`);
+    }
+  }
+
+  async function refreshPeopleDirectory(): Promise<void> {
+    try {
+      const people = await apiClient.listPeople();
+      startTransition(() => {
+        setPeopleDirectory(people);
+      });
+    } catch (error) {
+      setFeedback(`People directory load failed: ${errorMessage(error)}`);
+    }
+  }
+
+  async function refreshAutomationJobs(): Promise<void> {
+    try {
+      const jobs = await apiClient.listAutomationJobs();
+      startTransition(() => {
+        setAutomationJobs(jobs);
+      });
+    } catch (error) {
+      setFeedback(`Automation queue load failed: ${errorMessage(error)}`);
     }
   }
 
@@ -258,14 +348,40 @@ export function PortalApp(): React.JSX.Element {
     if (!session) {
       setJobs([]);
       setSelectedJobUid("");
+      setDocuments([]);
+      setDispatchContext(null);
+      setPeopleDirectory([]);
+      setAutomationJobs([]);
       return;
     }
 
-    void (async () => {
-      await refreshJobs();
-      await refreshDocuments();
-    })();
+    void refreshJobs();
   }, [session]);
+
+  useEffect(() => {
+    if (!session || !selectedJobUid) {
+      setDocuments([]);
+      setDispatchContext(null);
+      return;
+    }
+
+    void refreshDocuments(selectedJobUid);
+    if (isDispatchRole) {
+      void refreshDispatchContext(selectedJobUid);
+    }
+  }, [isDispatchRole, selectedJobUid, session]);
+
+  useEffect(() => {
+    if (activeWorkspaceTool === "people" && isDispatchRole) {
+      void refreshPeopleDirectory();
+    }
+  }, [activeWorkspaceTool, isDispatchRole]);
+
+  useEffect(() => {
+    if (activeWorkspaceTool === "admin" && isAdmin) {
+      void refreshAutomationJobs();
+    }
+  }, [activeWorkspaceTool, isAdmin]);
 
   useEffect(() => {
     if (!selectableStatuses.includes(statusTarget)) {
@@ -275,6 +391,73 @@ export function PortalApp(): React.JSX.Element {
       }
     }
   }, [selectableStatuses, statusTarget]);
+
+  useEffect(() => {
+    if (dispatchRequests.length === 0) {
+      setSelectedRequestUid("");
+      return;
+    }
+    if (!dispatchRequests.some((request) => request.request_uid === selectedRequestUid)) {
+      setSelectedRequestUid(dispatchRequests[0]?.request_uid ?? "");
+    }
+  }, [dispatchRequests, selectedRequestUid]);
+
+  useEffect(() => {
+    if (dispatchSchedules.length === 0) {
+      setSelectedScheduleUid("");
+      return;
+    }
+    if (!dispatchSchedules.some((schedule) => schedule.schedule_uid === selectedScheduleUid)) {
+      setSelectedScheduleUid(dispatchSchedules[0]?.schedule_uid ?? "");
+    }
+  }, [dispatchSchedules, selectedScheduleUid]);
+
+  useEffect(() => {
+    if (dispatchDocuments.length === 0) {
+      setSelectedDocumentUid("");
+      return;
+    }
+    if (!dispatchDocuments.some((document) => document.document_uid === selectedDocumentUid)) {
+      setSelectedDocumentUid(dispatchDocuments[0]?.document_uid ?? "");
+    }
+  }, [dispatchDocuments, selectedDocumentUid]);
+
+  useEffect(() => {
+    if (automationJobs.length === 0) {
+      setSelectedAutomationJobUid("");
+      return;
+    }
+    if (!automationJobs.some((job) => job.automation_job_uid === selectedAutomationJobUid)) {
+      setSelectedAutomationJobUid(automationJobs[0]?.automation_job_uid ?? "");
+    }
+  }, [automationJobs, selectedAutomationJobUid]);
+
+  useEffect(() => {
+    if (technicians.length === 0) {
+      setConfirmTechUid("");
+      return;
+    }
+    if (!technicians.some((technician) => technician.technician_uid === confirmTechUid)) {
+      setConfirmTechUid(technicians[0]?.technician_uid ?? "");
+    }
+  }, [confirmTechUid, technicians]);
+
+  useEffect(() => {
+    const preferredSlot = firstRequestedSlot(selectedRequest);
+    if (!preferredSlot) {
+      return;
+    }
+    setConfirmStart(toLocalInputValue(preferredSlot.start_at));
+    setConfirmEnd(toLocalInputValue(preferredSlot.end_at));
+  }, [selectedRequest]);
+
+  useEffect(() => {
+    if (!selectedSchedule) {
+      return;
+    }
+    setRescheduleStart(toLocalInputValue(selectedSchedule.start_at));
+    setRescheduleEnd(toLocalInputValue(selectedSchedule.end_at));
+  }, [selectedSchedule]);
 
   async function handleLogin(token: string): Promise<void> {
     try {
@@ -405,23 +588,20 @@ export function PortalApp(): React.JSX.Element {
     );
 
     const createdRequestUid = String(response.data?.request_uid ?? "");
-    if (createdRequestUid !== "") {
-      setConfirmRequestUid(createdRequestUid);
+    await refreshDispatchContext(selectedJob.job_uid);
+    if (createdRequestUid) {
+      setSelectedRequestUid(createdRequestUid);
     }
-    if (typeof response.row_version === "number") {
-      setConfirmRowVersion(response.row_version);
-    }
-
     setFeedback(createdRequestUid ? `Preferred slot request submitted (${createdRequestUid}).` : "Preferred slot request submitted.");
   }
 
   async function handleScheduleConfirm(): Promise<void> {
-    if (confirmRequestUid.trim() === "") {
-      setFeedback("Enter a valid request UID before confirming.");
+    if (!selectedRequest) {
+      setFeedback("Select a stored request before confirming a schedule.");
       return;
     }
     if (confirmTechUid.trim() === "") {
-      setFeedback("Enter a technician UID before confirming.");
+      setFeedback("Select a technician before confirming the schedule.");
       return;
     }
 
@@ -437,28 +617,28 @@ export function PortalApp(): React.JSX.Element {
     }
 
     const response = await apiClient.confirmSchedule(
-      confirmRequestUid.trim(),
+      selectedRequest.request_uid,
       startIso,
       endIso,
       confirmTechUid.trim(),
-      confirmRowVersion,
+      selectedRequest.row_version,
       selectedJob ? { job_uid: selectedJob.job_uid } : undefined
     );
 
     const createdScheduleUid = String(response.data?.schedule_uid ?? "");
-    if (createdScheduleUid !== "") {
-      setRescheduleUid(createdScheduleUid);
+    if (selectedJob) {
+      await refreshDispatchContext(selectedJob.job_uid);
     }
-    if (typeof response.row_version === "number") {
-      setRescheduleRowVersion(response.row_version);
+    if (createdScheduleUid) {
+      setSelectedScheduleUid(createdScheduleUid);
     }
 
     setFeedback(createdScheduleUid ? `Schedule confirmed (${createdScheduleUid}).` : "Schedule confirmed.");
   }
 
   async function handleReschedule(): Promise<void> {
-    if (rescheduleUid.trim() === "") {
-      setFeedback("Enter a schedule UID before rescheduling.");
+    if (!selectedSchedule) {
+      setFeedback("Select a stored schedule before rescheduling it.");
       return;
     }
 
@@ -473,13 +653,15 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
 
-    const response = await apiClient.reschedule(rescheduleUid.trim(), startIso, endIso, rescheduleRowVersion, {
-      ...(selectedJob ? { job_uid: selectedJob.job_uid } : {}),
-      ...(selectedJob?.technician_uid ? { technician_uid: selectedJob.technician_uid } : {}),
-      ...(confirmRequestUid.trim() !== "" ? { request_uid: confirmRequestUid.trim() } : {})
+    await apiClient.reschedule(selectedSchedule.schedule_uid, startIso, endIso, selectedSchedule.row_version, {
+      job_uid: selectedSchedule.job_uid,
+      technician_uid: selectedSchedule.technician_uid,
+      request_uid: selectedSchedule.request_uid,
+      calendar_event_id: selectedSchedule.calendar_event_id
     });
-    if (typeof response.row_version === "number") {
-      setRescheduleRowVersion(response.row_version);
+
+    if (selectedJob) {
+      await refreshDispatchContext(selectedJob.job_uid);
     }
     setFeedback("Schedule rescheduled.");
   }
@@ -491,14 +673,15 @@ export function PortalApp(): React.JSX.Element {
 
     const response = await apiClient.generateDocument(selectedJob.job_uid, documentType, checklistData);
     const generatedDocumentUid = String(response.data?.document_uid ?? "");
-    if (generatedDocumentUid !== "") {
-      setPublishDocumentUid(generatedDocumentUid);
-    }
-    if (typeof response.row_version === "number") {
-      setPublishRowVersion(response.row_version);
-    }
 
     await refreshDocuments(selectedJob.job_uid);
+    if (isDispatchRole) {
+      await refreshDispatchContext(selectedJob.job_uid);
+    }
+    if (generatedDocumentUid) {
+      setSelectedDocumentUid(generatedDocumentUid);
+    }
+
     setFeedback(generatedDocumentUid ? `${documentType} generated (${generatedDocumentUid}).` : `${documentType} generated.`);
   }
 
@@ -512,20 +695,21 @@ export function PortalApp(): React.JSX.Element {
   }
 
   async function handleDocumentPublish(): Promise<void> {
-    if (publishDocumentUid.trim() === "") {
-      setFeedback("Enter a document UID before publishing.");
+    const document = selectedDispatchDocument as JobDocumentRow | null;
+    if (!document) {
+      setFeedback("Select a generated document before publishing it.");
       return;
     }
 
-    const response = await apiClient.publishDocument(publishDocumentUid.trim(), publishRowVersion, {
-      ...(selectedJob ? { job_uid: selectedJob.job_uid } : {}),
-      document_type: documentType
+    await apiClient.publishDocument(document.document_uid, document.row_version, {
+      job_uid: document.job_uid,
+      document_type: document.document_type
     });
-    if (typeof response.row_version === "number") {
-      setPublishRowVersion(response.row_version);
-    }
 
     await refreshDocuments(selectedJob?.job_uid);
+    if (selectedJob && isDispatchRole) {
+      await refreshDispatchContext(selectedJob.job_uid);
+    }
     setFeedback("Document published.");
   }
 
@@ -553,10 +737,23 @@ export function PortalApp(): React.JSX.Element {
     setFeedback(`Retry queued for ${uid}.`);
   }
 
+  async function handlePeopleSync(payload: { name: string; email: string; phone: string; roleHint: string }): Promise<void> {
+    await apiClient.syncPerson(payload.name, payload.email, payload.phone, payload.roleHint);
+    await refreshPeopleDirectory();
+    setFeedback("People sync executed.");
+  }
+
+  async function handleAutomationRetry(automationJobUid: string): Promise<void> {
+    await apiClient.retryAutomation(automationJobUid);
+    await refreshAutomationJobs();
+    setFeedback(`Automation retry requested (${automationJobUid}).`);
+  }
+
+
   if (loading) {
     return (
       <div className="portal-shell portal-shell--loading">
-        <div className="loading-card">Loading portal workspace...</div>
+        <div className="loading-card">Loading portal workspace…</div>
       </div>
     );
   }
@@ -575,9 +772,6 @@ export function PortalApp(): React.JSX.Element {
     );
   }
 
-  const isDispatchRole = role === "dispatcher" || role === "admin" || role === "super_admin";
-  const isAdmin = role === "admin" || role === "super_admin";
-  const isSuperAdmin = role === "super_admin";
 
   if (portalView === "dashboard") {
     return (
@@ -585,7 +779,10 @@ export function PortalApp(): React.JSX.Element {
         <DashboardView
           session={session}
           openJobCount={openJobCount}
-          onEnterWorkspace={(tool) => { setActiveWorkspaceTool(tool); setPortalView("workspace"); }}
+          onEnterWorkspace={(tool) => {
+            setActiveWorkspaceTool(tool);
+            setPortalView("workspace");
+          }}
           onLogout={() => runAction(handleLogout)}
         />
         <footer className="portal-statusbar">
@@ -603,7 +800,7 @@ export function PortalApp(): React.JSX.Element {
       <header className="portal-topbar">
         <div className="portal-topbar__brand">
           <div className="portal-mark">
-            <svg viewBox="0 0 100 100" width="32" height="32">
+            <svg viewBox="0 0 100 100" width="32" height="32" aria-hidden="true">
               <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8" />
               <circle cx="50" cy="50" r="12" fill="currentColor" />
             </svg>
@@ -611,7 +808,7 @@ export function PortalApp(): React.JSX.Element {
           <div>
             <div className="portal-title">KHARON COMMAND CENTRE</div>
             <div className="portal-subtitle">
-              {session.session.display_name} | {role.toUpperCase()}
+              {session.session.display_name} | {role?.toUpperCase()}
             </div>
           </div>
         </div>
@@ -628,21 +825,17 @@ export function PortalApp(): React.JSX.Element {
             Force queue mode
           </label>
           <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`}>{networkOnline ? "Online" : "Offline"}</span>
-          <button className="button button--secondary" onClick={() => setPortalView("dashboard")}>
+          <button className="button button--secondary" type="button" onClick={() => setPortalView("dashboard")}>
             Dashboard
           </button>
-          <button className="button button--secondary" onClick={() => runAction(handleReplay)}>
+          <button className="button button--secondary" type="button" onClick={() => runAction(handleReplay)}>
             Execute Queue ({queueCount})
           </button>
-          <button className="button button--ghost" onClick={() => runAction(handleLogout)}>
+          <button className="button button--ghost" type="button" onClick={() => runAction(handleLogout)}>
             Logout
           </button>
         </div>
       </header>
-
-      {/* WorkspaceInfo removed: the role-contextual essay copy added bulk without
-          operational value. The SummaryBoard already surfaces the key live metrics
-          (open jobs, queue depth, doc count) in a compact, scannable format. */}
 
       <div className="portal-layout">
         <aside className="portal-sidebar">
@@ -655,9 +848,8 @@ export function PortalApp(): React.JSX.Element {
         </aside>
 
         <main className="portal-main">
-
           <SummaryBoard
-            role={role}
+            role={role ?? "client"}
             openJobCount={openJobCount}
             selectedJobStatus={selectedJobStatus}
             queueCount={queueCount}
@@ -667,10 +859,10 @@ export function PortalApp(): React.JSX.Element {
           />
 
           <section className="workspace-grid">
-            {activeWorkspaceTool === "jobs" && (
+            {activeWorkspaceTool === "jobs" ? (
               <JobDetailView
                 selectedJob={selectedJob}
-                role={role}
+                role={role ?? "client"}
                 selectableStatuses={selectableStatuses}
                 statusTarget={statusTarget}
                 setStatusTarget={setStatusTarget}
@@ -689,62 +881,81 @@ export function PortalApp(): React.JSX.Element {
                 onChecklistChange={setChecklistData}
                 selectedJobTitle="Job Detail"
               />
-            )}
+            ) : null}
 
-            {activeWorkspaceTool === "schedule" && isDispatchRole && (
+            {activeWorkspaceTool === "schedule" && isDispatchRole ? (
               <ScheduleControlCard
                 selectedJobUid={selectedJob?.job_uid ?? ""}
-                selectedJobRowVersion={selectedJob?.row_version ?? 1}
                 preferredStart={preferredStart}
                 setPreferredStart={setPreferredStart}
                 preferredEnd={preferredEnd}
                 setPreferredEnd={setPreferredEnd}
-                confirmRequestUid={confirmRequestUid}
-                setConfirmRequestUid={setConfirmRequestUid}
+                requests={dispatchRequests}
+                selectedRequestUid={selectedRequestUid}
+                setSelectedRequestUid={setSelectedRequestUid}
                 confirmStart={confirmStart}
                 setConfirmStart={setConfirmStart}
                 confirmEnd={confirmEnd}
                 setConfirmEnd={setConfirmEnd}
                 confirmTechUid={confirmTechUid}
                 setConfirmTechUid={setConfirmTechUid}
-                confirmRowVersion={confirmRowVersion}
-                setConfirmRowVersion={setConfirmRowVersion}
-                rescheduleUid={rescheduleUid}
-                setRescheduleUid={setRescheduleUid}
+                technicians={technicians}
+                schedules={dispatchSchedules}
+                selectedScheduleUid={selectedScheduleUid}
+                setSelectedScheduleUid={setSelectedScheduleUid}
                 rescheduleStart={rescheduleStart}
                 setRescheduleStart={setRescheduleStart}
                 rescheduleEnd={rescheduleEnd}
                 setRescheduleEnd={setRescheduleEnd}
+<<<<<<< HEAD
                 rescheduleRowVersion={rescheduleRowVersion}
                 setRescheduleRowVersion={setRescheduleRowVersion}
                 onScheduleRequest={() => runAction(handleScheduleRequest)}
                 onScheduleConfirm={() => runAction(handleScheduleConfirm)}
                 onReschedule={() => runAction(handleReschedule)}
                 onFeedback={setFeedback}
+=======
+                documents={dispatchDocuments}
+                selectedDocumentUid={selectedDocumentUid}
+                setSelectedDocumentUid={setSelectedDocumentUid}
+                onScheduleRequest={() => runAction(handleScheduleRequest)}
+                onScheduleConfirm={() => runAction(handleScheduleConfirm)}
+                onReschedule={() => runAction(handleReschedule)}
+                onDocumentPublish={() => runAction(handleDocumentPublish)}
+>>>>>>> 3e57d37 (chore: local sync with remote main)
               />
-            )}
+            ) : null}
 
-            {activeWorkspaceTool === "comms" && isDispatchRole && (
+            {activeWorkspaceTool === "comms" && isDispatchRole ? (
               <CommunicationRailsCard
                 selectedJobUid={selectedJob?.job_uid ?? ""}
+                selectedJobTitle={selectedJob?.title ?? ""}
                 onFeedback={setFeedback}
               />
-            )}
+            ) : null}
 
-            {activeWorkspaceTool === "admin" && isAdmin && (
+            {activeWorkspaceTool === "admin" && isAdmin ? (
               <AdminPanelCard
                 adminHealth={adminHealth}
                 adminAutomationJobs={adminAutomationJobs}
                 adminAuditCount={adminAuditCount}
+                automationJobs={automationJobs}
+                selectedAutomationJobUid={selectedAutomationJobUid}
+                setSelectedAutomationJobUid={setSelectedAutomationJobUid}
                 onLoadHealth={() => runAction(loadAdminHealth)}
                 onLoadAudits={() => runAction(loadAdminAudits)}
+<<<<<<< HEAD
                 onLoadAutomationJobs={() => runAction(loadAdminAutomationJobs)}
                 onRetryAutomation={(uid) => runAction(() => handleRetryAutomation(uid))}
                 onFeedback={setFeedback}
+=======
+                onLoadAutomationJobs={() => runAction(refreshAutomationJobs)}
+                onRetryAutomation={(automationJobUid) => runAction(() => handleAutomationRetry(automationJobUid))}
+>>>>>>> 3e57d37 (chore: local sync with remote main)
               />
-            )}
+            ) : null}
 
-            {activeWorkspaceTool === "documents" && (
+            {activeWorkspaceTool === "documents" ? (
               <DocumentHistoryCard
                 documents={documents}
                 selectedJobUid={selectedJob?.job_uid ?? ""}
@@ -752,11 +963,21 @@ export function PortalApp(): React.JSX.Element {
                 onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_uid))}
                 onPublish={(uid, ver, vis) => runAction(() => handleDocumentPublishInline(uid, ver, vis))}
               />
-            )}
+            ) : null}
 
+<<<<<<< HEAD
             {activeWorkspaceTool === "people" && (isAdmin || role === "super_admin") && (
               <RegistryCard onFeedback={setFeedback} />
             )}
+=======
+            {activeWorkspaceTool === "people" && isDispatchRole ? (
+              <PeopleDirectoryCard
+                people={peopleDirectory}
+                onSync={(payload) => handlePeopleSync(payload)}
+                onFeedback={setFeedback}
+              />
+            ) : null}
+>>>>>>> 3e57d37 (chore: local sync with remote main)
           </section>
         </main>
       </div>
@@ -776,3 +997,4 @@ export function PortalApp(): React.JSX.Element {
     </div>
   );
 }
+

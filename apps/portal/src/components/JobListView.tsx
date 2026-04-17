@@ -1,14 +1,4 @@
-/**
- * KharonOps Portal - JobListView Component
- * Purpose: Scrollable sidebar list of jobs with status filter and text search.
- *          Reduces cognitive load when 100+ jobs are active (e.g. admin view).
- *          Default filter is "draft" (Open / Ready) so the list opens showing
- *          only actionable jobs — user must explicitly change filter to see
- *          performed, approved, certified, or cancelled records.
- * Dependencies: @kharon/domain (JobStatus)
- * Structural Role: Left sidebar in the workspace view; drives job context for all cards.
- */
-import React, { useState, useMemo } from "react";
+﻿import React, { useMemo, useState } from "react";
 import type { JobStatus } from "@kharon/domain";
 
 const JOB_STATUS_LABELS: Record<JobStatus, string> = {
@@ -54,10 +44,7 @@ interface JobItemProps {
 
 function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
   return (
-    <button
-      className={isActive ? "job-item job-item--active" : "job-item"}
-      onClick={() => onClick(job.job_uid)}
-    >
+    <button type="button" className={isActive ? "job-item job-item--active" : "job-item"} onClick={() => onClick(job.job_uid)}>
       <div className="job-item__top">
         <strong>{job.job_uid}</strong>
         <span className={`status-chip status-chip--${statusTone(job.status)}`}>{JOB_STATUS_LABELS[job.status]}</span>
@@ -70,10 +57,7 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
   );
 }
 
-// "all" ensures no status filter is active. "open" shows active jobs (not cancelled/certified).
 type StatusFilter = JobStatus | "all" | "open";
-
-// Default filter: "open" — ensures the list opens showing all actionable jobs.
 const DEFAULT_STATUS_FILTER: StatusFilter = "open";
 
 interface JobListViewProps {
@@ -90,27 +74,25 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
   const filtered = useMemo(() => {
     let result = jobs;
 
-    // Status filter
     if (statusFilter === "open") {
-      result = result.filter((j) => j.status !== "cancelled" && j.status !== "certified");
+      result = result.filter((job) => job.status !== "cancelled" && job.status !== "certified");
     } else if (statusFilter !== "all") {
-      result = result.filter((j) => j.status === statusFilter);
+      result = result.filter((job) => job.status === statusFilter);
     }
 
-    // Text search — matches job_uid, title, client_uid, technician_uid
-    const q = searchQuery.trim().toLowerCase();
-    if (q !== "") {
+    const query = searchQuery.trim().toLowerCase();
+    if (query !== "") {
       result = result.filter(
-        (j) =>
-          j.job_uid.toLowerCase().includes(q) ||
-          j.title.toLowerCase().includes(q) ||
-          j.client_uid.toLowerCase().includes(q) ||
-          j.technician_uid.toLowerCase().includes(q)
+        (job) =>
+          job.job_uid.toLowerCase().includes(query) ||
+          job.title.toLowerCase().includes(query) ||
+          job.client_uid.toLowerCase().includes(query) ||
+          job.technician_uid.toLowerCase().includes(query)
       );
     }
 
     return result;
-  }, [jobs, statusFilter, searchQuery]);
+  }, [jobs, searchQuery, statusFilter]);
 
   return (
     <section className="workspace-card job-list-panel">
@@ -119,36 +101,39 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
           <p className="panel-eyebrow">Jobs</p>
           <h2>{title}</h2>
         </div>
-        {/* Show filtered count / total to signal filter is active */}
         <span className="count-pill" title={`${filtered.length} of ${jobs.length} total`}>
           {filtered.length}
-          {filtered.length !== jobs.length && <span className="count-pill__total"> / {jobs.length}</span>}
+          {filtered.length !== jobs.length ? <span className="count-pill__total"> / {jobs.length}</span> : null}
         </span>
       </div>
 
-      {/* Filter controls */}
       <div className="job-list-filters">
         <input
           id="job-list-search"
+          name="job_list_search"
           className="job-list-filters__search"
           type="search"
           placeholder="Search job ID, title, client…"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(event) => setSearchQuery(event.target.value)}
           aria-label="Search jobs"
+          autoComplete="off"
         />
         <select
           id="job-list-status-filter"
+          name="job_list_status_filter"
           className="job-list-filters__select"
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+          onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
           aria-label="Filter by status"
         >
           <option value="open">Open Jobs</option>
           <option value="all">All Statuses</option>
           <optgroup label="Specific Status">
-            {(Object.keys(JOB_STATUS_LABELS) as JobStatus[]).map((s) => (
-              <option key={s} value={s}>{JOB_STATUS_LABELS[s]}</option>
+            {(Object.keys(JOB_STATUS_LABELS) as JobStatus[]).map((status) => (
+              <option key={status} value={status}>
+                {JOB_STATUS_LABELS[status]}
+              </option>
             ))}
           </optgroup>
         </select>
@@ -162,16 +147,10 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
               : "No jobs match the current filter. Adjust the search or status filter above."}
           </p>
         ) : (
-          filtered.map((job) => (
-            <JobItem
-              key={job.job_uid}
-              job={job}
-              isActive={job.job_uid === selectedJobUid}
-              onClick={onSelectJob}
-            />
-          ))
+          filtered.map((job) => <JobItem key={job.job_uid} job={job} isActive={job.job_uid === selectedJobUid} onClick={onSelectJob} />)
         )}
       </div>
     </section>
   );
 }
+

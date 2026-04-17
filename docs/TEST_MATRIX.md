@@ -32,6 +32,14 @@
    - optimistic concurrency enforcement on status update
 4. `conflict-shape.test.ts`
    - canonical conflict envelope shape
+5. `dispatch-workspace.test.ts`
+   - client slot request, dispatcher confirm/reschedule, people directory, and document publish lifecycle
+6. `admin-automation.test.ts`
+   - automation queue listing and retry workflow
+7. `public-contact.test.ts`
+   - public website contact intake and audit capture
+8. `super-admin-middleware.test.ts`
+   - super-admin access through admin middleware surfaces
 
 ## Offline Tests (`tests/offline`)
 
@@ -46,8 +54,8 @@
 
 1. Google OIDC login with real tenant account.
 2. Role-gated job visibility across all roles.
-3. Client preferred slot request, dispatcher confirm, and reschedule cycle.
+3. Browser UX sanity check for contact intake, resources request links, and portal dashboard navigation.
 4. Document generate/publish in Drive + Docs PDF output.
-5. Gmail notify + Chat alert + People sync execution.
+5. Gmail notify + Chat alert + People sync execution against live Google rails.
 6. Offline mutation queue and replay with forced disconnect.
 7. Admin health and audit endpoints under load.

@@ -67,6 +67,10 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     return this.notImplemented("getScheduleRequest");
   }
 
+  async listScheduleRequests(_jobUid?: string): Promise<ScheduleRequestRow[]> {
+    return this.notImplemented("listScheduleRequests");
+  }
+
   async upsertScheduleRequest(_row: ScheduleRequestRow): Promise<void> {
     this.notImplemented("upsertScheduleRequest");
   }
@@ -77,6 +81,10 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
 
   async getSchedule(_scheduleUid: string): Promise<ScheduleRow | null> {
     return this.notImplemented("getSchedule");
+  }
+
+  async listSchedules(_jobUid?: string): Promise<ScheduleRow[]> {
+    return this.notImplemented("listSchedules");
   }
 
   async upsertSchedule(_row: ScheduleRow): Promise<void> {
@@ -113,6 +121,10 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
 
   async getAutomationJob(_automationJobUid: string): Promise<AutomationJobRow | null> {
     return this.notImplemented("getAutomationJob");
+  }
+
+  async listAutomationJobs(): Promise<AutomationJobRow[]> {
+    return this.notImplemented("listAutomationJobs");
   }
 
   async upsertSyncQueue(_row: SyncQueueRow): Promise<void> {
