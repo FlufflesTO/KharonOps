@@ -1,15 +1,19 @@
 :root {
-  --color-bg: #0a1018;
-  --color-surface: #111a26;
-  --color-surface-hover: #172436;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-primary: #3d8de6;
-  --color-secondary: #7bc4f9;
-  --color-accent: #5ea3f0;
-  --color-text: #f2f6fb;
-  --color-text-muted: #9cb3c9;
-  --font-sans: "Sora", "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", "JetBrains Mono", monospace;
+  --color-bg: #030508;
+  --color-surface: #0b0e14;
+  --color-surface-hover: #121822;
+  --color-border: rgba(255, 255, 255, 0.05);
+  /* The Kharon Digitization Palette */
+  --color-primary: #6366f1; /* Brand Purple/Indigo */
+  --color-secondary: #0ea5e9; /* Brand Blue/Cyan */
+  --color-accent: #818cf8; /* Subtle highlight */
+  --color-text: #f8fafc;
+  --color-text-muted: #64748b;
+  --font-sans: "Sora", "Inter", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "Space Mono", monospace;
+  --radius-sleek: 1rem; /* 16px - avoids sharp edges */
+  --radius-full: 9999px;
+  --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
@@ -28,8 +32,8 @@ body {
 .site-shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 0% 0%, rgba(61, 141, 230, 0.22), transparent 38%),
-    radial-gradient(circle at 100% 100%, rgba(123, 196, 249, 0.14), transparent 42%),
+    radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15), transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(14, 165, 233, 0.1), transparent 40%),
     var(--color-bg);
 }
 
@@ -104,11 +108,18 @@ body {
   height: 2.8rem;
   display: grid;
   place-items: center;
-  border-radius: 0.65rem;
-  border: 1px solid rgba(61, 141, 230, 0.45);
+  border-radius: var(--radius-sleek);
+  border: 1px solid rgba(99, 102, 241, 0.3);
   background:
-    linear-gradient(135deg, rgba(61, 141, 230, 0.3), rgba(255, 255, 255, 0.06)),
-    rgba(255, 255, 255, 0.03);
+    linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.02);
+  transition: var(--transition-smooth);
+}
+
+.site-brand:hover .site-brand__mark {
+  transform: scale(1.05) rotate(5deg);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
 }
 
 .site-brand__copy {
@@ -261,17 +272,17 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.9rem;
-  padding: 0.75rem 1.15rem;
-  border-radius: 0.9rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  min-height: 3rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: var(--radius-sleek);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #e8edf4;
   text-decoration: none;
-  font-size: 0.79rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+  transition: var(--transition-smooth);
 }
 
 .site-button:hover {
@@ -279,9 +290,9 @@ body {
 }
 
 .site-button--primary {
-  border-color: rgba(61, 141, 230, 0.68);
-  background: linear-gradient(135deg, rgba(61, 141, 230, 0.96), rgba(39, 111, 190, 0.84));
-  color: #091322;
+  border-color: rgba(99, 102, 241, 0.5);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  color: #ffffff;
 }
 
 .site-button--secondary {
@@ -326,16 +337,56 @@ body {
 .assurance-panel,
 .case-card,
 .cta-panel {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sleek);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
-    rgba(16, 26, 38, 0.9);
-  box-shadow: 0 24px 55px rgba(3, 8, 14, 0.3);
+    rgba(13, 17, 23, 0.8);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .hero-card {
-  padding: 1.2rem;
+  padding: 1.5rem;
+}
+
+.hero-visual__stack {
+  display: grid;
+  gap: 1rem;
+  position: relative;
+}
+
+.hero-card--secondary {
+  transform: translateX(2rem) translateY(-1rem);
+  opacity: 0.9;
+  font-size: 0.85rem;
+  background: rgba(13, 17, 23, 0.4);
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.status-item {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.status-item small {
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
+.status-item strong {
+  color: var(--color-secondary);
+  font-family: var(--font-mono);
 }
 
 .hero-card__header {
@@ -392,7 +443,16 @@ body {
   display: block;
   width: 82%;
   height: 100%;
-  background: linear-gradient(90deg, #3d8de6, #7bc4f9);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.site-brand__mark {
+  animation: float 6s ease-in-out infinite;
 }
 
 .hero-card__list,
@@ -483,8 +543,8 @@ body {
 
 .service-card,
 .case-card {
-  padding: 1.3rem;
-  transition: transform 180ms ease, border-color 180ms ease;
+  padding: 1.5rem;
+  transition: var(--transition-smooth);
 }
 
 .service-card--link,
@@ -495,8 +555,10 @@ body {
 
 .service-card:hover,
 .case-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(123, 196, 249, 0.28);
+  transform: translateY(-8px);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  background: rgba(13, 17, 23, 0.9);
 }
 
 .service-card__header {
@@ -577,12 +639,12 @@ body {
 .case-card__visual {
   display: grid;
   gap: 0.35rem;
-  margin: -1.3rem -1.3rem 1rem;
-  padding: 1.05rem 1.2rem;
+  margin: -1.5rem -1.5rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   background:
-    linear-gradient(135deg, rgba(61, 141, 230, 0.2), rgba(123, 196, 249, 0.12)),
+    linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(14, 165, 233, 0.1)),
     rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .logo-strip {

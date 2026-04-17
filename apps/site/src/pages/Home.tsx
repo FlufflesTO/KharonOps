@@ -55,23 +55,44 @@ export function HomePage(): React.JSX.Element {
           </div>
 
           <div className="hero-visual" aria-label="Company credentials">
-            <article className="hero-card" data-tone="blue">
-              <div className="hero-card__header">
-                <div>
-                  <span className="hero-card__title">Operational profile</span>
-                  <strong>Established {companyProfile.established}</strong>
+            <div className="hero-visual__stack">
+              <article className="hero-card hero-card--primary">
+                <div className="hero-card__header">
+                  <div>
+                    <span className="hero-card__title">Operational profile</span>
+                    <strong>Established {companyProfile.established}</strong>
+                  </div>
+                  <span className="hero-badge hero-badge--blue">Active</span>
                 </div>
-                <span className="hero-badge hero-badge--blue">Active</span>
-              </div>
-              <div className="hero-card__bar">
-                <span className="hero-card__bar-fill" />
-              </div>
-              <ul className="hero-card__list">
-                <li>Service footprint: {companyProfile.serviceFootprint.join(", ")}</li>
-                <li>Standards alignment: {standards.slice(0, 4).join(" | ")}</li>
-                <li>Office hours: {companyProfile.officeHours}</li>
-              </ul>
-            </article>
+                <div className="hero-card__bar">
+                  <span className="hero-card__bar-fill" />
+                </div>
+                <ul className="hero-card__list">
+                  <li>Service footprint: {companyProfile.serviceFootprint.join(", ")}</li>
+                  <li>Standards alignment: {standards.slice(0, 4).join(" | ")}</li>
+                  <li>Office hours: {companyProfile.officeHours}</li>
+                </ul>
+              </article>
+
+              <article className="hero-card hero-card--secondary">
+                <div className="hero-card__header">
+                  <div>
+                    <span className="hero-card__title">Digitization Status</span>
+                    <strong>SANS Compliance Tier 1</strong>
+                  </div>
+                </div>
+                <div className="status-grid">
+                  <div className="status-item">
+                    <small>Inspection Ready</small>
+                    <strong>100%</strong>
+                  </div>
+                  <div className="status-item">
+                    <small>Records Logic</small>
+                    <strong>Verified</strong>
+                  </div>
+                </div>
+              </article>
+            </div>
           </div>
         </div>
       </section>

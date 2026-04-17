@@ -47,7 +47,7 @@ export function JobDetailView({
   onChecklistChange,
   selectedJobTitle
 }: JobDetailViewProps): React.JSX.Element {
-  const isFieldRole = role === "technician" || role === "dispatcher" || role === "admin";
+  const isFieldRole = role === "technician" || role === "dispatcher" || role === "admin" || role === "super_admin";
 
   const postureItems = [
     {

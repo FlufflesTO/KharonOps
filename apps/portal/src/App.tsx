@@ -16,6 +16,7 @@ import { CommunicationRailsCard } from "./components/CommunicationRailsCard";
 import { AdminPanelCard } from "./components/AdminPanelCard";
 import { DocumentHistoryCard } from "./components/DocumentHistoryCard";
 import { DashboardView } from "./components/DashboardView";
+import { RegistryCard } from "./components/RegistryCard";
 
 
 
@@ -167,6 +168,17 @@ export function PortalApp(): React.JSX.Element {
       setFeedback(`Jobs load failed: ${errorMessage(error)}`);
     }
   }
+
+  // Contextual dispatch: auto-populate UIDs from selected job metadata
+  useEffect(() => {
+    if (selectedJob) {
+      // If the backend returns these fields in the job record
+      const raw = selectedJob as any;
+      if (raw.active_request_uid) setConfirmRequestUid(raw.active_request_uid);
+      if (raw.active_document_uid) setPublishDocumentUid(raw.active_document_uid);
+      if (raw.suggested_technician_uid) setConfirmTechUid(raw.suggested_technician_uid);
+    }
+  }, [selectedJobUid]);
 
   async function refreshDocuments(jobUid?: string): Promise<void> {
     try {
@@ -704,18 +716,8 @@ export function PortalApp(): React.JSX.Element {
               />
             )}
 
-            {activeWorkspaceTool === "people" && (
-              <div className="workspace-card">
-                <div className="panel-heading panel-heading--inline">
-                  <div>
-                    <p className="panel-eyebrow">Registry</p>
-                    <h2>People Sync</h2>
-                  </div>
-                </div>
-                <div style={{ padding: "1rem" }}>
-                  <p className="muted-copy">This functional domain is pending implementation.</p>
-                </div>
-              </div>
+            {activeWorkspaceTool === "people" && (isAdmin || role === "super_admin") && (
+              <RegistryCard onFeedback={setFeedback} />
             )}
           </section>
         </main>
