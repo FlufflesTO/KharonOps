@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { CtaSection } from "../components/CtaSection";
 import { services } from "../constants/siteData";
 import { NotFound } from "../components/NotFound";
+import { Breadcrumbs } from "../components/Breadcrumbs";
 
 export function ServiceDetailPage(): React.JSX.Element {
   const { serviceSlug } = useParams<{ serviceSlug: string }>();
@@ -21,6 +22,7 @@ export function ServiceDetailPage(): React.JSX.Element {
       </Helmet>
 
       <section className="site-section">
+        <Breadcrumbs />
         <div className="section-heading">
           <p className="section-kicker">Service Scope</p>
           <h2>{service.title}</h2>

@@ -30,7 +30,11 @@ function asJob(record: Record<string, unknown>): JobRecord {
     row_version: Number(record.row_version ?? 0),
     client_uid: String(record.client_uid ?? ""),
     technician_uid: String(record.technician_uid ?? ""),
-    last_note: String(record.last_note ?? "")
+    last_note: String(record.last_note ?? ""),
+    // Metadata preservation for contextual dispatch
+    active_request_uid: String(record.active_request_uid ?? ""),
+    active_document_uid: String(record.active_document_uid ?? ""),
+    suggested_technician_uid: String(record.suggested_technician_uid ?? "")
   };
 }
 
@@ -171,14 +175,21 @@ export function PortalApp(): React.JSX.Element {
 
   // Contextual dispatch: auto-populate UIDs from selected job metadata
   useEffect(() => {
-    if (selectedJob) {
-      // If the backend returns these fields in the job record
+    let isActive = true;
+    if (selectedJob && isActive) {
+      // Prioritize preserving the row_version logic for the target job
       const raw = selectedJob as any;
       if (raw.active_request_uid) setConfirmRequestUid(raw.active_request_uid);
       if (raw.active_document_uid) setPublishDocumentUid(raw.active_document_uid);
       if (raw.suggested_technician_uid) setConfirmTechUid(raw.suggested_technician_uid);
+      
+      // Safety: always ensure row versions are synced to the selection
+      setConfirmRowVersion(selectedJob.row_version);
+      setPublishRowVersion(selectedJob.row_version);
+      setRescheduleRowVersion(selectedJob.row_version);
     }
-  }, [selectedJobUid]);
+    return () => { isActive = false; };
+  }, [selectedJobUid, selectedJob?.row_version]);
 
   async function refreshDocuments(jobUid?: string): Promise<void> {
     try {

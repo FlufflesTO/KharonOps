@@ -29,6 +29,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
 .site-shell {
   min-height: 100vh;
   background:
@@ -161,6 +166,10 @@ body {
   color: var(--color-secondary);
 }
 
+.nav-portal-button {
+  display: none;
+}
+
 .nav-status-dot {
   display: inline-block;
   width: 10px;
@@ -184,6 +193,31 @@ body {
     box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.08);
   }
 }
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 2rem;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  z-index: 100;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 1.4rem;
+  height: 2px;
+  background: var(--color-text);
+  border-radius: 1px;
+  transition: var(--transition-smooth);
+}
+
+.nav-toggle--active span:first-child { transform: translateY(7px) rotate(45deg); }
+.nav-toggle--active span:nth-child(2) { opacity: 0; }
+.nav-toggle--active span:last-child { transform: translateY(-7px) rotate(-45deg); }
 
 .hero-section {
   position: relative;
@@ -809,4 +843,66 @@ body {
   .signal-band__inner {
     grid-template-columns: 1fr;
   }
+}
+@media (max-width: 960px) {
+  .nav-toggle { display: flex; }
+  
+  .site-links {
+    position: fixed;
+    inset: 0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2.5rem;
+    background: var(--color-bg);
+    transform: translateX(100%);
+    transition: var(--transition-smooth);
+    z-index: 90;
+  }
+
+  .site-links--active { transform: translateX(0); }
+
+  .site-links a { font-size: 1.4rem; }
+  
+  .nav-portal-button {
+    display: flex;
+    margin-top: 1rem;
+    color: var(--color-primary);
+  }
+}
+
+.site-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.site-breadcrumbs a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: var(--transition-smooth);
+}
+
+.site-breadcrumbs a:hover {
+  color: var(--color-primary);
+}
+
+.site-breadcrumbs a::after {
+  content: "/";
+  margin-left: 0.75rem;
+  color: var(--color-border);
+  pointer-events: none;
+}
+
+.breadcrumb-current {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+main > * {
+  animation: site-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
