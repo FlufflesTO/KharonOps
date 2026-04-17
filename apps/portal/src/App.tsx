@@ -147,6 +147,7 @@ export function PortalApp(): React.JSX.Element {
   const [automationJobs, setAutomationJobs] = useState<AutomationJobEntry[]>([]);
   const [selectedAutomationJobUid, setSelectedAutomationJobUid] = useState("");
   const [actionPending, setActionPending] = useState(false);
+  const [emulatedRole, setEmulatedRole] = useState<Role | "">("");
   const [checklistData, setChecklistData] = useState<Record<string, string>>({});
   const [confirmRequestUid, setConfirmRequestUid] = useState("");
   const [publishDocumentUid, setPublishDocumentUid] = useState("");
@@ -155,22 +156,25 @@ export function PortalApp(): React.JSX.Element {
   const [rescheduleRowVersion, setRescheduleRowVersion] = useState(0);
 
 
-  const role = session?.session.role ?? null;
-  const isDispatchRole = role === "dispatcher" || role === "admin" || role === "super_admin";
-  const isAdmin = role === "admin" || role === "super_admin";
-  const isSuperAdmin = role === "super_admin";
+  const realRole = session?.session.role ?? null;
+  const isRealSuperAdmin = realRole === "super_admin";
+  const effectiveRole = emulatedRole || realRole;
+
+  const isDispatchRole = effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin";
+  const isAdmin = effectiveRole === "admin" || effectiveRole === "super_admin";
+  const isSuperAdmin = effectiveRole === "super_admin";
 
   const selectedJob = useMemo(() => jobs.find((job) => job.job_uid === selectedJobUid) ?? null, [jobs, selectedJobUid]);
   const selectableStatuses = useMemo<JobStatus[]>(
     () => {
       if (!selectedJob) return ["draft"];
       const allowed = listAllowedStatusTransitions(selectedJob.status);
-      if (session?.session.role === "technician") {
+      if (effectiveRole === "technician") {
         return allowed.filter(s => s === "performed" || s === "cancelled");
       }
       return allowed;
     },
-    [selectedJob, session?.session.role]
+    [selectedJob, effectiveRole]
   );
 
   const dispatchRequests = dispatchContext?.requests ?? [];
@@ -785,10 +789,11 @@ export function PortalApp(): React.JSX.Element {
 
   if (portalView === "dashboard") {
     return (
-      <div className={`portal-shell portal-shell--${role}`}>
+      <div className={`portal-shell portal-shell--${effectiveRole}`}>
         <DashboardView
           session={session}
           openJobCount={openJobCount}
+          overrideRole={effectiveRole as Role}
           onEnterWorkspace={(tool) => {
             setActiveWorkspaceTool(tool);
             setPortalView("workspace");
@@ -806,7 +811,7 @@ export function PortalApp(): React.JSX.Element {
   }
 
   return (
-    <div className={`portal-shell portal-shell--${role}`}>
+    <div className={`portal-shell portal-shell--${effectiveRole}`}>
       <header className="portal-topbar">
         <div className="portal-topbar__brand">
           <div className="portal-mark">
@@ -818,7 +823,8 @@ export function PortalApp(): React.JSX.Element {
           <div>
             <div className="portal-title">KHARON COMMAND CENTRE</div>
             <div className="portal-subtitle">
-              {session.session.display_name} | {role?.toUpperCase()}
+              {session.session.display_name} | {effectiveRole?.toUpperCase()}
+              {emulatedRole && <span className="emulation-tag"> [EMULATING: {emulatedRole.toUpperCase()}]</span>}
             </div>
           </div>
         </div>
@@ -859,7 +865,7 @@ export function PortalApp(): React.JSX.Element {
 
         <main className="portal-main">
             <SummaryBoard
-              role={role || "client"}
+              role={effectiveRole || "client"}
               openJobCount={openJobCount}
               selectedJobStatus={selectedJobStatus}
               queueCount={queueCount}
@@ -873,7 +879,7 @@ export function PortalApp(): React.JSX.Element {
             {activeWorkspaceTool === "jobs" ? (
               <JobDetailView
                 selectedJob={selectedJob}
-                role={role ?? "client"}
+                role={effectiveRole ?? "client"}
                 selectableStatuses={selectableStatuses}
                 statusTarget={statusTarget}
                 setStatusTarget={setStatusTarget}
@@ -953,6 +959,8 @@ export function PortalApp(): React.JSX.Element {
                 onLoadAutomationJobs={() => runAction(loadAdminAutomationJobs)}
                 onRetryAutomation={(uid) => runAction(() => handleRetryAutomation(uid))}
                 onFeedback={setFeedback}
+                emulatedRole={emulatedRole}
+                onEmulateRole={setEmulatedRole}
 
               />
             ) : null}
@@ -961,7 +969,7 @@ export function PortalApp(): React.JSX.Element {
               <DocumentHistoryCard
                 documents={documents}
                 selectedJobUid={selectedJob?.job_uid ?? ""}
-                role={role ?? "client"}
+                role={effectiveRole ?? "client"}
 
                 onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_uid))}
                 onPublish={(uid, ver, vis) => runAction(() => handleDocumentPublishInline(uid, ver, vis))}

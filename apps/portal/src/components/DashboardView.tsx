@@ -1,4 +1,5 @@
-﻿import React from "react";
+import React from "react";
+import type { Role } from "@kharon/domain";
 import type { PortalSession } from "../apiClient";
 
 function Icon({ d, size = 20 }: { d: string; size?: number }): React.JSX.Element {
@@ -77,10 +78,11 @@ interface DashboardViewProps {
   openJobCount: number;
   onEnterWorkspace: (tool: string) => void;
   onLogout: () => void;
+  overrideRole?: Role;
 }
 
-export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogout }: DashboardViewProps): React.JSX.Element {
-  const role = session.session.role;
+export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogout, overrideRole }: DashboardViewProps): React.JSX.Element {
+  const role = overrideRole || session.session.role;
   const meta = ROLE_DISPLAY[role] ?? { label: "Operations", sub: role.toUpperCase() };
 
   if (role === "technician") {

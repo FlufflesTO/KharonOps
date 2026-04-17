@@ -1,4 +1,5 @@
 import React from "react";
+import type { Role } from "@kharon/domain";
 import type { AutomationJobEntry } from "../apiClient";
 
 interface AdminPanelCardProps {
@@ -13,7 +14,8 @@ interface AdminPanelCardProps {
   onLoadAutomationJobs: () => void;
   onRetryAutomation: (uid: string) => void;
   onFeedback: (msg: string) => void;
-
+  emulatedRole: Role | "";
+  onEmulateRole: (role: Role | "") => void;
 }
 
 export function AdminPanelCard({
@@ -28,7 +30,8 @@ export function AdminPanelCard({
   onLoadAutomationJobs,
   onRetryAutomation,
   onFeedback: _onFeedback,
-
+  emulatedRole,
+  onEmulateRole,
 }: AdminPanelCardProps): React.JSX.Element {
   const selectedAutomationJob =
     automationJobs.find((job) => job.automation_job_uid === selectedAutomationJobUid) ?? null;
@@ -39,6 +42,30 @@ export function AdminPanelCard({
         <p className="panel-eyebrow">Admin</p>
         <h2>Health & Automation</h2>
       </div>
+
+      <section className="admin-section" style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px border-solid rgba(255,255,255,0.05)' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1rem', color: 'var(--accent-amber)' }}>Role Emulation (Diagnostic)</h3>
+        <p style={{ fontSize: '0.85rem', marginBottom: '1.5rem', opacity: 0.7 }}>
+          Temporarily switch your active dashboard view to verify technician or client workflows.
+        </p>
+        <div className="button-row" style={{ flexWrap: 'wrap' }}>
+          {(["client", "technician", "dispatcher", "admin"] as const).map((r) => (
+            <button
+              key={r}
+              className={`button ${emulatedRole === r ? 'button--primary' : 'button--secondary'} button--compact`}
+              onClick={() => onEmulateRole(r)}
+            >
+              {r.charAt(0).toUpperCase() + r.slice(1)}
+            </button>
+          ))}
+          <button
+            className={`button ${emulatedRole === "" ? 'button--primary' : 'button--ghost'} button--compact`}
+            onClick={() => onEmulateRole("")}
+          >
+            Clear (SuperAdmin)
+          </button>
+        </div>
+      </section>
       
       <div className="button-row" style={{ marginBottom: '2rem' }}>
         <button className="button button--secondary" onClick={onLoadHealth}>

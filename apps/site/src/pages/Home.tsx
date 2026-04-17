@@ -5,7 +5,11 @@ import { CtaSection } from "../components/CtaSection";
 import {
   companyProfile,
   services,
-  trustSignals
+  trustSignals,
+  partnerLogos,
+  compliancePillars,
+  caseStudies,
+  resourceCards
 } from "../constants/siteData";
 
 export function HomePage(): React.JSX.Element {
