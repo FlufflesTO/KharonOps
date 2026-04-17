@@ -1,10 +1,46 @@
-﻿{
+{
+  "id": "/portal/",
   "name": "Kharon Operations Portal",
   "short_name": "KharonOps",
+  "description": "Unified client-technician-dispatch operations portal.",
   "start_url": "/portal/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#121212",
   "theme_color": "#121212",
-  "description": "Unified client-technician-dispatch operations portal.",
-  "icons": []
+  "icons": [
+    {
+      "src": "/portal/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/portal/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/portal/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Kharon Command Centre Dashboard"
+    },
+    {
+      "src": "/portal/screenshot-mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "label": "Technician Mobile View"
+    }
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+kharon",
+      "url": "/portal/jobs?query=%s"
+    }
+  ]
 }
