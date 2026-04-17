@@ -109,14 +109,22 @@ export function PortalApp(): React.JSX.Element {
   const [feedback, setFeedback] = useState("Ready.");
   const [documents, setDocuments] = useState<Array<Record<string, unknown>>>([]);
   const [adminHealth, setAdminHealth] = useState<Record<string, unknown> | null>(null);
+  const [adminAutomationJobs, setAdminAutomationJobs] = useState<Array<Record<string, unknown>>>([]);
   const [adminAuditCount, setAdminAuditCount] = useState(0);
   const [actionPending, setActionPending] = useState(false);
   const [checklistData, setChecklistData] = useState<Record<string, string>>({});
 
   const selectedJob = useMemo(() => jobs.find((job) => job.job_uid === selectedJobUid) ?? null, [jobs, selectedJobUid]);
   const selectableStatuses = useMemo<JobStatus[]>(
-    () => (selectedJob ? listAllowedStatusTransitions(selectedJob.status) : ["draft"]),
-    [selectedJob]
+    () => {
+      if (!selectedJob) return ["draft"];
+      const allowed = listAllowedStatusTransitions(selectedJob.status);
+      if (session?.session.role === "technician") {
+        return allowed.filter(s => s === "performed" || s === "cancelled");
+      }
+      return allowed;
+    },
+    [selectedJob, session?.session.role]
   );
 
   const openJobCount = jobs.filter((job) => job.status !== "certified" && job.status !== "cancelled").length;
@@ -494,6 +502,15 @@ export function PortalApp(): React.JSX.Element {
     setFeedback(generatedDocumentUid ? `${documentType} generated (${generatedDocumentUid}).` : `${documentType} generated.`);
   }
 
+  async function handleDocumentPublishInline(documentUid: string, rowVersion: number, clientVisible: boolean): Promise<void> {
+    await apiClient.publishDocument(documentUid, rowVersion, {
+      job_uid: selectedJob?.job_uid,
+      client_visible: clientVisible
+    });
+    await refreshDocuments(selectedJob?.job_uid);
+    setFeedback(`Document ${documentUid} published (Visibility: ${clientVisible ? 'Client' : 'Internal'}).`);
+  }
+
   async function handleDocumentPublish(): Promise<void> {
     if (publishDocumentUid.trim() === "") {
       setFeedback("Enter a document UID before publishing.");
@@ -524,6 +541,18 @@ export function PortalApp(): React.JSX.Element {
     setFeedback("Audit log fetched.");
   }
 
+  async function loadAdminAutomationJobs(): Promise<void> {
+    const data = await apiClient.adminAutomationJobs();
+    setAdminAutomationJobs(data);
+    setFeedback(`Fetched ${data.length} automation entries.`);
+  }
+
+  async function handleRetryAutomation(uid: string): Promise<void> {
+    await apiClient.retryAutomation(uid);
+    await loadAdminAutomationJobs();
+    setFeedback(`Retry queued for ${uid}.`);
+  }
+
   if (loading) {
     return (
       <div className="portal-shell portal-shell--loading">
@@ -546,10 +575,9 @@ export function PortalApp(): React.JSX.Element {
     );
   }
 
-  const role = session.session.role;
-  // super_admin inherits every workspace panel without restriction.
   const isDispatchRole = role === "dispatcher" || role === "admin" || role === "super_admin";
   const isAdmin = role === "admin" || role === "super_admin";
+  const isSuperAdmin = role === "super_admin";
 
   if (portalView === "dashboard") {
     return (
@@ -689,15 +717,9 @@ export function PortalApp(): React.JSX.Element {
                 setRescheduleEnd={setRescheduleEnd}
                 rescheduleRowVersion={rescheduleRowVersion}
                 setRescheduleRowVersion={setRescheduleRowVersion}
-                publishDocumentUid={publishDocumentUid}
-                setPublishDocumentUid={setPublishDocumentUid}
-                publishRowVersion={publishRowVersion}
-                setPublishRowVersion={setPublishRowVersion}
-                documentType={documentType}
                 onScheduleRequest={() => runAction(handleScheduleRequest)}
                 onScheduleConfirm={() => runAction(handleScheduleConfirm)}
                 onReschedule={() => runAction(handleReschedule)}
-                onDocumentPublish={() => runAction(handleDocumentPublish)}
                 onFeedback={setFeedback}
               />
             )}
@@ -712,9 +734,12 @@ export function PortalApp(): React.JSX.Element {
             {activeWorkspaceTool === "admin" && isAdmin && (
               <AdminPanelCard
                 adminHealth={adminHealth}
+                adminAutomationJobs={adminAutomationJobs}
                 adminAuditCount={adminAuditCount}
                 onLoadHealth={() => runAction(loadAdminHealth)}
                 onLoadAudits={() => runAction(loadAdminAudits)}
+                onLoadAutomationJobs={() => runAction(loadAdminAutomationJobs)}
+                onRetryAutomation={(uid) => runAction(() => handleRetryAutomation(uid))}
                 onFeedback={setFeedback}
               />
             )}
@@ -723,7 +748,9 @@ export function PortalApp(): React.JSX.Element {
               <DocumentHistoryCard
                 documents={documents}
                 selectedJobUid={selectedJob?.job_uid ?? ""}
+                role={role}
                 onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_uid))}
+                onPublish={(uid, ver, vis) => runAction(() => handleDocumentPublishInline(uid, ver, vis))}
               />
             )}
 

@@ -57,6 +57,7 @@ export interface JobDocumentRow extends MutableMeta {
   drive_file_id: string;
   pdf_file_id: string;
   published_url: string;
+  client_visible: boolean;
 }
 
 export interface ScheduleRequestRow extends MutableMeta {

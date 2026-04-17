@@ -278,6 +278,11 @@ export const apiClient = {
       method: "GET"
     });
   },
+  async adminAutomationJobs() {
+    return request<Array<Record<string, unknown>>>("/api/v1/admin/automation-jobs", {
+      method: "GET"
+    });
+  },
   async retryAutomation(automationJobUid: string) {
     return request<Record<string, unknown>>(`/api/v1/admin/retries/${automationJobUid}`, {
       method: "POST"

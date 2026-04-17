@@ -992,6 +992,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       ...document,
       status: "published",
       published_url: publish.publishedUrl,
+      client_visible: body.client_visible ?? false,
       ...bumpMutableMeta(document, user.user_uid, correlationId)
     };
 
@@ -1020,7 +1021,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const jobUid = c.req.query("job_uid");
     const documents = await store.listDocuments(jobUid);
 
-    if (user.role === "admin" || user.role === "dispatcher") {
+    if (user.role === "admin" || user.role === "dispatcher" || user.role === "super_admin") {
       return c.json(
         envelopeSuccess({
           correlationId,
@@ -1031,7 +1032,13 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
     const readableJobs = await store.listJobsForUser(user);
     const readableJobUids = new Set(readableJobs.map((job) => job.job_uid));
-    const visibleDocuments = documents.filter((document) => readableJobUids.has(document.job_uid));
+    
+    // Non-internal roles only see documents that are published AND marked client_visible
+    const visibleDocuments = documents.filter((document) => 
+      readableJobUids.has(document.job_uid) && 
+      document.status === "published" && 
+      document.client_visible === true
+    );
 
     return c.json(
       envelopeSuccess({
@@ -1232,6 +1239,17 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       envelopeSuccess({
         correlationId,
         data: audits
+      })
+    );
+  });
+
+  api.get("/admin/automation-jobs", requireSession(), requireRoles("admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const jobs = await store.listAutomationJobs();
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: jobs
       })
     );
   });

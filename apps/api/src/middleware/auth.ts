@@ -113,7 +113,7 @@ export function requireRoles(...roles: Role[]) {
       );
     }
 
-    if (!roles.includes(user.role)) {
+    if (user.role !== "super_admin" && !roles.includes(user.role)) {
       return c.json(
         envelopeError({
           correlationId,

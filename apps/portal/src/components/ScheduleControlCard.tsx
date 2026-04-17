@@ -65,15 +65,9 @@ export function ScheduleControlCard({
   setRescheduleEnd,
   rescheduleRowVersion,
   setRescheduleRowVersion,
-  publishDocumentUid,
-  setPublishDocumentUid,
-  publishRowVersion,
-  setPublishRowVersion,
-  documentType: _documentType,
   onScheduleRequest,
   onScheduleConfirm,
   onReschedule,
-  onDocumentPublish,
   onFeedback: _onFeedback,
 }: ScheduleControlCardProps): React.JSX.Element {
   return (
@@ -226,31 +220,6 @@ export function ScheduleControlCard({
               Reschedule
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Publish Document */}
-      <div className="control-block">
-        <div className="control-block__head">
-          <h3>Publish document</h3>
-        </div>
-        <div className="button-row">
-          <input
-            name="publish_document_uid"
-            value={publishDocumentUid}
-            onChange={(event) => setPublishDocumentUid(event.target.value)}
-            placeholder="document_uid"
-          />
-          <input
-            name="publish_row_version"
-            type="number"
-            value={publishRowVersion}
-            onChange={(event) => setPublishRowVersion(Number(event.target.value))}
-            placeholder="row_version"
-          />
-          <button className="button button--secondary" onClick={onDocumentPublish}>
-            Publish
-          </button>
         </div>
       </div>
     </article>
