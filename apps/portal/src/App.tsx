@@ -249,12 +249,12 @@ export function PortalApp(): React.JSX.Element {
     let isActive = true;
     if (selectedJob && isActive) {
       // Prioritize preserving the row_version logic for the target job
-      const raw = selectedJob as any;
-      if (raw.active_request_uid) setConfirmRequestUid(raw.active_request_uid);
-      if (raw.active_document_uid) setPublishDocumentUid(raw.active_document_uid);
-      if (raw.suggested_technician_uid) setConfirmTechUid(raw.suggested_technician_uid);
+      if (selectedJob.active_request_uid) setConfirmRequestUid(selectedJob.active_request_uid);
+      if (selectedJob.active_document_uid) setPublishDocumentUid(selectedJob.active_document_uid);
+      if (selectedJob.suggested_technician_uid) setConfirmTechUid(selectedJob.suggested_technician_uid);
       
       // Safety: always ensure row versions are synced to the selection
+
       setConfirmRowVersion(selectedJob.row_version);
       setPublishRowVersion(selectedJob.row_version);
       setRescheduleRowVersion(selectedJob.row_version);
@@ -663,8 +663,9 @@ export function PortalApp(): React.JSX.Element {
       job_uid: selectedSchedule.job_uid,
       technician_uid: selectedSchedule.technician_uid,
       request_uid: selectedSchedule.request_uid,
-      calendar_event_id: selectedSchedule.calendar_event_id
+      calendar_event_id: selectedSchedule.calendar_event_id ?? ""
     });
+
 
     if (selectedJob) {
       await refreshDispatchContext(selectedJob.job_uid);
@@ -693,9 +694,10 @@ export function PortalApp(): React.JSX.Element {
 
   async function handleDocumentPublishInline(documentUid: string, rowVersion: number, clientVisible: boolean): Promise<void> {
     await apiClient.publishDocument(documentUid, rowVersion, {
-      job_uid: selectedJob?.job_uid,
+      ...(selectedJob ? { job_uid: selectedJob.job_uid } : {}),
       client_visible: clientVisible
     });
+
     await refreshDocuments(selectedJob?.job_uid);
     setFeedback(`Document ${documentUid} published (Visibility: ${clientVisible ? 'Client' : 'Internal'}).`);
   }
@@ -732,10 +734,12 @@ export function PortalApp(): React.JSX.Element {
   }
 
   async function loadAdminAutomationJobs(): Promise<void> {
-    const data = await apiClient.adminAutomationJobs();
+    const response = await apiClient.adminAutomationJobs();
+    const data = response.data ?? [];
     setAdminAutomationJobs(data);
     setFeedback(`Fetched ${data.length} automation entries.`);
   }
+
 
   async function handleRetryAutomation(uid: string): Promise<void> {
     await apiClient.retryAutomation(uid);
@@ -957,7 +961,8 @@ export function PortalApp(): React.JSX.Element {
               <DocumentHistoryCard
                 documents={documents}
                 selectedJobUid={selectedJob?.job_uid ?? ""}
-                role={role}
+                role={role ?? "client"}
+
                 onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_uid))}
                 onPublish={(uid, ver, vis) => runAction(() => handleDocumentPublishInline(uid, ver, vis))}
               />

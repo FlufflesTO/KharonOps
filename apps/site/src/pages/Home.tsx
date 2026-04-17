@@ -59,7 +59,10 @@ export function HomePage(): React.JSX.Element {
               </div>
               <ul className="hero-card__list">
                 <li>Established: {companyProfile.established}</li>
-                <li>{services[0].navLabel}: {services[0].summary}</li>
+                {services[0] && (
+                  <li>{services[0].navLabel}: {services[0].summary}</li>
+                )}
+
               </ul>
             </article>
           </div>

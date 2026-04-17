@@ -22,9 +22,11 @@ export function RegistryCard({ onFeedback }: RegistryCardProps): React.JSX.Eleme
       setName("");
       setEmail("");
       setPhone("");
-    } catch (error: any) {
-      onFeedback(`Registry sync failed: ${error.error?.message || String(error)}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      onFeedback(`Registry sync failed: ${msg}`);
     }
+
   };
 
   return (

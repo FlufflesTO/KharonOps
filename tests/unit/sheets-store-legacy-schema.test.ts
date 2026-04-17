@@ -222,8 +222,10 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
       row_version: 1,
       updated_at: "2026-04-11T10:00:00.000Z",
       updated_by: "USR-001",
-      correlation_id: "corr-doc-001"
+      correlation_id: "corr-doc-001",
+      client_visible: false
     });
+
 
     const createdDocument = await store.getDocument("DOC-00001");
     const documentRow = rows.get("Job_Documents")?.[0];
@@ -266,8 +268,10 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
       row_version: 2,
       updated_at: "2026-04-11T10:05:00.000Z",
       updated_by: "USR-001",
-      correlation_id: "corr-doc-002"
+      correlation_id: "corr-doc-002",
+      client_visible: true
     });
+
 
     const published = await store.getDocument("DOC-00001");
     const updatedFileRow = rows.get("Portal_Files")?.[0];

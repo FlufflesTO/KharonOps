@@ -682,7 +682,9 @@ button.site-button {
 .operations-board {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .site-section--ultra-compact {
+
   padding: 1.5rem 2rem;
 }
 

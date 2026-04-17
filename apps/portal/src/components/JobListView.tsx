@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { JobStatus } from "@kharon/domain";
 
 const JOB_STATUS_LABELS: Record<JobStatus, string> = {
@@ -18,7 +18,11 @@ export interface JobRecord {
   client_uid: string;
   technician_uid: string;
   last_note: string;
+  active_request_uid?: string;
+  active_document_uid?: string;
+  suggested_technician_uid?: string;
 }
+
 
 export function statusTone(status: string): "active" | "warning" | "critical" | "neutral" {
   switch (status) {
