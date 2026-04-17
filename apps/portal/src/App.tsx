@@ -87,6 +87,14 @@ function formatApiFailure(error: unknown): string {
   return `${message}${code}${correlation}${details}`;
 }
 
+function isUnauthorizedError(error: unknown): boolean {
+  const code = errorCode(error);
+  if (code === "unauthorized" || code === "forbidden") {
+    return true;
+  }
+  return /401|unauthori[sz]ed|forbidden/i.test(errorMessage(error));
+}
+
 function looksLikeJwt(token: string): boolean {
   const trimmed = token.trim();
   return trimmed.split(".").length === 3 && trimmed.length > 40;
@@ -154,13 +162,17 @@ export function PortalApp(): React.JSX.Element {
   const [confirmRowVersion, setConfirmRowVersion] = useState(0);
   const [publishRowVersion, setPublishRowVersion] = useState(0);
   const [rescheduleRowVersion, setRescheduleRowVersion] = useState(0);
+  const [documentAccessDenied, setDocumentAccessDenied] = useState(false);
+  const [dispatchAccessDenied, setDispatchAccessDenied] = useState(false);
 
 
   const realRole = session?.session.role ?? null;
   const isRealSuperAdmin = realRole === "super_admin";
   const effectiveRole = emulatedRole || realRole;
 
-  const isDispatchRole = effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin";
+  const isDispatchRole = effectiveRole === "dispatcher" || effectiveRole === "super_admin";
+  const canAccessPeopleDirectory = effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin";
+  const canGenerateDocuments = effectiveRole === "technician" || effectiveRole === "dispatcher" || effectiveRole === "super_admin";
   const isAdmin = effectiveRole === "admin" || effectiveRole === "super_admin";
   const isSuperAdmin = effectiveRole === "super_admin";
 
@@ -267,23 +279,41 @@ export function PortalApp(): React.JSX.Element {
   }, [selectedJobUid, selectedJob?.row_version]);
 
   async function refreshDocuments(jobUid?: string): Promise<void> {
+    if (documentAccessDenied) {
+      return;
+    }
     try {
       const response = await apiClient.history(jobUid);
       startTransition(() => {
         setDocuments(response.data ?? []);
       });
     } catch (error) {
+      if (isUnauthorizedError(error)) {
+        setDocumentAccessDenied(true);
+        setDocuments([]);
+        setFeedback("Document access is unavailable for this account.");
+        return;
+      }
       setFeedback(`Document history load failed: ${errorMessage(error)}`);
     }
   }
 
   async function refreshDispatchContext(jobUid: string): Promise<void> {
+    if (!isDispatchRole || dispatchAccessDenied) {
+      return;
+    }
     try {
       const data = await apiClient.dispatchContext(jobUid);
       startTransition(() => {
         setDispatchContext(data);
       });
     } catch (error) {
+      if (isUnauthorizedError(error)) {
+        setDispatchAccessDenied(true);
+        setDispatchContext(null);
+        setFeedback("Dispatch controls are unavailable for this account.");
+        return;
+      }
       setFeedback(`Dispatch context load failed: ${errorMessage(error)}`);
     }
   }
@@ -365,8 +395,10 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
 
+    setDocumentAccessDenied(false);
+    setDispatchAccessDenied(false);
     void refreshJobs();
-  }, [session]);
+  }, [session, effectiveRole]);
 
   useEffect(() => {
     if (!session || !selectedJobUid) {
@@ -375,17 +407,19 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
 
-    void refreshDocuments(selectedJobUid);
-    if (isDispatchRole) {
+    if (activeWorkspaceTool === "jobs" || activeWorkspaceTool === "documents") {
+      void refreshDocuments(selectedJobUid);
+    }
+    if (activeWorkspaceTool === "schedule" && isDispatchRole) {
       void refreshDispatchContext(selectedJobUid);
     }
-  }, [isDispatchRole, selectedJobUid, session]);
+  }, [activeWorkspaceTool, isDispatchRole, selectedJobUid, session]);
 
   useEffect(() => {
-    if (activeWorkspaceTool === "people" && isDispatchRole) {
+    if (activeWorkspaceTool === "people" && canAccessPeopleDirectory) {
       void refreshPeopleDirectory();
     }
-  }, [activeWorkspaceTool, isDispatchRole]);
+  }, [activeWorkspaceTool, canAccessPeopleDirectory]);
 
   useEffect(() => {
     if (activeWorkspaceTool === "admin" && isAdmin) {
@@ -681,6 +715,10 @@ export function PortalApp(): React.JSX.Element {
     if (!selectedJob) {
       return;
     }
+    if (!canGenerateDocuments || documentAccessDenied) {
+      setFeedback("Document generation is disabled for this role/account.");
+      return;
+    }
 
     const response = await apiClient.generateDocument(selectedJob.job_uid, documentType, checklistData);
     const generatedDocumentUid = String(response.data?.document_uid ?? "");
@@ -895,12 +933,18 @@ export function PortalApp(): React.JSX.Element {
                 documentType={documentType}
                 setDocumentType={setDocumentType}
                 onDocumentGenerate={() => runAction(handleDocumentGenerate)}
+                canGenerateDocuments={canGenerateDocuments && !documentAccessDenied}
+                documentGenerateDisabledReason={
+                  canGenerateDocuments
+                    ? "Document APIs are currently unavailable for this account. Contact an administrator to restore access."
+                    : "This role can review job status and notes, but cannot generate documents."
+                }
                 onChecklistChange={setChecklistData}
                 selectedJobTitle="Job Detail"
               />
             ) : null}
 
-            {activeWorkspaceTool === "schedule" && isDispatchRole ? (
+            {activeWorkspaceTool === "schedule" && isDispatchRole && !dispatchAccessDenied ? (
               <ScheduleControlCard
                 selectedJobUid={selectedJob?.job_uid ?? ""}
                 preferredStart={preferredStart}
@@ -976,7 +1020,7 @@ export function PortalApp(): React.JSX.Element {
               />
             ) : null}
 
-            {activeWorkspaceTool === "people" && isDispatchRole ? (
+            {activeWorkspaceTool === "people" && canAccessPeopleDirectory ? (
               <PeopleDirectoryCard
                 people={peopleDirectory}
                 onSync={(payload) => handlePeopleSync(payload)}

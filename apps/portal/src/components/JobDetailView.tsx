@@ -21,6 +21,8 @@ interface JobDetailViewProps {
   documentType: "jobcard" | "service_report" | "certificate";
   setDocumentType: (type: "jobcard" | "service_report" | "certificate") => void;
   onDocumentGenerate: () => void;
+  canGenerateDocuments: boolean;
+  documentGenerateDisabledReason?: string;
   onChecklistChange: (data: Record<string, string>) => void;
   selectedJobTitle: string;
 }
@@ -44,6 +46,8 @@ export function JobDetailView({
   documentType,
   setDocumentType,
   onDocumentGenerate,
+  canGenerateDocuments,
+  documentGenerateDisabledReason,
   onChecklistChange,
   selectedJobTitle
 }: JobDetailViewProps): React.JSX.Element {
@@ -210,10 +214,16 @@ export function JobDetailView({
               <option value="service_report">Service report</option>
               <option value="certificate">Certificate</option>
             </select>
-            <button className="button button--secondary" onClick={onDocumentGenerate}>
+            <button className="button button--secondary" onClick={onDocumentGenerate} disabled={!canGenerateDocuments}>
               Generate
             </button>
           </div>
+
+          {!canGenerateDocuments ? (
+            <p className="inline-note">
+              {documentGenerateDisabledReason ?? "Document generation is not available for this account."}
+            </p>
+          ) : null}
 
           {(documentType === "service_report" || documentType === "certificate") && (
             <CertificationForm jobTitle={selectedJob.title} onChange={onChecklistChange} />

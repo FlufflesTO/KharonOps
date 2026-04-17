@@ -1,170 +1,135 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { CtaSection } from "../components/CtaSection";
-import {
-  companyProfile,
-  services,
-  trustSignals,
-  partnerLogos,
-  compliancePillars,
-  caseStudies,
-  resourceCards
-} from "../constants/siteData";
+import { companyProfile, services, trustSignals, standards } from "../constants/siteData";
 
 export function HomePage(): React.JSX.Element {
+  const technicianServices = services.slice(0, 4);
+  const standardsPreview = standards.slice(0, 4);
+
   return (
     <>
       <Helmet>
-        <title>Kharon | Engineering-Led Fire and Security</title>
+        <title>Kharon | Engineering and Technician Portal</title>
         <meta
           name="description"
-          content="Engineering-led fire and security delivery with inspection-ready documentation and controlled response."
+          content="A compact operations portal into Kharon engineering delivery and technician execution."
         />
       </Helmet>
 
-      <section className="hero-section" id="top">
-        <div className="hero-grid">
-          <div className="hero-copy">
-            <p className="hero-kicker">Compliance Execution Partner</p>
-            <h1>
-              <span className="hero-line reveal-text">Mission-Critical</span>
-              <span className="hero-line hero-line--accent reveal-text" style={{ animationDelay: '0.2s' }}>Fire and Security</span>
-            </h1>
-            <p className="hero-summary">
-              Kharon delivers engineered fire and security systems with the operational discipline required for multi-stakeholder accountability.
+      <section className="home-portal-hero" id="top">
+        <div className="home-portal-hero__ambient" aria-hidden="true" />
+        <div className="home-portal-hero__inner">
+          <div className="home-portal-hero__copy">
+            <p className="home-portal-hero__kicker">KHARON COMMAND SURFACE</p>
+            <h1>Engineering Precision. Technician Excellence.</h1>
+            <p>
+              One decisive entry point into engineered fire and security delivery. Route into planning, execution,
+              compliance evidence, or live field operations in seconds.
             </p>
-            <div className="hero-actions">
-              <Link className="site-button site-button--primary" to="/contact?intent=project">
-                Get assessment
-              </Link>
-              <a className="site-button site-button--secondary" href="/portal/">
-                Portal login
+            <div className="home-portal-hero__actions">
+              <a className="site-button site-button--primary" href="/portal/">
+                Enter Portal
               </a>
-            </div>
-            <div className="hero-trust-strip" aria-label="Core trust signals">
-              {trustSignals.slice(0, 3).map((signal) => (
-                <div key={signal} className="hero-trust-pill">
-                  <span className="hero-trust-pill__dot" />
-                  <span>{signal}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="hero-visual">
-            <div className="hero-visual__stack">
-              <article className="hero-card hero-card--primary animate-float">
-                <div className="hero-card__header">
-                  <div>
-                    <span className="hero-card__title">Profile</span>
-                    <strong>{companyProfile.registration}</strong>
-                  </div>
-                  <span className="hero-badge hero-badge--blue">Active</span>
-                </div>
-                <div className="hero-card__bar">
-                  <span className="hero-card__bar-fill" />
-                </div>
-                <ul className="hero-card__list">
-                  <li>Established: {companyProfile.established}</li>
-                  {services[0] && (
-                    <li>{services[0].navLabel}: {services[0].summary}</li>
-                  )}
-                </ul>
-              </article>
-              <article className="hero-card hero-card--secondary animate-float" style={{ animationDelay: '1s' }}>
-                <span className="hero-card__title">System Status</span>
-                <div className="status-grid">
-                  <div className="status-item">
-                    <small>Uptime</small>
-                    <strong>99.9%</strong>
-                  </div>
-                  <div className="status-item">
-                    <small>Safety</small>
-                    <strong>100%</strong>
-                  </div>
-                </div>
-              </article>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="logo-section">
-        <div className="logo-strip">
-          {partnerLogos.map((logo) => (
-            <span key={logo} className="logo-item">{logo}</span>
-          ))}
-        </div>
-      </section>
-
-      <section className="site-section site-section--compact">
-        <div className="section-heading">
-          <p className="section-kicker">Core Capabilities</p>
-          <h2>Precision Delivery</h2>
-        </div>
-        <div className="service-features-grid">
-          {services.slice(1, 4).map((service) => (
-            <Link key={service.slug} to={`/services/${service.slug}`} className="feature-pill-link">
-              <strong>{service.navLabel}</strong>
-              <span>{service.summary.split('.')[0]}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="site-section site-section--compact">
-        <div className="pillar-grid">
-          {compliancePillars.map((pillar) => (
-            <article key={pillar.title} className="pillar-card">
-              <h3>{pillar.title}</h3>
-              <p>{pillar.detail}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="site-section site-section--compact">
-        <div className="section-heading">
-          <p className="section-kicker">Forensic Evidence</p>
-          <h2>Recent Deployments</h2>
-        </div>
-        <div className="case-grid">
-          {caseStudies.slice(0, 2).map((study) => (
-            <article key={study.slug} className="case-card">
-              <span className="case-card__tag">{study.environment}</span>
-              <h3>{study.title}</h3>
-              <p>{study.outcome}</p>
-              <Link to={`/cases/${study.slug}`} className="text-link">View case study →</Link>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="site-section site-section--compact">
-        <div className="section-heading">
-          <p className="section-kicker">Technical Library</p>
-          <h2>Compliance Resources</h2>
-        </div>
-        <div className="resource-grid">
-          {resourceCards.map((resource) => (
-            <article key={resource.title} className="resource-card">
-              <span className="resource-card__format">{resource.format}</span>
-              <h3>{resource.title}</h3>
-              <p>{resource.description}</p>
-              <Link
-                to={`/contact?intent=resource&resource=${encodeURIComponent(resource.title)}`}
-                className="site-button site-button--secondary"
-              >
-                {resource.ctaLabel}
+              <Link className="site-button site-button--secondary" to="/contact?intent=project">
+                Start Engineering Scope
               </Link>
-            </article>
-          ))}
+            </div>
+          </div>
+
+          <div className="home-portal-hero__panel">
+            <div className="home-portal-hero__status">
+              <span>OPERATIONS LIVE</span>
+              <strong>{companyProfile.registration}</strong>
+              <small>{companyProfile.serviceFootprint.join(" | ")}</small>
+            </div>
+            <ul className="home-portal-hero__signals" aria-label="Core trust signals">
+              {trustSignals.map((signal) => (
+                <li key={signal}>
+                  <span className="home-portal-hero__signal-dot" />
+                  <span>{signal}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
-      <CtaSection />
+      <section className="home-portal-track">
+        <div className="home-portal-track__inner">
+          <header className="home-portal-track__header">
+            <p className="home-portal-track__kicker">Choose the Track</p>
+            <h2>Enter the right Kharon workflow immediately.</h2>
+          </header>
 
+          <div className="home-portal-track__grid">
+            <Link className="home-portal-lane" to="/services">
+              <p className="home-portal-lane__label">Engineering</p>
+              <h3>Design, compliance, and managed delivery</h3>
+              <p>Service architecture, standards execution, and project control from scope to closeout.</p>
+              <span className="home-portal-lane__action">Explore Engineering Services</span>
+            </Link>
+
+            <a className="home-portal-lane home-portal-lane--accent" href="/portal/">
+              <p className="home-portal-lane__label">Technician</p>
+              <h3>Live jobs, evidence, and field closeout</h3>
+              <p>Dispatch-ready queueing, jobcard generation, and inspection-grade documentation in one workspace.</p>
+              <span className="home-portal-lane__action">Open Technician Dashboard</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-portal-proof">
+        <div className="home-portal-proof__inner">
+          <div className="home-portal-proof__summary">
+            <p className="home-portal-proof__kicker">Delivery Snapshot</p>
+            <h2>Built for audited engineering and high-performance field teams.</h2>
+          </div>
+
+          <div className="home-portal-proof__rows">
+            <div className="home-portal-proof__row">
+              <span>Active Service Domains</span>
+              <strong>{services.length}</strong>
+              <small>{technicianServices.map((service) => service.navLabel).join(" | ")}</small>
+            </div>
+            <div className="home-portal-proof__row">
+              <span>Standards Backbone</span>
+              <strong>{standards.length}</strong>
+              <small>{standardsPreview.join(" | ")}</small>
+            </div>
+            <div className="home-portal-proof__row">
+              <span>Command Contact</span>
+              <strong>{companyProfile.phone}</strong>
+              <small>{companyProfile.officeHours}</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-portal-final">
+        <div className="home-portal-final__inner">
+          <h2>Route work. Verify execution. Close with evidence.</h2>
+          <div className="home-portal-final__actions">
+            <a className="site-button site-button--primary" href="/portal/">
+              Launch Kharon Portal
+            </a>
+            <Link className="site-button site-button--secondary" to="/contact?intent=urgent_callout">
+              Emergency Callout
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="site-section site-section--compact" aria-hidden="true" style={{ paddingTop: "0.75rem" }}>
+        <div className="logo-strip">
+          {technicianServices.map((service) => (
+            <span key={service.slug} className="logo-item">
+              {service.navLabel}
+            </span>
+          ))}
+        </div>
+      </section>
     </>
   );
 }

@@ -23,7 +23,6 @@ export interface JobRecord {
   suggested_technician_uid?: string;
 }
 
-
 export function statusTone(status: string): "active" | "warning" | "critical" | "neutral" {
   switch (status) {
     case "performed":
@@ -117,7 +116,7 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
           name="job_list_search"
           className="job-list-filters__search"
           type="search"
-          placeholder="Search job ID, title, client…"
+          placeholder="Search job ID, title, client..."
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           aria-label="Search jobs"
@@ -157,4 +156,5 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
     </section>
   );
 }
+
 

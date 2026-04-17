@@ -2,6 +2,14 @@
 
 Unified public website and operations portal for Kharon Fire and Security Solutions, delivered from Cloudflare Workers.
 
+## Current Release Highlights (2026-04-17)
+
+- Home page redesigned into a compact portal-first command surface.
+- Portal Technician dashboard hardened:
+  - fixed sidebar job-card overlap and readability issues
+  - added role-aware gating for dispatch/document actions to prevent unauthorized request loops
+- Super Admin role and RBAC inheritance retained from the 2026-04-16 release.
+
 ## Stack
 
 - Node.js 22+
@@ -78,6 +86,14 @@ Production:
 npm run build
 npx wrangler deploy
 npx wrangler deploy --env public
+```
+
+Single-command production deploy (existing npm scripts):
+
+```bash
+npm run build
+npm run deploy:worker
+npm run deploy:public
 ```
 
 Staging:

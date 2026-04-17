@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-04-17
+
+### Changed
+- **Home Page Portal Redesign** (`apps/site/src/pages/Home.tsx`, `apps/site/src/styles.css`):
+  - Replaced the long, multi-section marketing flow with a compact portal-first landing experience.
+  - Added a full-viewport command-style hero with direct portal and engineering entry actions.
+  - Introduced focused "Engineering" and "Technician" workflow tracks with stronger visual hierarchy and reduced scroll depth.
+
+### Fixed
+- **Technician Job List Overlap** (`apps/portal/src/styles.css`):
+  - Stabilized job-item layout and spacing in the portal sidebar to prevent text and status overlap on constrained viewports.
+  - Added wrapping and line-clamp safeguards for long titles and metadata.
+- **Unauthorized Dashboard Function Calls** (`apps/portal/src/App.tsx`, `apps/portal/src/components/JobDetailView.tsx`):
+  - Added unauthorized detection and role-aware gating for dispatch and document actions.
+  - Disabled inaccessible document generation paths with clear inline feedback instead of repeated 401-triggering requests.
+
 ## [1.3.0] - 2026-04-16
 
 ### Added
