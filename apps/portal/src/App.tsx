@@ -1,5 +1,5 @@
 import React, { startTransition, useEffect, useMemo, useState } from "react";
-import type { JobDocumentRow, OfflineQueueItem, ScheduleRequestRow, ScheduleRow, UserRow, JobStatus } from "@kharon/domain";
+import type { JobDocumentRow, OfflineQueueItem, ScheduleRequestRow, ScheduleRow, UserRow, JobStatus, Role } from "@kharon/domain";
 import { listAllowedStatusTransitions } from "@kharon/domain";
 import {
   apiClient,
