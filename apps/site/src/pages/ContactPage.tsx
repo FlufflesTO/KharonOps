@@ -1,68 +1,83 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { CtaSection } from "../components/CtaSection";
+import { companyProfile } from "../constants/siteData";
 
-export function ContactPage() {
+const enquiryTypes = [
+  "New project enquiry",
+  "Maintenance contract enquiry",
+  "Urgent callout or break-fix",
+  "Compliance or documentation request"
+];
+
+export function ContactPage(): React.JSX.Element {
   return (
     <>
       <Helmet>
-        <title>Contact Us | Kharon Fire & Security</title>
-        <meta name="description" content="Request a site assessment or schedule maintenance with Kharon Fire & Security." />
+        <title>Contact | Kharon Fire and Security</title>
+        <meta
+          name="description"
+          content="Contact Kharon for project engineering, maintenance contracts, urgent callouts, and compliance documentation support."
+        />
       </Helmet>
-      
+
       <section className="site-section">
         <div className="section-heading">
-          <p className="section-kicker">Engage Command</p>
-          <h2>Secure your site's operational future.</h2>
+          <p className="section-kicker">Contact and callout</p>
+          <h2>Route your request to the right delivery track.</h2>
         </div>
-        
-        <div className="operations-board" style={{ marginTop: '3rem' }}>
-          <div className="operations-flow">
+        <div className="operations-board detail-grid">
+          <article className="operations-flow">
             <div className="operations-flow__header">
-              <h3>Enquiry Registration</h3>
+              <h3>Request pathways</h3>
             </div>
-            <form style={{ display: 'grid', gap: '1.25rem', marginTop: '1.5rem' }}>
-              <div style={{ display: 'grid', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)', textTransform: 'uppercase' }}>Enquiry Type</label>
-                <select className="site-button site-button--secondary" style={{ width: '100%', justifyContent: 'flex-start', appearance: 'auto' }}>
-                  <option>New Project / Installation</option>
-                  <option>Maintenance Contract Inquiry</option>
-                  <option>Urgent Callout / Break-Fix</option>
-                  <option>Audit or Documentation Request</option>
-                </select>
-              </div>
-              <div style={{ display: 'grid', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)', textTransform: 'uppercase' }}>Site Location</label>
-                <input type="text" placeholder="e.g. Cape Town, Johannesburg, Gaborone" className="site-button site-button--secondary" style={{ width: '100%', justifyContent: 'flex-start' }} />
-              </div>
-              <div style={{ display: 'grid', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)', textTransform: 'uppercase' }}>Message / Scope</label>
-                <textarea rows={4} placeholder="Briefly describe your site requirements..." className="site-button site-button--secondary" style={{ width: '100%', justifyContent: 'flex-start', minHeight: '100px', resize: 'vertical' }} />
-              </div>
-              <button type="submit" className="site-button site-button--primary">Submit Request</button>
-            </form>
-          </div>
-          
+            <p className="section-subtitle">
+              Email the operations team with your site location, urgency, and required outcome. Kharon separates project,
+              maintenance, and emergency response flows to accelerate triage.
+            </p>
+            <ul className="service-list">
+              {enquiryTypes.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <div className="detail-actions">
+              <a className="site-button site-button--primary" href="mailto:admin@kharon.co.za?subject=Site%20Assessment%20Request">
+                Email operations
+              </a>
+              <a className="site-button site-button--secondary" href="tel:+27615458830">
+                Call emergency line
+              </a>
+            </div>
+          </article>
+
           <aside className="assurance-panel">
-            <h3>Operational Details</h3>
-            <div className="assurance-list" style={{ marginTop: '1.5rem' }}>
-              <div className="assurance-list__item">
-                <span>HEADQUARTERS</span>
-                <p>Unit 58, M5 Freeway Park, Ndabeni, Cape Town, 7405</p>
-              </div>
-              <div className="assurance-list__item">
-                <span>COMMUNICATIONS</span>
-                <p>T: 061 545 8830<br/>E: admin@kharon.co.za</p>
-              </div>
-              <div className="assurance-list__item">
-                <span>RESPONSE EXPECTATION</span>
-                <p>Urgent breakdown requests are prioritized. Standard project inquiries are reviewed within 24 operational hours.</p>
-              </div>
+            <h3>Operational details</h3>
+            <div className="assurance-list">
+              <article className="assurance-list__item">
+                <span>Address</span>
+                <p>{companyProfile.address}</p>
+              </article>
+              <article className="assurance-list__item">
+                <span>Contact</span>
+                <p>
+                  T: {companyProfile.phone}
+                  <br />
+                  E: {companyProfile.email}
+                </p>
+              </article>
+              <article className="assurance-list__item">
+                <span>Coverage and hours</span>
+                <p>
+                  {companyProfile.serviceFootprint.join(", ")}
+                  <br />
+                  {companyProfile.officeHours}
+                </p>
+              </article>
             </div>
           </aside>
         </div>
       </section>
-      
+
       <CtaSection />
     </>
   );

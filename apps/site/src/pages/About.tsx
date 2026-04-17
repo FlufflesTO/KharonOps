@@ -1,51 +1,73 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { CtaSection } from "../components/CtaSection";
+import { companyProfile, partnerLogos } from "../constants/siteData";
 
-export function AboutPage() {
+export function AboutPage(): React.JSX.Element {
   return (
     <>
       <Helmet>
-        <title>About Us | Kharon Fire & Security</title>
-        <meta name="description" content="Kharon Fire & Security Solutions — Engineering-led site command established in 2016." />
+        <title>About Kharon | Fire and Security Solutions</title>
+        <meta
+          name="description"
+          content="Company profile, operating footprint, quality stance, and technical delivery model for Kharon Fire and Security Solutions."
+        />
       </Helmet>
-      
+
       <section className="site-section">
         <div className="section-heading">
-          <p className="section-kicker">Our History</p>
-          <h2>Engineering-led site command since 2016.</h2>
+          <p className="section-kicker">About</p>
+          <h2>Engineering-led fire and security delivery since {companyProfile.established}.</h2>
         </div>
-        <div style={{ maxWidth: "800px", marginTop: "2.5rem" }} className="section-subtitle">
-          <p>Kharon Fire & Security Solutions was established in 2016 with a mission to move from fragmented safety reporting to a single, integrated evidence trail. We are an engineering-led business focused on precision execution and inspection-ready reporting.</p>
-          
-          <h3 style={{ marginTop: "2rem", color: "var(--color-text)" }}>Operating Footprint</h3>
-          <p>Headquartered in Cape Town, our capability extends across the SADC region with active support and project delivery in <strong>South Africa, Botswana, and Malawi</strong>.</p>
-          
-          <h3 style={{ marginTop: "2rem", color: "var(--color-text)" }}>Our Approach</h3>
-          <p>We solve for the "long tail" of site integrity. Every installation, maintenance check, or callout is treated as a component of your site's permanent compliance record. We bridge the gap between physical security sensors and engineering-level reporting.</p>
-          
-          <h3 style={{ marginTop: "2rem", color: "var(--color-text)" }}>Mission Statement</h3>
-          <p>To provide mission-critical fire and security environments with the operational discipline required to protect high-value assets and human life, underpinned by verifiable compliance documentation.</p>
+        <div className="operations-board detail-grid">
+          <article className="operations-flow">
+            <div className="operations-flow__header">
+              <h3>Company profile</h3>
+            </div>
+            <p className="section-subtitle">
+              Kharon was founded to close the gap between site-level engineering work and the compliance evidence decision-makers
+              need. We focus on high-accountability projects where safety, continuity, and traceability are all non-negotiable.
+            </p>
+            <ul className="service-list">
+              <li>Established: {companyProfile.established}</li>
+              <li>Registration: {companyProfile.registration}</li>
+              <li>Head office: {companyProfile.address}</li>
+              <li>Coverage: {companyProfile.serviceFootprint.join(", ")}</li>
+            </ul>
+          </article>
+
+          <aside className="assurance-panel">
+            <h3>Operational posture</h3>
+            <div className="assurance-list">
+              <article className="assurance-list__item">
+                <span>Delivery model</span>
+                <p>Design, install, maintain, and document under one controlled execution flow.</p>
+              </article>
+              <article className="assurance-list__item">
+                <span>Quality stance</span>
+                <p>Low-hype, high-discipline reporting with clear closeout and stakeholder visibility.</p>
+              </article>
+              <article className="assurance-list__item">
+                <span>Ecosystem support</span>
+                <p>Manufacturer and platform familiarity across fire detection, suppression, access, and CCTV.</p>
+              </article>
+            </div>
+          </aside>
         </div>
       </section>
-      
-      <section className="signal-band" aria-label="Company Details">
-        <div className="signal-band__inner">
-          <div className="signal-band__item">
-            <span>REGISTRATION</span>
-            <small>2016/313076/07</small>
-          </div>
-          <div className="signal-band__item">
-            <span>FOUNDED</span>
-            <small>Cape Town, 2016</small>
-          </div>
-          <div className="signal-band__item">
-            <span>OFFICE HOURS</span>
-            <small>08:00 - 17:00 (Mon-Fri)</small>
-          </div>
+
+      <section className="site-section">
+        <div className="section-heading">
+          <p className="section-kicker">Partner familiarity</p>
+          <h2>Technology ecosystems we regularly support.</h2>
+        </div>
+        <div className="logo-strip">
+          {partnerLogos.map((logo) => (
+            <span key={logo}>{logo}</span>
+          ))}
         </div>
       </section>
-      
+
       <CtaSection />
     </>
   );

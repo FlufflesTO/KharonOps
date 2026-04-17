@@ -1,23 +1,24 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
-export function CtaSection() {
+export function CtaSection(): React.JSX.Element {
   return (
     <section className="site-section cta-section">
       <div className="cta-panel">
         <div className="cta-panel__copy">
-          <p className="section-kicker">Next Engagement</p>
-          <h2>Authorize a command audit of your security posture.</h2>
+          <p className="section-kicker">Next Step</p>
+          <h2>Engage Kharon for engineering, maintenance, or urgent response.</h2>
           <p>
-            Align your site documentation with SANS requirements via the Kharon Command Centre. 
-            Move from fragmented reporting to a single, integrated evidence trail.
+            Choose your intent: project scoping, planned maintenance, urgent break-fix response, or returning-client portal
+            access.
           </p>
         </div>
         <div className="cta-panel__actions">
-          <a className="site-button site-button--primary" href="mailto:admin@kharon.co.za?subject=Command%20Centre%20Enquiry">
-            Request Service Partnership
-          </a>
+          <Link className="site-button site-button--primary" to="/contact">
+            Request site assessment
+          </Link>
           <a className="site-button site-button--secondary" href="/portal/">
-            Access Command Centre
+            Portal login
           </a>
         </div>
       </div>

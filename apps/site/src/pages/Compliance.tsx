@@ -1,53 +1,70 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
-import { workflowSteps, assurancePanels } from "../constants/siteData";
 import { CtaSection } from "../components/CtaSection";
+import { compliancePillars, standards } from "../constants/siteData";
 
-export function CompliancePage() {
+const documentationStreams = [
+  "Inspection and maintenance logs",
+  "Service certificates and test records",
+  "As-built and O and M handover sets",
+  "Defect and remediation trackers",
+  "Audit-readiness summaries for stakeholders"
+];
+
+export function CompliancePage(): React.JSX.Element {
   return (
     <>
       <Helmet>
-        <title>Compliance Engine | Kharon Fire & Security</title>
-        <meta name="description" content="Verifiable evidence and precision execution for audit-ready fire and security reporting." />
+        <title>Compliance and Documentation | Kharon</title>
+        <meta
+          name="description"
+          content="Standards alignment, audit-ready documentation, and evidence-led closeout designed for insurers, auditors, and operational teams."
+        />
       </Helmet>
 
       <section className="site-section site-section--split">
         <div className="section-heading">
-          <p className="section-kicker">Compliance Engine</p>
-          <h2>Verifiable evidence. Precision execution.</h2>
+          <p className="section-kicker">Compliance and documentation</p>
+          <h2>Flagship differentiator: execution that remains auditable months later.</h2>
+          <p className="section-subtitle">
+            Kharon combines engineering delivery with documentation discipline so inspection cycles are supported by complete
+            and structured evidence packs.
+          </p>
         </div>
-        <div className="operations-board">
-          <div className="operations-flow">
+        <div className="operations-board detail-grid">
+          {compliancePillars.map((pillar) => (
+            <article key={pillar.title} className="assurance-list__item">
+              <span>{pillar.title}</span>
+              <p>{pillar.detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="site-section">
+        <div className="operations-board detail-grid">
+          <article className="operations-flow">
             <div className="operations-flow__header">
-              <p className="section-kicker">Certification Flow</p>
-              <h3>Audit-ready reporting trail</h3>
+              <h3>Documentation streams</h3>
             </div>
-            <div className="operations-timeline">
-              {workflowSteps.map((item, index) => (
-                <article key={item.step} className="operations-timeline__item">
-                  <span className="operations-timeline__index">0{index + 1}</span>
-                  <div>
-                    <h4>{item.step}</h4>
-                    <p>{item.body}</p>
-                  </div>
-                </article>
+            <ul className="service-list">
+              {documentationStreams.map((item) => (
+                <li key={item}>{item}</li>
               ))}
-            </div>
-          </div>
+            </ul>
+          </article>
+
           <aside className="assurance-panel">
-            <p className="section-kicker">Command Assurances</p>
-            <h3>Operational standards</h3>
-            <div className="assurance-list">
-              {assurancePanels.map((panel) => (
-                <article key={panel.label} className="assurance-list__item">
-                  <span>{panel.label}</span>
-                  <p>{panel.detail}</p>
-                </article>
+            <h3>Standards baseline</h3>
+            <ul className="service-list service-list--compact">
+              {standards.map((item) => (
+                <li key={item}>{item}</li>
               ))}
-            </div>
+            </ul>
           </aside>
         </div>
       </section>
+
       <CtaSection />
     </>
   );

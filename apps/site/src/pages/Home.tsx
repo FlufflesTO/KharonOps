@@ -1,126 +1,182 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { heroSignals, heroCards, marketMetrics } from "../constants/siteData";
 import { CtaSection } from "../components/CtaSection";
+import {
+  caseStudies,
+  companyProfile,
+  compliancePillars,
+  partnerLogos,
+  sectors,
+  services,
+  standards,
+  trustSignals
+} from "../constants/siteData";
 
-export function HomePage() {
+export function HomePage(): React.JSX.Element {
   return (
     <>
       <Helmet>
-        <title>Kharon Fire & Security Solutions | Engineering & Compliance</title>
-        <meta name="description" content="Engineering-led fire detection, gaseous suppression, and integrated security. SANS-aligned execution for mission-critical environments." />
+        <title>Kharon | Engineering-Led Fire and Security Execution</title>
+        <meta
+          name="description"
+          content="Engineering-led fire and security delivery with inspection-ready documentation, compliance traceability, and controlled service response."
+        />
       </Helmet>
-      
+
       <section className="hero-section" id="top">
         <div className="hero-grid">
           <div className="hero-copy">
-            <p className="hero-kicker">Engineering-Led Site Command</p>
+            <p className="hero-kicker">Engineering and Compliance Execution Partner</p>
             <h1>
               <span className="hero-line">Mission-Critical</span>
-              <span className="hero-line hero-line--accent">Fire & Security</span>
+              <span className="hero-line hero-line--accent">Fire and Security Operations</span>
             </h1>
             <p className="hero-summary">
-              Kharon provides the integrated operational command for high-stakes environments. 
-              We bridge the gap between fragmented security and engineering-led compliance.
+              Kharon delivers engineered fire and security systems with the operational discipline required for high-stakes
+              sites, inspection cycles, and multi-stakeholder accountability.
             </p>
             <div className="hero-actions">
               <Link className="site-button site-button--primary" to="/contact">
-                Request Site Assessment
+                Request site assessment
               </Link>
               <a className="site-button site-button--secondary" href="/portal/">
-                Portal Login
+                Portal login
               </a>
             </div>
-          </div>
-          <div className="hero-visual" aria-hidden="true">
-            {/* Proof Strip Replacement or Summary Card */}
-            <div className="hero-card-stack">
-              <article className="hero-card" data-tone="blue">
-                <div className="hero-card__header">
-                  <div>
-                    <span className="hero-card__title">Service Coverage</span>
-                    <strong>SANS 10139 / 14520</strong>
-                  </div>
-                  <span className="hero-badge hero-badge--blue">Active</span>
+            <div className="hero-trust-strip" aria-label="Core trust signals">
+              {trustSignals.map((signal) => (
+                <div key={signal} className="hero-trust-pill">
+                  <span className="hero-trust-pill__dot" />
+                  <span>{signal}</span>
                 </div>
-                <div className="hero-card__bar"><span className="hero-card__bar-fill" /></div>
-                <div style={{ marginTop: '1rem', fontSize: '0.85rem', opacity: 0.8 }}>
-                  Established 2016. Serving Cape Town, Botswana, and Malawi.
-                </div>
-              </article>
+              ))}
             </div>
           </div>
+
+          <div className="hero-visual" aria-label="Company credentials">
+            <article className="hero-card" data-tone="blue">
+              <div className="hero-card__header">
+                <div>
+                  <span className="hero-card__title">Operational profile</span>
+                  <strong>Established {companyProfile.established}</strong>
+                </div>
+                <span className="hero-badge hero-badge--blue">Active</span>
+              </div>
+              <div className="hero-card__bar">
+                <span className="hero-card__bar-fill" />
+              </div>
+              <ul className="hero-card__list">
+                <li>Service footprint: {companyProfile.serviceFootprint.join(", ")}</li>
+                <li>Standards alignment: {standards.slice(0, 4).join(" | ")}</li>
+                <li>Office hours: {companyProfile.officeHours}</li>
+              </ul>
+            </article>
+          </div>
         </div>
       </section>
 
-      {/* Proof Strip: Standards and Locations */}
-      <section className="signal-band" aria-label="Credentials">
+      <section className="signal-band" aria-label="Proof and standards">
         <div className="signal-band__inner">
           <div className="signal-band__item">
-            <span>REGIONAL FOOTPRINT</span>
-            <small>SA, Botswana, Malawi</small>
+            <span>Registration</span>
+            <small>{companyProfile.registration}</small>
           </div>
           <div className="signal-band__item">
-            <span>SANS STANDARDS</span>
-            <small>10139, 14520, 10400, 322</small>
+            <span>Standards</span>
+            <small>{standards.join(", ")}</small>
           </div>
           <div className="signal-band__item">
-            <span>OPERATIONAL SINCE</span>
-            <small>2016 (Registration: 2016/313076/07)</small>
+            <span>Operating regions</span>
+            <small>{companyProfile.serviceFootprint.join(", ")}</small>
           </div>
         </div>
       </section>
 
-      {/* 4 Core Pillars Routing */}
       <section className="site-section">
         <div className="section-heading">
-          <p className="section-kicker">Core Capabilities</p>
-          <h2>Engineering-led protection for high-value assets.</h2>
+          <p className="section-kicker">Core capabilities</p>
+          <h2>Service architecture built around buyer intent.</h2>
         </div>
         <div className="service-grid">
-          <Link to="/services/fire-detection" className="service-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="service-card__code">FD</div>
-            <h3>Fire Detection</h3>
-            <p>SANS 10139 aligned design and maintenance for L1 to P1 tiers.</p>
-          </Link>
-          <Link to="/services/gaseous-suppression" className="service-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="service-card__code">GS</div>
-            <h3>Gaseous Suppression</h3>
-            <p>Special risk server room protection and integrity testing.</p>
-          </Link>
-          <Link to="/services/integrated-security" className="service-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="service-card__code">IS</div>
-            <h3>Integrated Security</h3>
-            <p>Access control, biometric governance, and forensic CCTV.</p>
-          </Link>
-          <Link to="/services/planned-maintenance" className="service-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="service-card__code">PM</div>
-            <h3>Planned Maintenance</h3>
-            <p>Disciplined service cadence with inspection-ready reporting.</p>
-          </Link>
+          {services.slice(0, 4).map((service) => (
+            <Link key={service.slug} to={`/services/${service.slug}`} className="service-card service-card--link">
+              <div className="service-card__header">
+                <div className="service-card__code">{service.navLabel.slice(0, 2).toUpperCase()}</div>
+                <div>
+                  <h3>{service.navLabel}</h3>
+                  <span className="service-card__meta">{service.standards.join(" | ")}</span>
+                </div>
+              </div>
+              <p>{service.summary}</p>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* Sector Orientation */}
+      <section className="site-section site-section--split">
+        <div className="section-heading">
+          <p className="section-kicker">Compliance and documentation</p>
+          <h2>Inspection-ready records as a core deliverable, not an afterthought.</h2>
+        </div>
+        <div className="operations-board">
+          {compliancePillars.map((pillar) => (
+            <article key={pillar.title} className="assurance-list__item">
+              <span>{pillar.title}</span>
+              <p>{pillar.detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="site-section">
         <div className="section-heading">
-          <p className="section-kicker">Sectors</p>
-          <h2>Tailored for the environment.</h2>
+          <p className="section-kicker">Sector coverage</p>
+          <h2>Built for environments with long buying cycles and strict accountability.</h2>
         </div>
         <div className="case-grid">
-           <Link to="/sectors/commercial" className="case-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-             <div className="case-card__visual"><span>Commercial</span></div>
-             <div className="case-card__body"><p>Industrial-scale management for commercial estates.</p></div>
-           </Link>
-           <Link to="/sectors/data-rooms" className="case-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-             <div className="case-card__visual"><span>Data Centers</span></div>
-             <div className="case-card__body"><p>Mission-critical server room protection.</p></div>
-           </Link>
-           <Link to="/sectors/industrial" className="case-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-             <div className="case-card__visual"><span>Industrial</span></div>
-             <div className="case-card__body"><p>Hardened security for logistics and manufacturing.</p></div>
-           </Link>
+          {sectors.slice(0, 4).map((sector) => (
+            <Link key={sector.slug} to={`/sectors/${sector.slug}`} className="case-card case-card--link">
+              <div className="case-card__visual">
+                <span>{sector.title}</span>
+              </div>
+              <div className="case-card__body">
+                <p>{sector.summary}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="site-section">
+        <div className="section-heading">
+          <p className="section-kicker">Project proof</p>
+          <h2>Case studies that show execution constraints, decisions, and outcomes.</h2>
+        </div>
+        <div className="case-grid">
+          {caseStudies.map((study) => (
+            <article key={study.slug} className="case-card">
+              <div className="case-card__visual">
+                <span>{study.environment}</span>
+              </div>
+              <div className="case-card__body">
+                <h3>{study.title}</h3>
+                <p>{study.outcome}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="site-section">
+        <div className="section-heading">
+          <p className="section-kicker">Partner ecosystem</p>
+          <h2>Manufacturer and platform familiarity across real-world deployments.</h2>
+        </div>
+        <div className="logo-strip" aria-label="Partner and manufacturer familiarity">
+          {partnerLogos.map((logo) => (
+            <span key={logo}>{logo}</span>
+          ))}
         </div>
       </section>
 
