@@ -1,6 +1,11 @@
 import type {
   AutomationJobRow,
   ConflictPayload,
+  EscrowRow,
+  FinanceDebtorRow,
+  FinanceInvoiceRow,
+  FinanceQuoteRow,
+  FinanceStatementRow,
   JobDocumentRow,
   JobEventRow,
   JobRow,
@@ -10,6 +15,8 @@ import type {
   SyncMutation,
   SyncPushResult,
   SyncQueueRow,
+  SkillMatrixRow,
+  UpgradeWorkspaceState,
   UserRow
 } from "@kharon/domain";
 import type { StoreContext, WorkbookStore } from "./types.js";
@@ -141,6 +148,74 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
 
   async listUsers(): Promise<UserRow[]> {
     return this.notImplemented("listUsers");
+  }
+
+  async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {
+    return this.notImplemented("listFinanceQuotes");
+  }
+
+  async createFinanceQuote(_row: FinanceQuoteRow): Promise<void> {
+    this.notImplemented("createFinanceQuote");
+  }
+
+  async updateFinanceQuoteStatus(_args: {
+    quote_uid: string;
+    status: FinanceQuoteRow["status"];
+    ctx: StoreContext;
+  }): Promise<FinanceQuoteRow | null> {
+    return this.notImplemented("updateFinanceQuoteStatus");
+  }
+
+  async listFinanceInvoices(): Promise<FinanceInvoiceRow[]> {
+    return this.notImplemented("listFinanceInvoices");
+  }
+
+  async createFinanceInvoice(_row: FinanceInvoiceRow): Promise<void> {
+    this.notImplemented("createFinanceInvoice");
+  }
+
+  async updateFinanceInvoice(_row: FinanceInvoiceRow): Promise<void> {
+    this.notImplemented("updateFinanceInvoice");
+  }
+
+  async listFinanceStatements(): Promise<FinanceStatementRow[]> {
+    return this.notImplemented("listFinanceStatements");
+  }
+
+  async replaceFinanceStatements(_rows: FinanceStatementRow[]): Promise<void> {
+    this.notImplemented("replaceFinanceStatements");
+  }
+
+  async listFinanceDebtors(): Promise<FinanceDebtorRow[]> {
+    return this.notImplemented("listFinanceDebtors");
+  }
+
+  async replaceFinanceDebtors(_rows: FinanceDebtorRow[]): Promise<void> {
+    this.notImplemented("replaceFinanceDebtors");
+  }
+
+  async listEscrowRows(): Promise<EscrowRow[]> {
+    return this.notImplemented("listEscrowRows");
+  }
+
+  async getEscrowByDocument(_document_uid: string): Promise<EscrowRow | null> {
+    return this.notImplemented("getEscrowByDocument");
+  }
+
+  async upsertEscrow(_row: EscrowRow): Promise<void> {
+    this.notImplemented("upsertEscrow");
+  }
+
+  async listSkillMatrix(): Promise<SkillMatrixRow[]> {
+    return this.notImplemented("listSkillMatrix");
+  }
+
+  async upsertSkillMatrix(_row: SkillMatrixRow): Promise<void> {
+    this.notImplemented("upsertSkillMatrix");
+  }
+
+  async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
+    return this.notImplemented("getUpgradeWorkspaceState");
   }
 
   async applySyncMutations(_args: {

@@ -7,7 +7,9 @@ import {
   type PeopleDirectoryEntry,
   type PortalAuthConfig,
   type PortalDispatchContext,
-  type PortalSession
+  type PortalSession,
+  type SkillMatrixRecord,
+  type UpgradeWorkspaceState
 } from "./apiClient";
 import { enqueueMutation, listQueuedMutations } from "./offline/queue";
 import { replayQueuedMutations } from "./offline/replay";
@@ -121,6 +123,15 @@ function firstRequestedSlot(request: ScheduleRequestRow | null): { start_at: str
   }
 }
 
+const EMPTY_UPGRADE_STATE: UpgradeWorkspaceState = {
+  quotes: [],
+  invoices: [],
+  statements: [],
+  debtors: [],
+  escrow: [],
+  skills: []
+};
+
 export function PortalApp(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<PortalSession | null>(null);
@@ -166,6 +177,7 @@ export function PortalApp(): React.JSX.Element {
   const [rescheduleRowVersion, setRescheduleRowVersion] = useState(0);
   const [documentAccessDenied, setDocumentAccessDenied] = useState(false);
   const [dispatchAccessDenied, setDispatchAccessDenied] = useState(false);
+  const [upgradeState, setUpgradeState] = useState<UpgradeWorkspaceState>(EMPTY_UPGRADE_STATE);
 
 
   const realRole = session?.session.role ?? null;
@@ -332,6 +344,17 @@ export function PortalApp(): React.JSX.Element {
     }
   }
 
+  async function refreshUpgradeWorkspaceState(): Promise<void> {
+    try {
+      const data = await apiClient.getUpgradeWorkspaceState();
+      startTransition(() => {
+        setUpgradeState(data);
+      });
+    } catch (error) {
+      setFeedback(`Upgrade workspace load failed: ${errorMessage(error)}`);
+    }
+  }
+
   async function refreshAutomationJobs(): Promise<void> {
     try {
       const jobs = await apiClient.listAutomationJobs();
@@ -396,12 +419,16 @@ export function PortalApp(): React.JSX.Element {
       setPeopleDirectory([]);
       setAdminAudits([]);
       setAutomationJobs([]);
+      setUpgradeState(EMPTY_UPGRADE_STATE);
       return;
     }
 
     setDocumentAccessDenied(false);
     setDispatchAccessDenied(false);
     void refreshJobs();
+    if (effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "finance" || effectiveRole === "super_admin") {
+      void refreshUpgradeWorkspaceState();
+    }
   }, [session, effectiveRole]);
 
   useEffect(() => {
@@ -422,8 +449,17 @@ export function PortalApp(): React.JSX.Element {
   useEffect(() => {
     if (activeWorkspaceTool === "people" && canAccessPeopleDirectory) {
       void refreshPeopleDirectory();
+      void refreshUpgradeWorkspaceState();
     }
   }, [activeWorkspaceTool, canAccessPeopleDirectory]);
+
+  useEffect(() => {
+    if (activeWorkspaceTool === "documents" || activeWorkspaceTool === "finance") {
+      if (effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "finance" || effectiveRole === "super_admin") {
+        void refreshUpgradeWorkspaceState();
+      }
+    }
+  }, [activeWorkspaceTool, effectiveRole]);
 
   useEffect(() => {
     if (activeWorkspaceTool === "admin" && isAdmin) {
@@ -1021,6 +1057,7 @@ export function PortalApp(): React.JSX.Element {
                 documents={documents}
                 selectedJobUid={selectedJob?.job_uid ?? ""}
                 role={effectiveRole ?? "client"}
+                escrowByDocumentUid={Object.fromEntries(upgradeState.escrow.map((row) => [row.document_uid, row]))}
 
                 onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_uid))}
                 onPublish={(uid, ver, vis) => runAction(() => handleDocumentPublishInline(uid, ver, vis))}
@@ -1028,12 +1065,61 @@ export function PortalApp(): React.JSX.Element {
             ) : null}
 
             {activeWorkspaceTool === "finance" && isFinanceRole ? (
-              <FinanceOpsCard jobs={jobs} documents={documents} />
+              <FinanceOpsCard
+                jobs={jobs}
+                documents={documents}
+                store={upgradeState}
+                onRefreshStore={() => runAction(refreshUpgradeWorkspaceState)}
+                onCreateQuote={(payload) =>
+                  runAction(async () => {
+                    await apiClient.createFinanceQuote(payload);
+                    await refreshUpgradeWorkspaceState();
+                  })
+                }
+                onUpdateQuoteStatus={(quoteUid, status) =>
+                  runAction(async () => {
+                    await apiClient.updateFinanceQuoteStatus(quoteUid, status);
+                    await refreshUpgradeWorkspaceState();
+                  })
+                }
+                onCreateInvoiceFromQuote={(quoteUid, dueDate) =>
+                  runAction(async () => {
+                    await apiClient.createInvoiceFromQuote(quoteUid, dueDate);
+                    await refreshUpgradeWorkspaceState();
+                  })
+                }
+                onReconcileInvoice={(invoiceUid) =>
+                  runAction(async () => {
+                    await apiClient.reconcileInvoice(invoiceUid);
+                    await apiClient.rebuildUpgradeAnalytics();
+                    await refreshUpgradeWorkspaceState();
+                  })
+                }
+                onLockEscrow={(documentUid, invoiceUid) =>
+                  runAction(async () => {
+                    await apiClient.lockEscrow(documentUid, invoiceUid);
+                    await refreshUpgradeWorkspaceState();
+                  })
+                }
+                onRebuildAnalytics={() =>
+                  runAction(async () => {
+                    await apiClient.rebuildUpgradeAnalytics();
+                    await refreshUpgradeWorkspaceState();
+                  })
+                }
+              />
             ) : null}
 
             {activeWorkspaceTool === "people" && canAccessPeopleDirectory ? (
               <PeopleDirectoryCard
                 people={peopleDirectory}
+                skillsState={upgradeState.skills}
+                onUpsertSkill={(payload: SkillMatrixRecord) =>
+                  runAction(async () => {
+                    await apiClient.upsertSkillMatrix(payload);
+                    await refreshUpgradeWorkspaceState();
+                  })
+                }
                 onSync={(payload) => handlePeopleSync(payload)}
                 onFeedback={setFeedback}
               />

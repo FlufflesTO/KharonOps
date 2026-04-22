@@ -1,5 +1,10 @@
 import type {
   AutomationJobRow,
+  EscrowRow,
+  FinanceDebtorRow,
+  FinanceInvoiceRow,
+  FinanceQuoteRow,
+  FinanceStatementRow,
   ConflictPayload,
   DocumentType,
   JobDocumentRow,
@@ -11,6 +16,8 @@ import type {
   SyncMutation,
   SyncPushResult,
   SyncQueueRow,
+  SkillMatrixRow,
+  UpgradeWorkspaceState,
   UserRow
 } from "@kharon/domain";
 
@@ -63,6 +70,26 @@ export interface WorkbookStore {
   getSyncQueue(mutationUid: string): Promise<SyncQueueRow | null>;
   listSyncQueueByJob(jobUid: string): Promise<SyncQueueRow[]>;
   listUsers(): Promise<UserRow[]>;
+  listFinanceQuotes(): Promise<FinanceQuoteRow[]>;
+  createFinanceQuote(row: FinanceQuoteRow): Promise<void>;
+  updateFinanceQuoteStatus(args: {
+    quote_uid: string;
+    status: FinanceQuoteRow["status"];
+    ctx: StoreContext;
+  }): Promise<FinanceQuoteRow | null>;
+  listFinanceInvoices(): Promise<FinanceInvoiceRow[]>;
+  createFinanceInvoice(row: FinanceInvoiceRow): Promise<void>;
+  updateFinanceInvoice(row: FinanceInvoiceRow): Promise<void>;
+  listFinanceStatements(): Promise<FinanceStatementRow[]>;
+  replaceFinanceStatements(rows: FinanceStatementRow[]): Promise<void>;
+  listFinanceDebtors(): Promise<FinanceDebtorRow[]>;
+  replaceFinanceDebtors(rows: FinanceDebtorRow[]): Promise<void>;
+  listEscrowRows(): Promise<EscrowRow[]>;
+  getEscrowByDocument(document_uid: string): Promise<EscrowRow | null>;
+  upsertEscrow(row: EscrowRow): Promise<void>;
+  listSkillMatrix(): Promise<SkillMatrixRow[]>;
+  upsertSkillMatrix(row: SkillMatrixRow): Promise<void>;
+  getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState>;
   applySyncMutations(args: {
     actor: SessionUser;
     mutations: SyncMutation[];

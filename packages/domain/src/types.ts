@@ -99,6 +99,73 @@ export interface SyncQueueRow extends MutableMeta {
   last_result: string;
 }
 
+export interface FinanceQuoteRow extends MutableMeta {
+  quote_uid: string;
+  job_uid: string;
+  client_uid: string;
+  description: string;
+  amount: number;
+  status: "draft" | "sent" | "approved" | "rejected" | "invoiced";
+  created_at: string;
+}
+
+export interface FinanceInvoiceRow extends MutableMeta {
+  invoice_uid: string;
+  job_uid: string;
+  quote_uid: string;
+  client_uid: string;
+  amount: number;
+  due_date: string;
+  status: "issued" | "part_paid" | "paid" | "overdue";
+  reconciled_at: string;
+}
+
+export interface FinanceStatementRow extends MutableMeta {
+  statement_uid: string;
+  client_uid: string;
+  period_label: string;
+  opening_balance: number;
+  billed: number;
+  paid: number;
+  closing_balance: number;
+  generated_at: string;
+}
+
+export interface FinanceDebtorRow extends MutableMeta {
+  client_uid: string;
+  total_due: number;
+  current_bucket: number;
+  bucket_30: number;
+  bucket_60: number;
+  bucket_90_plus: number;
+  risk_band: "low" | "medium" | "high";
+}
+
+export interface EscrowRow extends MutableMeta {
+  document_uid: string;
+  invoice_uid: string;
+  status: "locked" | "released";
+  locked_at: string;
+  released_at: string;
+}
+
+export interface SkillMatrixRow extends MutableMeta {
+  user_uid: string;
+  saqcc_type: string;
+  saqcc_expiry: string;
+  medical_expiry: string;
+  rest_hours_last_24h: number;
+}
+
+export interface UpgradeWorkspaceState {
+  quotes: FinanceQuoteRow[];
+  invoices: FinanceInvoiceRow[];
+  statements: FinanceStatementRow[];
+  debtors: FinanceDebtorRow[];
+  escrow: EscrowRow[];
+  skills: SkillMatrixRow[];
+}
+
 export interface ApiError {
   code: string;
   message: string;

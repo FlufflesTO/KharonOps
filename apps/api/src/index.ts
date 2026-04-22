@@ -17,6 +17,10 @@ import {
   documentPublishSchema,
   envelopeError,
   envelopeSuccess,
+  financeEscrowLockSchema,
+  financeInvoiceFromQuoteSchema,
+  financeQuoteCreateSchema,
+  financeQuoteStatusSchema,
   gmailNotifySchema,
   googleLoginSchema,
   noteSchema,
@@ -26,8 +30,12 @@ import {
   scheduleConfirmSchema,
   scheduleRequestSchema,
   scheduleRescheduleSchema,
+  skillMatrixUpsertSchema,
   statusUpdateSchema,
   syncPushSchema,
+  type FinanceDebtorRow,
+  type FinanceInvoiceRow,
+  type FinanceStatementRow,
   type JobDocumentRow,
   type JobRow,
   type ScheduleRequestRow,
@@ -120,6 +128,10 @@ function enquiryTypeLabel(type: "project" | "maintenance" | "urgent_callout" | "
     default:
       return "General Enquiry";
   }
+}
+
+function nowIso(): string {
+  return new Date().toISOString();
 }
 
 export function createApp(env: Record<string, string | undefined> = {}): Hono<AppBindings> {
@@ -1309,6 +1321,265 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       envelopeSuccess({
         correlationId,
         data: activeUsers
+      })
+    );
+  });
+
+  api.get("/workspace/upgrade/state", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const data = await store.getUpgradeWorkspaceState();
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data
+      })
+    );
+  });
+
+  api.post("/workspace/upgrade/quotes", requireSession(), requireRoles("finance", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const body = await parseJsonBody(c.req.raw, financeQuoteCreateSchema);
+    const quote = {
+      quote_uid: `QTE-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+      job_uid: body.job_uid,
+      client_uid: body.client_uid,
+      description: body.description,
+      amount: body.amount,
+      status: "draft" as const,
+      created_at: nowIso(),
+      ...createMutable(user.user_uid, correlationId)
+    };
+
+    await store.createFinanceQuote(quote);
+    await store.appendAudit({
+      action: "workspace.upgrade.finance.quote.create",
+      payload: quote,
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    return c.json(envelopeSuccess({ correlationId, rowVersion: quote.row_version, data: quote }));
+  });
+
+  api.post("/workspace/upgrade/quotes/:quote_uid/status", requireSession(), requireRoles("finance", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const quote_uid = c.req.param("quote_uid");
+    const body = await parseJsonBody(c.req.raw, financeQuoteStatusSchema);
+    const updated = await store.updateFinanceQuoteStatus({
+      quote_uid,
+      status: body.status,
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+    if (!updated) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: { code: "not_found", message: "Quote not found" }
+        }),
+        404
+      );
+    }
+    return c.json(envelopeSuccess({ correlationId, rowVersion: updated.row_version, data: updated }));
+  });
+
+  api.post("/workspace/upgrade/invoices/from-quote", requireSession(), requireRoles("finance", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const body = await parseJsonBody(c.req.raw, financeInvoiceFromQuoteSchema);
+    const quotes = await store.listFinanceQuotes();
+    const quote = quotes.find((item) => item.quote_uid === body.quote_uid) ?? null;
+    if (!quote) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: { code: "not_found", message: "Quote not found" }
+        }),
+        404
+      );
+    }
+
+    const invoice = {
+      invoice_uid: `INV-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+      job_uid: quote.job_uid,
+      quote_uid: quote.quote_uid,
+      client_uid: quote.client_uid,
+      amount: quote.amount,
+      due_date: body.due_date,
+      status: "issued" as const,
+      reconciled_at: "",
+      ...createMutable(user.user_uid, correlationId)
+    };
+
+    await store.createFinanceInvoice(invoice);
+    await store.updateFinanceQuoteStatus({
+      quote_uid: quote.quote_uid,
+      status: "invoiced",
+      ctx: createStoreContext(user.user_uid, correlationId)
+    });
+
+    return c.json(envelopeSuccess({ correlationId, rowVersion: invoice.row_version, data: invoice }));
+  });
+
+  api.post("/workspace/upgrade/invoices/:invoice_uid/reconcile", requireSession(), requireRoles("finance", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const invoice_uid = c.req.param("invoice_uid");
+    const invoices = await store.listFinanceInvoices();
+    const current = invoices.find((item) => item.invoice_uid === invoice_uid) ?? null;
+    if (!current) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: { code: "not_found", message: "Invoice not found" }
+        }),
+        404
+      );
+    }
+
+    const updated = {
+      ...current,
+      status: "paid" as const,
+      reconciled_at: nowIso(),
+      ...bumpMutableMeta(current, user.user_uid, correlationId)
+    };
+    await store.updateFinanceInvoice(updated);
+
+    const escrowRows = await store.listEscrowRows();
+    for (const escrow of escrowRows.filter((item) => item.invoice_uid === invoice_uid && item.status === "locked")) {
+      await store.upsertEscrow({
+        ...escrow,
+        status: "released",
+        released_at: nowIso(),
+        ...bumpMutableMeta(escrow, user.user_uid, correlationId)
+      });
+    }
+
+    return c.json(envelopeSuccess({ correlationId, rowVersion: updated.row_version, data: updated }));
+  });
+
+  api.post("/workspace/upgrade/escrow/lock", requireSession(), requireRoles("finance", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const body = await parseJsonBody(c.req.raw, financeEscrowLockSchema);
+    const existing = await store.getEscrowByDocument(body.document_uid);
+    const row = {
+      document_uid: body.document_uid,
+      invoice_uid: body.invoice_uid,
+      status: "locked" as const,
+      locked_at: existing?.locked_at || nowIso(),
+      released_at: "",
+      ...(existing
+        ? bumpMutableMeta(existing, user.user_uid, correlationId)
+        : createMutable(user.user_uid, correlationId))
+    };
+    await store.upsertEscrow(row);
+    return c.json(envelopeSuccess({ correlationId, rowVersion: row.row_version, data: row }));
+  });
+
+  api.get("/workspace/upgrade/escrow/:document_uid", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const document_uid = c.req.param("document_uid");
+    const row = await store.getEscrowByDocument(document_uid);
+    return c.json(envelopeSuccess({ correlationId, data: row }));
+  });
+
+  api.put("/workspace/upgrade/skills/:user_uid", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const user_uid = c.req.param("user_uid");
+    const body = await parseJsonBody(c.req.raw, skillMatrixUpsertSchema);
+    const skills = await store.listSkillMatrix();
+    const existing = skills.find((item) => item.user_uid === user_uid) ?? null;
+    const row = {
+      user_uid,
+      saqcc_type: body.saqcc_type ?? "",
+      saqcc_expiry: body.saqcc_expiry ?? "",
+      medical_expiry: body.medical_expiry ?? "",
+      rest_hours_last_24h: body.rest_hours_last_24h,
+      ...(existing
+        ? bumpMutableMeta(existing, user.user_uid, correlationId)
+        : createMutable(user.user_uid, correlationId))
+    };
+    await store.upsertSkillMatrix(row);
+    return c.json(envelopeSuccess({ correlationId, rowVersion: row.row_version, data: row }));
+  });
+
+  api.post("/workspace/upgrade/analytics/rebuild", requireSession(), requireRoles("finance", "admin"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const invoices = await store.listFinanceInvoices();
+    const byClient = new Map<string, FinanceInvoiceRow[]>();
+    for (const invoice of invoices) {
+      const list = byClient.get(invoice.client_uid) ?? [];
+      list.push(invoice);
+      byClient.set(invoice.client_uid, list);
+    }
+
+    const debtors: FinanceDebtorRow[] = [];
+    const statements: FinanceStatementRow[] = [];
+    const today = Date.now();
+    const period = nowIso().slice(0, 7);
+
+    for (const [client_uid, rows] of byClient.entries()) {
+      let total = 0;
+      let c0 = 0;
+      let c30 = 0;
+      let c60 = 0;
+      let c90 = 0;
+      let billed = 0;
+      let paid = 0;
+
+      for (const invoice of rows) {
+        billed += invoice.amount;
+        if (invoice.status === "paid") {
+          paid += invoice.amount;
+          continue;
+        }
+        total += invoice.amount;
+        const ageDays = Math.floor((today - Date.parse(invoice.due_date)) / 86400000);
+        if (ageDays <= 0) c0 += invoice.amount;
+        else if (ageDays <= 30) c30 += invoice.amount;
+        else if (ageDays <= 60) c60 += invoice.amount;
+        else c90 += invoice.amount;
+      }
+
+      const risk_band: FinanceDebtorRow["risk_band"] = c90 > 0 ? "high" : c60 > 0 ? "medium" : "low";
+      debtors.push({
+        client_uid,
+        total_due: total,
+        current_bucket: c0,
+        bucket_30: c30,
+        bucket_60: c60,
+        bucket_90_plus: c90,
+        risk_band,
+        ...createMutable(user.user_uid, correlationId)
+      });
+
+      const safeClient = client_uid.replace(/[^A-Za-z0-9]/g, "").slice(0, 10).toUpperCase();
+      statements.push({
+        statement_uid: `STM-${period.replace("-", "")}-${safeClient || "CLIENT"}`,
+        client_uid,
+        period_label: period,
+        opening_balance: Math.max(0, total - billed + paid),
+        billed,
+        paid,
+        closing_balance: total,
+        generated_at: nowIso(),
+        ...createMutable(user.user_uid, correlationId)
+      });
+    }
+
+    await store.replaceFinanceDebtors(debtors);
+    await store.replaceFinanceStatements(statements);
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          debtors: debtors.length,
+          statements: statements.length
+        }
       })
     );
   });

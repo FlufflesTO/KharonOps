@@ -11,6 +11,12 @@ export const REQUIRED_WORKBOOK_SHEETS = [
   "Schedules_Master",
   "Automation_Jobs",
   "Sync_Queue",
+  "Finance_Quotes",
+  "Finance_Invoices",
+  "Finance_Statements",
+  "Finance_Debtors",
+  "Compliance_Escrow",
+  "HR_Skills_Matrix",
   "System_Config",
   "Ledger"
 ] as const;
@@ -309,6 +315,64 @@ export const WORKBOOK_HEADERS: Record<(typeof REQUIRED_WORKBOOK_SHEETS)[number],
     "payload_json",
     "status",
     "last_result",
+    ...MUTABLE_FIELDS
+  ],
+  Finance_Quotes: [
+    "quote_uid",
+    "job_uid",
+    "client_uid",
+    "description",
+    "amount",
+    "status",
+    "created_at",
+    ...MUTABLE_FIELDS
+  ],
+  Finance_Invoices: [
+    "invoice_uid",
+    "job_uid",
+    "quote_uid",
+    "client_uid",
+    "amount",
+    "due_date",
+    "status",
+    "reconciled_at",
+    ...MUTABLE_FIELDS
+  ],
+  Finance_Statements: [
+    "statement_uid",
+    "client_uid",
+    "period_label",
+    "opening_balance",
+    "billed",
+    "paid",
+    "closing_balance",
+    "generated_at",
+    ...MUTABLE_FIELDS
+  ],
+  Finance_Debtors: [
+    "client_uid",
+    "total_due",
+    "current_bucket",
+    "bucket_30",
+    "bucket_60",
+    "bucket_90_plus",
+    "risk_band",
+    ...MUTABLE_FIELDS
+  ],
+  Compliance_Escrow: [
+    "document_uid",
+    "invoice_uid",
+    "status",
+    "locked_at",
+    "released_at",
+    ...MUTABLE_FIELDS
+  ],
+  HR_Skills_Matrix: [
+    "user_uid",
+    "saqcc_type",
+    "saqcc_expiry",
+    "medical_expiry",
+    "rest_hours_last_24h",
     ...MUTABLE_FIELDS
   ],
   System_Config: ["config_key", "config_value", ...MUTABLE_FIELDS],

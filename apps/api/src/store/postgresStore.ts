@@ -3,6 +3,11 @@ import {
   bumpMutableMeta,
   canReadJob,
   canTransitionStatus,
+  type EscrowRow,
+  type FinanceDebtorRow,
+  type FinanceInvoiceRow,
+  type FinanceQuoteRow,
+  type FinanceStatementRow,
   newMutableMeta,
   type ApiError,
   type AutomationJobRow,
@@ -16,6 +21,8 @@ import {
   type SyncMutation,
   type SyncPushResult,
   type SyncQueueRow,
+  type SkillMatrixRow,
+  type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";
 import type { PostgresStoreConfig } from "../config.js";
@@ -205,6 +212,88 @@ function syncQueueRowFromPg(row: PgRow | undefined): SyncQueueRow {
   };
 }
 
+function financeQuoteRowFromPg(row: PgRow | undefined): FinanceQuoteRow {
+  if (!row) throw new Error("Missing row for FinanceQuoteRow mapping");
+  return {
+    quote_uid: String(row.quote_uid),
+    job_uid: String(row.job_uid),
+    client_uid: String(row.client_uid),
+    description: String(row.description ?? ""),
+    amount: Number(row.amount ?? 0),
+    status: String(row.status) as FinanceQuoteRow["status"],
+    created_at: String(row.created_at ?? ""),
+    ...rowToMutableMeta(row)
+  };
+}
+
+function financeInvoiceRowFromPg(row: PgRow | undefined): FinanceInvoiceRow {
+  if (!row) throw new Error("Missing row for FinanceInvoiceRow mapping");
+  return {
+    invoice_uid: String(row.invoice_uid),
+    job_uid: String(row.job_uid),
+    quote_uid: String(row.quote_uid),
+    client_uid: String(row.client_uid),
+    amount: Number(row.amount ?? 0),
+    due_date: String(row.due_date ?? ""),
+    status: String(row.status) as FinanceInvoiceRow["status"],
+    reconciled_at: String(row.reconciled_at ?? ""),
+    ...rowToMutableMeta(row)
+  };
+}
+
+function financeStatementRowFromPg(row: PgRow | undefined): FinanceStatementRow {
+  if (!row) throw new Error("Missing row for FinanceStatementRow mapping");
+  return {
+    statement_uid: String(row.statement_uid),
+    client_uid: String(row.client_uid),
+    period_label: String(row.period_label ?? ""),
+    opening_balance: Number(row.opening_balance ?? 0),
+    billed: Number(row.billed ?? 0),
+    paid: Number(row.paid ?? 0),
+    closing_balance: Number(row.closing_balance ?? 0),
+    generated_at: String(row.generated_at ?? ""),
+    ...rowToMutableMeta(row)
+  };
+}
+
+function financeDebtorRowFromPg(row: PgRow | undefined): FinanceDebtorRow {
+  if (!row) throw new Error("Missing row for FinanceDebtorRow mapping");
+  return {
+    client_uid: String(row.client_uid),
+    total_due: Number(row.total_due ?? 0),
+    current_bucket: Number(row.current_bucket ?? 0),
+    bucket_30: Number(row.bucket_30 ?? 0),
+    bucket_60: Number(row.bucket_60 ?? 0),
+    bucket_90_plus: Number(row.bucket_90_plus ?? 0),
+    risk_band: String(row.risk_band ?? "low") as FinanceDebtorRow["risk_band"],
+    ...rowToMutableMeta(row)
+  };
+}
+
+function escrowRowFromPg(row: PgRow | undefined): EscrowRow {
+  if (!row) throw new Error("Missing row for EscrowRow mapping");
+  return {
+    document_uid: String(row.document_uid),
+    invoice_uid: String(row.invoice_uid),
+    status: String(row.status) as EscrowRow["status"],
+    locked_at: String(row.locked_at ?? ""),
+    released_at: String(row.released_at ?? ""),
+    ...rowToMutableMeta(row)
+  };
+}
+
+function skillMatrixRowFromPg(row: PgRow | undefined): SkillMatrixRow {
+  if (!row) throw new Error("Missing row for SkillMatrixRow mapping");
+  return {
+    user_uid: String(row.user_uid),
+    saqcc_type: String(row.saqcc_type ?? ""),
+    saqcc_expiry: String(row.saqcc_expiry ?? ""),
+    medical_expiry: String(row.medical_expiry ?? ""),
+    rest_hours_last_24h: Number(row.rest_hours_last_24h ?? 0),
+    ...rowToMutableMeta(row)
+  };
+}
+
 function toConflict(job: JobRow, expectedRowVersion: number): ConflictPayload {
   return buildConflict({
     entity: "Jobs_Master",
@@ -351,6 +440,88 @@ CREATE TABLE IF NOT EXISTS svr_sync_queue (
   correlation_id  TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS svr_finance_quotes (
+  quote_uid       TEXT PRIMARY KEY,
+  job_uid         TEXT NOT NULL,
+  client_uid      TEXT NOT NULL,
+  description     TEXT NOT NULL,
+  amount          DOUBLE PRECISION NOT NULL DEFAULT 0,
+  status          TEXT NOT NULL DEFAULT 'draft',
+  created_at      TEXT NOT NULL,
+  row_version     INTEGER NOT NULL DEFAULT 1,
+  updated_at      TEXT NOT NULL,
+  updated_by      TEXT NOT NULL,
+  correlation_id  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS svr_finance_invoices (
+  invoice_uid     TEXT PRIMARY KEY,
+  job_uid         TEXT NOT NULL,
+  quote_uid       TEXT NOT NULL,
+  client_uid      TEXT NOT NULL,
+  amount          DOUBLE PRECISION NOT NULL DEFAULT 0,
+  due_date        TEXT NOT NULL,
+  status          TEXT NOT NULL DEFAULT 'issued',
+  reconciled_at   TEXT NOT NULL DEFAULT '',
+  row_version     INTEGER NOT NULL DEFAULT 1,
+  updated_at      TEXT NOT NULL,
+  updated_by      TEXT NOT NULL,
+  correlation_id  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS svr_finance_statements (
+  statement_uid   TEXT PRIMARY KEY,
+  client_uid      TEXT NOT NULL,
+  period_label    TEXT NOT NULL,
+  opening_balance DOUBLE PRECISION NOT NULL DEFAULT 0,
+  billed          DOUBLE PRECISION NOT NULL DEFAULT 0,
+  paid            DOUBLE PRECISION NOT NULL DEFAULT 0,
+  closing_balance DOUBLE PRECISION NOT NULL DEFAULT 0,
+  generated_at    TEXT NOT NULL,
+  row_version     INTEGER NOT NULL DEFAULT 1,
+  updated_at      TEXT NOT NULL,
+  updated_by      TEXT NOT NULL,
+  correlation_id  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS svr_finance_debtors (
+  client_uid      TEXT PRIMARY KEY,
+  total_due       DOUBLE PRECISION NOT NULL DEFAULT 0,
+  current_bucket  DOUBLE PRECISION NOT NULL DEFAULT 0,
+  bucket_30       DOUBLE PRECISION NOT NULL DEFAULT 0,
+  bucket_60       DOUBLE PRECISION NOT NULL DEFAULT 0,
+  bucket_90_plus  DOUBLE PRECISION NOT NULL DEFAULT 0,
+  risk_band       TEXT NOT NULL DEFAULT 'low',
+  row_version     INTEGER NOT NULL DEFAULT 1,
+  updated_at      TEXT NOT NULL,
+  updated_by      TEXT NOT NULL,
+  correlation_id  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS svr_compliance_escrow (
+  document_uid    TEXT PRIMARY KEY,
+  invoice_uid     TEXT NOT NULL,
+  status          TEXT NOT NULL DEFAULT 'locked',
+  locked_at       TEXT NOT NULL,
+  released_at     TEXT NOT NULL DEFAULT '',
+  row_version     INTEGER NOT NULL DEFAULT 1,
+  updated_at      TEXT NOT NULL,
+  updated_by      TEXT NOT NULL,
+  correlation_id  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS svr_hr_skills_matrix (
+  user_uid                TEXT PRIMARY KEY,
+  saqcc_type              TEXT NOT NULL DEFAULT '',
+  saqcc_expiry            TEXT NOT NULL DEFAULT '',
+  medical_expiry          TEXT NOT NULL DEFAULT '',
+  rest_hours_last_24h     DOUBLE PRECISION NOT NULL DEFAULT 0,
+  row_version             INTEGER NOT NULL DEFAULT 1,
+  updated_at              TEXT NOT NULL,
+  updated_by              TEXT NOT NULL,
+  correlation_id          TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS svr_audit_log (
   audit_uid       TEXT PRIMARY KEY,
   action          TEXT NOT NULL,
@@ -366,7 +537,9 @@ CREATE INDEX IF NOT EXISTS idx_svr_sync_queue_job_uid ON svr_sync_queue(job_uid)
 CREATE INDEX IF NOT EXISTS idx_svr_jobs_client_uid ON svr_jobs(client_uid);
 CREATE INDEX IF NOT EXISTS idx_svr_jobs_technician_uid ON svr_jobs(technician_uid);
 CREATE INDEX IF NOT EXISTS idx_svr_job_documents_job_uid ON svr_job_documents(job_uid);
-`;
+CREATE INDEX IF NOT EXISTS idx_svr_finance_quotes_job_uid ON svr_finance_quotes(job_uid);
+CREATE INDEX IF NOT EXISTS idx_svr_finance_invoices_client_uid ON svr_finance_invoices(client_uid);
+`; 
 
 // ---------------------------------------------------------------------------
 // Store Implementation
@@ -421,6 +594,285 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     const result = await pool.query(`SELECT * FROM ${this.schema}.svr_users ORDER BY email`);
     return result.rows.map(userRowFromPg);
+  }
+
+  async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {
+    const pool = await this.getPool();
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_finance_quotes ORDER BY created_at DESC`);
+    return result.rows.map(financeQuoteRowFromPg);
+  }
+
+  async createFinanceQuote(row: FinanceQuoteRow): Promise<void> {
+    const pool = await this.getPool();
+    await pool.query(
+      `INSERT INTO ${this.schema}.svr_finance_quotes
+       (quote_uid, job_uid, client_uid, description, amount, status, created_at, row_version, updated_at, updated_by, correlation_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       ON CONFLICT (quote_uid) DO UPDATE SET
+         job_uid = EXCLUDED.job_uid,
+         client_uid = EXCLUDED.client_uid,
+         description = EXCLUDED.description,
+         amount = EXCLUDED.amount,
+         status = EXCLUDED.status,
+         created_at = EXCLUDED.created_at,
+         row_version = EXCLUDED.row_version,
+         updated_at = EXCLUDED.updated_at,
+         updated_by = EXCLUDED.updated_by,
+         correlation_id = EXCLUDED.correlation_id`,
+      [
+        row.quote_uid,
+        row.job_uid,
+        row.client_uid,
+        row.description,
+        row.amount,
+        row.status,
+        row.created_at,
+        row.row_version,
+        row.updated_at,
+        row.updated_by,
+        row.correlation_id
+      ]
+    );
+  }
+
+  async updateFinanceQuoteStatus(args: {
+    quote_uid: string;
+    status: FinanceQuoteRow["status"];
+    ctx: StoreContext;
+  }): Promise<FinanceQuoteRow | null> {
+    const pool = await this.getPool();
+    const current = await pool.query(`SELECT * FROM ${this.schema}.svr_finance_quotes WHERE quote_uid = $1`, [args.quote_uid]);
+    if (current.rows.length === 0) return null;
+    const now = nowIso();
+    const currentRow = financeQuoteRowFromPg(current.rows[0]);
+    const nextVersion = currentRow.row_version + 1;
+    const updated = await pool.query(
+      `UPDATE ${this.schema}.svr_finance_quotes
+       SET status = $1, row_version = $2, updated_at = $3, updated_by = $4, correlation_id = $5
+       WHERE quote_uid = $6
+       RETURNING *`,
+      [args.status, nextVersion, now, args.ctx.actorUserUid, args.ctx.correlationId, args.quote_uid]
+    );
+    if (updated.rows.length === 0) return null;
+    return financeQuoteRowFromPg(updated.rows[0]);
+  }
+
+  async listFinanceInvoices(): Promise<FinanceInvoiceRow[]> {
+    const pool = await this.getPool();
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_finance_invoices ORDER BY updated_at DESC`);
+    return result.rows.map(financeInvoiceRowFromPg);
+  }
+
+  async createFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
+    const pool = await this.getPool();
+    await pool.query(
+      `INSERT INTO ${this.schema}.svr_finance_invoices
+       (invoice_uid, job_uid, quote_uid, client_uid, amount, due_date, status, reconciled_at, row_version, updated_at, updated_by, correlation_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       ON CONFLICT (invoice_uid) DO UPDATE SET
+         job_uid = EXCLUDED.job_uid,
+         quote_uid = EXCLUDED.quote_uid,
+         client_uid = EXCLUDED.client_uid,
+         amount = EXCLUDED.amount,
+         due_date = EXCLUDED.due_date,
+         status = EXCLUDED.status,
+         reconciled_at = EXCLUDED.reconciled_at,
+         row_version = EXCLUDED.row_version,
+         updated_at = EXCLUDED.updated_at,
+         updated_by = EXCLUDED.updated_by,
+         correlation_id = EXCLUDED.correlation_id`,
+      [
+        row.invoice_uid,
+        row.job_uid,
+        row.quote_uid,
+        row.client_uid,
+        row.amount,
+        row.due_date,
+        row.status,
+        row.reconciled_at,
+        row.row_version,
+        row.updated_at,
+        row.updated_by,
+        row.correlation_id
+      ]
+    );
+  }
+
+  async updateFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
+    await this.createFinanceInvoice(row);
+  }
+
+  async listFinanceStatements(): Promise<FinanceStatementRow[]> {
+    const pool = await this.getPool();
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_finance_statements ORDER BY generated_at DESC`);
+    return result.rows.map(financeStatementRowFromPg);
+  }
+
+  async replaceFinanceStatements(rows: FinanceStatementRow[]): Promise<void> {
+    const pool = await this.getPool();
+    for (const row of rows) {
+      await pool.query(
+        `INSERT INTO ${this.schema}.svr_finance_statements
+         (statement_uid, client_uid, period_label, opening_balance, billed, paid, closing_balance, generated_at, row_version, updated_at, updated_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         ON CONFLICT (statement_uid) DO UPDATE SET
+           client_uid = EXCLUDED.client_uid,
+           period_label = EXCLUDED.period_label,
+           opening_balance = EXCLUDED.opening_balance,
+           billed = EXCLUDED.billed,
+           paid = EXCLUDED.paid,
+           closing_balance = EXCLUDED.closing_balance,
+           generated_at = EXCLUDED.generated_at,
+           row_version = EXCLUDED.row_version,
+           updated_at = EXCLUDED.updated_at,
+           updated_by = EXCLUDED.updated_by,
+           correlation_id = EXCLUDED.correlation_id`,
+        [
+          row.statement_uid,
+          row.client_uid,
+          row.period_label,
+          row.opening_balance,
+          row.billed,
+          row.paid,
+          row.closing_balance,
+          row.generated_at,
+          row.row_version,
+          row.updated_at,
+          row.updated_by,
+          row.correlation_id
+        ]
+      );
+    }
+  }
+
+  async listFinanceDebtors(): Promise<FinanceDebtorRow[]> {
+    const pool = await this.getPool();
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_finance_debtors ORDER BY total_due DESC`);
+    return result.rows.map(financeDebtorRowFromPg);
+  }
+
+  async replaceFinanceDebtors(rows: FinanceDebtorRow[]): Promise<void> {
+    const pool = await this.getPool();
+    for (const row of rows) {
+      await pool.query(
+        `INSERT INTO ${this.schema}.svr_finance_debtors
+         (client_uid, total_due, current_bucket, bucket_30, bucket_60, bucket_90_plus, risk_band, row_version, updated_at, updated_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (client_uid) DO UPDATE SET
+           total_due = EXCLUDED.total_due,
+           current_bucket = EXCLUDED.current_bucket,
+           bucket_30 = EXCLUDED.bucket_30,
+           bucket_60 = EXCLUDED.bucket_60,
+           bucket_90_plus = EXCLUDED.bucket_90_plus,
+           risk_band = EXCLUDED.risk_band,
+           row_version = EXCLUDED.row_version,
+           updated_at = EXCLUDED.updated_at,
+           updated_by = EXCLUDED.updated_by,
+           correlation_id = EXCLUDED.correlation_id`,
+        [
+          row.client_uid,
+          row.total_due,
+          row.current_bucket,
+          row.bucket_30,
+          row.bucket_60,
+          row.bucket_90_plus,
+          row.risk_band,
+          row.row_version,
+          row.updated_at,
+          row.updated_by,
+          row.correlation_id
+        ]
+      );
+    }
+  }
+
+  async listEscrowRows(): Promise<EscrowRow[]> {
+    const pool = await this.getPool();
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_compliance_escrow ORDER BY updated_at DESC`);
+    return result.rows.map(escrowRowFromPg);
+  }
+
+  async getEscrowByDocument(document_uid: string): Promise<EscrowRow | null> {
+    const pool = await this.getPool();
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_compliance_escrow WHERE document_uid = $1`, [document_uid]);
+    if (result.rows.length === 0) return null;
+    return escrowRowFromPg(result.rows[0]);
+  }
+
+  async upsertEscrow(row: EscrowRow): Promise<void> {
+    const pool = await this.getPool();
+    await pool.query(
+      `INSERT INTO ${this.schema}.svr_compliance_escrow
+       (document_uid, invoice_uid, status, locked_at, released_at, row_version, updated_at, updated_by, correlation_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT (document_uid) DO UPDATE SET
+         invoice_uid = EXCLUDED.invoice_uid,
+         status = EXCLUDED.status,
+         locked_at = EXCLUDED.locked_at,
+         released_at = EXCLUDED.released_at,
+         row_version = EXCLUDED.row_version,
+         updated_at = EXCLUDED.updated_at,
+         updated_by = EXCLUDED.updated_by,
+         correlation_id = EXCLUDED.correlation_id`,
+      [
+        row.document_uid,
+        row.invoice_uid,
+        row.status,
+        row.locked_at,
+        row.released_at,
+        row.row_version,
+        row.updated_at,
+        row.updated_by,
+        row.correlation_id
+      ]
+    );
+  }
+
+  async listSkillMatrix(): Promise<SkillMatrixRow[]> {
+    const pool = await this.getPool();
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_hr_skills_matrix ORDER BY user_uid ASC`);
+    return result.rows.map(skillMatrixRowFromPg);
+  }
+
+  async upsertSkillMatrix(row: SkillMatrixRow): Promise<void> {
+    const pool = await this.getPool();
+    await pool.query(
+      `INSERT INTO ${this.schema}.svr_hr_skills_matrix
+       (user_uid, saqcc_type, saqcc_expiry, medical_expiry, rest_hours_last_24h, row_version, updated_at, updated_by, correlation_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT (user_uid) DO UPDATE SET
+         saqcc_type = EXCLUDED.saqcc_type,
+         saqcc_expiry = EXCLUDED.saqcc_expiry,
+         medical_expiry = EXCLUDED.medical_expiry,
+         rest_hours_last_24h = EXCLUDED.rest_hours_last_24h,
+         row_version = EXCLUDED.row_version,
+         updated_at = EXCLUDED.updated_at,
+         updated_by = EXCLUDED.updated_by,
+         correlation_id = EXCLUDED.correlation_id`,
+      [
+        row.user_uid,
+        row.saqcc_type,
+        row.saqcc_expiry,
+        row.medical_expiry,
+        row.rest_hours_last_24h,
+        row.row_version,
+        row.updated_at,
+        row.updated_by,
+        row.correlation_id
+      ]
+    );
+  }
+
+  async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
+    const [quotes, invoices, statements, debtors, escrow, skills] = await Promise.all([
+      this.listFinanceQuotes(),
+      this.listFinanceInvoices(),
+      this.listFinanceStatements(),
+      this.listFinanceDebtors(),
+      this.listEscrowRows(),
+      this.listSkillMatrix()
+    ]);
+    return { quotes, invoices, statements, debtors, escrow, skills };
   }
 
   // -- Job operations ------------------------------------------------------

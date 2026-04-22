@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
-import type { PeopleDirectoryEntry } from "../apiClient";
-import { loadUpgradeStore, upsertSkill } from "../features/upgradeStore";
+import type { PeopleDirectoryEntry, SkillMatrixRecord } from "../apiClient";
 
 function errorMessage(error: unknown): string {
   const typed = error as { error?: { message?: string } };
@@ -9,6 +8,8 @@ function errorMessage(error: unknown): string {
 
 interface PeopleDirectoryCardProps {
   people: PeopleDirectoryEntry[];
+  skillsState: SkillMatrixRecord[];
+  onUpsertSkill: (payload: SkillMatrixRecord) => void;
   onSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => Promise<void>;
   onFeedback: (message: string) => void;
 }
@@ -22,12 +23,11 @@ const ROLE_LABELS: Record<string, string> = {
   super_admin: "Super Admin"
 };
 
-export function PeopleDirectoryCard({ people, onSync, onFeedback }: PeopleDirectoryCardProps): React.JSX.Element {
+export function PeopleDirectoryCard({ people, skillsState, onUpsertSkill, onSync, onFeedback }: PeopleDirectoryCardProps): React.JSX.Element {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [roleHint, setRoleHint] = useState("client");
-  const [skillsState, setSkillsState] = useState(() => loadUpgradeStore().skills);
 
   const counts = useMemo(() => {
     return people.reduce<Record<string, number>>((accumulator, person) => {
@@ -42,15 +42,13 @@ export function PeopleDirectoryCard({ people, onSync, onFeedback }: PeopleDirect
 
   function setSkillField(userUid: string, patch: Partial<{ saqcc_type: string; saqcc_expiry: string; medical_expiry: string; rest_hours_last_24h: number }>): void {
     const current = skillFor(userUid);
-    const next = upsertSkill({
+    onUpsertSkill({
       user_uid: userUid,
       saqcc_type: patch.saqcc_type ?? current?.saqcc_type ?? "",
       saqcc_expiry: patch.saqcc_expiry ?? current?.saqcc_expiry ?? "",
       medical_expiry: patch.medical_expiry ?? current?.medical_expiry ?? "",
-      rest_hours_last_24h: patch.rest_hours_last_24h ?? current?.rest_hours_last_24h ?? 0,
-      updated_at: new Date().toISOString()
+      rest_hours_last_24h: patch.rest_hours_last_24h ?? current?.rest_hours_last_24h ?? 0
     });
-    setSkillsState(next.skills);
   }
 
   return (

@@ -4,9 +4,14 @@ import {
   bumpMutableMeta,
   canReadJob,
   canTransitionStatus,
+  type EscrowRow,
   type ApiError,
   type AutomationJobRow,
   type ConflictPayload,
+  type FinanceDebtorRow,
+  type FinanceInvoiceRow,
+  type FinanceQuoteRow,
+  type FinanceStatementRow,
   type JobDocumentRow,
   type JobEventRow,
   type JobRow,
@@ -16,6 +21,8 @@ import {
   type SyncMutation,
   type SyncPushResult,
   type SyncQueueRow,
+  type SkillMatrixRow,
+  type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";
 import type { WorkspaceRails } from "@kharon/google";
@@ -368,6 +375,100 @@ function parseSyncQueue(row: Row): SyncQueueRow {
   };
 }
 
+function parseFinanceQuote(row: Row): FinanceQuoteRow {
+  return {
+    quote_uid: field(row, "quote_uid"),
+    job_uid: field(row, "job_uid"),
+    client_uid: field(row, "client_uid"),
+    description: field(row, "description"),
+    amount: toNum(field(row, "amount")),
+    status: field(row, "status") as FinanceQuoteRow["status"],
+    created_at: field(row, "created_at"),
+    row_version: Math.max(1, toNum(field(row, "row_version"))),
+    updated_at: field(row, "updated_at"),
+    updated_by: field(row, "updated_by"),
+    correlation_id: field(row, "correlation_id")
+  };
+}
+
+function parseFinanceInvoice(row: Row): FinanceInvoiceRow {
+  return {
+    invoice_uid: field(row, "invoice_uid"),
+    job_uid: field(row, "job_uid"),
+    quote_uid: field(row, "quote_uid"),
+    client_uid: field(row, "client_uid"),
+    amount: toNum(field(row, "amount")),
+    due_date: field(row, "due_date"),
+    status: field(row, "status") as FinanceInvoiceRow["status"],
+    reconciled_at: field(row, "reconciled_at"),
+    row_version: Math.max(1, toNum(field(row, "row_version"))),
+    updated_at: field(row, "updated_at"),
+    updated_by: field(row, "updated_by"),
+    correlation_id: field(row, "correlation_id")
+  };
+}
+
+function parseFinanceStatement(row: Row): FinanceStatementRow {
+  return {
+    statement_uid: field(row, "statement_uid"),
+    client_uid: field(row, "client_uid"),
+    period_label: field(row, "period_label"),
+    opening_balance: toNum(field(row, "opening_balance")),
+    billed: toNum(field(row, "billed")),
+    paid: toNum(field(row, "paid")),
+    closing_balance: toNum(field(row, "closing_balance")),
+    generated_at: field(row, "generated_at"),
+    row_version: Math.max(1, toNum(field(row, "row_version"))),
+    updated_at: field(row, "updated_at"),
+    updated_by: field(row, "updated_by"),
+    correlation_id: field(row, "correlation_id")
+  };
+}
+
+function parseFinanceDebtor(row: Row): FinanceDebtorRow {
+  return {
+    client_uid: field(row, "client_uid"),
+    total_due: toNum(field(row, "total_due")),
+    current_bucket: toNum(field(row, "current_bucket")),
+    bucket_30: toNum(field(row, "bucket_30")),
+    bucket_60: toNum(field(row, "bucket_60")),
+    bucket_90_plus: toNum(field(row, "bucket_90_plus")),
+    risk_band: (field(row, "risk_band") || "low") as FinanceDebtorRow["risk_band"],
+    row_version: Math.max(1, toNum(field(row, "row_version"))),
+    updated_at: field(row, "updated_at"),
+    updated_by: field(row, "updated_by"),
+    correlation_id: field(row, "correlation_id")
+  };
+}
+
+function parseEscrow(row: Row): EscrowRow {
+  return {
+    document_uid: field(row, "document_uid"),
+    invoice_uid: field(row, "invoice_uid"),
+    status: field(row, "status") as EscrowRow["status"],
+    locked_at: field(row, "locked_at"),
+    released_at: field(row, "released_at"),
+    row_version: Math.max(1, toNum(field(row, "row_version"))),
+    updated_at: field(row, "updated_at"),
+    updated_by: field(row, "updated_by"),
+    correlation_id: field(row, "correlation_id")
+  };
+}
+
+function parseSkillMatrix(row: Row): SkillMatrixRow {
+  return {
+    user_uid: field(row, "user_uid"),
+    saqcc_type: field(row, "saqcc_type"),
+    saqcc_expiry: field(row, "saqcc_expiry"),
+    medical_expiry: field(row, "medical_expiry"),
+    rest_hours_last_24h: toNum(field(row, "rest_hours_last_24h")),
+    row_version: Math.max(1, toNum(field(row, "row_version"))),
+    updated_at: field(row, "updated_at"),
+    updated_by: field(row, "updated_by"),
+    correlation_id: field(row, "correlation_id")
+  };
+}
+
 function conflictFor(job: JobRow, expected: number): ConflictPayload {
   return buildConflict({
     entity: "Jobs_Master",
@@ -577,6 +678,96 @@ export class SheetsWorkbookStore implements WorkbookStore {
 
   async listUsers(): Promise<UserRow[]> {
     return (await this.rows("Users_Master")).map(parseUserRow);
+  }
+
+  async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {
+    return (await this.rows("Finance_Quotes")).map(parseFinanceQuote).sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }
+
+  async createFinanceQuote(row: FinanceQuoteRow): Promise<void> {
+    await this.rails.sheets.upsertRow("Finance_Quotes", "quote_uid", stringifyRow(row));
+  }
+
+  async updateFinanceQuoteStatus(args: {
+    quote_uid: string;
+    status: FinanceQuoteRow["status"];
+    ctx: { correlationId: string; actorUserUid: string };
+  }): Promise<FinanceQuoteRow | null> {
+    const existing = await this.findRow("Finance_Quotes", "quote_uid", args.quote_uid);
+    if (!existing) return null;
+    const current = parseFinanceQuote(existing);
+    const updated: FinanceQuoteRow = {
+      ...current,
+      status: args.status,
+      ...bumpMutableMeta(current, args.ctx.actorUserUid, args.ctx.correlationId)
+    };
+    await this.rails.sheets.upsertRow("Finance_Quotes", "quote_uid", stringifyRow(updated));
+    return updated;
+  }
+
+  async listFinanceInvoices(): Promise<FinanceInvoiceRow[]> {
+    return (await this.rows("Finance_Invoices")).map(parseFinanceInvoice).sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  }
+
+  async createFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
+    await this.rails.sheets.upsertRow("Finance_Invoices", "invoice_uid", stringifyRow(row));
+  }
+
+  async updateFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
+    await this.rails.sheets.upsertRow("Finance_Invoices", "invoice_uid", stringifyRow(row));
+  }
+
+  async listFinanceStatements(): Promise<FinanceStatementRow[]> {
+    return (await this.rows("Finance_Statements")).map(parseFinanceStatement).sort((a, b) => b.generated_at.localeCompare(a.generated_at));
+  }
+
+  async replaceFinanceStatements(rows: FinanceStatementRow[]): Promise<void> {
+    for (const row of rows) {
+      await this.rails.sheets.upsertRow("Finance_Statements", "statement_uid", stringifyRow(row));
+    }
+  }
+
+  async listFinanceDebtors(): Promise<FinanceDebtorRow[]> {
+    return (await this.rows("Finance_Debtors")).map(parseFinanceDebtor).sort((a, b) => b.total_due - a.total_due);
+  }
+
+  async replaceFinanceDebtors(rows: FinanceDebtorRow[]): Promise<void> {
+    for (const row of rows) {
+      await this.rails.sheets.upsertRow("Finance_Debtors", "client_uid", stringifyRow(row));
+    }
+  }
+
+  async listEscrowRows(): Promise<EscrowRow[]> {
+    return (await this.rows("Compliance_Escrow")).map(parseEscrow).sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  }
+
+  async getEscrowByDocument(document_uid: string): Promise<EscrowRow | null> {
+    const row = await this.findRow("Compliance_Escrow", "document_uid", document_uid);
+    return row ? parseEscrow(row) : null;
+  }
+
+  async upsertEscrow(row: EscrowRow): Promise<void> {
+    await this.rails.sheets.upsertRow("Compliance_Escrow", "document_uid", stringifyRow(row));
+  }
+
+  async listSkillMatrix(): Promise<SkillMatrixRow[]> {
+    return (await this.rows("HR_Skills_Matrix")).map(parseSkillMatrix).sort((a, b) => a.user_uid.localeCompare(b.user_uid));
+  }
+
+  async upsertSkillMatrix(row: SkillMatrixRow): Promise<void> {
+    await this.rails.sheets.upsertRow("HR_Skills_Matrix", "user_uid", stringifyRow(row));
+  }
+
+  async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
+    const [quotes, invoices, statements, debtors, escrow, skills] = await Promise.all([
+      this.listFinanceQuotes(),
+      this.listFinanceInvoices(),
+      this.listFinanceStatements(),
+      this.listFinanceDebtors(),
+      this.listEscrowRows(),
+      this.listSkillMatrix()
+    ]);
+    return { quotes, invoices, statements, debtors, escrow, skills };
   }
 
   async listJobsForUser(user: SessionUser): Promise<JobRow[]> {

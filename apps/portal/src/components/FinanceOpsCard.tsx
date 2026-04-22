@@ -1,15 +1,6 @@
 import React, { useMemo, useState } from "react";
+import type { UpgradeWorkspaceState } from "../apiClient";
 import type { JobRecord } from "./JobListView";
-import {
-  createInvoiceFromQuote,
-  createQuote,
-  loadUpgradeStore,
-  lockEscrow,
-  reconcileInvoice,
-  rebuildDebtorsAndStatements,
-  updateQuoteStatus,
-  type UpgradeStore
-} from "../features/upgradeStore";
 
 const MODULES = [
   "Financial Pulse",
@@ -23,6 +14,14 @@ const MODULES = [
 interface FinanceOpsCardProps {
   jobs: JobRecord[];
   documents: Array<Record<string, unknown>>;
+  store: UpgradeWorkspaceState;
+  onRefreshStore: () => void;
+  onCreateQuote: (payload: { job_uid: string; client_uid: string; description: string; amount: number }) => void;
+  onUpdateQuoteStatus: (quoteUid: string, status: "draft" | "sent" | "approved" | "rejected" | "invoiced") => void;
+  onCreateInvoiceFromQuote: (quoteUid: string, dueDate: string) => void;
+  onReconcileInvoice: (invoiceUid: string) => void;
+  onLockEscrow: (documentUid: string, invoiceUid: string) => void;
+  onRebuildAnalytics: () => void;
 }
 
 function asMoney(value: number): string {
@@ -43,9 +42,19 @@ function deriveJobValue(job: JobRecord): number {
   return Math.round((base + uidSeed * 850) * statusFactor[job.status]);
 }
 
-export function FinanceOpsCard({ jobs, documents }: FinanceOpsCardProps): React.JSX.Element {
+export function FinanceOpsCard({
+  jobs,
+  documents,
+  store,
+  onRefreshStore,
+  onCreateQuote,
+  onUpdateQuoteStatus,
+  onCreateInvoiceFromQuote,
+  onReconcileInvoice,
+  onLockEscrow,
+  onRebuildAnalytics
+}: FinanceOpsCardProps): React.JSX.Element {
   const [moduleIndex, setModuleIndex] = useState(0);
-  const [store, setStore] = useState<UpgradeStore>(() => loadUpgradeStore());
   const [quoteJobUid, setQuoteJobUid] = useState("");
   const [quoteClientUid, setQuoteClientUid] = useState("");
   const [quoteDescription, setQuoteDescription] = useState("Remedial works proposal");
@@ -82,7 +91,6 @@ export function FinanceOpsCard({ jobs, documents }: FinanceOpsCardProps): React.
   );
 
   const selectedQuote = store.quotes.find((item) => item.quote_uid === selectedQuoteUid) ?? null;
-  const selectedInvoice = store.invoices.find((item) => item.invoice_uid === selectedInvoiceUid) ?? null;
 
   return (
     <article className="workspace-card workspace-card--primary">
@@ -91,7 +99,12 @@ export function FinanceOpsCard({ jobs, documents }: FinanceOpsCardProps): React.
           <p className="panel-eyebrow">Finance Portal</p>
           <h2>Finance and Integrity Workspace</h2>
         </div>
-        <span className="status-chip status-chip--active">Live</span>
+        <div className="button-row">
+          <span className="status-chip status-chip--active">Live</span>
+          <button className="button button--ghost" type="button" onClick={onRefreshStore}>
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="button-row">
@@ -164,13 +177,12 @@ export function FinanceOpsCard({ jobs, documents }: FinanceOpsCardProps): React.
                 onClick={() => {
                   const amount = Number(quoteAmount);
                   if (!quoteJobUid.trim() || !quoteClientUid.trim() || !Number.isFinite(amount) || amount <= 0) return;
-                  createQuote({
+                  onCreateQuote({
                     job_uid: quoteJobUid.trim(),
                     client_uid: quoteClientUid.trim(),
                     description: quoteDescription.trim(),
                     amount
                   });
-                  setStore(loadUpgradeStore());
                   setQuoteAmount("0");
                   setQuoteDescription("Remedial works proposal");
                 }}
@@ -188,14 +200,7 @@ export function FinanceOpsCard({ jobs, documents }: FinanceOpsCardProps): React.
                     <button className="button button--ghost" type="button" onClick={() => setSelectedQuoteUid(quote.quote_uid)}>
                       Select
                     </button>
-                    <button
-                      className="button button--secondary"
-                      type="button"
-                      onClick={() => {
-                        updateQuoteStatus(quote.quote_uid, "approved");
-                        setStore(loadUpgradeStore());
-                      }}
-                    >
+                    <button className="button button--secondary" type="button" onClick={() => onUpdateQuoteStatus(quote.quote_uid, "approved")}>
                       Approve
                     </button>
                   </div>
@@ -232,8 +237,7 @@ export function FinanceOpsCard({ jobs, documents }: FinanceOpsCardProps): React.
                 type="button"
                 onClick={() => {
                   if (!selectedQuote) return;
-                  createInvoiceFromQuote(selectedQuote.quote_uid, invoiceDueDate);
-                  setStore(loadUpgradeStore());
+                  onCreateInvoiceFromQuote(selectedQuote.quote_uid, invoiceDueDate);
                 }}
               >
                 Generate invoice
@@ -271,11 +275,7 @@ export function FinanceOpsCard({ jobs, documents }: FinanceOpsCardProps): React.
         {moduleIndex === 4 ? (
           <div className="control-stack">
             <div className="button-row">
-              <button
-                className="button button--secondary"
-                type="button"
-                onClick={() => setStore(rebuildDebtorsAndStatements())}
-              >
+              <button className="button button--secondary" type="button" onClick={onRebuildAnalytics}>
                 Rebuild debtors profile
               </button>
             </div>
@@ -287,8 +287,14 @@ export function FinanceOpsCard({ jobs, documents }: FinanceOpsCardProps): React.
                   <div key={debtor.client_uid} className="history-row">
                     <strong>{debtor.client_uid}</strong>
                     <span>{asMoney(debtor.total_due)}</span>
-                    <span>30d {asMoney(debtor.bucket_30)} | 60d {asMoney(debtor.bucket_60)}</span>
-                    <span className={`status-chip status-chip--${debtor.risk_band === "high" ? "critical" : debtor.risk_band === "medium" ? "warning" : "active"}`}>
+                    <span>
+                      30d {asMoney(debtor.bucket_30)} | 60d {asMoney(debtor.bucket_60)}
+                    </span>
+                    <span
+                      className={`status-chip status-chip--${
+                        debtor.risk_band === "high" ? "critical" : debtor.risk_band === "medium" ? "warning" : "active"
+                      }`}
+                    >
                       {debtor.risk_band}
                     </span>
                   </div>
@@ -330,7 +336,7 @@ export function FinanceOpsCard({ jobs, documents }: FinanceOpsCardProps): React.
                 type="button"
                 onClick={() => {
                   if (!selectedEscrowDocumentUid || !selectedInvoiceUid) return;
-                  setStore(lockEscrow(selectedEscrowDocumentUid, selectedInvoiceUid));
+                  onLockEscrow(selectedEscrowDocumentUid, selectedInvoiceUid);
                 }}
               >
                 Lock certificate escrow
@@ -340,9 +346,7 @@ export function FinanceOpsCard({ jobs, documents }: FinanceOpsCardProps): React.
                 type="button"
                 onClick={() => {
                   if (!selectedInvoiceUid) return;
-                  reconcileInvoice(selectedInvoiceUid);
-                  rebuildDebtorsAndStatements();
-                  setStore(loadUpgradeStore());
+                  onReconcileInvoice(selectedInvoiceUid);
                 }}
               >
                 Reconcile and release

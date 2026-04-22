@@ -3,6 +3,11 @@ import {
   bumpMutableMeta,
   canReadJob,
   canTransitionStatus,
+  type EscrowRow,
+  type FinanceDebtorRow,
+  type FinanceInvoiceRow,
+  type FinanceQuoteRow,
+  type FinanceStatementRow,
   newMutableMeta,
   type ApiError,
   type AutomationJobRow,
@@ -16,6 +21,8 @@ import {
   type SyncMutation,
   type SyncPushResult,
   type SyncQueueRow,
+  type SkillMatrixRow,
+  type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";
 import type { WorkbookStore } from "./types.js";
@@ -30,6 +37,12 @@ interface LocalData {
   automationJobs: Map<string, AutomationJobRow>;
   syncQueue: Map<string, SyncQueueRow>;
   audits: Array<Record<string, string>>;
+  financeQuotes: Map<string, FinanceQuoteRow>;
+  financeInvoices: Map<string, FinanceInvoiceRow>;
+  financeStatements: Map<string, FinanceStatementRow>;
+  financeDebtors: Map<string, FinanceDebtorRow>;
+  escrowRows: Map<string, EscrowRow>;
+  skills: Map<string, SkillMatrixRow>;
 }
 
 function nowIso(): string {
@@ -154,7 +167,13 @@ function makeSeedData(): LocalData {
     documents: new Map<string, JobDocumentRow>(),
     automationJobs,
     syncQueue: new Map<string, SyncQueueRow>(),
-    audits: []
+    audits: [],
+    financeQuotes: new Map<string, FinanceQuoteRow>(),
+    financeInvoices: new Map<string, FinanceInvoiceRow>(),
+    financeStatements: new Map<string, FinanceStatementRow>(),
+    financeDebtors: new Map<string, FinanceDebtorRow>(),
+    escrowRows: new Map<string, EscrowRow>(),
+    skills: new Map<string, SkillMatrixRow>()
   };
 }
 
@@ -208,6 +227,97 @@ export class LocalWorkbookStore implements WorkbookStore {
 
   async listUsers(): Promise<UserRow[]> {
     return [...this.data.users.values()].map((row) => immutableClone(row));
+  }
+
+  async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {
+    return [...this.data.financeQuotes.values()].sort((a, b) => b.created_at.localeCompare(a.created_at)).map(immutableClone);
+  }
+
+  async createFinanceQuote(row: FinanceQuoteRow): Promise<void> {
+    this.data.financeQuotes.set(row.quote_uid, immutableClone(row));
+  }
+
+  async updateFinanceQuoteStatus(args: {
+    quote_uid: string;
+    status: FinanceQuoteRow["status"];
+    ctx: { correlationId: string; actorUserUid: string };
+  }): Promise<FinanceQuoteRow | null> {
+    const current = this.data.financeQuotes.get(args.quote_uid);
+    if (!current) return null;
+    const updated: FinanceQuoteRow = {
+      ...current,
+      status: args.status,
+      ...bumpMutableMeta(current, args.ctx.actorUserUid, args.ctx.correlationId)
+    };
+    this.data.financeQuotes.set(updated.quote_uid, updated);
+    return immutableClone(updated);
+  }
+
+  async listFinanceInvoices(): Promise<FinanceInvoiceRow[]> {
+    return [...this.data.financeInvoices.values()].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).map(immutableClone);
+  }
+
+  async createFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
+    this.data.financeInvoices.set(row.invoice_uid, immutableClone(row));
+  }
+
+  async updateFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
+    this.data.financeInvoices.set(row.invoice_uid, immutableClone(row));
+  }
+
+  async listFinanceStatements(): Promise<FinanceStatementRow[]> {
+    return [...this.data.financeStatements.values()].sort((a, b) => b.generated_at.localeCompare(a.generated_at)).map(immutableClone);
+  }
+
+  async replaceFinanceStatements(rows: FinanceStatementRow[]): Promise<void> {
+    this.data.financeStatements.clear();
+    for (const row of rows) {
+      this.data.financeStatements.set(row.statement_uid, immutableClone(row));
+    }
+  }
+
+  async listFinanceDebtors(): Promise<FinanceDebtorRow[]> {
+    return [...this.data.financeDebtors.values()].sort((a, b) => b.total_due - a.total_due).map(immutableClone);
+  }
+
+  async replaceFinanceDebtors(rows: FinanceDebtorRow[]): Promise<void> {
+    this.data.financeDebtors.clear();
+    for (const row of rows) {
+      this.data.financeDebtors.set(row.client_uid, immutableClone(row));
+    }
+  }
+
+  async listEscrowRows(): Promise<EscrowRow[]> {
+    return [...this.data.escrowRows.values()].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).map(immutableClone);
+  }
+
+  async getEscrowByDocument(document_uid: string): Promise<EscrowRow | null> {
+    const row = this.data.escrowRows.get(document_uid);
+    return row ? immutableClone(row) : null;
+  }
+
+  async upsertEscrow(row: EscrowRow): Promise<void> {
+    this.data.escrowRows.set(row.document_uid, immutableClone(row));
+  }
+
+  async listSkillMatrix(): Promise<SkillMatrixRow[]> {
+    return [...this.data.skills.values()].sort((a, b) => a.user_uid.localeCompare(b.user_uid)).map(immutableClone);
+  }
+
+  async upsertSkillMatrix(row: SkillMatrixRow): Promise<void> {
+    this.data.skills.set(row.user_uid, immutableClone(row));
+  }
+
+  async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
+    const [quotes, invoices, statements, debtors, escrow, skills] = await Promise.all([
+      this.listFinanceQuotes(),
+      this.listFinanceInvoices(),
+      this.listFinanceStatements(),
+      this.listFinanceDebtors(),
+      this.listEscrowRows(),
+      this.listSkillMatrix()
+    ]);
+    return { quotes, invoices, statements, debtors, escrow, skills };
   }
 
   async listJobsForUser(user: SessionUser): Promise<JobRow[]> {

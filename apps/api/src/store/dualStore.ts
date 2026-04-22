@@ -30,6 +30,11 @@ interface DualStoreRuntimeConfig {
 import {
   type AutomationJobRow,
   type ConflictPayload,
+  type EscrowRow,
+  type FinanceDebtorRow,
+  type FinanceInvoiceRow,
+  type FinanceQuoteRow,
+  type FinanceStatementRow,
   type JobDocumentRow,
   type JobEventRow,
   type JobRow,
@@ -39,6 +44,8 @@ import {
   type SyncMutation,
   type SyncPushResult,
   type SyncQueueRow,
+  type SkillMatrixRow,
+  type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";
 import type { StoreContext } from "./types.js";
@@ -292,6 +299,83 @@ export class DualWorkbookStore implements WorkbookStore {
 
   async listUsers(): Promise<UserRow[]> {
     return this.primary.listUsers();
+  }
+
+  async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {
+    return this.primary.listFinanceQuotes();
+  }
+
+  async createFinanceQuote(row: FinanceQuoteRow): Promise<void> {
+    await this.primary.createFinanceQuote(row);
+    await this._mirrorWrite("createFinanceQuote", row.quote_uid, () => this.mirror.createFinanceQuote(row));
+  }
+
+  async updateFinanceQuoteStatus(args: {
+    quote_uid: string;
+    status: FinanceQuoteRow["status"];
+    ctx: StoreContext;
+  }): Promise<FinanceQuoteRow | null> {
+    const result = await this.primary.updateFinanceQuoteStatus(args);
+    await this._mirrorWrite("updateFinanceQuoteStatus", args.quote_uid, () => this.mirror.updateFinanceQuoteStatus(args));
+    return result;
+  }
+
+  async listFinanceInvoices(): Promise<FinanceInvoiceRow[]> {
+    return this.primary.listFinanceInvoices();
+  }
+
+  async createFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
+    await this.primary.createFinanceInvoice(row);
+    await this._mirrorWrite("createFinanceInvoice", row.invoice_uid, () => this.mirror.createFinanceInvoice(row));
+  }
+
+  async updateFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
+    await this.primary.updateFinanceInvoice(row);
+    await this._mirrorWrite("updateFinanceInvoice", row.invoice_uid, () => this.mirror.updateFinanceInvoice(row));
+  }
+
+  async listFinanceStatements(): Promise<FinanceStatementRow[]> {
+    return this.primary.listFinanceStatements();
+  }
+
+  async replaceFinanceStatements(rows: FinanceStatementRow[]): Promise<void> {
+    await this.primary.replaceFinanceStatements(rows);
+    await this._mirrorWrite("replaceFinanceStatements", `rows:${rows.length}`, () => this.mirror.replaceFinanceStatements(rows));
+  }
+
+  async listFinanceDebtors(): Promise<FinanceDebtorRow[]> {
+    return this.primary.listFinanceDebtors();
+  }
+
+  async replaceFinanceDebtors(rows: FinanceDebtorRow[]): Promise<void> {
+    await this.primary.replaceFinanceDebtors(rows);
+    await this._mirrorWrite("replaceFinanceDebtors", `rows:${rows.length}`, () => this.mirror.replaceFinanceDebtors(rows));
+  }
+
+  async listEscrowRows(): Promise<EscrowRow[]> {
+    return this.primary.listEscrowRows();
+  }
+
+  async getEscrowByDocument(document_uid: string): Promise<EscrowRow | null> {
+    return this.primary.getEscrowByDocument(document_uid);
+  }
+
+  async upsertEscrow(row: EscrowRow): Promise<void> {
+    await this.primary.upsertEscrow(row);
+    await this._mirrorWrite("upsertEscrow", row.document_uid, () => this.mirror.upsertEscrow(row));
+  }
+
+  async listSkillMatrix(): Promise<SkillMatrixRow[]> {
+    return this.primary.listSkillMatrix();
+  }
+
+  async upsertSkillMatrix(row: SkillMatrixRow): Promise<void> {
+    await this.primary.upsertSkillMatrix(row);
+    await this._mirrorWrite("upsertSkillMatrix", row.user_uid, () => this.mirror.upsertSkillMatrix(row));
+  }
+
+  async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
+    return this.primary.getUpgradeWorkspaceState();
   }
 
   // -- Job operations ------------------------------------------------------

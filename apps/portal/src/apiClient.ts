@@ -104,6 +104,73 @@ export interface PortalDispatchContext {
 export type PeopleDirectoryEntry = UserRow;
 export type AutomationJobEntry = AutomationJobRow;
 
+export interface FinanceQuoteRecord {
+  quote_uid: string;
+  job_uid: string;
+  client_uid: string;
+  description: string;
+  amount: number;
+  status: "draft" | "sent" | "approved" | "rejected" | "invoiced";
+  created_at: string;
+}
+
+export interface FinanceInvoiceRecord {
+  invoice_uid: string;
+  job_uid: string;
+  quote_uid: string;
+  client_uid: string;
+  amount: number;
+  due_date: string;
+  status: "issued" | "part_paid" | "paid" | "overdue";
+  reconciled_at: string;
+}
+
+export interface FinanceStatementRecord {
+  statement_uid: string;
+  client_uid: string;
+  period_label: string;
+  opening_balance: number;
+  billed: number;
+  paid: number;
+  closing_balance: number;
+  generated_at: string;
+}
+
+export interface FinanceDebtorRecord {
+  client_uid: string;
+  total_due: number;
+  current_bucket: number;
+  bucket_30: number;
+  bucket_60: number;
+  bucket_90_plus: number;
+  risk_band: "low" | "medium" | "high";
+}
+
+export interface EscrowRecord {
+  document_uid: string;
+  invoice_uid: string;
+  status: "locked" | "released";
+  locked_at: string;
+  released_at: string;
+}
+
+export interface SkillMatrixRecord {
+  user_uid: string;
+  saqcc_type: string;
+  saqcc_expiry: string;
+  medical_expiry: string;
+  rest_hours_last_24h: number;
+}
+
+export interface UpgradeWorkspaceState {
+  quotes: FinanceQuoteRecord[];
+  invoices: FinanceInvoiceRecord[];
+  statements: FinanceStatementRecord[];
+  debtors: FinanceDebtorRecord[];
+  escrow: EscrowRecord[];
+  skills: SkillMatrixRecord[];
+}
+
 export const apiClient = {
   async login(idToken: string, options?: { gsiClientId?: string }): Promise<PortalSession> {
     const result = await request<PortalSession>("/api/v1/auth/google-login", {
@@ -318,6 +385,70 @@ export const apiClient = {
     return request<Record<string, unknown>>(`/api/v1/admin/retries/${automationJobUid}`, {
       method: "POST"
     });
+  },
+  async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
+    const result = await request<UpgradeWorkspaceState>("/api/v1/workspace/upgrade/state", {
+      method: "GET"
+    });
+    return requireData(result, "Upgrade state request succeeded but no state payload was returned.");
+  },
+  async createFinanceQuote(payload: {
+    job_uid: string;
+    client_uid: string;
+    description: string;
+    amount: number;
+  }): Promise<FinanceQuoteRecord> {
+    const result = await request<FinanceQuoteRecord>("/api/v1/workspace/upgrade/quotes", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    return requireData(result, "Quote creation succeeded but no quote payload was returned.");
+  },
+  async updateFinanceQuoteStatus(quote_uid: string, status: FinanceQuoteRecord["status"]): Promise<FinanceQuoteRecord> {
+    const result = await request<FinanceQuoteRecord>(`/api/v1/workspace/upgrade/quotes/${encodeURIComponent(quote_uid)}/status`, {
+      method: "POST",
+      body: JSON.stringify({ status })
+    });
+    return requireData(result, "Quote status update succeeded but no quote payload was returned.");
+  },
+  async createInvoiceFromQuote(quote_uid: string, due_date: string): Promise<FinanceInvoiceRecord> {
+    const result = await request<FinanceInvoiceRecord>("/api/v1/workspace/upgrade/invoices/from-quote", {
+      method: "POST",
+      body: JSON.stringify({ quote_uid, due_date })
+    });
+    return requireData(result, "Invoice creation succeeded but no invoice payload was returned.");
+  },
+  async reconcileInvoice(invoice_uid: string): Promise<FinanceInvoiceRecord> {
+    const result = await request<FinanceInvoiceRecord>(`/api/v1/workspace/upgrade/invoices/${encodeURIComponent(invoice_uid)}/reconcile`, {
+      method: "POST"
+    });
+    return requireData(result, "Invoice reconcile succeeded but no invoice payload was returned.");
+  },
+  async lockEscrow(document_uid: string, invoice_uid: string): Promise<EscrowRecord> {
+    const result = await request<EscrowRecord>("/api/v1/workspace/upgrade/escrow/lock", {
+      method: "POST",
+      body: JSON.stringify({ document_uid, invoice_uid })
+    });
+    return requireData(result, "Escrow lock succeeded but no escrow payload was returned.");
+  },
+  async getEscrowByDocument(document_uid: string): Promise<EscrowRecord | null> {
+    const result = await request<EscrowRecord | null>(`/api/v1/workspace/upgrade/escrow/${encodeURIComponent(document_uid)}`, {
+      method: "GET"
+    });
+    return result.data ?? null;
+  },
+  async upsertSkillMatrix(payload: SkillMatrixRecord): Promise<SkillMatrixRecord> {
+    const result = await request<SkillMatrixRecord>(`/api/v1/workspace/upgrade/skills/${encodeURIComponent(payload.user_uid)}`, {
+      method: "PUT",
+      body: JSON.stringify(payload)
+    });
+    return requireData(result, "Skill upsert succeeded but no skill payload was returned.");
+  },
+  async rebuildUpgradeAnalytics(): Promise<{ debtors: number; statements: number }> {
+    const result = await request<{ debtors: number; statements: number }>("/api/v1/workspace/upgrade/analytics/rebuild", {
+      method: "POST"
+    });
+    return requireData(result, "Analytics rebuild succeeded but no summary payload was returned.");
   },
   async syncPush(mutations: SyncMutation[]): Promise<ApiEnvelope<SyncPushResult>> {
     return request<SyncPushResult>("/api/v1/sync/push", {

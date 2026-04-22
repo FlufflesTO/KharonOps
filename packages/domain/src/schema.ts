@@ -128,3 +128,32 @@ export const publicContactRequestSchema = z.object({
   company_size: z.string().trim().max(80).default(""),
   honey: z.string().trim().max(200).default("")
 });
+
+export const financeQuoteCreateSchema = z.object({
+  job_uid: z.string().trim().min(1),
+  client_uid: z.string().trim().min(1),
+  description: z.string().trim().min(1).max(4000),
+  amount: z.number().positive()
+});
+
+export const financeQuoteStatusSchema = z.object({
+  status: z.enum(["draft", "sent", "approved", "rejected", "invoiced"])
+});
+
+export const financeInvoiceFromQuoteSchema = z.object({
+  quote_uid: z.string().trim().min(1),
+  due_date: z.string().trim().min(1)
+});
+
+export const financeEscrowLockSchema = z.object({
+  document_uid: z.string().trim().min(1),
+  invoice_uid: z.string().trim().min(1)
+});
+
+export const skillMatrixUpsertSchema = z.object({
+  user_uid: z.string().trim().min(1),
+  saqcc_type: z.string().trim().max(200).default(""),
+  saqcc_expiry: z.string().trim().max(40).default(""),
+  medical_expiry: z.string().trim().max(40).default(""),
+  rest_hours_last_24h: z.number().min(0).max(24)
+});

@@ -1,11 +1,12 @@
 import React from "react";
 import { statusTone } from "./JobListView";
-import { getEscrowStatus } from "../features/upgradeStore";
+import type { EscrowRecord } from "../apiClient";
 
 interface DocumentHistoryCardProps {
   documents: Array<Record<string, unknown>>;
   selectedJobUid: string;
   role: string;
+  escrowByDocumentUid: Record<string, EscrowRecord | undefined>;
   onRefresh: () => void;
   onPublish: (documentUid: string, rowVersion: number, clientVisible: boolean) => void;
 }
@@ -14,6 +15,7 @@ export function DocumentHistoryCard({
   documents,
   selectedJobUid,
   role,
+  escrowByDocumentUid,
   onRefresh,
   onPublish,
 
@@ -42,11 +44,11 @@ export function DocumentHistoryCard({
             const docUid = String(document.document_uid);
             const rowVersion = Number(document.row_version ?? 1);
             const status = String(document.status);
-            const escrow = getEscrowStatus(docUid);
+            const escrow = escrowByDocumentUid[docUid] ?? null;
             const escrowLocked = escrow?.status === "locked";
             
             return (
-              <div key={docUid} className="history-row" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1.5fr 1fr', gap: '1rem', alignItems: 'center' }}>
+              <div key={docUid} className="history-row">
                 <div className="field-stack">
                   <span className="doc-uid">{docUid}</span>
                   <span className="doc-type-label">{String(document.document_type)}</span>

@@ -7,6 +7,9 @@ Unified public website and operations portal for Kharon Fire and Security Soluti
 - Finance Portal role added across domain RBAC, API auth, local seed users, and portal login/dashboard surfaces.
 - Dispatch operations upgraded with drag and drop scheduling, SLA countdown visibility, and daily capacity balancing.
 - Document workflow upgraded with compliance escrow lock and release controls tied to reconciliation actions.
+- Upgrade workspace state moved from browser-local storage to shared backend workbook tables and API flows so finance, skills, and escrow state is consistent across users/devices.
+- Platform Governance now includes an explicit `End Emulation` control when role emulation is active.
+- Portal layout and tile structure tuned to reduce stretched cards and large empty regions, especially in workspace/history panels.
 - Technician and compliance workflows upgraded:
   - checklist clauses now support legislation mapping metadata and version capture
   - job views now include risk heatmap scoring bands

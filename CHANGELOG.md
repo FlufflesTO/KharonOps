@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-04-22
+
+### Added
+- **Shared Upgrade Workspace APIs** (`apps/api/src/index.ts`, `apps/portal/src/apiClient.ts`):
+  - Added workbook-backed endpoints and client methods for shared finance, escrow, skills matrix, and analytics rebuild workflows under `/api/v1/workspace/upgrade/*`.
+- **Workbook Upgrade Tables** (`packages/domain/src/workbook.ts`):
+  - Added `Finance_Quotes`, `Finance_Invoices`, `Finance_Statements`, `Finance_Debtors`, `Compliance_Escrow`, and `HR_Skills_Matrix` to required workbook schema.
+- **Upgrade Data Contracts** (`packages/domain/src/types.ts`, `packages/domain/src/schema.ts`):
+  - Added canonical types and validation schemas for finance quotes/invoices/statements/debtors, escrow state, and skills matrix payloads.
+
+### Changed
+- **Persistence Model Migration** (`apps/portal/src/App.tsx`, `apps/portal/src/components/FinanceOpsCard.tsx`, `apps/portal/src/components/PeopleDirectoryCard.tsx`, `apps/portal/src/components/DocumentHistoryCard.tsx`):
+  - Replaced browser `localStorage` upgrade state usage with backend-shared workbook state and API mutation flows.
+- **Store Backend Capability Expansion** (`apps/api/src/store/types.ts`, `apps/api/src/store/localStore.ts`, `apps/api/src/store/sheetsStore.ts`, `apps/api/src/store/postgresStore.ts`, `apps/api/src/store/dualStore.ts`, `apps/api/src/store/scaffoldStore.ts`):
+  - Extended all store backends to support shared upgrade finance/escrow/skills operations.
+- **Platform Governance Emulation UX** (`apps/portal/src/components/AdminPanelCard.tsx`):
+  - Added explicit `End Emulation` action while emulation is active.
+- **Workspace Layout Density** (`apps/portal/src/styles.css`):
+  - Tightened workspace grid and card sizing to reduce oversized tiles and empty vertical space.
+
+### Removed
+- **Client-Only Upgrade Store** (`apps/portal/src/features/upgradeStore.ts`):
+  - Removed local `localStorage` upgrade persistence module after backend migration.
+
 ## [1.4.0] - 2026-04-22
 
 ### Added

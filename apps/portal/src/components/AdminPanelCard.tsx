@@ -60,6 +60,11 @@ export function AdminPanelCard({
           <button className={`button ${emulatedRole === "" ? "button--primary" : "button--ghost"} button--compact`} onClick={() => onEmulateRole("")}>
             Clear (SuperAdmin)
           </button>
+          {emulatedRole ? (
+            <button className="button button--secondary button--compact" onClick={() => onEmulateRole("")}>
+              End Emulation
+            </button>
+          ) : null}
         </div>
       </section>
 

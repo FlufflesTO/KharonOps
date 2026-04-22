@@ -678,6 +678,7 @@ summary:focus-visible {
 .portal-layout {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  align-items: start;
   gap: var(--space-4);
   width: min(var(--max-width), calc(100% - var(--container-padding)));
   margin: 0 auto;
@@ -698,6 +699,11 @@ summary:focus-visible {
 .control-stack {
   display: grid;
   gap: var(--space-4);
+}
+
+.workspace-card {
+  height: auto;
+  align-self: start;
 }
 
 
@@ -721,7 +727,7 @@ summary:focus-visible {
 }
 
 .history-table {
-  max-height: 380px;
+  max-height: 460px;
 }
 
 .automation-list {
@@ -787,7 +793,8 @@ summary:focus-visible {
 }
 
 .workspace-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
 }
 
 .workspace-card--primary {
@@ -1039,7 +1046,7 @@ summary:focus-visible {
 
 .history-row {
   display: grid;
-  grid-template-columns: 1.1fr 0.8fr auto 1.2fr;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(120px, 0.8fr) minmax(120px, auto) minmax(160px, 1.2fr);
   gap: 0.62rem;
   align-items: center;
   padding: 0.72rem;
