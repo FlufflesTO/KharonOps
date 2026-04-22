@@ -22,6 +22,8 @@ import {
   type SyncPushResult,
   type SyncQueueRow,
   type SkillMatrixRow,
+  type ClientRow,
+  type TechnicianRow,
   type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";
@@ -282,6 +284,26 @@ function escrowRowFromPg(row: PgRow | undefined): EscrowRow {
   };
 }
 
+function clientRowFromPg(row: PgRow | undefined): ClientRow {
+  if (!row) throw new Error("Missing row for ClientRow mapping");
+  return {
+    client_id: String(row.client_id),
+    client_name: String(row.client_name ?? ""),
+    billing_entity: String(row.billing_entity ?? ""),
+    ops_email: String(row.ops_email ?? ""),
+    active: String(row.active ?? "true") as ClientRow["active"]
+  };
+}
+
+function technicianRowFromPg(row: PgRow | undefined): TechnicianRow {
+  if (!row) throw new Error("Missing row for TechnicianRow mapping");
+  return {
+    technician_id: String(row.technician_id),
+    display_name: String(row.display_name ?? ""),
+    active: String(row.active ?? "true") as TechnicianRow["active"]
+  };
+}
+
 function skillMatrixRowFromPg(row: PgRow | undefined): SkillMatrixRow {
   if (!row) throw new Error("Missing row for SkillMatrixRow mapping");
   return {
@@ -534,11 +556,27 @@ CREATE TABLE IF NOT EXISTS svr_audit_log (
 
 CREATE INDEX IF NOT EXISTS idx_svr_job_events_job_uid ON svr_job_events(job_uid);
 CREATE INDEX IF NOT EXISTS idx_svr_sync_queue_job_uid ON svr_sync_queue(job_uid);
+CREATE TABLE IF NOT EXISTS svr_clients (
+  client_id       TEXT PRIMARY KEY,
+  client_name     TEXT NOT NULL DEFAULT '',
+  billing_entity  TEXT NOT NULL DEFAULT '',
+  ops_email       TEXT NOT NULL DEFAULT '',
+  active          TEXT NOT NULL DEFAULT 'true'
+);
+
+CREATE TABLE IF NOT EXISTS svr_technicians (
+  technician_id   TEXT PRIMARY KEY,
+  display_name    TEXT NOT NULL DEFAULT '',
+  active          TEXT NOT NULL DEFAULT 'true'
+);
+
 CREATE INDEX IF NOT EXISTS idx_svr_jobs_client_uid ON svr_jobs(client_uid);
 CREATE INDEX IF NOT EXISTS idx_svr_jobs_technician_uid ON svr_jobs(technician_uid);
 CREATE INDEX IF NOT EXISTS idx_svr_job_documents_job_uid ON svr_job_documents(job_uid);
 CREATE INDEX IF NOT EXISTS idx_svr_finance_quotes_job_uid ON svr_finance_quotes(job_uid);
 CREATE INDEX IF NOT EXISTS idx_svr_finance_invoices_client_uid ON svr_finance_invoices(client_uid);
+CREATE INDEX IF NOT EXISTS idx_svr_clients_active ON svr_clients(active);
+CREATE INDEX IF NOT EXISTS idx_svr_technicians_active ON svr_technicians(active);
 `; 
 
 // ---------------------------------------------------------------------------
@@ -594,6 +632,18 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     const result = await pool.query(`SELECT * FROM ${this.schema}.svr_users ORDER BY email`);
     return result.rows.map(userRowFromPg);
+  }
+
+  async listClients(): Promise<ClientRow[]> {
+    const pool = await this.getPool();
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_clients WHERE active = 'true' ORDER BY client_name`);
+    return result.rows.map(clientRowFromPg);
+  }
+
+  async listTechnicians(): Promise<TechnicianRow[]> {
+    const pool = await this.getPool();
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_technicians WHERE active = 'true' ORDER BY display_name`);
+    return result.rows.map(technicianRowFromPg);
   }
 
   async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {

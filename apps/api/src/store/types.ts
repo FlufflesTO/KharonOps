@@ -17,6 +17,8 @@ import type {
   SyncPushResult,
   SyncQueueRow,
   SkillMatrixRow,
+  TechnicianRow,
+  ClientRow,
   UpgradeWorkspaceState,
   UserRow
 } from "@kharon/domain";
@@ -70,6 +72,8 @@ export interface WorkbookStore {
   getSyncQueue(mutationUid: string): Promise<SyncQueueRow | null>;
   listSyncQueueByJob(jobUid: string): Promise<SyncQueueRow[]>;
   listUsers(): Promise<UserRow[]>;
+  listClients(): Promise<ClientRow[]>;
+  listTechnicians(): Promise<TechnicianRow[]>;
   listFinanceQuotes(): Promise<FinanceQuoteRow[]>;
   createFinanceQuote(row: FinanceQuoteRow): Promise<void>;
   updateFinanceQuoteStatus(args: {

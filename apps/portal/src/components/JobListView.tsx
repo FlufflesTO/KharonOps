@@ -61,8 +61,8 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
     return Math.min(99, baseByStatus[job.status] + noteBoost);
   })();
 
-  const clientDisplay = job.client_name?.trim() || "Client Not Assigned";
-  const technicianDisplay = job.technician_name?.trim() || "Technician Pending";
+  const clientDisplay = job.client_name?.trim() || "Not Assigned";
+  const technicianDisplay = job.technician_name?.trim() || "Pending Assignment";
 
   return (
     <button type="button" className={isActive ? "job-item job-item--active" : "job-item"} onClick={() => onClick(job.job_uid)}>
@@ -72,7 +72,10 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
       </div>
       <span className="job-item__title">{job.title}</span>
       <span className="job-item__meta">
-        Client {clientDisplay} | Tech {technicianDisplay}
+        Client: {clientDisplay}
+      </span>
+      <span className="job-item__meta">
+        Tech: {technicianDisplay}
       </span>
       <span className="job-item__meta">
         Risk Score {riskScore}

@@ -14,6 +14,8 @@
     "db:postgres:migrate:plan": "node ./scripts/migrate-postgres.mjs",
     "db:postgres:backfill:plan": "node ./scripts/backfill-sheets-to-postgres.mjs",
     "db:postgres:parity:plan": "node ./scripts/verify-store-parity.mjs",
+    "workbook:audit": "node ./scripts/workbook-governance.mjs",
+    "workbook:fix": "node ./scripts/workbook-governance.mjs --apply",
     "typecheck": "tsc -p tsconfig.check.json --noEmit",
     "check": "npm run typecheck",
     "build:packages": "npm run build -w @kharon/domain && npm run build -w @kharon/google && npm run build -w @kharon/ui",

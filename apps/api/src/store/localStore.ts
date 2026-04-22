@@ -22,6 +22,8 @@ import {
   type SyncPushResult,
   type SyncQueueRow,
   type SkillMatrixRow,
+  type ClientRow,
+  type TechnicianRow,
   type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";
@@ -228,6 +230,11 @@ export class LocalWorkbookStore implements WorkbookStore {
   async listUsers(): Promise<UserRow[]> {
     return [...this.data.users.values()].map((row) => immutableClone(row));
   }
+
+  // listClients/listTechnicians return empty in local mode; name enrichment
+  // falls back to Users_Master seed rows (which use matching TECH-xxx IDs).
+  async listClients(): Promise<ClientRow[]> { return []; }
+  async listTechnicians(): Promise<TechnicianRow[]> { return []; }
 
   async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {
     return [...this.data.financeQuotes.values()].sort((a, b) => b.created_at.localeCompare(a.created_at)).map(immutableClone);

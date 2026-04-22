@@ -22,6 +22,8 @@ import {
   type SyncPushResult,
   type SyncQueueRow,
   type SkillMatrixRow,
+  type ClientRow,
+  type TechnicianRow,
   type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";
@@ -194,6 +196,36 @@ function parseUserRow(row: Row): UserRow {
     updated_at: firstNonEmpty(field(row, "updated_at"), field(row, "last_sync_at")),
     updated_by: firstNonEmpty(field(row, "updated_by"), field(row, "display_name")),
     correlation_id: firstNonEmpty(field(row, "correlation_id"), field(row, "email"), field(row, "user_uid"))
+  };
+}
+
+/**
+ * parseClientRow — maps a raw Clients_Master row to a ClientRow.
+ * Root cause: Jobs_Master references client_id (CLT-xxxx) which resolves
+ * exclusively in Clients_Master, not in Users_Master (which has no client rows).
+ * Alias fallback order: client_id → client_uid (tolerates future renames).
+ */
+function parseClientRow(row: Row): ClientRow {
+  return {
+    client_id: field(row, "client_id", "client_uid"),
+    client_name: firstNonEmpty(field(row, "client_name"), field(row, "account"), field(row, "billing_entity")),
+    billing_entity: firstNonEmpty(field(row, "billing_entity"), field(row, "client_name")),
+    ops_email: field(row, "ops_email", "email"),
+    active: boolString(field(row, "active_flag", "active"))
+  };
+}
+
+/**
+ * parseTechnicianRow — maps a raw Technicians_Master row to a TechnicianRow.
+ * Root cause: Jobs_Master references primary_technician_id (e.g., ROY001) which
+ * resolves exclusively in Technicians_Master. Users_Master uses a different ID
+ * scheme and has zero matching entries for any of the 8 live technician IDs.
+ */
+function parseTechnicianRow(row: Row): TechnicianRow {
+  return {
+    technician_id: field(row, "technician_id", "technician_uid"),
+    display_name: firstNonEmpty(field(row, "display_name"), field(row, "technician_name")),
+    active: boolString(field(row, "active_flag", "active"))
   };
 }
 
@@ -678,6 +710,25 @@ export class SheetsWorkbookStore implements WorkbookStore {
 
   async listUsers(): Promise<UserRow[]> {
     return (await this.rows("Users_Master")).map(parseUserRow);
+  }
+
+  /**
+   * listClients — reads Clients_Master as the authoritative source for
+   * client display names. Users_Master is NOT used here; it has no client rows
+   * with valid client_uid values.
+   */
+  async listClients(): Promise<ClientRow[]> {
+    return (await this.rows("Clients_Master")).map(parseClientRow);
+  }
+
+  /**
+   * listTechnicians — reads Technicians_Master as the authoritative source
+   * for technician display names. Technician IDs here (ROY001, MAG001, etc.)
+   * map directly to Jobs_Master.primary_technician_id, unlike Users_Master
+   * which uses a different ID scheme.
+   */
+  async listTechnicians(): Promise<TechnicianRow[]> {
+    return (await this.rows("Technicians_Master")).map(parseTechnicianRow);
   }
 
   async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {

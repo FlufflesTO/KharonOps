@@ -33,11 +33,11 @@ These tokens are populated by default during document generation:
 - `{{job_status}}`
 - `{{job_status_label}}`
 - `{{client_uid}}`
-- `{{client_display_name}}`
+- `{{client_display_name}}` — resolved from Clients_Master (primary) or Users_Master (fallback)
 - `{{client_email}}`
 - `{{site_uid}}`
 - `{{technician_uid}}`
-- `{{technician_display_name}}`
+- `{{technician_display_name}}` — resolved from Technicians_Master (primary) or Users_Master (fallback)
 - `{{technician_email}}`
 - `{{scheduled_start}}`
 - `{{scheduled_start_display}}`

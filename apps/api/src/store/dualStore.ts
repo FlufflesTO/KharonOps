@@ -45,6 +45,8 @@ import {
   type SyncPushResult,
   type SyncQueueRow,
   type SkillMatrixRow,
+  type ClientRow,
+  type TechnicianRow,
   type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";
@@ -299,6 +301,14 @@ export class DualWorkbookStore implements WorkbookStore {
 
   async listUsers(): Promise<UserRow[]> {
     return this.primary.listUsers();
+  }
+
+  async listClients(): Promise<ClientRow[]> {
+    return this.primary.listClients();
+  }
+
+  async listTechnicians(): Promise<TechnicianRow[]> {
+    return this.primary.listTechnicians();
   }
 
   async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {

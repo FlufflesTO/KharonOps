@@ -192,6 +192,14 @@ export function PortalApp(): React.JSX.Element {
   const canGenerateDocuments = effectiveRole === "technician" || effectiveRole === "dispatcher" || effectiveRole === "super_admin";
   const isAdmin = effectiveRole === "admin" || effectiveRole === "super_admin";
   const isSuperAdmin = effectiveRole === "super_admin";
+  const allowedWorkspaceTools = useMemo(() => {
+    const tools = ["jobs", "documents"] as string[];
+    if (isDispatchRole) tools.push("schedule", "comms");
+    if (isFinanceRole) tools.push("finance");
+    if (canAccessPeopleDirectory) tools.push("people");
+    if (isAdmin) tools.push("admin");
+    return tools;
+  }, [canAccessPeopleDirectory, isAdmin, isDispatchRole, isFinanceRole]);
   const showOperationalEngagements =
     activeWorkspaceTool === "jobs" ||
     activeWorkspaceTool === "schedule" ||
@@ -476,6 +484,15 @@ export function PortalApp(): React.JSX.Element {
   }, [activeWorkspaceTool, isAdmin]);
 
   useEffect(() => {
+    if (!allowedWorkspaceTools.includes(activeWorkspaceTool)) {
+      setActiveWorkspaceTool("jobs");
+      if (portalView === "workspace") {
+        setPortalView("dashboard");
+      }
+    }
+  }, [activeWorkspaceTool, allowedWorkspaceTools, portalView]);
+
+  useEffect(() => {
     if (!selectableStatuses.includes(statusTarget)) {
       const next = selectableStatuses[0];
       if (next) {
@@ -557,6 +574,8 @@ export function PortalApp(): React.JSX.Element {
       await apiClient.login(token, productionAuth ? { gsiClientId: authConfig?.google_client_id ?? "" } : undefined);
       await refreshSession();
       await refreshJobs();
+      setActiveWorkspaceTool("jobs");
+      setPortalView("dashboard");
       setFeedback("Signed in.");
     } catch (error) {
       setFeedback(formatApiFailure(error));
@@ -577,6 +596,9 @@ export function PortalApp(): React.JSX.Element {
   async function handleLogout(): Promise<void> {
     await apiClient.logout();
     setSession(null);
+    setEmulatedRole("");
+    setActiveWorkspaceTool("jobs");
+    setPortalView("dashboard");
     setFeedback("Session cleared.");
   }
 
@@ -1072,7 +1094,11 @@ export function PortalApp(): React.JSX.Element {
                 onRetryAutomation={(uid) => runAction(() => handleRetryAutomation(uid))}
                 onFeedback={setFeedback}
                 emulatedRole={emulatedRole}
-                onEmulateRole={setEmulatedRole}
+                onEmulateRole={(role) => {
+                  setEmulatedRole(role);
+                  setActiveWorkspaceTool("jobs");
+                  setPortalView("dashboard");
+                }}
 
               />
             ) : null}

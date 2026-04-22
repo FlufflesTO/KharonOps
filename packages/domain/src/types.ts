@@ -157,6 +157,34 @@ export interface SkillMatrixRow extends MutableMeta {
   rest_hours_last_24h: number;
 }
 
+/**
+ * ClientRow — parsed from Clients_Master.
+ * NOTE: This sheet currently lacks the full MutableMeta governance columns
+ * (updated_at, updated_by, correlation_id, row_version). It does NOT extend
+ * MutableMeta intentionally; adding those columns is tracked as a separate
+ * schema migration task.
+ */
+export interface ClientRow {
+  /** Primary key matching Jobs_Master.client_id (format: CLT-xxxxx). */
+  client_id: string;
+  client_name: string;
+  billing_entity: string;
+  ops_email: string;
+  active: "true" | "false";
+}
+
+/**
+ * TechnicianRow — parsed from Technicians_Master.
+ * NOTE: Same governance-column gap as ClientRow above.
+ */
+export interface TechnicianRow {
+  /** Primary key matching Jobs_Master.primary_technician_id (e.g., ROY001). */
+  technician_id: string;
+  /** Preferred display name (display_name > technician_name fallback). */
+  display_name: string;
+  active: "true" | "false";
+}
+
 export interface UpgradeWorkspaceState {
   quotes: FinanceQuoteRow[];
   invoices: FinanceInvoiceRow[];

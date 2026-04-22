@@ -52,6 +52,8 @@ import { apiSecurityHeadersMiddleware } from "./middleware/security.js";
 import { buildDocumentTokens } from "./services/documentTokens.js";
 import { parseJsonBody } from "./services/parse.js";
 import { createWorkbookStore } from "./store/factory.js";
+import type { WorkbookStore } from "./store/types.js";
+import { buildNameLookups } from "./services/nameEnrichment.js";
 import { createMutable, createStoreContext } from "./services/meta.js";
 
 function rowVersionConflictResponse(correlationId: string, rowVersion: number, conflict: NonNullable<ReturnType<typeof envelopeError>["conflict"]>) {
@@ -498,21 +500,55 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     );
   });
 
+  // ---------------------------------------------------------------------------
+  // Name-enrichment helper — shared by GET /jobs and GET /jobs/:job_uid
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Fetch clients, technicians, and users in parallel with graceful
+   * degradation. If any reference-sheet fetch fails, we log a warning
+   * and degrade to an empty list — the endpoint still returns job data,
+   * just without enriched names.
+   */
+  async function fetchNameSources(store: WorkbookStore): Promise<{
+    clients: Awaited<ReturnType<WorkbookStore["listClients"]>>;
+    technicians: Awaited<ReturnType<WorkbookStore["listTechnicians"]>>;
+    users: Awaited<ReturnType<WorkbookStore["listUsers"]>>;
+  }> {
+    const [clientsResult, techniciansResult, usersResult] = await Promise.allSettled([
+      store.listClients(),
+      store.listTechnicians(),
+      store.listUsers()
+    ]);
+
+    const clients = clientsResult.status === "fulfilled" ? clientsResult.value : [];
+    if (clientsResult.status === "rejected") {
+      console.warn("[name-enrichment] listClients failed, degrading gracefully:", clientsResult.reason);
+    }
+
+    const technicians = techniciansResult.status === "fulfilled" ? techniciansResult.value : [];
+    if (techniciansResult.status === "rejected") {
+      console.warn("[name-enrichment] listTechnicians failed, degrading gracefully:", techniciansResult.reason);
+    }
+
+    const users = usersResult.status === "fulfilled" ? usersResult.value : [];
+    if (usersResult.status === "rejected") {
+      console.warn("[name-enrichment] listUsers failed, degrading gracefully:", usersResult.reason);
+    }
+
+    return { clients, technicians, users };
+  }
+
   api.get("/jobs", requireSession(), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const jobs = await store.listJobsForUser(user);
-    const users = await store.listUsers();
-    const technicianNameByUid = new Map(
-      users
-        .filter((row) => row.active === "true" && row.role === "technician" && row.technician_uid.trim() !== "")
-        .map((row) => [row.technician_uid, row.display_name] as const)
-    );
-    const clientNameByUid = new Map(
-      users
-        .filter((row) => row.active === "true" && row.role === "client" && row.client_uid.trim() !== "")
-        .map((row) => [row.client_uid, row.display_name] as const)
-    );
+
+    const [jobs, sources] = await Promise.all([
+      store.listJobsForUser(user),
+      fetchNameSources(store)
+    ]);
+
+    const { clientNameByUid, technicianNameByUid } = buildNameLookups(sources);
 
     const enrichedJobs = jobs.map((job) => ({
       ...job,
@@ -560,11 +596,21 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
 
+    // Enrich the single-job view using the shared name-lookup helper.
+    const sources = await fetchNameSources(store);
+    const { clientNameByUid, technicianNameByUid } = buildNameLookups(sources);
+
+    const enrichedJob = {
+      ...job,
+      client_name: clientNameByUid.get(job.client_uid) ?? "",
+      technician_name: technicianNameByUid.get(job.technician_uid) ?? ""
+    };
+
     return c.json(
       envelopeSuccess({
         correlationId,
         rowVersion: job.row_version,
-        data: job
+        data: enrichedJob
       })
     );
   });

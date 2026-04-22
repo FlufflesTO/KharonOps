@@ -16,6 +16,8 @@ import type {
   SyncPushResult,
   SyncQueueRow,
   SkillMatrixRow,
+  ClientRow,
+  TechnicianRow,
   UpgradeWorkspaceState,
   UserRow
 } from "@kharon/domain";
@@ -149,6 +151,9 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
   async listUsers(): Promise<UserRow[]> {
     return this.notImplemented("listUsers");
   }
+
+  async listClients(): Promise<ClientRow[]> { return this.notImplemented("listClients"); }
+  async listTechnicians(): Promise<TechnicianRow[]> { return this.notImplemented("listTechnicians"); }
 
   async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {
     return this.notImplemented("listFinanceQuotes");

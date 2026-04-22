@@ -49,6 +49,13 @@ Kharon Unified Rebuild v1 is a single Cloudflare-hosted product with:
 - workbook schema definitions
 - conflict payload helpers
 
+### Services Layer
+
+- `nameEnrichment.ts` — builds client/technician name-lookup maps with priority hierarchy (Master sheets → Users_Master fallback)
+- `documentTokens.ts` — token builder for controlled document generation
+- `meta.ts` — mutable metadata stamping utilities
+- `parse.ts` — Zod-validated JSON body parser
+
 ### Google Adapter Layer
 
 - Sheets
@@ -67,12 +74,21 @@ Production mode uses service-account-backed API calls. Local mode uses determini
 
 Google Sheets remains canonical in the current production design.
 
+### Name Enrichment
+
+Job records reference clients and technicians by UID only (`client_uid`, `technician_uid`). Display names are enriched at query time using a priority hierarchy:
+
+1. **Clients_Master / Technicians_Master** — authoritative registration data
+2. **Users_Master** — portal-provisioned fallback only
+
+The enrichment logic is implemented in `apps/api/src/services/nameEnrichment.ts` and is resilient to individual sheet-fetch failures via `Promise.allSettled`.
+
 ### Store Implementations
 
-- `LocalWorkbookStore`
-- `SheetsWorkbookStore`
-- scaffolded `PostgresWorkbookStore`
-- scaffolded `DualWorkbookStore`
+- `LocalWorkbookStore` — in-memory, deterministic seed data for development
+- `SheetsWorkbookStore` — production Google Sheets backend
+- `PostgresWorkbookStore` — SQL-backed store with `svr_clients` and `svr_technicians` tables
+- `DualWorkbookStore` — primary+mirror write strategy with consistency verification
 
 All stores enforce:
 
@@ -80,6 +96,7 @@ All stores enforce:
 - mutable audit fields
 - conflict payload generation
 - replay-safe mutation behavior
+- `listClients()` / `listTechnicians()` interface contract
 
 ## Identity and Session
 

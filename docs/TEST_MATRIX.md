@@ -15,6 +15,22 @@
    - validates role and ownership enforcement helpers
 3. `schema-validation.test.ts`
    - validates request schemas and payload contracts
+4. `name-enrichment.test.ts`
+   - validates primary source mapping (Clients_Master, Technicians_Master)
+   - validates Users_Master fallback when master sheet has no match
+   - validates priority hierarchy (master wins over portal)
+   - validates inactive/empty row filtering
+   - validates graceful degradation with empty sources
+5. `google-sheet-layout.test.ts`
+   - validates canonical vs legacy header detection
+6. `sheets-store-legacy-schema.test.ts`
+   - validates legacy workbook mapping, update, and portal file storage
+7. `runtime-config.test.ts`
+   - validates local/production config requirements
+8. `store-factory.test.ts`
+   - validates store backend selection
+9. `document-tokens.test.ts`
+   - validates template token contract and override behavior
 
 ## Integration Tests (`tests/integration`)
 

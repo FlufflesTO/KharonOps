@@ -42,8 +42,8 @@ Error example:
 
 ## Core Endpoints
 
-- `GET /api/v1/jobs`
-- `GET /api/v1/jobs/:job_uid`
+- `GET /api/v1/jobs` — returns enriched job records (see Name Enrichment below)
+- `GET /api/v1/jobs/:job_uid` — returns a single enriched job record
 - `POST /api/v1/jobs/:job_uid/status`
 - `POST /api/v1/jobs/:job_uid/note`
 - `POST /api/v1/schedules/request-slot`
@@ -64,6 +64,17 @@ Error example:
 ## Health
 
 - `GET /api/v1/health`
+
+## Name Enrichment
+
+The `GET /jobs` and `GET /jobs/:job_uid` endpoints enrich each `JobRow` with two additional display fields:
+
+| Field              | Type     | Source Priority                                           |
+|--------------------|----------|-----------------------------------------------------------|
+| `client_name`      | `string` | Clients_Master (primary) → Users_Master (fallback)        |
+| `technician_name`  | `string` | Technicians_Master (primary) → Users_Master (fallback)    |
+
+These fields are **not** stored in the job record. They are resolved at query time using the `buildNameLookups` service. If any reference-sheet fetch fails, the endpoint degrades gracefully — job data is returned with empty name fields rather than failing with a 500.
 
 ## Status Codes
 

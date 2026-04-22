@@ -1,137 +1,35 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to the KharonOps project are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [Unreleased] — 2026-04-22
 
-## [1.5.1] - 2026-04-22
+### [Added]
+- `nameEnrichment.ts` service — extracted, testable `buildNameLookups` function with priority hierarchy (Clients_Master → Users_Master fallback for clients; Technicians_Master → Users_Master fallback for technicians).
+- `svr_clients` and `svr_technicians` DDL tables in PostgresStore for SQL-backed name resolution.
+- `clientRowFromPg()` and `technicianRowFromPg()` row mapper functions in PostgresStore.
+- Real SQL queries for `listClients()` and `listTechnicians()` in `PostgresWorkbookStore`.
+- `fetchNameSources()` helper with `Promise.allSettled` for error-resilient reference-sheet fetching.
+- 13 unit tests in `tests/unit/name-enrichment.test.ts` covering: primary source mapping, fallback logic, priority hierarchy, inactive/empty filtering, graceful degradation.
+- `WorkbookStore` type import in `index.ts`.
 
-### Changed
-- **Jobs List Readability and Naming** (`apps/api/src/index.ts`, `apps/portal/src/components/JobListView.tsx`, `apps/portal/src/App.tsx`, `apps/portal/src/styles.css`):
-  - Enriched job list payloads with `client_name` and `technician_name` and updated tiles to display human-readable names instead of raw UID-only labels.
-  - Renamed sidebar header from `Operational Engagements` to `Jobs List` for clearer user-facing language.
-  - Tightened tile overflow/wrapping behavior to prevent text bleed outside card bounds.
-- **Role Dashboard Coverage** (`apps/portal/src/components/DashboardView.tsx`):
-  - Added missing job workspace entry points for dispatcher and finance dashboards so role-applicable functions are discoverable from dashboard.
+### [Changed]
+- Refactored `GET /jobs` and `GET /jobs/:job_uid` handlers to use shared `fetchNameSources` + `buildNameLookups` helpers (eliminates code duplication).
+- `DualWorkbookStore.listClients()` / `listTechnicians()` now delegates to `this.primary` (was returning empty arrays).
+- `Promise.all` → `Promise.allSettled` in name-enrichment fetch — a single sheet failure no longer crashes the entire endpoint.
 
-### Fixed
-- **Document Generation Retry Noise** (`apps/portal/src/App.tsx`):
-  - Added stale selection guard for `/api/v1/documents/generate` failures where selected `job_uid` is no longer found, with automatic job refresh and actionable feedback instead of repeated failing requests.
+### [Fixed]
+- PostgresStore `listClients()` and `listTechnicians()` no longer return empty arrays — they now query `svr_clients` / `svr_technicians` with active-flag filtering.
+- DualStore no longer silently drops client/technician data when active backend is dual-write.
 
-## [1.5.0] - 2026-04-22
+### [Security]
+- Added system actor UID governance documentation to SECURITY_MODEL.md — prohibits hardcoded `"system"` actor identity.
 
-### Added
-- **Shared Upgrade Workspace APIs** (`apps/api/src/index.ts`, `apps/portal/src/apiClient.ts`):
-  - Added workbook-backed endpoints and client methods for shared finance, escrow, skills matrix, and analytics rebuild workflows under `/api/v1/workspace/upgrade/*`.
-- **Workbook Upgrade Tables** (`packages/domain/src/workbook.ts`):
-  - Added `Finance_Quotes`, `Finance_Invoices`, `Finance_Statements`, `Finance_Debtors`, `Compliance_Escrow`, and `HR_Skills_Matrix` to required workbook schema.
-- **Upgrade Data Contracts** (`packages/domain/src/types.ts`, `packages/domain/src/schema.ts`):
-  - Added canonical types and validation schemas for finance quotes/invoices/statements/debtors, escrow state, and skills matrix payloads.
-
-### Changed
-- **Persistence Model Migration** (`apps/portal/src/App.tsx`, `apps/portal/src/components/FinanceOpsCard.tsx`, `apps/portal/src/components/PeopleDirectoryCard.tsx`, `apps/portal/src/components/DocumentHistoryCard.tsx`):
-  - Replaced browser `localStorage` upgrade state usage with backend-shared workbook state and API mutation flows.
-- **Store Backend Capability Expansion** (`apps/api/src/store/types.ts`, `apps/api/src/store/localStore.ts`, `apps/api/src/store/sheetsStore.ts`, `apps/api/src/store/postgresStore.ts`, `apps/api/src/store/dualStore.ts`, `apps/api/src/store/scaffoldStore.ts`):
-  - Extended all store backends to support shared upgrade finance/escrow/skills operations.
-- **Platform Governance Emulation UX** (`apps/portal/src/components/AdminPanelCard.tsx`):
-  - Added explicit `End Emulation` action while emulation is active.
-- **Workspace Layout Density** (`apps/portal/src/styles.css`):
-  - Tightened workspace grid and card sizing to reduce oversized tiles and empty vertical space.
-
-### Removed
-- **Client-Only Upgrade Store** (`apps/portal/src/features/upgradeStore.ts`):
-  - Removed local `localStorage` upgrade persistence module after backend migration.
-
-## [1.4.0] - 2026-04-22
-
-### Added
-- **Finance Role And Portal Access** (`packages/domain/src/types.ts`, `packages/domain/src/schema.ts`, `packages/domain/src/rbac.ts`, `apps/api/src/auth/google.ts`, `apps/api/src/store/localStore.ts`, `apps/api/src/store/postgresStore.ts`, `apps/portal/src/components/PortalAuth.tsx`, `apps/portal/src/components/DashboardView.tsx`, `apps/portal/src/components/SummaryBoard.tsx`):
-  - Added canonical `finance` role support across domain type/schema validation, RBAC logic, API role handling, dev login mappings, and portal role surfaces.
-- **Finance Operations Engine** (`apps/portal/src/components/FinanceOpsCard.tsx`, `apps/portal/src/features/upgradeStore.ts`):
-  - Implemented quote creation, quote approval, invoice generation, statement entries, debtors reconstruction, payment reconciliation, and escrow lock state management.
-- **Upgrade State Store** (`apps/portal/src/features/upgradeStore.ts`):
-  - Added local persisted state for finance workflow records, escrow status, and HR matrix data.
-
-### Changed
-- **Dispatch Scheduling Upgrade** (`apps/portal/src/components/ScheduleControlCard.tsx`):
-  - Extended schedule control with drag/drop planning, SLA countdown signals, and technician capacity balancing.
-- **Document Publishing Escrow Workflow** (`apps/portal/src/components/DocumentHistoryCard.tsx`, `apps/portal/src/components/FinanceOpsCard.tsx`):
-  - Publish actions now enforce escrow locks and require release from finance reconciliation workflow.
-- **Technician Checklist Legislation Mapping** (`apps/portal/src/components/CertificationForm.tsx`):
-  - Extended static checklists with legislation clause metadata and versioned compliance capture inputs.
-- **Job Risk Visibility** (`apps/portal/src/components/JobListView.tsx`):
-  - Added portfolio-style risk scoring tiers and visual heatmap buckets on job list items.
-- **Admin Provenance Auditing** (`apps/portal/src/components/AdminPanelCard.tsx`, `apps/portal/src/App.tsx`):
-  - Reworked audit list into a forensic-style provenance view with hash-chain references and anomaly detection flags.
-- **People Directory To HR/Skills Matrix** (`apps/portal/src/components/PeopleDirectoryCard.tsx`):
-  - Extended people sync view with SAQCC type/expiry, medical expiry, mandatory rest counters, and fatigue state tracking.
-
-### Fixed
-- **Mobile Navigation Stability** (`apps/site/src/components/Layout.tsx`, `apps/site/src/styles.css`):
-  - Corrected mobile menu layering and interaction behavior to prevent partial off-canvas overlap on narrow viewport widths.
-
-## [1.3.1] - 2026-04-17
-
-### Changed
-- **Home Page Portal Redesign** (`apps/site/src/pages/Home.tsx`, `apps/site/src/styles.css`):
-  - Replaced the long, multi-section marketing flow with a compact portal-first landing experience.
-  - Added a full-viewport command-style hero with direct portal and engineering entry actions.
-  - Introduced focused "Engineering" and "Technician" workflow tracks with stronger visual hierarchy and reduced scroll depth.
-
-### Fixed
-- **Technician Job List Overlap** (`apps/portal/src/styles.css`):
-  - Stabilized job-item layout and spacing in the portal sidebar to prevent text and status overlap on constrained viewports.
-  - Added wrapping and line-clamp safeguards for long titles and metadata.
-- **Unauthorized Dashboard Function Calls** (`apps/portal/src/App.tsx`, `apps/portal/src/components/JobDetailView.tsx`):
-  - Added unauthorized detection and role-aware gating for dispatch and document actions.
-  - Disabled inaccessible document generation paths with clear inline feedback instead of repeated 401-triggering requests.
-
-## [1.3.0] - 2026-04-16
-
-### Added
-- **SuperAdmin Role** (`packages/domain/src/types.ts`): Added `"super_admin"` to the canonical `Role` union. This is the definitive change point — all other files derive from this.
-- **RBAC Super-Inheritance** (`packages/domain/src/rbac.ts`): All RBAC gate functions (`canReadJob`, `canRequestSchedule`, `canConfirmSchedule`, `canGenerateDocument`, `canPublishDocument`, `canUseAdmin`, `canUpdateJobStatus`) now short-circuit with a centralised `isSuperAdmin()` helper, granting full access across all domains.
-- **Super Admin Dashboard** (`apps/portal/src/components/DashboardView.tsx`): SuperAdmin login shows all 4 role-specific command cards — Field Operations (technician), Schedule Control (dispatcher), Compliance Vault (client), and Platform Governance (admin).
-- **Role Tag Display**: Dashboard header shows `"SUPER ADMIN — FULL ACCESS"` for `super_admin` sessions.
-- **Schema Enum** (`packages/domain/src/schema.ts`): `super_admin` added to `role_hint` enum in `peopleSyncSchema`.
-
-### Security
-- **Hard-wired SuperAdmin Elevation** (`apps/api/src/index.ts`): `connor@kharon.co.za` is listed in the `SUPER_ADMIN_EMAILS` allowlist. After OIDC verification, the login handler overrides the `Role` from `Users_Master` to `"super_admin"` for this address. The allowlist requires a code change + deploy to modify — no UI-level self-service path exists. `super_admin` is never stored in `Users_Master`.
-
-### Fixed
-- **GLOBAL-002 Violation**: `PortalSession` in `apps/portal/src/apiClient.ts` was defining `role` as a local 4-member literal union, duplicating `@kharon/domain`. Now imports and uses the canonical `Role` type.
-
- - 2026-04-16
-
-### Security
-- [Security] **CRITICAL (A-001):** Replaced deprecated Google `tokeninfo` API endpoint with a fully local JWKS RS256 signature verifier in `packages/google/src/index.ts`. Eliminates 200–500ms server-to-server round-trip latency on every login and removes the dependency on Google's external validation API — the confirmed root cause of intermittent `400` authentication errors. Tokens are now verified locally using Google's public JWKS keys (`https://www.googleapis.com/oauth2/v3/certs`) via the Web Crypto API.
-- [Security] **(A-004):** Hardened issuer validation in `verifyGoogleIdToken`. Replaced the bypassable `.includes("accounts.google.com")` substring check with an exact `Set` membership test against `["https://accounts.google.com", "accounts.google.com"]`. Prevents issuer spoofing via domains like `evil-accounts.google.com.attacker.com`.
-- [Security] **(A-008):** Replaced real production email `connor@kharon.co.za` in dev token map (`auth/google.ts`) with RFC-2606-reserved `.invalid` TLD addresses (e.g., `dev.admin@kharon.invalid`). Prevents accidental role acquisition if `KHARON_MODE` is misconfigured.
-
-### Fixed
-- [Fixed] **(A-007):** Removed non-null assertions (`result.data!`) from `apiClient.ts` `login()` and `authConfig()` methods. Replaced with structured `ApiEnvelope<null>` error throws that surface a meaningful `"empty_response"` code to the UI.
-
-### Added
-- [Added] JWKS response caching in `loadOidcJwks()`. Cache TTL respects `Cache-Control: max-age` from Google's JWKS endpoint (defaulting to 5 minutes). Reduces JWKS fetch frequency for high-traffic deployments.
-
-## [1.1.0] - 2026-04-16
-
-### Added
-- [Added] Role-based Dashboard landing surface in Portal (`DashboardView.tsx`) to reduce initial information density.
-- [Added] Global GSI initialization lock to prevent duplicate Google Identity Services script calls.
-- [Added] Dashboard/Workspace view switching state in Portal `App.tsx`.
-
-### Changed
-- [Changed] Removed "Command Centre Login" button from Marketing Site header to improve mobile responsiveness.
-- [Changed] Relaxed `Cross-Origin-Opener-Policy` to `unsafe-none` in API middleware to resolve Google Login popup blockers.
-- [Changed] Refactored `@kharon/domain` source exports to resolve Vite build resolution issues in the monorepo.
-
-### Fixed
-- [Fixed] Authentication instability caused by GSI double-initialization.
-- [Fixed] Portal build failures caused by stale compiled files shadowing source and missing exports.
-- [Fixed] Header density on small screens for the public marketing site.
-
-### Security
-- [Security] Standardized COOP headers to balance security and authentication interoperability.
-- [Security] Ensured strict type adherence in new Dashboard components (Zero-Any policy).
+### Documentation
+- `ARCHITECTURE.md` — added Services Layer section, name enrichment data model, updated store implementation descriptions.
+- `API_SPEC.md` — documented `client_name` / `technician_name` enriched response fields and graceful degradation behavior.
+- `TEST_MATRIX.md` — added all missing unit test entries (9 total test files documented).
+- `WORKBOOK_SCHEMA.md` — complete rewrite to match production `workbook.ts` — all 20 required tabs, correct column names, governance notes.
+- `DOCUMENT_TEMPLATES.md` — annotated `client_display_name` and `technician_display_name` tokens with source hierarchy.
+- `SECURITY_MODEL.md` — added system actor UID naming convention.
+- Created `CHANGELOG.md`.

@@ -42,6 +42,10 @@ Privileged actions append audits for:
 - workspace rail triggers
 - admin automation retries
 
+### System Actor UIDs
+
+System-initiated operations (cron, webhooks, automated reconciliation) use namespaced UIDs in the format `system:<function-name>` (e.g., `system:reconcile-ledger`, `system:hse-escalation`). The literal string `"system"` must never be hardcoded as an actor identity — every audit entry must bind to a verifiable actor UID.
+
 ## Offline Sync Safety
 
 - mutation IDs provide idempotent replay behavior
