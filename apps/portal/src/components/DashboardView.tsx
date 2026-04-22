@@ -21,7 +21,8 @@ const ICONS = {
   compliance: "M22 11.08V12a10 10 0 1 1-5.93-9.14",
   audit: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7",
   checklist: "M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 0 2-2h2a2 2 0 0 0 2 2m-6 9l2 2 4-4",
-  visibility: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"
+  visibility: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
+  finance: "M12 1v22M5 6h8a4 4 0 0 1 0 8H9a4 4 0 0 0 0 8h10"
 };
 
 interface ActionCardProps {
@@ -69,6 +70,7 @@ const ROLE_DISPLAY: Record<string, { label: string; sub: string }> = {
   technician: { label: "Field Technician", sub: "FIELD OPERATIONS" },
   dispatcher: { label: "Dispatch Controller", sub: "SCHEDULING AND COMMS" },
   client: { label: "Client Portal", sub: "SERVICE VISIBILITY" },
+  finance: { label: "Finance Command", sub: "BILLING AND INTEGRITY" },
   admin: { label: "Administration", sub: "PLATFORM ADMIN" },
   super_admin: { label: "Platform Command", sub: "SUPER ADMIN | FULL ACCESS" }
 };
@@ -249,6 +251,31 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
     );
   }
 
+  if (role === "finance") {
+    return (
+      <main className="dashboard-view">
+        <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
+
+        <DashSection title="Finance Operations">
+          <ActionCard
+            icon={ICONS.finance}
+            label="Financial Pulse"
+            description="Review quoting, invoicing, debtors, and statements."
+            onClick={() => onEnterWorkspace("finance")}
+            accent="green"
+          />
+          <ActionCard
+            icon={ICONS.documents}
+            label="Published Ledger"
+            description="Inspect generated and published document evidence."
+            onClick={() => onEnterWorkspace("documents")}
+            accent="slate"
+          />
+        </DashSection>
+      </main>
+    );
+  }
+
   return (
     <main className="dashboard-view">
       <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
@@ -307,6 +334,13 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
       </DashSection>
 
       <DashSection title="Admin and Governance">
+        <ActionCard
+          icon={ICONS.finance}
+          label="Finance Workspace"
+          description="Cross-role finance and debtors oversight."
+          onClick={() => onEnterWorkspace("finance")}
+          accent="green"
+        />
         <ActionCard
           icon={ICONS.documents}
           label="Document Control"

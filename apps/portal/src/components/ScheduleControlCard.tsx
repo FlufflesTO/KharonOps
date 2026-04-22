@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import type { JobDocumentRow, ScheduleRequestRow, ScheduleRow, UserRow } from "@kharon/domain";
 
 interface ScheduleControlCardProps {
@@ -89,10 +89,37 @@ export function ScheduleControlCard({
   onFeedback: _onFeedback,
 
 }: ScheduleControlCardProps): React.JSX.Element {
+  const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>({});
   const selectedRequest = requests.find((request) => request.request_uid === selectedRequestUid) ?? null;
   const selectedSchedule = schedules.find((schedule) => schedule.schedule_uid === selectedScheduleUid) ?? null;
   const selectedDocument = documents.find((document) => document.document_uid === selectedDocumentUid) ?? null;
   const disableActions = selectedJobUid === "";
+
+  const requestSla = useMemo(() => {
+    return requests.map((request) => {
+      const openedAt = Date.parse(request.updated_at || new Date().toISOString());
+      const dueAt = openedAt + 24 * 60 * 60 * 1000;
+      const remainingMs = dueAt - Date.now();
+      const hours = Math.max(0, Math.floor(remainingMs / (60 * 60 * 1000)));
+      const mins = Math.max(0, Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000)));
+      const breached = remainingMs <= 0;
+      return {
+        request_uid: request.request_uid,
+        text: breached ? "SLA breached" : `${hours}h ${mins}m left`,
+        breached
+      };
+    });
+  }, [requests]);
+
+  const capacityByTech = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const req of requests) {
+      const tech = draftAssignments[req.request_uid];
+      if (!tech) continue;
+      counts.set(tech, (counts.get(tech) ?? 0) + 1);
+    }
+    return counts;
+  }, [draftAssignments, requests]);
 
   return (
     <article className="workspace-card">
@@ -102,6 +129,63 @@ export function ScheduleControlCard({
       </div>
 
       {disableActions ? <p className="muted-copy">Select a job to request, confirm, reschedule, or publish from live records.</p> : null}
+
+      <div className="control-block">
+        <div className="control-block__head">
+          <h3>Dispatch planner</h3>
+          <p>Drag requests into technician lanes for capacity-balanced dispatch. Use Confirm request to commit.</p>
+        </div>
+        {requests.length === 0 ? (
+          <p className="muted-copy">No incoming requests to plan yet.</p>
+        ) : (
+          <div className="form-grid" style={{ gridTemplateColumns: "1fr 2fr", alignItems: "start" }}>
+            <div className="history-table" style={{ maxHeight: "420px" }}>
+              {requests.map((request) => {
+                const sla = requestSla.find((item) => item.request_uid === request.request_uid);
+                const assigned = draftAssignments[request.request_uid];
+                return (
+                  <div
+                    key={request.request_uid}
+                    className="history-row"
+                    draggable
+                    onDragStart={(event) => event.dataTransfer.setData("text/plain", request.request_uid)}
+                    style={{ cursor: "grab" }}
+                  >
+                    <strong>{request.request_uid}</strong>
+                    <span>{request.status}</span>
+                    <span className={`status-chip status-chip--${sla?.breached ? "critical" : "warning"}`}>{sla?.text ?? "SLA n/a"}</span>
+                    <span>{assigned ? `Draft -> ${assigned}` : "Unassigned"}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="posture-grid">
+              {technicians.map((technician) => {
+                const techUid = technician.technician_uid;
+                const load = capacityByTech.get(techUid) ?? 0;
+                const overloaded = load > 3;
+                return (
+                  <div
+                    key={technician.user_uid}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      const requestUid = event.dataTransfer.getData("text/plain");
+                      if (!requestUid) return;
+                      setDraftAssignments((prev) => ({ ...prev, [requestUid]: techUid }));
+                    }}
+                    style={{ minHeight: "120px", border: "1px dashed rgba(255,255,255,0.2)" }}
+                  >
+                    <span>{technician.display_name}</span>
+                    <strong>{techUid || "n/a"}</strong>
+                    <small className={`status-chip status-chip--${overloaded ? "critical" : "active"}`}>{load} assigned</small>
+                    <small>{overloaded ? "Over capacity" : "Within capacity"}</small>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="control-block">
         <div className="control-block__head">
@@ -178,6 +262,14 @@ export function ScheduleControlCard({
               </select>
             </label>
             <label className="field-stack">
+              <span>Draft assignment</span>
+              <input
+                name="draft_assignment"
+                value={selectedRequestUid ? draftAssignments[selectedRequestUid] ?? "None" : "None"}
+                readOnly
+              />
+            </label>
+            <label className="field-stack">
               <span>Start</span>
               <input
                 name="confirm_start"
@@ -203,9 +295,23 @@ export function ScheduleControlCard({
             </div>
             <div className="field-stack field-stack--action field-stack--full">
               <span>&nbsp;</span>
+              <div className="button-row">
+                <button
+                  className="button button--ghost"
+                  type="button"
+                  disabled={!selectedRequestUid || !draftAssignments[selectedRequestUid]}
+                  onClick={() => {
+                    const draft = draftAssignments[selectedRequestUid];
+                    if (!draft) return;
+                    setConfirmTechUid(draft);
+                  }}
+                >
+                  Use draft assignment
+                </button>
               <button className="button button--primary" type="button" onClick={onScheduleConfirm} disabled={disableActions}>
                 Confirm request
               </button>
+              </div>
             </div>
           </div>
         )}

@@ -87,6 +87,16 @@ function makeSeedData(): LocalData {
       technician_uid: "",
       active: "true",
       ...meta
+    },
+    {
+      user_uid: "USR-FIN-1",
+      email: "connor@kharon.co.za",
+      display_name: "Finance Controller",
+      role: "finance" as UserRow["role"],
+      client_uid: "",
+      technician_uid: "",
+      active: "true",
+      ...meta
     }
   ];
 

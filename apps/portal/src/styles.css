@@ -21,6 +21,11 @@
   --role-glow: rgba(240, 170, 74, 0.24);
 }
 
+.portal-shell--finance {
+  --role-accent: #2ecc71;
+  --role-glow: rgba(46, 204, 113, 0.24);
+}
+
 .portal-shell--admin {
   --role-accent: #9da7bd;
   --role-glow: rgba(157, 167, 189, 0.24);

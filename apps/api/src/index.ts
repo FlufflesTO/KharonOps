@@ -1114,7 +1114,8 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const jobUid = c.req.query("job_uid");
     const documents = await store.listDocuments(jobUid);
 
-    if (user.role === "admin" || user.role === "dispatcher" || user.role === "super_admin") {
+    const internalDocumentRoles = new Set(["admin", "dispatcher", "finance", "super_admin"]);
+    if (internalDocumentRoles.has(String(user.role))) {
       return c.json(
         envelopeSuccess({
           correlationId,

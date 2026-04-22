@@ -7,7 +7,7 @@ function isSuperAdmin(role: Role): boolean {
 }
 
 export function canReadJob(user: SessionUser, job: JobRow): boolean {
-  if (isSuperAdmin(user.role) || user.role === "admin" || user.role === "dispatcher") {
+  if (isSuperAdmin(user.role) || user.role === "admin" || user.role === "dispatcher" || user.role === "finance") {
     return true;
   }
   if (user.role === "client") {

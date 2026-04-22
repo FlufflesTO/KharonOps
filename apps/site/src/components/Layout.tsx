@@ -32,6 +32,19 @@ export function Layout(): React.JSX.Element {
     return () => window.removeEventListener("scroll", onScroll);
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (!menuOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    setNavHidden(false);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
   const localBusinessSchema = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",

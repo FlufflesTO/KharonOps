@@ -46,6 +46,19 @@ interface JobItemProps {
 }
 
 function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
+  const riskScore = (() => {
+    const baseByStatus: Record<JobStatus, number> = {
+      draft: 55,
+      performed: 35,
+      rejected: 78,
+      approved: 22,
+      certified: 10,
+      cancelled: 5
+    };
+    const noteBoost = /urgent|critical|fault|overdue/i.test(job.last_note ?? "") ? 12 : 0;
+    return Math.min(99, baseByStatus[job.status] + noteBoost);
+  })();
+
   return (
     <button type="button" className={isActive ? "job-item job-item--active" : "job-item"} onClick={() => onClick(job.job_uid)}>
       <div className="job-item__top">
@@ -55,6 +68,9 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
       <span className="job-item__title">{job.title}</span>
       <span className="job-item__meta">
         client {job.client_uid || "unassigned"} | tech {job.technician_uid || "pending"}
+      </span>
+      <span className="job-item__meta">
+        risk score {riskScore}
       </span>
     </button>
   );
@@ -96,6 +112,25 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
 
     return result;
   }, [jobs, searchQuery, statusFilter]);
+
+  const heatmap = useMemo(() => {
+    const buckets = { high: 0, medium: 0, low: 0 };
+    for (const job of filtered) {
+      const score = /urgent|critical|fault|overdue/i.test(job.last_note ?? "")
+        ? 75
+        : job.status === "rejected"
+          ? 80
+          : job.status === "draft"
+            ? 60
+            : job.status === "performed"
+              ? 40
+              : 15;
+      if (score >= 70) buckets.high += 1;
+      else if (score >= 40) buckets.medium += 1;
+      else buckets.low += 1;
+    }
+    return buckets;
+  }, [filtered]);
 
   return (
     <section className="workspace-card job-list-panel">
@@ -140,6 +175,12 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
             ))}
           </optgroup>
         </select>
+      </div>
+
+      <div className="button-row" style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid var(--color-border)" }}>
+        <span className="status-chip status-chip--critical">High risk {heatmap.high}</span>
+        <span className="status-chip status-chip--warning">Medium {heatmap.medium}</span>
+        <span className="status-chip status-chip--active">Low {heatmap.low}</span>
       </div>
 
       <div className="job-list">

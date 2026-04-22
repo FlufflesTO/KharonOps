@@ -52,6 +52,13 @@ export function SummaryBoard({
           { label: "Documents in scope", value: generatedDocumentCount, detail: "Loaded history" },
           { label: "Loaded audits", value: adminAuditCount, detail: "Audit trail fetched" }
         ];
+      case "finance":
+        return [
+          { label: "Billable jobs", value: openJobCount, detail: "Active financial scope" },
+          { label: "Selected status", value: selectedJobStatus, detail: "Current workflow stage" },
+          { label: "Documents in scope", value: generatedDocumentCount, detail: "Generated/published evidence" },
+          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: "Session availability" }
+        ];
       default:
         return [
           { label: "Open jobs", value: openJobCount, detail: "Active records" },

@@ -429,7 +429,8 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     let result;
 
-    if (user.role === "admin" || user.role === "dispatcher") {
+    const broadAccessRoles = new Set(["admin", "dispatcher", "finance"]);
+    if (broadAccessRoles.has(String(user.role))) {
       result = await pool.query(`SELECT * FROM ${this.schema}.svr_jobs ORDER BY updated_at DESC`);
     } else if (user.role === "client") {
       result = await pool.query(

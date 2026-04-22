@@ -24,6 +24,7 @@ import { DocumentHistoryCard } from "./components/DocumentHistoryCard";
 import { DashboardView } from "./components/DashboardView";
 import { RegistryCard } from "./components/RegistryCard";
 import { PeopleDirectoryCard } from "./components/PeopleDirectoryCard";
+import { FinanceOpsCard } from "./components/FinanceOpsCard";
 
 
 function asJob(record: Record<string, unknown>): JobRecord {
@@ -150,6 +151,7 @@ export function PortalApp(): React.JSX.Element {
   const [dispatchContext, setDispatchContext] = useState<PortalDispatchContext | null>(null);
   const [peopleDirectory, setPeopleDirectory] = useState<PeopleDirectoryEntry[]>([]);
   const [adminHealth, setAdminHealth] = useState<Record<string, unknown> | null>(null);
+  const [adminAudits, setAdminAudits] = useState<Array<Record<string, unknown>>>([]);
   const [adminAutomationJobs, setAdminAutomationJobs] = useState<Array<Record<string, unknown>>>([]);
   const [adminAuditCount, setAdminAuditCount] = useState(0);
   const [automationJobs, setAutomationJobs] = useState<AutomationJobEntry[]>([]);
@@ -171,6 +173,7 @@ export function PortalApp(): React.JSX.Element {
   const effectiveRole = emulatedRole || realRole;
 
   const isDispatchRole = effectiveRole === "dispatcher" || effectiveRole === "super_admin";
+  const isFinanceRole = effectiveRole === "finance" || effectiveRole === "super_admin";
   const canAccessPeopleDirectory = effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin";
   const canGenerateDocuments = effectiveRole === "technician" || effectiveRole === "dispatcher" || effectiveRole === "super_admin";
   const isAdmin = effectiveRole === "admin" || effectiveRole === "super_admin";
@@ -391,6 +394,7 @@ export function PortalApp(): React.JSX.Element {
       setDocuments([]);
       setDispatchContext(null);
       setPeopleDirectory([]);
+      setAdminAudits([]);
       setAutomationJobs([]);
       return;
     }
@@ -407,7 +411,7 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
 
-    if (activeWorkspaceTool === "jobs" || activeWorkspaceTool === "documents") {
+    if (activeWorkspaceTool === "jobs" || activeWorkspaceTool === "documents" || activeWorkspaceTool === "finance") {
       void refreshDocuments(selectedJobUid);
     }
     if (activeWorkspaceTool === "schedule" && isDispatchRole) {
@@ -771,7 +775,9 @@ export function PortalApp(): React.JSX.Element {
 
   async function loadAdminAudits(): Promise<void> {
     const response = await apiClient.adminAudits();
-    setAdminAuditCount((response.data ?? []).length);
+    const data = response.data ?? [];
+    setAdminAudits(data);
+    setAdminAuditCount(data.length);
     setFeedback("Audit log fetched.");
   }
 
@@ -993,6 +999,7 @@ export function PortalApp(): React.JSX.Element {
             {activeWorkspaceTool === "admin" && isAdmin ? (
               <AdminPanelCard
                 adminHealth={adminHealth}
+                adminAudits={adminAudits}
                 adminAutomationJobs={adminAutomationJobs}
                 adminAuditCount={adminAuditCount}
                 automationJobs={automationJobs}
@@ -1018,6 +1025,10 @@ export function PortalApp(): React.JSX.Element {
                 onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_uid))}
                 onPublish={(uid, ver, vis) => runAction(() => handleDocumentPublishInline(uid, ver, vis))}
               />
+            ) : null}
+
+            {activeWorkspaceTool === "finance" && isFinanceRole ? (
+              <FinanceOpsCard jobs={jobs} documents={documents} />
             ) : null}
 
             {activeWorkspaceTool === "people" && canAccessPeopleDirectory ? (

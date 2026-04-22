@@ -2,13 +2,17 @@
 
 Unified public website and operations portal for Kharon Fire and Security Solutions, delivered from Cloudflare Workers.
 
-## Current Release Highlights (2026-04-17)
+## Current Release Highlights (2026-04-22)
 
-- Home page redesigned into a compact portal-first command surface.
-- Portal Technician dashboard hardened:
-  - fixed sidebar job-card overlap and readability issues
-  - added role-aware gating for dispatch/document actions to prevent unauthorized request loops
-- Super Admin role and RBAC inheritance retained from the 2026-04-16 release.
+- Finance Portal role added across domain RBAC, API auth, local seed users, and portal login/dashboard surfaces.
+- Dispatch operations upgraded with drag and drop scheduling, SLA countdown visibility, and daily capacity balancing.
+- Document workflow upgraded with compliance escrow lock and release controls tied to reconciliation actions.
+- Technician and compliance workflows upgraded:
+  - checklist clauses now support legislation mapping metadata and version capture
+  - job views now include risk heatmap scoring bands
+  - admin audits now expose hash-linked provenance and anomaly indicators
+- People operations upgraded from a basic directory to an HR and skills matrix (certification, medical, rest and fatigue tracking).
+- Finance operations upgraded from scaffold state to quote, invoice, statement, debtors, and reconciliation workflows.
 
 ## Stack
 

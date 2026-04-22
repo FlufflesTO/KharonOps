@@ -1,7 +1,7 @@
 // Role union — canonical order reflects privilege escalation.
 // super_admin is a platform-level role; it is hard-wired to specific email
 // addresses in the auth layer and may never be stored in Users_Master.
-export type Role = "client" | "technician" | "dispatcher" | "admin" | "super_admin";
+export type Role = "client" | "technician" | "dispatcher" | "finance" | "admin" | "super_admin";
 
 export type JobStatus =
   | "draft"       // Initial local state

@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-04-22
+
+### Added
+- **Finance Role And Portal Access** (`packages/domain/src/types.ts`, `packages/domain/src/schema.ts`, `packages/domain/src/rbac.ts`, `apps/api/src/auth/google.ts`, `apps/api/src/store/localStore.ts`, `apps/api/src/store/postgresStore.ts`, `apps/portal/src/components/PortalAuth.tsx`, `apps/portal/src/components/DashboardView.tsx`, `apps/portal/src/components/SummaryBoard.tsx`):
+  - Added canonical `finance` role support across domain type/schema validation, RBAC logic, API role handling, dev login mappings, and portal role surfaces.
+- **Finance Operations Engine** (`apps/portal/src/components/FinanceOpsCard.tsx`, `apps/portal/src/features/upgradeStore.ts`):
+  - Implemented quote creation, quote approval, invoice generation, statement entries, debtors reconstruction, payment reconciliation, and escrow lock state management.
+- **Upgrade State Store** (`apps/portal/src/features/upgradeStore.ts`):
+  - Added local persisted state for finance workflow records, escrow status, and HR matrix data.
+
+### Changed
+- **Dispatch Scheduling Upgrade** (`apps/portal/src/components/ScheduleControlCard.tsx`):
+  - Extended schedule control with drag/drop planning, SLA countdown signals, and technician capacity balancing.
+- **Document Publishing Escrow Workflow** (`apps/portal/src/components/DocumentHistoryCard.tsx`, `apps/portal/src/components/FinanceOpsCard.tsx`):
+  - Publish actions now enforce escrow locks and require release from finance reconciliation workflow.
+- **Technician Checklist Legislation Mapping** (`apps/portal/src/components/CertificationForm.tsx`):
+  - Extended static checklists with legislation clause metadata and versioned compliance capture inputs.
+- **Job Risk Visibility** (`apps/portal/src/components/JobListView.tsx`):
+  - Added portfolio-style risk scoring tiers and visual heatmap buckets on job list items.
+- **Admin Provenance Auditing** (`apps/portal/src/components/AdminPanelCard.tsx`, `apps/portal/src/App.tsx`):
+  - Reworked audit list into a forensic-style provenance view with hash-chain references and anomaly detection flags.
+- **People Directory To HR/Skills Matrix** (`apps/portal/src/components/PeopleDirectoryCard.tsx`):
+  - Extended people sync view with SAQCC type/expiry, medical expiry, mandatory rest counters, and fatigue state tracking.
+
+### Fixed
+- **Mobile Navigation Stability** (`apps/site/src/components/Layout.tsx`, `apps/site/src/styles.css`):
+  - Corrected mobile menu layering and interaction behavior to prevent partial off-canvas overlap on narrow viewport widths.
+
 ## [1.3.1] - 2026-04-17
 
 ### Changed

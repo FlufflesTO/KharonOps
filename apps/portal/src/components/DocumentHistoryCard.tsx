@@ -1,5 +1,6 @@
 import React from "react";
 import { statusTone } from "./JobListView";
+import { getEscrowStatus } from "../features/upgradeStore";
 
 interface DocumentHistoryCardProps {
   documents: Array<Record<string, unknown>>;
@@ -17,7 +18,7 @@ export function DocumentHistoryCard({
   onPublish,
 
 }: DocumentHistoryCardProps): React.JSX.Element {
-  const isInternal = role === "admin" || role === "dispatcher" || role === "super_admin";
+  const isInternal = role === "admin" || role === "dispatcher" || role === "finance" || role === "super_admin";
 
   return (
     <article className="workspace-card">
@@ -41,6 +42,8 @@ export function DocumentHistoryCard({
             const docUid = String(document.document_uid);
             const rowVersion = Number(document.row_version ?? 1);
             const status = String(document.status);
+            const escrow = getEscrowStatus(docUid);
+            const escrowLocked = escrow?.status === "locked";
             
             return (
               <div key={docUid} className="history-row" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1.5fr 1fr', gap: '1rem', alignItems: 'center' }}>
@@ -57,7 +60,7 @@ export function DocumentHistoryCard({
                 </div>
 
                 <div className="history-row__actions">
-                  {status === "generated" && isInternal && (
+                  {status === "generated" && isInternal && !escrowLocked && (
                     <div className="button-group">
                       <button 
                         className="button button--secondary button--compact" 
@@ -68,6 +71,9 @@ export function DocumentHistoryCard({
                       </button>
                     </div>
                   )}
+                  {status === "generated" && isInternal && escrowLocked ? (
+                    <span className="status-chip status-chip--warning" style={{ fontSize: '0.65rem' }}>Escrow Locked</span>
+                  ) : null}
                   {status === "published" && (
                     <span className="history-row__url">
                       {document.published_url ? (
@@ -84,6 +90,8 @@ export function DocumentHistoryCard({
                 <div className="visibility-badge">
                   {document.client_visible ? (
                     <span className="status-chip status-chip--active" style={{ fontSize: '0.65rem' }}>Client Visible</span>
+                  ) : escrowLocked ? (
+                    <span className="status-chip status-chip--warning" style={{ fontSize: '0.65rem' }}>Escrow Hold</span>
                   ) : status === "published" ? (
                     <span className="status-chip status-chip--warning" style={{ fontSize: '0.65rem' }}>Internal Only</span>
                   ) : null}
