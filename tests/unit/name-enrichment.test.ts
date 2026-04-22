@@ -35,12 +35,12 @@ function technician(overrides: Partial<TechnicianRow> = {}): TechnicianRow {
 
 function userRow(overrides: Partial<UserRow> = {}): UserRow {
   return {
-    user_uid: "USR-001",
+    user_id: "USR-001",
     email: "user@example.com",
     display_name: "User One",
     role: "client",
-    client_uid: "",
-    technician_uid: "",
+    client_id: "",
+    technician_id: "",
     active: "true",
     row_version: 1,
     updated_at: "2026-01-01T00:00:00Z",
@@ -62,8 +62,8 @@ describe("buildNameLookups", () => {
       users: []
     });
 
-    expect(result.clientNameByUid.get("CLT-001")).toBe("Acme Corp");
-    expect(result.clientNameByUid.size).toBe(1);
+    expect(result.clientNameByid.get("CLT-001")).toBe("Acme Corp");
+    expect(result.clientNameByid.size).toBe(1);
   });
 
   it("maps technicians from Technicians_Master when all sources present", () => {
@@ -73,8 +73,8 @@ describe("buildNameLookups", () => {
       users: []
     });
 
-    expect(result.technicianNameByUid.get("ROY001")).toBe("Roy Meyers");
-    expect(result.technicianNameByUid.size).toBe(1);
+    expect(result.technicianNameByid.get("ROY001")).toBe("Roy Meyers");
+    expect(result.technicianNameByid.size).toBe(1);
   });
 
   it("uses Users_Master as fallback for client when Clients_Master has no match", () => {
@@ -84,13 +84,13 @@ describe("buildNameLookups", () => {
       users: [
         userRow({
           role: "client",
-          client_uid: "PORTAL-CLT-001",
+          client_id: "PORTAL-CLT-001",
           display_name: "Portal Client"
         })
       ]
     });
 
-    expect(result.clientNameByUid.get("PORTAL-CLT-001")).toBe("Portal Client");
+    expect(result.clientNameByid.get("PORTAL-CLT-001")).toBe("Portal Client");
   });
 
   it("uses Users_Master as fallback for technician when Technicians_Master has no match", () => {
@@ -100,46 +100,46 @@ describe("buildNameLookups", () => {
       users: [
         userRow({
           role: "technician",
-          technician_uid: "PORTAL-TECH-001",
+          technician_id: "PORTAL-TECH-001",
           display_name: "Portal Tech"
         })
       ]
     });
 
-    expect(result.technicianNameByUid.get("PORTAL-TECH-001")).toBe("Portal Tech");
+    expect(result.technicianNameByid.get("PORTAL-TECH-001")).toBe("Portal Tech");
   });
 
-  it("prefers Clients_Master over Users_Master when both have the same UID", () => {
+  it("prefers Clients_Master over Users_Master when both have the same id", () => {
     const result = buildNameLookups({
       clients: [client({ client_id: "CLT-001", client_name: "Master Name" })],
       technicians: [],
       users: [
         userRow({
           role: "client",
-          client_uid: "CLT-001",
+          client_id: "CLT-001",
           display_name: "Portal Override Name"
         })
       ]
     });
 
     // Master should win — Users_Master should NOT override.
-    expect(result.clientNameByUid.get("CLT-001")).toBe("Master Name");
+    expect(result.clientNameByid.get("CLT-001")).toBe("Master Name");
   });
 
-  it("prefers Technicians_Master over Users_Master when both have the same UID", () => {
+  it("prefers Technicians_Master over Users_Master when both have the same id", () => {
     const result = buildNameLookups({
       clients: [],
       technicians: [technician({ technician_id: "ROY001", display_name: "Master Tech Name" })],
       users: [
         userRow({
           role: "technician",
-          technician_uid: "ROY001",
+          technician_id: "ROY001",
           display_name: "Portal Tech Override"
         })
       ]
     });
 
-    expect(result.technicianNameByUid.get("ROY001")).toBe("Master Tech Name");
+    expect(result.technicianNameByid.get("ROY001")).toBe("Master Tech Name");
   });
 
   it("skips inactive client rows from Clients_Master", () => {
@@ -149,7 +149,7 @@ describe("buildNameLookups", () => {
       users: []
     });
 
-    expect(result.clientNameByUid.has("CLT-002")).toBe(false);
+    expect(result.clientNameByid.has("CLT-002")).toBe(false);
   });
 
   it("skips inactive technician rows from Technicians_Master", () => {
@@ -159,7 +159,7 @@ describe("buildNameLookups", () => {
       users: []
     });
 
-    expect(result.technicianNameByUid.has("MAG001")).toBe(false);
+    expect(result.technicianNameByid.has("MAG001")).toBe(false);
   });
 
   it("skips client rows with empty client_id", () => {
@@ -169,7 +169,7 @@ describe("buildNameLookups", () => {
       users: []
     });
 
-    expect(result.clientNameByUid.size).toBe(0);
+    expect(result.clientNameByid.size).toBe(0);
   });
 
   it("skips technician rows with empty technician_id", () => {
@@ -179,7 +179,7 @@ describe("buildNameLookups", () => {
       users: []
     });
 
-    expect(result.technicianNameByUid.size).toBe(0);
+    expect(result.technicianNameByid.size).toBe(0);
   });
 
   it("returns empty maps when all sources are empty (graceful degradation)", () => {
@@ -189,8 +189,8 @@ describe("buildNameLookups", () => {
       users: []
     });
 
-    expect(result.clientNameByUid.size).toBe(0);
-    expect(result.technicianNameByUid.size).toBe(0);
+    expect(result.clientNameByid.size).toBe(0);
+    expect(result.technicianNameByid.size).toBe(0);
   });
 
   it("handles multiple clients and technicians correctly", () => {
@@ -205,13 +205,13 @@ describe("buildNameLookups", () => {
         technician({ technician_id: "MAG001", display_name: "Mag" })
       ],
       users: [
-        userRow({ role: "client", client_uid: "CLT-NEW", display_name: "Portal New" })
+        userRow({ role: "client", client_id: "CLT-NEW", display_name: "Portal New" })
       ]
     });
 
-    expect(result.clientNameByUid.size).toBe(4);  // 3 master + 1 portal
-    expect(result.technicianNameByUid.size).toBe(2);
-    expect(result.clientNameByUid.get("CLT-NEW")).toBe("Portal New");
+    expect(result.clientNameByid.size).toBe(4);  // 3 master + 1 portal
+    expect(result.technicianNameByid.size).toBe(2);
+    expect(result.clientNameByid.get("CLT-NEW")).toBe("Portal New");
   });
 
   it("skips inactive Users_Master fallback rows", () => {
@@ -221,13 +221,13 @@ describe("buildNameLookups", () => {
       users: [
         userRow({
           role: "client",
-          client_uid: "CLT-INACTIVE",
+          client_id: "CLT-INACTIVE",
           display_name: "Deactivated",
           active: "false"
         })
       ]
     });
 
-    expect(result.clientNameByUid.has("CLT-INACTIVE")).toBe(false);
+    expect(result.clientNameByid.has("CLT-INACTIVE")).toBe(false);
   });
 });

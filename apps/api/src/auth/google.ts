@@ -3,7 +3,7 @@ import { verifyGoogleIdToken } from "@kharon/google";
 export interface VerifiedIdentity {
   email: string;
   displayName: string;
-  localUserUid?: string;
+  localUserid?: string;
 }
 
 /**
@@ -15,11 +15,11 @@ export interface VerifiedIdentity {
  * The `.invalid` TLD cannot resolve and will never match a live user record.
  */
 const localTokenMap: Record<string, VerifiedIdentity> = {
-  "dev-client": { localUserUid: "USR-CLIENT-1", email: "dev.client@kharon.invalid", displayName: "Client Operator" },
-  "dev-technician": { localUserUid: "USR-TECH-1", email: "dev.technician@kharon.invalid", displayName: "Field Technician" },
-  "dev-dispatcher": { localUserUid: "USR-DISP-1", email: "dev.dispatcher@kharon.invalid", displayName: "Dispatch Controller" },
-  "dev-finance": { localUserUid: "USR-FIN-1", email: "dev.finance@kharon.invalid", displayName: "Finance Controller" },
-  "dev-admin": { localUserUid: "USR-ADMIN-1", email: "dev.admin@kharon.invalid", displayName: "Security Admin" }
+  "dev-client": { localUserid: "USR-CLIENT-1", email: "dev.client@kharon.invalid", displayName: "Client Operator" },
+  "dev-technician": { localUserid: "USR-TECH-1", email: "dev.technician@kharon.invalid", displayName: "Field Technician" },
+  "dev-dispatcher": { localUserid: "USR-DISP-1", email: "dev.dispatcher@kharon.invalid", displayName: "Dispatch Controller" },
+  "dev-finance": { localUserid: "USR-FIN-1", email: "dev.finance@kharon.invalid", displayName: "Finance Controller" },
+  "dev-admin": { localUserid: "USR-ADMIN-1", email: "dev.admin@kharon.invalid", displayName: "Security Admin" }
 };
 
 export async function verifyIdentity(args: {

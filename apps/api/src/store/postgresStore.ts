@@ -50,7 +50,7 @@ interface PgPool {
 }
 
 interface PgPoolConstructor {
-  new (config: Record<string, unknown>): PgPool;
+  new(config: Record<string, unknown>): PgPool;
 }
 
 let _pgModule: { Pool: PgPoolConstructor } | null = null;
@@ -105,12 +105,12 @@ function rowToMutableMeta(row: PgRow): Pick<UserRow, "row_version" | "updated_at
 function userRowFromPg(row: PgRow | undefined): UserRow {
   if (!row) throw new Error("Missing row for UserRow mapping");
   return {
-    user_uid: String(row.user_uid),
+    user_id: String(row.user_id),
     email: String(row.email),
     display_name: String(row.display_name),
     role: String(row.role) as UserRow["role"],
-    client_uid: String(row.client_uid),
-    technician_uid: String(row.technician_uid),
+    client_id: String(row.client_id),
+    technician_id: String(row.technician_id),
     active: String(row.active) as UserRow["active"],
     ...rowToMutableMeta(row)
   };
@@ -119,10 +119,10 @@ function userRowFromPg(row: PgRow | undefined): UserRow {
 function jobRowFromPg(row: PgRow | undefined): JobRow {
   if (!row) throw new Error("Missing row for JobRow mapping");
   return {
-    job_uid: String(row.job_uid),
-    client_uid: String(row.client_uid),
-    site_uid: String(row.site_uid),
-    technician_uid: String(row.technician_uid),
+    job_id: String(row.job_id),
+    client_id: String(row.client_id),
+    site_id: String(row.site_id),
+    technician_id: String(row.technician_id),
     title: String(row.title),
     status: String(row.status) as JobRow["status"],
     scheduled_start: String(row.scheduled_start),
@@ -135,8 +135,8 @@ function jobRowFromPg(row: PgRow | undefined): JobRow {
 function jobEventRowFromPg(row: PgRow | undefined): JobEventRow {
   if (!row) throw new Error("Missing row for JobEventRow mapping");
   return {
-    event_uid: String(row.event_uid),
-    job_uid: String(row.job_uid),
+    event_id: String(row.event_id),
+    job_id: String(row.job_id),
     event_type: String(row.event_type),
     payload_json: String(row.payload_json ?? "{}"),
     ...rowToMutableMeta(row)
@@ -146,9 +146,9 @@ function jobEventRowFromPg(row: PgRow | undefined): JobEventRow {
 function scheduleRequestRowFromPg(row: PgRow | undefined): ScheduleRequestRow {
   if (!row) throw new Error("Missing row for ScheduleRequestRow mapping");
   return {
-    request_uid: String(row.request_uid),
-    job_uid: String(row.job_uid),
-    client_uid: String(row.client_uid),
+    request_id: String(row.request_id),
+    job_id: String(row.job_id),
+    client_id: String(row.client_id),
     preferred_slots_json: String(row.preferred_slots_json ?? "[]"),
     timezone: String(row.timezone ?? "UTC"),
     notes: String(row.notes ?? ""),
@@ -160,13 +160,13 @@ function scheduleRequestRowFromPg(row: PgRow | undefined): ScheduleRequestRow {
 function scheduleRowFromPg(row: PgRow | undefined): ScheduleRow {
   if (!row) throw new Error("Missing row for ScheduleRow mapping");
   return {
-    schedule_uid: String(row.schedule_uid),
-    request_uid: String(row.request_uid),
-    job_uid: String(row.job_uid),
+    schedule_id: String(row.schedule_id),
+    request_id: String(row.request_id),
+    job_id: String(row.job_id),
     calendar_event_id: String(row.calendar_event_id ?? ""),
     start_at: String(row.start_at),
     end_at: String(row.end_at),
-    technician_uid: String(row.technician_uid),
+    technician_id: String(row.technician_id),
     status: String(row.status) as ScheduleRow["status"],
     ...rowToMutableMeta(row)
   };
@@ -175,8 +175,8 @@ function scheduleRowFromPg(row: PgRow | undefined): ScheduleRow {
 function jobDocumentRowFromPg(row: PgRow | undefined): JobDocumentRow {
   if (!row) throw new Error("Missing row for JobDocumentRow mapping");
   return {
-    document_uid: String(row.document_uid),
-    job_uid: String(row.job_uid),
+    document_id: String(row.document_id),
+    job_id: String(row.job_id),
     document_type: String(row.document_type) as JobDocumentRow["document_type"],
     status: String(row.status) as JobDocumentRow["status"],
     drive_file_id: String(row.drive_file_id ?? ""),
@@ -191,7 +191,7 @@ function jobDocumentRowFromPg(row: PgRow | undefined): JobDocumentRow {
 function automationJobRowFromPg(row: PgRow | undefined): AutomationJobRow {
   if (!row) throw new Error("Missing row for AutomationJobRow mapping");
   return {
-    automation_job_uid: String(row.automation_job_uid),
+    automation_job_id: String(row.automation_job_id),
     action: String(row.action),
     payload_json: String(row.payload_json ?? "{}"),
     status: String(row.status) as AutomationJobRow["status"],
@@ -204,9 +204,9 @@ function automationJobRowFromPg(row: PgRow | undefined): AutomationJobRow {
 function syncQueueRowFromPg(row: PgRow | undefined): SyncQueueRow {
   if (!row) throw new Error("Missing row for SyncQueueRow mapping");
   return {
-    mutation_uid: String(row.mutation_uid),
-    job_uid: String(row.job_uid),
-    actor_uid: String(row.actor_uid),
+    mutation_id: String(row.mutation_id),
+    job_id: String(row.job_id),
+    actor_id: String(row.actor_id),
     payload_json: String(row.payload_json ?? "{}"),
     status: String(row.status) as SyncQueueRow["status"],
     last_result: String(row.last_result ?? ""),
@@ -217,9 +217,9 @@ function syncQueueRowFromPg(row: PgRow | undefined): SyncQueueRow {
 function financeQuoteRowFromPg(row: PgRow | undefined): FinanceQuoteRow {
   if (!row) throw new Error("Missing row for FinanceQuoteRow mapping");
   return {
-    quote_uid: String(row.quote_uid),
-    job_uid: String(row.job_uid),
-    client_uid: String(row.client_uid),
+    quote_id: String(row.quote_id),
+    job_id: String(row.job_id),
+    client_id: String(row.client_id),
     description: String(row.description ?? ""),
     amount: Number(row.amount ?? 0),
     status: String(row.status) as FinanceQuoteRow["status"],
@@ -231,10 +231,10 @@ function financeQuoteRowFromPg(row: PgRow | undefined): FinanceQuoteRow {
 function financeInvoiceRowFromPg(row: PgRow | undefined): FinanceInvoiceRow {
   if (!row) throw new Error("Missing row for FinanceInvoiceRow mapping");
   return {
-    invoice_uid: String(row.invoice_uid),
-    job_uid: String(row.job_uid),
-    quote_uid: String(row.quote_uid),
-    client_uid: String(row.client_uid),
+    invoice_id: String(row.invoice_id),
+    job_id: String(row.job_id),
+    quote_id: String(row.quote_id),
+    client_id: String(row.client_id),
     amount: Number(row.amount ?? 0),
     due_date: String(row.due_date ?? ""),
     status: String(row.status) as FinanceInvoiceRow["status"],
@@ -246,8 +246,8 @@ function financeInvoiceRowFromPg(row: PgRow | undefined): FinanceInvoiceRow {
 function financeStatementRowFromPg(row: PgRow | undefined): FinanceStatementRow {
   if (!row) throw new Error("Missing row for FinanceStatementRow mapping");
   return {
-    statement_uid: String(row.statement_uid),
-    client_uid: String(row.client_uid),
+    statement_id: String(row.statement_id),
+    client_id: String(row.client_id),
     period_label: String(row.period_label ?? ""),
     opening_balance: Number(row.opening_balance ?? 0),
     billed: Number(row.billed ?? 0),
@@ -261,7 +261,7 @@ function financeStatementRowFromPg(row: PgRow | undefined): FinanceStatementRow 
 function financeDebtorRowFromPg(row: PgRow | undefined): FinanceDebtorRow {
   if (!row) throw new Error("Missing row for FinanceDebtorRow mapping");
   return {
-    client_uid: String(row.client_uid),
+    client_id: String(row.client_id),
     total_due: Number(row.total_due ?? 0),
     current_bucket: Number(row.current_bucket ?? 0),
     bucket_30: Number(row.bucket_30 ?? 0),
@@ -275,8 +275,8 @@ function financeDebtorRowFromPg(row: PgRow | undefined): FinanceDebtorRow {
 function escrowRowFromPg(row: PgRow | undefined): EscrowRow {
   if (!row) throw new Error("Missing row for EscrowRow mapping");
   return {
-    document_uid: String(row.document_uid),
-    invoice_uid: String(row.invoice_uid),
+    document_id: String(row.document_id),
+    invoice_id: String(row.invoice_id),
     status: String(row.status) as EscrowRow["status"],
     locked_at: String(row.locked_at ?? ""),
     released_at: String(row.released_at ?? ""),
@@ -307,7 +307,7 @@ function technicianRowFromPg(row: PgRow | undefined): TechnicianRow {
 function skillMatrixRowFromPg(row: PgRow | undefined): SkillMatrixRow {
   if (!row) throw new Error("Missing row for SkillMatrixRow mapping");
   return {
-    user_uid: String(row.user_uid),
+    user_id: String(row.user_id),
     saqcc_type: String(row.saqcc_type ?? ""),
     saqcc_expiry: String(row.saqcc_expiry ?? ""),
     medical_expiry: String(row.medical_expiry ?? ""),
@@ -319,7 +319,7 @@ function skillMatrixRowFromPg(row: PgRow | undefined): SkillMatrixRow {
 function toConflict(job: JobRow, expectedRowVersion: number): ConflictPayload {
   return buildConflict({
     entity: "Jobs_Master",
-    entityId: job.job_uid,
+    entityId: job.job_id,
     serverState: job as unknown as Record<string, unknown>,
     clientRowVersion: expectedRowVersion,
     serverRowVersion: job.row_version
@@ -331,17 +331,17 @@ function normalizeError(message: string, code = "validation_error"): ApiError {
 }
 
 function stampEvent(args: {
-  jobUid: string;
+  jobid: string;
   eventType: string;
   payload: Record<string, unknown>;
   ctx: StoreContext;
 }): JobEventRow {
   return {
-    event_uid: `EVT-${crypto.randomUUID()}`,
-    job_uid: args.jobUid,
+    event_id: `EVT-${crypto.randomUUID()}`,
+    job_id: args.jobid,
     event_type: args.eventType,
     payload_json: JSON.stringify(args.payload),
-    ...newMutableMeta(args.ctx.actorUserUid, args.ctx.correlationId)
+    ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
   };
 }
 
@@ -351,12 +351,12 @@ function stampEvent(args: {
 
 const SCHEMA_DDL = `
 CREATE TABLE IF NOT EXISTS svr_users (
-  user_uid        TEXT PRIMARY KEY,
+  user_id        TEXT PRIMARY KEY,
   email           TEXT NOT NULL UNIQUE,
   display_name    TEXT NOT NULL,
   role            TEXT NOT NULL,
-  client_uid      TEXT NOT NULL DEFAULT '',
-  technician_uid  TEXT NOT NULL DEFAULT '',
+  client_id      TEXT NOT NULL DEFAULT '',
+  technician_id  TEXT NOT NULL DEFAULT '',
   active          TEXT NOT NULL DEFAULT 'true',
   row_version     INTEGER NOT NULL DEFAULT 1,
   updated_at      TEXT NOT NULL,
@@ -365,10 +365,10 @@ CREATE TABLE IF NOT EXISTS svr_users (
 );
 
 CREATE TABLE IF NOT EXISTS svr_jobs (
-  job_uid         TEXT PRIMARY KEY,
-  client_uid      TEXT NOT NULL,
-  site_uid        TEXT NOT NULL,
-  technician_uid  TEXT NOT NULL,
+  job_id         TEXT PRIMARY KEY,
+  client_id      TEXT NOT NULL,
+  site_id        TEXT NOT NULL,
+  technician_id  TEXT NOT NULL,
   title           TEXT NOT NULL,
   status          TEXT NOT NULL,
   scheduled_start TEXT NOT NULL,
@@ -381,8 +381,8 @@ CREATE TABLE IF NOT EXISTS svr_jobs (
 );
 
 CREATE TABLE IF NOT EXISTS svr_job_events (
-  event_uid       TEXT PRIMARY KEY,
-  job_uid         TEXT NOT NULL REFERENCES svr_jobs(job_uid),
+  event_id       TEXT PRIMARY KEY,
+  job_id         TEXT NOT NULL REFERENCES svr_jobs(job_id),
   event_type      TEXT NOT NULL,
   payload_json    TEXT NOT NULL,
   row_version     INTEGER NOT NULL DEFAULT 1,
@@ -392,9 +392,9 @@ CREATE TABLE IF NOT EXISTS svr_job_events (
 );
 
 CREATE TABLE IF NOT EXISTS svr_schedule_requests (
-  request_uid        TEXT PRIMARY KEY,
-  job_uid            TEXT NOT NULL REFERENCES svr_jobs(job_uid),
-  client_uid         TEXT NOT NULL,
+  request_id        TEXT PRIMARY KEY,
+  job_id            TEXT NOT NULL REFERENCES svr_jobs(job_id),
+  client_id         TEXT NOT NULL,
   preferred_slots_json TEXT NOT NULL,
   timezone           TEXT NOT NULL DEFAULT 'UTC',
   notes              TEXT NOT NULL DEFAULT '',
@@ -406,13 +406,13 @@ CREATE TABLE IF NOT EXISTS svr_schedule_requests (
 );
 
 CREATE TABLE IF NOT EXISTS svr_schedules (
-  schedule_uid      TEXT PRIMARY KEY,
-  request_uid       TEXT NOT NULL REFERENCES svr_schedule_requests(request_uid),
-  job_uid           TEXT NOT NULL REFERENCES svr_jobs(job_uid),
+  schedule_id      TEXT PRIMARY KEY,
+  request_id       TEXT NOT NULL REFERENCES svr_schedule_requests(request_id),
+  job_id           TEXT NOT NULL REFERENCES svr_jobs(job_id),
   calendar_event_id TEXT NOT NULL DEFAULT '',
   start_at          TEXT NOT NULL,
   end_at            TEXT NOT NULL,
-  technician_uid    TEXT NOT NULL,
+  technician_id    TEXT NOT NULL,
   status            TEXT NOT NULL DEFAULT 'confirmed',
   row_version       INTEGER NOT NULL DEFAULT 1,
   updated_at        TEXT NOT NULL,
@@ -421,8 +421,8 @@ CREATE TABLE IF NOT EXISTS svr_schedules (
 );
 
 CREATE TABLE IF NOT EXISTS svr_job_documents (
-  document_uid    TEXT PRIMARY KEY,
-  job_uid         TEXT NOT NULL REFERENCES svr_jobs(job_uid),
+  document_id    TEXT PRIMARY KEY,
+  job_id         TEXT NOT NULL REFERENCES svr_jobs(job_id),
   document_type   TEXT NOT NULL,
   status          TEXT NOT NULL DEFAULT 'generated',
   drive_file_id   TEXT NOT NULL DEFAULT '',
@@ -437,7 +437,7 @@ CREATE TABLE IF NOT EXISTS svr_job_documents (
 
 
 CREATE TABLE IF NOT EXISTS svr_automation_jobs (
-  automation_job_uid TEXT PRIMARY KEY,
+  automation_job_id TEXT PRIMARY KEY,
   action             TEXT NOT NULL,
   payload_json       TEXT NOT NULL,
   status             TEXT NOT NULL DEFAULT 'queued',
@@ -450,9 +450,9 @@ CREATE TABLE IF NOT EXISTS svr_automation_jobs (
 );
 
 CREATE TABLE IF NOT EXISTS svr_sync_queue (
-  mutation_uid    TEXT PRIMARY KEY,
-  job_uid         TEXT NOT NULL REFERENCES svr_jobs(job_uid),
-  actor_uid       TEXT NOT NULL,
+  mutation_id    TEXT PRIMARY KEY,
+  job_id         TEXT NOT NULL REFERENCES svr_jobs(job_id),
+  actor_id       TEXT NOT NULL,
   payload_json    TEXT NOT NULL,
   status          TEXT NOT NULL DEFAULT 'applied',
   last_result     TEXT NOT NULL DEFAULT '',
@@ -463,9 +463,9 @@ CREATE TABLE IF NOT EXISTS svr_sync_queue (
 );
 
 CREATE TABLE IF NOT EXISTS svr_finance_quotes (
-  quote_uid       TEXT PRIMARY KEY,
-  job_uid         TEXT NOT NULL,
-  client_uid      TEXT NOT NULL,
+  quote_id       TEXT PRIMARY KEY,
+  job_id         TEXT NOT NULL,
+  client_id      TEXT NOT NULL,
   description     TEXT NOT NULL,
   amount          DOUBLE PRECISION NOT NULL DEFAULT 0,
   status          TEXT NOT NULL DEFAULT 'draft',
@@ -477,10 +477,10 @@ CREATE TABLE IF NOT EXISTS svr_finance_quotes (
 );
 
 CREATE TABLE IF NOT EXISTS svr_finance_invoices (
-  invoice_uid     TEXT PRIMARY KEY,
-  job_uid         TEXT NOT NULL,
-  quote_uid       TEXT NOT NULL,
-  client_uid      TEXT NOT NULL,
+  invoice_id     TEXT PRIMARY KEY,
+  job_id         TEXT NOT NULL,
+  quote_id       TEXT NOT NULL,
+  client_id      TEXT NOT NULL,
   amount          DOUBLE PRECISION NOT NULL DEFAULT 0,
   due_date        TEXT NOT NULL,
   status          TEXT NOT NULL DEFAULT 'issued',
@@ -492,8 +492,8 @@ CREATE TABLE IF NOT EXISTS svr_finance_invoices (
 );
 
 CREATE TABLE IF NOT EXISTS svr_finance_statements (
-  statement_uid   TEXT PRIMARY KEY,
-  client_uid      TEXT NOT NULL,
+  statement_id   TEXT PRIMARY KEY,
+  client_id      TEXT NOT NULL,
   period_label    TEXT NOT NULL,
   opening_balance DOUBLE PRECISION NOT NULL DEFAULT 0,
   billed          DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -507,7 +507,7 @@ CREATE TABLE IF NOT EXISTS svr_finance_statements (
 );
 
 CREATE TABLE IF NOT EXISTS svr_finance_debtors (
-  client_uid      TEXT PRIMARY KEY,
+  client_id      TEXT PRIMARY KEY,
   total_due       DOUBLE PRECISION NOT NULL DEFAULT 0,
   current_bucket  DOUBLE PRECISION NOT NULL DEFAULT 0,
   bucket_30       DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -521,8 +521,8 @@ CREATE TABLE IF NOT EXISTS svr_finance_debtors (
 );
 
 CREATE TABLE IF NOT EXISTS svr_compliance_escrow (
-  document_uid    TEXT PRIMARY KEY,
-  invoice_uid     TEXT NOT NULL,
+  document_id    TEXT PRIMARY KEY,
+  invoice_id     TEXT NOT NULL,
   status          TEXT NOT NULL DEFAULT 'locked',
   locked_at       TEXT NOT NULL,
   released_at     TEXT NOT NULL DEFAULT '',
@@ -533,7 +533,7 @@ CREATE TABLE IF NOT EXISTS svr_compliance_escrow (
 );
 
 CREATE TABLE IF NOT EXISTS svr_hr_skills_matrix (
-  user_uid                TEXT PRIMARY KEY,
+  user_id                TEXT PRIMARY KEY,
   saqcc_type              TEXT NOT NULL DEFAULT '',
   saqcc_expiry            TEXT NOT NULL DEFAULT '',
   medical_expiry          TEXT NOT NULL DEFAULT '',
@@ -545,17 +545,17 @@ CREATE TABLE IF NOT EXISTS svr_hr_skills_matrix (
 );
 
 CREATE TABLE IF NOT EXISTS svr_audit_log (
-  audit_uid       TEXT PRIMARY KEY,
+  audit_id       TEXT PRIMARY KEY,
   action          TEXT NOT NULL,
   entry_type      TEXT NOT NULL DEFAULT 'system_audit',
   payload_json    TEXT NOT NULL,
-  actor_user_uid  TEXT NOT NULL,
+  actor_user_id  TEXT NOT NULL,
   correlation_id  TEXT NOT NULL,
   at              TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_svr_job_events_job_uid ON svr_job_events(job_uid);
-CREATE INDEX IF NOT EXISTS idx_svr_sync_queue_job_uid ON svr_sync_queue(job_uid);
+CREATE INDEX IF NOT EXISTS idx_svr_job_events_job_id ON svr_job_events(job_id);
+CREATE INDEX IF NOT EXISTS idx_svr_sync_queue_job_id ON svr_sync_queue(job_id);
 CREATE TABLE IF NOT EXISTS svr_clients (
   client_id       TEXT PRIMARY KEY,
   client_name     TEXT NOT NULL DEFAULT '',
@@ -570,14 +570,14 @@ CREATE TABLE IF NOT EXISTS svr_technicians (
   active          TEXT NOT NULL DEFAULT 'true'
 );
 
-CREATE INDEX IF NOT EXISTS idx_svr_jobs_client_uid ON svr_jobs(client_uid);
-CREATE INDEX IF NOT EXISTS idx_svr_jobs_technician_uid ON svr_jobs(technician_uid);
-CREATE INDEX IF NOT EXISTS idx_svr_job_documents_job_uid ON svr_job_documents(job_uid);
-CREATE INDEX IF NOT EXISTS idx_svr_finance_quotes_job_uid ON svr_finance_quotes(job_uid);
-CREATE INDEX IF NOT EXISTS idx_svr_finance_invoices_client_uid ON svr_finance_invoices(client_uid);
+CREATE INDEX IF NOT EXISTS idx_svr_jobs_client_id ON svr_jobs(client_id);
+CREATE INDEX IF NOT EXISTS idx_svr_jobs_technician_id ON svr_jobs(technician_id);
+CREATE INDEX IF NOT EXISTS idx_svr_job_documents_job_id ON svr_job_documents(job_id);
+CREATE INDEX IF NOT EXISTS idx_svr_finance_quotes_job_id ON svr_finance_quotes(job_id);
+CREATE INDEX IF NOT EXISTS idx_svr_finance_invoices_client_id ON svr_finance_invoices(client_id);
 CREATE INDEX IF NOT EXISTS idx_svr_clients_active ON svr_clients(active);
 CREATE INDEX IF NOT EXISTS idx_svr_technicians_active ON svr_technicians(active);
-`; 
+`;
 
 // ---------------------------------------------------------------------------
 // Store Implementation
@@ -656,11 +656,11 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_finance_quotes
-       (quote_uid, job_uid, client_uid, description, amount, status, created_at, row_version, updated_at, updated_by, correlation_id)
+       (quote_id, job_id, client_id, description, amount, status, created_at, row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       ON CONFLICT (quote_uid) DO UPDATE SET
-         job_uid = EXCLUDED.job_uid,
-         client_uid = EXCLUDED.client_uid,
+       ON CONFLICT (quote_id) DO UPDATE SET
+         job_id = EXCLUDED.job_id,
+         client_id = EXCLUDED.client_id,
          description = EXCLUDED.description,
          amount = EXCLUDED.amount,
          status = EXCLUDED.status,
@@ -670,9 +670,9 @@ export class PostgresWorkbookStore implements WorkbookStore {
          updated_by = EXCLUDED.updated_by,
          correlation_id = EXCLUDED.correlation_id`,
       [
-        row.quote_uid,
-        row.job_uid,
-        row.client_uid,
+        row.quote_id,
+        row.job_id,
+        row.client_id,
         row.description,
         row.amount,
         row.status,
@@ -686,12 +686,12 @@ export class PostgresWorkbookStore implements WorkbookStore {
   }
 
   async updateFinanceQuoteStatus(args: {
-    quote_uid: string;
+    quote_id: string;
     status: FinanceQuoteRow["status"];
     ctx: StoreContext;
   }): Promise<FinanceQuoteRow | null> {
     const pool = await this.getPool();
-    const current = await pool.query(`SELECT * FROM ${this.schema}.svr_finance_quotes WHERE quote_uid = $1`, [args.quote_uid]);
+    const current = await pool.query(`SELECT * FROM ${this.schema}.svr_finance_quotes WHERE quote_id = $1`, [args.quote_id]);
     if (current.rows.length === 0) return null;
     const now = nowIso();
     const currentRow = financeQuoteRowFromPg(current.rows[0]);
@@ -699,9 +699,9 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const updated = await pool.query(
       `UPDATE ${this.schema}.svr_finance_quotes
        SET status = $1, row_version = $2, updated_at = $3, updated_by = $4, correlation_id = $5
-       WHERE quote_uid = $6
+       WHERE quote_id = $6
        RETURNING *`,
-      [args.status, nextVersion, now, args.ctx.actorUserUid, args.ctx.correlationId, args.quote_uid]
+      [args.status, nextVersion, now, args.ctx.actorUserid, args.ctx.correlationId, args.quote_id]
     );
     if (updated.rows.length === 0) return null;
     return financeQuoteRowFromPg(updated.rows[0]);
@@ -717,12 +717,12 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_finance_invoices
-       (invoice_uid, job_uid, quote_uid, client_uid, amount, due_date, status, reconciled_at, row_version, updated_at, updated_by, correlation_id)
+       (invoice_id, job_id, quote_id, client_id, amount, due_date, status, reconciled_at, row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       ON CONFLICT (invoice_uid) DO UPDATE SET
-         job_uid = EXCLUDED.job_uid,
-         quote_uid = EXCLUDED.quote_uid,
-         client_uid = EXCLUDED.client_uid,
+       ON CONFLICT (invoice_id) DO UPDATE SET
+         job_id = EXCLUDED.job_id,
+         quote_id = EXCLUDED.quote_id,
+         client_id = EXCLUDED.client_id,
          amount = EXCLUDED.amount,
          due_date = EXCLUDED.due_date,
          status = EXCLUDED.status,
@@ -732,10 +732,10 @@ export class PostgresWorkbookStore implements WorkbookStore {
          updated_by = EXCLUDED.updated_by,
          correlation_id = EXCLUDED.correlation_id`,
       [
-        row.invoice_uid,
-        row.job_uid,
-        row.quote_uid,
-        row.client_uid,
+        row.invoice_id,
+        row.job_id,
+        row.quote_id,
+        row.client_id,
         row.amount,
         row.due_date,
         row.status,
@@ -763,10 +763,10 @@ export class PostgresWorkbookStore implements WorkbookStore {
     for (const row of rows) {
       await pool.query(
         `INSERT INTO ${this.schema}.svr_finance_statements
-         (statement_uid, client_uid, period_label, opening_balance, billed, paid, closing_balance, generated_at, row_version, updated_at, updated_by, correlation_id)
+         (statement_id, client_id, period_label, opening_balance, billed, paid, closing_balance, generated_at, row_version, updated_at, updated_by, correlation_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-         ON CONFLICT (statement_uid) DO UPDATE SET
-           client_uid = EXCLUDED.client_uid,
+         ON CONFLICT (statement_id) DO UPDATE SET
+           client_id = EXCLUDED.client_id,
            period_label = EXCLUDED.period_label,
            opening_balance = EXCLUDED.opening_balance,
            billed = EXCLUDED.billed,
@@ -778,8 +778,8 @@ export class PostgresWorkbookStore implements WorkbookStore {
            updated_by = EXCLUDED.updated_by,
            correlation_id = EXCLUDED.correlation_id`,
         [
-          row.statement_uid,
-          row.client_uid,
+          row.statement_id,
+          row.client_id,
           row.period_label,
           row.opening_balance,
           row.billed,
@@ -806,9 +806,9 @@ export class PostgresWorkbookStore implements WorkbookStore {
     for (const row of rows) {
       await pool.query(
         `INSERT INTO ${this.schema}.svr_finance_debtors
-         (client_uid, total_due, current_bucket, bucket_30, bucket_60, bucket_90_plus, risk_band, row_version, updated_at, updated_by, correlation_id)
+         (client_id, total_due, current_bucket, bucket_30, bucket_60, bucket_90_plus, risk_band, row_version, updated_at, updated_by, correlation_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-         ON CONFLICT (client_uid) DO UPDATE SET
+         ON CONFLICT (client_id) DO UPDATE SET
            total_due = EXCLUDED.total_due,
            current_bucket = EXCLUDED.current_bucket,
            bucket_30 = EXCLUDED.bucket_30,
@@ -820,7 +820,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
            updated_by = EXCLUDED.updated_by,
            correlation_id = EXCLUDED.correlation_id`,
         [
-          row.client_uid,
+          row.client_id,
           row.total_due,
           row.current_bucket,
           row.bucket_30,
@@ -842,9 +842,9 @@ export class PostgresWorkbookStore implements WorkbookStore {
     return result.rows.map(escrowRowFromPg);
   }
 
-  async getEscrowByDocument(document_uid: string): Promise<EscrowRow | null> {
+  async getEscrowByDocument(document_id: string): Promise<EscrowRow | null> {
     const pool = await this.getPool();
-    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_compliance_escrow WHERE document_uid = $1`, [document_uid]);
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_compliance_escrow WHERE document_id = $1`, [document_id]);
     if (result.rows.length === 0) return null;
     return escrowRowFromPg(result.rows[0]);
   }
@@ -853,10 +853,10 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_compliance_escrow
-       (document_uid, invoice_uid, status, locked_at, released_at, row_version, updated_at, updated_by, correlation_id)
+       (document_id, invoice_id, status, locked_at, released_at, row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       ON CONFLICT (document_uid) DO UPDATE SET
-         invoice_uid = EXCLUDED.invoice_uid,
+       ON CONFLICT (document_id) DO UPDATE SET
+         invoice_id = EXCLUDED.invoice_id,
          status = EXCLUDED.status,
          locked_at = EXCLUDED.locked_at,
          released_at = EXCLUDED.released_at,
@@ -865,8 +865,8 @@ export class PostgresWorkbookStore implements WorkbookStore {
          updated_by = EXCLUDED.updated_by,
          correlation_id = EXCLUDED.correlation_id`,
       [
-        row.document_uid,
-        row.invoice_uid,
+        row.document_id,
+        row.invoice_id,
         row.status,
         row.locked_at,
         row.released_at,
@@ -880,7 +880,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
 
   async listSkillMatrix(): Promise<SkillMatrixRow[]> {
     const pool = await this.getPool();
-    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_hr_skills_matrix ORDER BY user_uid ASC`);
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_hr_skills_matrix ORDER BY user_id ASC`);
     return result.rows.map(skillMatrixRowFromPg);
   }
 
@@ -888,9 +888,9 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_hr_skills_matrix
-       (user_uid, saqcc_type, saqcc_expiry, medical_expiry, rest_hours_last_24h, row_version, updated_at, updated_by, correlation_id)
+       (user_id, saqcc_type, saqcc_expiry, medical_expiry, rest_hours_last_24h, row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       ON CONFLICT (user_uid) DO UPDATE SET
+       ON CONFLICT (user_id) DO UPDATE SET
          saqcc_type = EXCLUDED.saqcc_type,
          saqcc_expiry = EXCLUDED.saqcc_expiry,
          medical_expiry = EXCLUDED.medical_expiry,
@@ -900,7 +900,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
          updated_by = EXCLUDED.updated_by,
          correlation_id = EXCLUDED.correlation_id`,
       [
-        row.user_uid,
+        row.user_id,
         row.saqcc_type,
         row.saqcc_expiry,
         row.medical_expiry,
@@ -936,13 +936,13 @@ export class PostgresWorkbookStore implements WorkbookStore {
       result = await pool.query(`SELECT * FROM ${this.schema}.svr_jobs ORDER BY updated_at DESC`);
     } else if (user.role === "client") {
       result = await pool.query(
-        `SELECT * FROM ${this.schema}.svr_jobs WHERE client_uid = $1 ORDER BY updated_at DESC`,
-        [user.client_uid]
+        `SELECT * FROM ${this.schema}.svr_jobs WHERE client_id = $1 ORDER BY updated_at DESC`,
+        [user.client_id]
       );
     } else {
       result = await pool.query(
-        `SELECT * FROM ${this.schema}.svr_jobs WHERE technician_uid = $1 ORDER BY updated_at DESC`,
-        [user.technician_uid]
+        `SELECT * FROM ${this.schema}.svr_jobs WHERE technician_id = $1 ORDER BY updated_at DESC`,
+        [user.technician_id]
       );
     }
 
@@ -950,18 +950,18 @@ export class PostgresWorkbookStore implements WorkbookStore {
     return result.rows.map(jobRowFromPg).filter((job) => canReadJob(user, job));
   }
 
-  async getJob(jobUid: string): Promise<JobRow | null> {
+  async getJob(jobid: string): Promise<JobRow | null> {
     const pool = await this.getPool();
     const result = await pool.query(
-      `SELECT * FROM ${this.schema}.svr_jobs WHERE job_uid = $1`,
-      [jobUid]
+      `SELECT * FROM ${this.schema}.svr_jobs WHERE job_id = $1`,
+      [jobid]
     );
     if (result.rows.length === 0) return null;
     return jobRowFromPg(result.rows[0]);
   }
 
   async updateJobStatus(args: {
-    jobUid: string;
+    jobid: string;
     status: JobRow["status"];
     expectedRowVersion: number;
     ctx: StoreContext;
@@ -972,13 +972,13 @@ export class PostgresWorkbookStore implements WorkbookStore {
       await client.query("BEGIN");
 
       const currentRes = await client.query(
-        `SELECT * FROM ${this.schema}.svr_jobs WHERE job_uid = $1 FOR UPDATE`,
-        [args.jobUid]
+        `SELECT * FROM ${this.schema}.svr_jobs WHERE job_id = $1 FOR UPDATE`,
+        [args.jobid]
       );
 
       if (currentRes.rows.length === 0) {
         await client.query("ROLLBACK");
-        throw new Error(`Unknown job ${args.jobUid}`);
+        throw new Error(`Unknown job ${args.jobid}`);
       }
 
       const current = jobRowFromPg(currentRes.rows[0]);
@@ -999,14 +999,14 @@ export class PostgresWorkbookStore implements WorkbookStore {
       const updatedRes = await client.query(
         `UPDATE ${this.schema}.svr_jobs
          SET status = $1, row_version = $2, updated_at = $3, updated_by = $4, correlation_id = $5
-         WHERE job_uid = $6 AND row_version = $7
+         WHERE job_id = $6 AND row_version = $7
          RETURNING *`,
-        [args.status, newVersion, now, args.ctx.actorUserUid, args.ctx.correlationId, args.jobUid, args.expectedRowVersion]
+        [args.status, newVersion, now, args.ctx.actorUserid, args.ctx.correlationId, args.jobid, args.expectedRowVersion]
       );
 
       if (updatedRes.rows.length === 0) {
         await client.query("ROLLBACK");
-        const refetched = await client.query(`SELECT * FROM ${this.schema}.svr_jobs WHERE job_uid = $1`, [args.jobUid]);
+        const refetched = await client.query(`SELECT * FROM ${this.schema}.svr_jobs WHERE job_id = $1`, [args.jobid]);
         const refetchedJob = refetched.rows.length > 0 ? jobRowFromPg(refetched.rows[0]) : current;
         return { job: immutableClone(refetchedJob), conflict: toConflict(refetchedJob, args.expectedRowVersion) };
       }
@@ -1014,16 +1014,16 @@ export class PostgresWorkbookStore implements WorkbookStore {
       const updated = jobRowFromPg(updatedRes.rows[0]);
 
       const event = stampEvent({
-        jobUid: updated.job_uid,
+        jobid: updated.job_id,
         eventType: "status_changed",
         payload: { from: current.status, to: args.status },
         ctx: args.ctx
       });
       await client.query(
         `INSERT INTO ${this.schema}.svr_job_events
-         (event_uid, job_uid, event_type, payload_json, row_version, updated_at, updated_by, correlation_id)
+         (event_id, job_id, event_type, payload_json, row_version, updated_at, updated_by, correlation_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [event.event_uid, event.job_uid, event.event_type, event.payload_json, event.row_version, event.updated_at, event.updated_by, event.correlation_id]
+        [event.event_id, event.job_id, event.event_type, event.payload_json, event.row_version, event.updated_at, event.updated_by, event.correlation_id]
       );
 
       await client.query("COMMIT");
@@ -1037,7 +1037,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
   }
 
   async appendJobNote(args: {
-    jobUid: string;
+    jobid: string;
     note: string;
     expectedRowVersion: number;
     ctx: StoreContext;
@@ -1048,13 +1048,13 @@ export class PostgresWorkbookStore implements WorkbookStore {
       await client.query("BEGIN");
 
       const currentRes = await client.query(
-        `SELECT * FROM ${this.schema}.svr_jobs WHERE job_uid = $1 FOR UPDATE`,
-        [args.jobUid]
+        `SELECT * FROM ${this.schema}.svr_jobs WHERE job_id = $1 FOR UPDATE`,
+        [args.jobid]
       );
 
       if (currentRes.rows.length === 0) {
         await client.query("ROLLBACK");
-        throw new Error(`Unknown job ${args.jobUid}`);
+        throw new Error(`Unknown job ${args.jobid}`);
       }
 
       const current = jobRowFromPg(currentRes.rows[0]);
@@ -1070,14 +1070,14 @@ export class PostgresWorkbookStore implements WorkbookStore {
       const updatedRes = await client.query(
         `UPDATE ${this.schema}.svr_jobs
          SET last_note = $1, row_version = $2, updated_at = $3, updated_by = $4, correlation_id = $5
-         WHERE job_uid = $6 AND row_version = $7
+         WHERE job_id = $6 AND row_version = $7
          RETURNING *`,
-        [args.note, newVersion, now, args.ctx.actorUserUid, args.ctx.correlationId, args.jobUid, args.expectedRowVersion]
+        [args.note, newVersion, now, args.ctx.actorUserid, args.ctx.correlationId, args.jobid, args.expectedRowVersion]
       );
 
       if (updatedRes.rows.length === 0) {
         await client.query("ROLLBACK");
-        const refetched = await client.query(`SELECT * FROM ${this.schema}.svr_jobs WHERE job_uid = $1`, [args.jobUid]);
+        const refetched = await client.query(`SELECT * FROM ${this.schema}.svr_jobs WHERE job_id = $1`, [args.jobid]);
         const refetchedJob = refetched.rows.length > 0 ? jobRowFromPg(refetched.rows[0]) : current;
         return { job: immutableClone(refetchedJob), conflict: toConflict(refetchedJob, args.expectedRowVersion) };
       }
@@ -1085,16 +1085,16 @@ export class PostgresWorkbookStore implements WorkbookStore {
       const updated = jobRowFromPg(updatedRes.rows[0]);
 
       const event = stampEvent({
-        jobUid: updated.job_uid,
+        jobid: updated.job_id,
         eventType: "note_added",
         payload: { note: args.note },
         ctx: args.ctx
       });
       await client.query(
         `INSERT INTO ${this.schema}.svr_job_events
-         (event_uid, job_uid, event_type, payload_json, row_version, updated_at, updated_by, correlation_id)
+         (event_id, job_id, event_type, payload_json, row_version, updated_at, updated_by, correlation_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [event.event_uid, event.job_uid, event.event_type, event.payload_json, event.row_version, event.updated_at, event.updated_by, event.correlation_id]
+        [event.event_id, event.job_id, event.event_type, event.payload_json, event.row_version, event.updated_at, event.updated_by, event.correlation_id]
       );
 
       await client.query("COMMIT");
@@ -1111,10 +1111,10 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_job_events
-       (event_uid, job_uid, event_type, payload_json, row_version, updated_at, updated_by, correlation_id)
+       (event_id, job_id, event_type, payload_json, row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
-        event.event_uid, event.job_uid, event.event_type, event.payload_json,
+        event.event_id, event.job_id, event.event_type, event.payload_json,
         event.row_version, event.updated_at, event.updated_by, event.correlation_id
       ]
     );
@@ -1126,34 +1126,34 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_schedule_requests
-       (request_uid, job_uid, client_uid, preferred_slots_json, timezone, notes, status,
+       (request_id, job_id, client_id, preferred_slots_json, timezone, notes, status,
         row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
-        row.request_uid, row.job_uid, row.client_uid, row.preferred_slots_json,
+        row.request_id, row.job_id, row.client_id, row.preferred_slots_json,
         row.timezone, row.notes, row.status,
         row.row_version, row.updated_at, row.updated_by, row.correlation_id
       ]
     );
   }
 
-  async getScheduleRequest(requestUid: string): Promise<ScheduleRequestRow | null> {
+  async getScheduleRequest(requestid: string): Promise<ScheduleRequestRow | null> {
     const pool = await this.getPool();
     const result = await pool.query(
-      `SELECT * FROM ${this.schema}.svr_schedule_requests WHERE request_uid = $1`,
-      [requestUid]
+      `SELECT * FROM ${this.schema}.svr_schedule_requests WHERE request_id = $1`,
+      [requestid]
     );
     if (result.rows.length === 0) return null;
     return scheduleRequestRowFromPg(result.rows[0]);
   }
 
-  async listScheduleRequests(jobUid?: string): Promise<ScheduleRequestRow[]> {
+  async listScheduleRequests(jobid?: string): Promise<ScheduleRequestRow[]> {
     const pool = await this.getPool();
     let sql = `SELECT * FROM ${this.schema}.svr_schedule_requests`;
     const params: unknown[] = [];
-    if (jobUid) {
-      sql += ` WHERE job_uid = $1`;
-      params.push(jobUid);
+    if (jobid) {
+      sql += ` WHERE job_id = $1`;
+      params.push(jobid);
     }
     sql += ` ORDER BY updated_at DESC`;
     const result = await pool.query(sql, params);
@@ -1164,12 +1164,12 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_schedule_requests
-       (request_uid, job_uid, client_uid, preferred_slots_json, timezone, notes, status,
+       (request_id, job_id, client_id, preferred_slots_json, timezone, notes, status,
         row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       ON CONFLICT (request_uid) DO UPDATE SET
-         job_uid = EXCLUDED.job_uid,
-         client_uid = EXCLUDED.client_uid,
+       ON CONFLICT (request_id) DO UPDATE SET
+         job_id = EXCLUDED.job_id,
+         client_id = EXCLUDED.client_id,
          preferred_slots_json = EXCLUDED.preferred_slots_json,
          timezone = EXCLUDED.timezone,
          notes = EXCLUDED.notes,
@@ -1179,7 +1179,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
          updated_by = EXCLUDED.updated_by,
          correlation_id = EXCLUDED.correlation_id`,
       [
-        row.request_uid, row.job_uid, row.client_uid, row.preferred_slots_json,
+        row.request_id, row.job_id, row.client_id, row.preferred_slots_json,
         row.timezone, row.notes, row.status,
         row.row_version, row.updated_at, row.updated_by, row.correlation_id
       ]
@@ -1190,34 +1190,34 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_schedules
-       (schedule_uid, request_uid, job_uid, calendar_event_id, start_at, end_at, technician_uid, status,
+       (schedule_id, request_id, job_id, calendar_event_id, start_at, end_at, technician_id, status,
         row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
-        row.schedule_uid, row.request_uid, row.job_uid, row.calendar_event_id,
-        row.start_at, row.end_at, row.technician_uid, row.status,
+        row.schedule_id, row.request_id, row.job_id, row.calendar_event_id,
+        row.start_at, row.end_at, row.technician_id, row.status,
         row.row_version, row.updated_at, row.updated_by, row.correlation_id
       ]
     );
   }
 
-  async getSchedule(scheduleUid: string): Promise<ScheduleRow | null> {
+  async getSchedule(scheduleid: string): Promise<ScheduleRow | null> {
     const pool = await this.getPool();
     const result = await pool.query(
-      `SELECT * FROM ${this.schema}.svr_schedules WHERE schedule_uid = $1`,
-      [scheduleUid]
+      `SELECT * FROM ${this.schema}.svr_schedules WHERE schedule_id = $1`,
+      [scheduleid]
     );
     if (result.rows.length === 0) return null;
     return scheduleRowFromPg(result.rows[0]);
   }
 
-  async listSchedules(jobUid?: string): Promise<ScheduleRow[]> {
+  async listSchedules(jobid?: string): Promise<ScheduleRow[]> {
     const pool = await this.getPool();
     let sql = `SELECT * FROM ${this.schema}.svr_schedules`;
     const params: unknown[] = [];
-    if (jobUid) {
-      sql += ` WHERE job_uid = $1`;
-      params.push(jobUid);
+    if (jobid) {
+      sql += ` WHERE job_id = $1`;
+      params.push(jobid);
     }
     sql += ` ORDER BY updated_at DESC`;
     const result = await pool.query(sql, params);
@@ -1228,24 +1228,24 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_schedules
-       (schedule_uid, request_uid, job_uid, calendar_event_id, start_at, end_at, technician_uid, status,
+       (schedule_id, request_id, job_id, calendar_event_id, start_at, end_at, technician_id, status,
         row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       ON CONFLICT (schedule_uid) DO UPDATE SET
-         request_uid = EXCLUDED.request_uid,
-         job_uid = EXCLUDED.job_uid,
+       ON CONFLICT (schedule_id) DO UPDATE SET
+         request_id = EXCLUDED.request_id,
+         job_id = EXCLUDED.job_id,
          calendar_event_id = EXCLUDED.calendar_event_id,
          start_at = EXCLUDED.start_at,
          end_at = EXCLUDED.end_at,
-         technician_uid = EXCLUDED.technician_uid,
+         technician_id = EXCLUDED.technician_id,
          status = EXCLUDED.status,
          row_version = EXCLUDED.row_version,
          updated_at = EXCLUDED.updated_at,
          updated_by = EXCLUDED.updated_by,
          correlation_id = EXCLUDED.correlation_id`,
       [
-        row.schedule_uid, row.request_uid, row.job_uid, row.calendar_event_id,
-        row.start_at, row.end_at, row.technician_uid, row.status,
+        row.schedule_id, row.request_id, row.job_id, row.calendar_event_id,
+        row.start_at, row.end_at, row.technician_id, row.status,
         row.row_version, row.updated_at, row.updated_by, row.correlation_id
       ]
     );
@@ -1257,11 +1257,11 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_job_documents
-       (document_uid, job_uid, document_type, status, drive_file_id, pdf_file_id, published_url, client_visible,
+       (document_id, job_id, document_type, status, drive_file_id, pdf_file_id, published_url, client_visible,
         row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
-        row.document_uid, row.job_uid, row.document_type, row.status,
+        row.document_id, row.job_id, row.document_type, row.status,
         row.drive_file_id, row.pdf_file_id, row.published_url, row.client_visible,
         row.row_version, row.updated_at, row.updated_by, row.correlation_id
       ]
@@ -1269,11 +1269,11 @@ export class PostgresWorkbookStore implements WorkbookStore {
   }
 
 
-  async getDocument(documentUid: string): Promise<JobDocumentRow | null> {
+  async getDocument(documentid: string): Promise<JobDocumentRow | null> {
     const pool = await this.getPool();
     const result = await pool.query(
-      `SELECT * FROM ${this.schema}.svr_job_documents WHERE document_uid = $1`,
-      [documentUid]
+      `SELECT * FROM ${this.schema}.svr_job_documents WHERE document_id = $1`,
+      [documentid]
     );
     if (result.rows.length === 0) return null;
     return jobDocumentRowFromPg(result.rows[0]);
@@ -1283,11 +1283,11 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_job_documents
-       (document_uid, job_uid, document_type, status, drive_file_id, pdf_file_id, published_url, client_visible,
+       (document_id, job_id, document_type, status, drive_file_id, pdf_file_id, published_url, client_visible,
         row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       ON CONFLICT (document_uid) DO UPDATE SET
-         job_uid = EXCLUDED.job_uid,
+       ON CONFLICT (document_id) DO UPDATE SET
+         job_id = EXCLUDED.job_id,
          document_type = EXCLUDED.document_type,
          status = EXCLUDED.status,
          drive_file_id = EXCLUDED.drive_file_id,
@@ -1299,7 +1299,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
          updated_by = EXCLUDED.updated_by,
          correlation_id = EXCLUDED.correlation_id`,
       [
-        row.document_uid, row.job_uid, row.document_type, row.status,
+        row.document_id, row.job_id, row.document_type, row.status,
         row.drive_file_id, row.pdf_file_id, row.published_url, row.client_visible,
         row.row_version, row.updated_at, row.updated_by, row.correlation_id
       ]
@@ -1307,13 +1307,13 @@ export class PostgresWorkbookStore implements WorkbookStore {
   }
 
 
-  async listDocuments(jobUid?: string): Promise<JobDocumentRow[]> {
+  async listDocuments(jobid?: string): Promise<JobDocumentRow[]> {
     const pool = await this.getPool();
     let sql = `SELECT * FROM ${this.schema}.svr_job_documents`;
     const params: unknown[] = [];
-    if (jobUid) {
-      sql += ` WHERE job_uid = $1`;
-      params.push(jobUid);
+    if (jobid) {
+      sql += ` WHERE job_id = $1`;
+      params.push(jobid);
     }
     sql += ` ORDER BY updated_at DESC`;
     const result = await pool.query(sql, params);
@@ -1331,14 +1331,14 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_audit_log
-       (audit_uid, action, entry_type, payload_json, actor_user_uid, correlation_id, at)
+       (audit_id, action, entry_type, payload_json, actor_user_id, correlation_id, at)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         `AUD-${crypto.randomUUID()}`,
         args.action,
         args.entry_type ?? "system_audit",
         JSON.stringify(args.payload),
-        args.ctx.actorUserUid,
+        args.ctx.actorUserid,
         args.ctx.correlationId,
         nowIso()
       ]
@@ -1348,16 +1348,16 @@ export class PostgresWorkbookStore implements WorkbookStore {
   async listAudits(): Promise<Array<Record<string, string>>> {
     const pool = await this.getPool();
     const result = await pool.query(
-      `SELECT audit_uid, action, entry_type, payload_json, actor_user_uid, correlation_id, at
+      `SELECT audit_id, action, entry_type, payload_json, actor_user_id, correlation_id, at
        FROM ${this.schema}.svr_audit_log
        ORDER BY at DESC`
     );
     return result.rows.map((row) => ({
-      audit_uid: String(row.audit_uid),
+      audit_id: String(row.audit_id),
       action: String(row.action),
       entry_type: String(row.entry_type),
       payload_json: String(row.payload_json),
-      actor_user_uid: String(row.actor_user_uid),
+      actor_user_id: String(row.actor_user_id),
       correlation_id: String(row.correlation_id),
       at: String(row.at)
     }));
@@ -1369,10 +1369,10 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_automation_jobs
-       (automation_job_uid, action, payload_json, status, retry_count, last_error,
+       (automation_job_id, action, payload_json, status, retry_count, last_error,
         row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       ON CONFLICT (automation_job_uid) DO UPDATE SET
+       ON CONFLICT (automation_job_id) DO UPDATE SET
          action = EXCLUDED.action,
          payload_json = EXCLUDED.payload_json,
          status = EXCLUDED.status,
@@ -1383,18 +1383,18 @@ export class PostgresWorkbookStore implements WorkbookStore {
          updated_by = EXCLUDED.updated_by,
          correlation_id = EXCLUDED.correlation_id`,
       [
-        row.automation_job_uid, row.action, row.payload_json, row.status,
+        row.automation_job_id, row.action, row.payload_json, row.status,
         row.retry_count, row.last_error,
         row.row_version, row.updated_at, row.updated_by, row.correlation_id
       ]
     );
   }
 
-  async getAutomationJob(automationJobUid: string): Promise<AutomationJobRow | null> {
+  async getAutomationJob(automationJobid: string): Promise<AutomationJobRow | null> {
     const pool = await this.getPool();
     const result = await pool.query(
-      `SELECT * FROM ${this.schema}.svr_automation_jobs WHERE automation_job_uid = $1`,
-      [automationJobUid]
+      `SELECT * FROM ${this.schema}.svr_automation_jobs WHERE automation_job_id = $1`,
+      [automationJobid]
     );
     if (result.rows.length === 0) return null;
     return automationJobRowFromPg(result.rows[0]);
@@ -1414,12 +1414,12 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const pool = await this.getPool();
     await pool.query(
       `INSERT INTO ${this.schema}.svr_sync_queue
-       (mutation_uid, job_uid, actor_uid, payload_json, status, last_result,
+       (mutation_id, job_id, actor_id, payload_json, status, last_result,
         row_version, updated_at, updated_by, correlation_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       ON CONFLICT (mutation_uid) DO UPDATE SET
-         job_uid = EXCLUDED.job_uid,
-         actor_uid = EXCLUDED.actor_uid,
+       ON CONFLICT (mutation_id) DO UPDATE SET
+         job_id = EXCLUDED.job_id,
+         actor_id = EXCLUDED.actor_id,
          payload_json = EXCLUDED.payload_json,
          status = EXCLUDED.status,
          last_result = EXCLUDED.last_result,
@@ -1428,28 +1428,28 @@ export class PostgresWorkbookStore implements WorkbookStore {
          updated_by = EXCLUDED.updated_by,
          correlation_id = EXCLUDED.correlation_id`,
       [
-        row.mutation_uid, row.job_uid, row.actor_uid, row.payload_json,
+        row.mutation_id, row.job_id, row.actor_id, row.payload_json,
         row.status, row.last_result,
         row.row_version, row.updated_at, row.updated_by, row.correlation_id
       ]
     );
   }
 
-  async getSyncQueue(mutationUid: string): Promise<SyncQueueRow | null> {
+  async getSyncQueue(mutationid: string): Promise<SyncQueueRow | null> {
     const pool = await this.getPool();
     const result = await pool.query(
-      `SELECT * FROM ${this.schema}.svr_sync_queue WHERE mutation_uid = $1`,
-      [mutationUid]
+      `SELECT * FROM ${this.schema}.svr_sync_queue WHERE mutation_id = $1`,
+      [mutationid]
     );
     if (result.rows.length === 0) return null;
     return syncQueueRowFromPg(result.rows[0]);
   }
 
-  async listSyncQueueByJob(jobUid: string): Promise<SyncQueueRow[]> {
+  async listSyncQueueByJob(jobid: string): Promise<SyncQueueRow[]> {
     const pool = await this.getPool();
     const result = await pool.query(
-      `SELECT * FROM ${this.schema}.svr_sync_queue WHERE job_uid = $1 ORDER BY updated_at DESC`,
-      [jobUid]
+      `SELECT * FROM ${this.schema}.svr_sync_queue WHERE job_id = $1 ORDER BY updated_at DESC`,
+      [jobid]
     );
     return result.rows.map(syncQueueRowFromPg);
   }
@@ -1467,21 +1467,21 @@ export class PostgresWorkbookStore implements WorkbookStore {
       try {
         const existingQueue = await this.getSyncQueue(mutation.mutation_id);
         if (existingQueue?.status === "applied") {
-          const job = await this.getJob(mutation.job_uid);
+          const job = await this.getJob(mutation.job_id);
           result.applied.push({
             mutation_id: mutation.mutation_id,
-            job_uid: mutation.job_uid,
+            job_id: mutation.job_id,
             row_version: job?.row_version ?? 0
           });
           continue;
         }
 
-        const job = await this.getJob(mutation.job_uid);
+        const job = await this.getJob(mutation.job_id);
         if (!job) {
           result.failed.push({
             mutation_id: mutation.mutation_id,
-            job_uid: mutation.job_uid,
-            error: normalizeError(`Unknown job ${mutation.job_uid}`, "not_found")
+            job_id: mutation.job_id,
+            error: normalizeError(`Unknown job ${mutation.job_id}`, "not_found")
           });
           continue;
         }
@@ -1490,18 +1490,18 @@ export class PostgresWorkbookStore implements WorkbookStore {
           const conflict = toConflict(job, mutation.expected_row_version);
           result.conflicts.push({
             mutation_id: mutation.mutation_id,
-            job_uid: mutation.job_uid,
+            job_id: mutation.job_id,
             conflict
           });
 
           await this.upsertSyncQueue({
-            mutation_uid: mutation.mutation_id,
-            job_uid: mutation.job_uid,
-            actor_uid: args.actor.user_uid,
+            mutation_id: mutation.mutation_id,
+            job_id: mutation.job_id,
+            actor_id: args.actor.user_id,
             payload_json: JSON.stringify(mutation.payload),
             status: "conflict",
             last_result: JSON.stringify(conflict),
-            ...newMutableMeta(args.ctx.actorUserUid, args.ctx.correlationId)
+            ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
           });
 
           continue;
@@ -1527,36 +1527,36 @@ export class PostgresWorkbookStore implements WorkbookStore {
         if (updateResult.conflict) {
           result.conflicts.push({
             mutation_id: mutation.mutation_id,
-            job_uid: mutation.job_uid,
+            job_id: mutation.job_id,
             conflict: updateResult.conflict
           });
 
           await this.upsertSyncQueue({
-            mutation_uid: mutation.mutation_id,
-            job_uid: mutation.job_uid,
-            actor_uid: args.actor.user_uid,
+            mutation_id: mutation.mutation_id,
+            job_id: mutation.job_id,
+            actor_id: args.actor.user_id,
             payload_json: JSON.stringify(mutation.payload),
             status: "conflict",
             last_result: JSON.stringify(updateResult.conflict),
-            ...newMutableMeta(args.ctx.actorUserUid, args.ctx.correlationId)
+            ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
           });
 
           continue;
         }
 
         await this.upsertSyncQueue({
-          mutation_uid: mutation.mutation_id,
-          job_uid: mutation.job_uid,
-          actor_uid: args.actor.user_uid,
+          mutation_id: mutation.mutation_id,
+          job_id: mutation.job_id,
+          actor_id: args.actor.user_id,
           payload_json: JSON.stringify(mutation.payload),
           status: "applied",
           last_result: "applied",
-          ...newMutableMeta(args.ctx.actorUserUid, args.ctx.correlationId)
+          ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
         });
 
         result.applied.push({
           mutation_id: mutation.mutation_id,
-          job_uid: mutation.job_uid,
+          job_id: mutation.job_id,
           row_version: updateResult.job.row_version
         });
       } catch (err) {
@@ -1564,18 +1564,18 @@ export class PostgresWorkbookStore implements WorkbookStore {
         const typedError: ApiError = normalizeError(message, "sync_apply_failed");
         result.failed.push({
           mutation_id: mutation.mutation_id,
-          job_uid: mutation.job_uid,
+          job_id: mutation.job_id,
           error: typedError
         });
 
         await this.upsertSyncQueue({
-          mutation_uid: mutation.mutation_id,
-          job_uid: mutation.job_uid,
-          actor_uid: args.actor.user_uid,
+          mutation_id: mutation.mutation_id,
+          job_id: mutation.job_id,
+          actor_id: args.actor.user_id,
           payload_json: JSON.stringify(mutation.payload),
           status: "failed",
           last_result: JSON.stringify(typedError),
-          ...newMutableMeta(args.ctx.actorUserUid, args.ctx.correlationId)
+          ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
         });
       }
     }
@@ -1585,7 +1585,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
 
   async resolveSyncConflict(args: {
     actor: SessionUser;
-    jobUid: string;
+    jobid: string;
     strategy: "server" | "client" | "merge";
     serverRowVersion: number;
     clientRowVersion: number;
@@ -1598,13 +1598,13 @@ export class PostgresWorkbookStore implements WorkbookStore {
       await client.query("BEGIN");
 
       const currentRes = await client.query(
-        `SELECT * FROM ${this.schema}.svr_jobs WHERE job_uid = $1 FOR UPDATE`,
-        [args.jobUid]
+        `SELECT * FROM ${this.schema}.svr_jobs WHERE job_id = $1 FOR UPDATE`,
+        [args.jobid]
       );
 
       if (currentRes.rows.length === 0) {
         await client.query("ROLLBACK");
-        throw new Error(`Unknown job ${args.jobUid}`);
+        throw new Error(`Unknown job ${args.jobid}`);
       }
 
       const current = jobRowFromPg(currentRes.rows[0]);
@@ -1635,14 +1635,14 @@ export class PostgresWorkbookStore implements WorkbookStore {
       const updatedRes = await client.query(
         `UPDATE ${this.schema}.svr_jobs
          SET status = $1, last_note = $2, row_version = $3, updated_at = $4, updated_by = $5, correlation_id = $6
-         WHERE job_uid = $7 AND row_version = $8
+         WHERE job_id = $7 AND row_version = $8
          RETURNING *`,
-        [current.status, current.last_note, newVersion, now, args.ctx.actorUserUid, args.ctx.correlationId, args.jobUid, args.serverRowVersion]
+        [current.status, current.last_note, newVersion, now, args.ctx.actorUserid, args.ctx.correlationId, args.jobid, args.serverRowVersion]
       );
 
       if (updatedRes.rows.length === 0) {
         await client.query("ROLLBACK");
-        const refetched = await client.query(`SELECT * FROM ${this.schema}.svr_jobs WHERE job_uid = $1`, [args.jobUid]);
+        const refetched = await client.query(`SELECT * FROM ${this.schema}.svr_jobs WHERE job_id = $1`, [args.jobid]);
         const refetchedJob = refetched.rows.length > 0 ? jobRowFromPg(refetched.rows[0] as PgRow) : current;
         return { job: immutableClone(refetchedJob), conflict: toConflict(refetchedJob, args.clientRowVersion) };
       }
@@ -1674,13 +1674,13 @@ export class PostgresWorkbookStore implements WorkbookStore {
       ? jobs
       : jobs.filter((job) => Date.parse(job.updated_at) >= sinceTs);
 
-    const jobUids = filteredJobs.map((j) => j.job_uid);
+    const jobids = filteredJobs.map((j) => j.job_id);
     let queue: SyncQueueRow[] = [];
-    if (jobUids.length > 0) {
-      const placeholders = jobUids.map((_, i) => `$${i + 1}`).join(", ");
+    if (jobids.length > 0) {
+      const placeholders = jobids.map((_, i) => `$${i + 1}`).join(", ");
       const queueResult = await pool.query(
-        `SELECT * FROM ${this.schema}.svr_sync_queue WHERE job_uid IN (${placeholders}) ORDER BY updated_at DESC`,
-        jobUids
+        `SELECT * FROM ${this.schema}.svr_sync_queue WHERE job_id IN (${placeholders}) ORDER BY updated_at DESC`,
+        jobids
       );
       queue = queueResult.rows.map(syncQueueRowFromPg);
     }
@@ -1705,13 +1705,13 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const result = await pool.query(
       `UPDATE ${this.schema}.svr_jobs
        SET status = $1, last_note = $2, row_version = $3, updated_at = $4, updated_by = $5, correlation_id = $6
-       WHERE job_uid = $7 AND row_version = $8
+       WHERE job_id = $7 AND row_version = $8
        RETURNING *`,
-      [job.status, job.last_note, newVersion, now, ctx.actorUserUid, ctx.correlationId, job.job_uid, job.row_version]
+      [job.status, job.last_note, newVersion, now, ctx.actorUserid, ctx.correlationId, job.job_id, job.row_version]
     );
 
     if (result.rows.length === 0) {
-      const refetched = await this.getJob(job.job_uid);
+      const refetched = await this.getJob(job.job_id);
       const refetchedJob = refetched ?? job;
       return { job: immutableClone(refetchedJob), conflict: toConflict(refetchedJob, job.row_version) };
     }
@@ -1719,7 +1719,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
     const updated = jobRowFromPg(result.rows[0] as PgRow);
 
     const event = stampEvent({
-      jobUid: updated.job_uid,
+      jobid: updated.job_id,
       eventType: "sync_mutation_applied",
       payload: { status: updated.status, last_note: updated.last_note },
       ctx

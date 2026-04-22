@@ -21,20 +21,20 @@ export interface MutableMeta {
 }
 
 export interface UserRow extends MutableMeta {
-  user_uid: string;
+  user_id: string;
   email: string;
   display_name: string;
   role: Role;
-  client_uid: string;
-  technician_uid: string;
+  client_id: string;
+  technician_id: string;
   active: "true" | "false";
 }
 
 export interface JobRow extends MutableMeta {
-  job_uid: string;
-  client_uid: string;
-  site_uid: string;
-  technician_uid: string;
+  job_id: string;
+  client_id: string;
+  site_id: string;
+  technician_id: string;
   title: string;
   status: JobStatus;
   scheduled_start: string;
@@ -43,15 +43,15 @@ export interface JobRow extends MutableMeta {
 }
 
 export interface JobEventRow extends MutableMeta {
-  event_uid: string;
-  job_uid: string;
+  event_id: string;
+  job_id: string;
   event_type: string;
   payload_json: string;
 }
 
 export interface JobDocumentRow extends MutableMeta {
-  document_uid: string;
-  job_uid: string;
+  document_id: string;
+  job_id: string;
   document_type: DocumentType;
   status: "generated" | "published";
   drive_file_id: string;
@@ -61,9 +61,9 @@ export interface JobDocumentRow extends MutableMeta {
 }
 
 export interface ScheduleRequestRow extends MutableMeta {
-  request_uid: string;
-  job_uid: string;
-  client_uid: string;
+  request_id: string;
+  job_id: string;
+  client_id: string;
   preferred_slots_json: string;
   timezone: string;
   notes: string;
@@ -71,18 +71,18 @@ export interface ScheduleRequestRow extends MutableMeta {
 }
 
 export interface ScheduleRow extends MutableMeta {
-  schedule_uid: string;
-  request_uid: string;
-  job_uid: string;
+  schedule_id: string;
+  request_id: string;
+  job_id: string;
   calendar_event_id: string;
   start_at: string;
   end_at: string;
-  technician_uid: string;
+  technician_id: string;
   status: "confirmed" | "rescheduled";
 }
 
 export interface AutomationJobRow extends MutableMeta {
-  automation_job_uid: string;
+  automation_job_id: string;
   action: string;
   payload_json: string;
   status: "queued" | "done" | "failed";
@@ -91,18 +91,18 @@ export interface AutomationJobRow extends MutableMeta {
 }
 
 export interface SyncQueueRow extends MutableMeta {
-  mutation_uid: string;
-  job_uid: string;
-  actor_uid: string;
+  mutation_id: string;
+  job_id: string;
+  actor_id: string;
   payload_json: string;
   status: "applied" | "conflict" | "failed";
   last_result: string;
 }
 
 export interface FinanceQuoteRow extends MutableMeta {
-  quote_uid: string;
-  job_uid: string;
-  client_uid: string;
+  quote_id: string;
+  job_id: string;
+  client_id: string;
   description: string;
   amount: number;
   status: "draft" | "sent" | "approved" | "rejected" | "invoiced";
@@ -110,10 +110,10 @@ export interface FinanceQuoteRow extends MutableMeta {
 }
 
 export interface FinanceInvoiceRow extends MutableMeta {
-  invoice_uid: string;
-  job_uid: string;
-  quote_uid: string;
-  client_uid: string;
+  invoice_id: string;
+  job_id: string;
+  quote_id: string;
+  client_id: string;
   amount: number;
   due_date: string;
   status: "issued" | "part_paid" | "paid" | "overdue";
@@ -121,8 +121,8 @@ export interface FinanceInvoiceRow extends MutableMeta {
 }
 
 export interface FinanceStatementRow extends MutableMeta {
-  statement_uid: string;
-  client_uid: string;
+  statement_id: string;
+  client_id: string;
   period_label: string;
   opening_balance: number;
   billed: number;
@@ -132,7 +132,7 @@ export interface FinanceStatementRow extends MutableMeta {
 }
 
 export interface FinanceDebtorRow extends MutableMeta {
-  client_uid: string;
+  client_id: string;
   total_due: number;
   current_bucket: number;
   bucket_30: number;
@@ -142,15 +142,15 @@ export interface FinanceDebtorRow extends MutableMeta {
 }
 
 export interface EscrowRow extends MutableMeta {
-  document_uid: string;
-  invoice_uid: string;
+  document_id: string;
+  invoice_id: string;
   status: "locked" | "released";
   locked_at: string;
   released_at: string;
 }
 
 export interface SkillMatrixRow extends MutableMeta {
-  user_uid: string;
+  user_id: string;
   saqcc_type: string;
   saqcc_expiry: string;
   medical_expiry: string;
@@ -218,26 +218,26 @@ export interface ApiEnvelope<T> {
 }
 
 export interface SessionUser {
-  user_uid: string;
+  user_id: string;
   email: string;
   role: Role;
   display_name: string;
-  client_uid: string;
-  technician_uid: string;
+  client_id: string;
+  technician_id: string;
 }
 
 export interface SyncMutation {
   mutation_id: string;
   kind: "job_status" | "job_note";
-  job_uid: string;
+  job_id: string;
   expected_row_version: number;
   payload: Record<string, unknown>;
 }
 
 export interface SyncPushResult {
-  applied: Array<{ mutation_id: string; job_uid: string; row_version: number }>;
-  conflicts: Array<{ mutation_id: string; job_uid: string; conflict: ConflictPayload }>;
-  failed: Array<{ mutation_id: string; job_uid: string; error: ApiError }>;
+  applied: Array<{ mutation_id: string; job_id: string; row_version: number }>;
+  conflicts: Array<{ mutation_id: string; job_id: string; conflict: ConflictPayload }>;
+  failed: Array<{ mutation_id: string; job_id: string; error: ApiError }>;
 }
 
 export interface OfflineQueueItem extends SyncMutation {

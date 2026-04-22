@@ -60,7 +60,7 @@ export function JobDetailView({
     },
     {
       label: "Lead technician",
-      detail: selectedJob?.technician_uid || "Pending assignment"
+      detail: selectedJob?.technician_id || "Pending assignment"
     }
   ];
 
@@ -106,20 +106,20 @@ export function JobDetailView({
         <summary>Technical metadata</summary>
         <dl className="detail-grid" style={{ marginTop: 'var(--space-3)' }}>
           <div>
-            <dt>Job UID</dt>
-            <dd>{selectedJob.job_uid}</dd>
+            <dt>Job id</dt>
+            <dd>{selectedJob.job_id}</dd>
           </div>
           <div>
             <dt>Row version</dt>
             <dd>{selectedJob.row_version}</dd>
           </div>
           <div>
-            <dt>Client UID</dt>
-            <dd>{selectedJob.client_uid || "n/a"}</dd>
+            <dt>Client id</dt>
+            <dd>{selectedJob.client_id || "n/a"}</dd>
           </div>
           <div>
-            <dt>Technician UID</dt>
-            <dd>{selectedJob.technician_uid || "n/a"}</dd>
+            <dt>Technician id</dt>
+            <dd>{selectedJob.technician_id || "n/a"}</dd>
           </div>
         </dl>
       </details>

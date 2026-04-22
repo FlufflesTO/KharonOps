@@ -135,10 +135,10 @@ Every real user must have:
 
 Role-specific requirements:
 
-- `client`: must also have `client_uid`
-- `technician`: must also have `technician_uid`
-- `dispatcher`: leave `client_uid` and `technician_uid` blank unless there is a specific reason
-- `admin`: leave `client_uid` and `technician_uid` blank unless there is a specific reason
+- `client`: must also have `client_id`
+- `technician`: must also have `technician_id`
+- `dispatcher`: leave `client_id` and `technician_id` blank unless there is a specific reason
+- `admin`: leave `client_id` and `technician_id` blank unless there is a specific reason
 
 ### Minimum pilot provisioning
 
@@ -151,8 +151,8 @@ Role-specific requirements:
 
 The user must have data to see after login:
 
-- client users need matching jobs by `client_uid`
-- technician users need matching jobs by `technician_uid`
+- client users need matching jobs by `client_id`
+- technician users need matching jobs by `technician_id`
 
 Otherwise login succeeds but the workspace appears empty.
 

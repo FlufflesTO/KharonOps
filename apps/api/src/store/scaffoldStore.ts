@@ -42,12 +42,12 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     return this.notImplemented("listJobsForUser");
   }
 
-  async getJob(_jobUid: string): Promise<JobRow | null> {
+  async getJob(_jobid: string): Promise<JobRow | null> {
     return this.notImplemented("getJob");
   }
 
   async updateJobStatus(_args: {
-    jobUid: string;
+    jobid: string;
     status: JobRow["status"];
     expectedRowVersion: number;
     ctx: StoreContext;
@@ -56,7 +56,7 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
   }
 
   async appendJobNote(_args: {
-    jobUid: string;
+    jobid: string;
     note: string;
     expectedRowVersion: number;
     ctx: StoreContext;
@@ -72,11 +72,11 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     this.notImplemented("createScheduleRequest");
   }
 
-  async getScheduleRequest(_requestUid: string): Promise<ScheduleRequestRow | null> {
+  async getScheduleRequest(_requestid: string): Promise<ScheduleRequestRow | null> {
     return this.notImplemented("getScheduleRequest");
   }
 
-  async listScheduleRequests(_jobUid?: string): Promise<ScheduleRequestRow[]> {
+  async listScheduleRequests(_jobid?: string): Promise<ScheduleRequestRow[]> {
     return this.notImplemented("listScheduleRequests");
   }
 
@@ -88,11 +88,11 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     this.notImplemented("createSchedule");
   }
 
-  async getSchedule(_scheduleUid: string): Promise<ScheduleRow | null> {
+  async getSchedule(_scheduleid: string): Promise<ScheduleRow | null> {
     return this.notImplemented("getSchedule");
   }
 
-  async listSchedules(_jobUid?: string): Promise<ScheduleRow[]> {
+  async listSchedules(_jobid?: string): Promise<ScheduleRow[]> {
     return this.notImplemented("listSchedules");
   }
 
@@ -104,7 +104,7 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     this.notImplemented("createDocument");
   }
 
-  async getDocument(_documentUid: string): Promise<JobDocumentRow | null> {
+  async getDocument(_documentid: string): Promise<JobDocumentRow | null> {
     return this.notImplemented("getDocument");
   }
 
@@ -112,7 +112,7 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     this.notImplemented("upsertDocument");
   }
 
-  async listDocuments(_jobUid?: string): Promise<JobDocumentRow[]> {
+  async listDocuments(_jobid?: string): Promise<JobDocumentRow[]> {
     return this.notImplemented("listDocuments");
   }
 
@@ -128,7 +128,7 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     this.notImplemented("upsertAutomationJob");
   }
 
-  async getAutomationJob(_automationJobUid: string): Promise<AutomationJobRow | null> {
+  async getAutomationJob(_automationJobid: string): Promise<AutomationJobRow | null> {
     return this.notImplemented("getAutomationJob");
   }
 
@@ -140,11 +140,11 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     this.notImplemented("upsertSyncQueue");
   }
 
-  async getSyncQueue(_mutationUid: string): Promise<SyncQueueRow | null> {
+  async getSyncQueue(_mutationid: string): Promise<SyncQueueRow | null> {
     return this.notImplemented("getSyncQueue");
   }
 
-  async listSyncQueueByJob(_jobUid: string): Promise<SyncQueueRow[]> {
+  async listSyncQueueByJob(_jobid: string): Promise<SyncQueueRow[]> {
     return this.notImplemented("listSyncQueueByJob");
   }
 
@@ -164,7 +164,7 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
   }
 
   async updateFinanceQuoteStatus(_args: {
-    quote_uid: string;
+    quote_id: string;
     status: FinanceQuoteRow["status"];
     ctx: StoreContext;
   }): Promise<FinanceQuoteRow | null> {
@@ -203,7 +203,7 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     return this.notImplemented("listEscrowRows");
   }
 
-  async getEscrowByDocument(_document_uid: string): Promise<EscrowRow | null> {
+  async getEscrowByDocument(_document_id: string): Promise<EscrowRow | null> {
     return this.notImplemented("getEscrowByDocument");
   }
 
@@ -233,7 +233,7 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
 
   async resolveSyncConflict(_args: {
     actor: SessionUser;
-    jobUid: string;
+    jobid: string;
     strategy: "server" | "client" | "merge";
     serverRowVersion: number;
     clientRowVersion: number;

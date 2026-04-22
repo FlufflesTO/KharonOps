@@ -152,7 +152,7 @@ export const services: ServiceProfile[] = [
       "Camera placement and coverage diagram",
       "Retention and export policy sheet",
       "Health-check service report",
-      "Incident retrieval SOP guidance"
+      "Incident retrieval SOP gidance"
     ],
     ctaLabel: "Design CCTV scope"
   },
@@ -371,7 +371,7 @@ export const resourceCards = [
   {
     title: "Suppression Integrity Primer",
     description:
-      "A concise guide to room integrity testing, retention time expectations, and pre-discharge verification.",
+      "A concise gide to room integrity testing, retention time expectations, and pre-discharge verification.",
     format: "Technical note",
     ctaLabel: "Request the primer",
     intent: "resource"

@@ -81,12 +81,12 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
     const { rails } = createRails({
       Users_Master: [
         {
-          user_uid: "USR-001",
+          user_id: "USR-001",
           email: "connor@kharon.co.za",
           display_name: "Connor",
           role: "admin",
-          client_uid: "",
-          technician_uid: "",
+          client_id: "",
+          technician_id: "",
           active: "TRUE",
           row_version: "1",
           updated_at: "2026-04-10T19:01:54.054Z",
@@ -96,7 +96,7 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
       ],
       Jobs_Master: [
         {
-          job_uid: "JOB-00001",
+          job_id: "JOB-00001",
           row_version: "7",
           client_id: "CLT-0042",
           site_id: "SITE-00119",
@@ -121,10 +121,10 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
     expect(user?.active).toBe("true");
     expect(user?.email).toBe("connor@kharon.co.za");
     expect(job).toMatchObject({
-      job_uid: "JOB-00001",
-      client_uid: "CLT-0042",
-      site_uid: "SITE-00119",
-      technician_uid: "TECH-001",
+      job_id: "JOB-00001",
+      client_id: "CLT-0042",
+      site_id: "SITE-00119",
+      technician_id: "TECH-001",
       title: "Replace Power Supply",
       status: "performed",
       scheduled_start: "2026-01-05",
@@ -140,7 +140,7 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
     const { rails, rows } = createRails({
       Jobs_Master: [
         {
-          job_uid: "JOB-00002",
+          job_id: "JOB-00002",
           row_version: "3",
           client_id: "CLT-0001",
           site_id: "SITE-0001",
@@ -159,11 +159,11 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
 
     const store = new SheetsWorkbookStore(rails);
     const result = await store.updateJobStatus({
-      jobUid: "JOB-00002",
+      jobid: "JOB-00002",
       status: "performed",
       expectedRowVersion: 3,
       ctx: {
-        actorUserUid: "USR-001",
+        actorUserid: "USR-001",
         correlationId: "corr-001"
       }
     });
@@ -174,7 +174,7 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
     expect(result.conflict).toBeNull();
     expect(result.job.status).toBe("performed");
     expect(updatedRow).toMatchObject({
-      job_uid: "JOB-00002",
+      job_id: "JOB-00002",
       row_version: "4",
       job_status: "performed",
       status_raw: "Performed",
@@ -186,7 +186,7 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
     });
     expect(eventRow).toMatchObject({
       event_type: "status_changed",
-      job_uid: "JOB-00002",
+      job_id: "JOB-00002",
       new_value: "performed"
     });
   });
@@ -195,7 +195,7 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
     const { rails, rows } = createRails({
       Jobs_Master: [
         {
-          job_uid: "JOB-00003",
+          job_id: "JOB-00003",
           legacy_job_id: "KHA12603",
           client_id: "CLT-0009",
           site_id: "SITE-00061",
@@ -212,8 +212,8 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
 
     const store = new SheetsWorkbookStore(rails);
     await store.createDocument({
-      document_uid: "DOC-00001",
-      job_uid: "JOB-00003",
+      document_id: "DOC-00001",
+      job_id: "JOB-00003",
       document_type: "service_report",
       status: "generated",
       drive_file_id: "drive-doc-001",
@@ -232,14 +232,14 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
     const fileRow = rows.get("Portal_Files")?.[0];
 
     expect(createdDocument).toMatchObject({
-      document_uid: "DOC-00001",
+      document_id: "DOC-00001",
       drive_file_id: "drive-doc-001",
       pdf_file_id: "pdf-file-001",
       status: "generated"
     });
     expect(documentRow).toMatchObject({
-      document_uid: "DOC-00001",
-      job_uid: "JOB-00003",
+      document_id: "DOC-00001",
+      job_id: "JOB-00003",
       client_id: "CLT-0009",
       site_id: "SITE-00061",
       contract_id: "CTR-0009",
@@ -248,18 +248,18 @@ describe("SheetsWorkbookStore legacy workbook mapping", () => {
       portal_visible: "FALSE"
     });
     expect(fileRow).toMatchObject({
-      file_uid: "FIL-00001",
-      job_uid: "JOB-00003",
+      file_id: "FIL-00001",
+      job_id: "JOB-00003",
       drive_file_id: "pdf-file-001",
       source_url: "",
       portal_visible: "FALSE",
       visible_to_client: "FALSE"
     });
-    expect(String(fileRow?.notes)).toContain("document_uid:DOC-00001");
+    expect(String(fileRow?.notes)).toContain("document_id:DOC-00001");
 
     await store.upsertDocument({
-      document_uid: "DOC-00001",
-      job_uid: "JOB-00003",
+      document_id: "DOC-00001",
+      job_id: "JOB-00003",
       document_type: "service_report",
       status: "published",
       drive_file_id: "drive-doc-001",

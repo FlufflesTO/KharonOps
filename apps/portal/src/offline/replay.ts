@@ -17,15 +17,15 @@ function extractData(envelope: ApiEnvelope<SyncPushResult>): SyncPushResult {
 
   return {
     applied: [],
-    conflicts: envelope.conflict ? [{ mutation_id: "", job_uid: "", conflict: envelope.conflict }] : [],
+    conflicts: envelope.conflict ? [{ mutation_id: "", job_id: "", conflict: envelope.conflict }] : [],
     failed: envelope.error
       ? [
-          {
-            mutation_id: "",
-            job_uid: "",
-            error: envelope.error
-          }
-        ]
+        {
+          mutation_id: "",
+          job_id: "",
+          error: envelope.error
+        }
+      ]
       : []
   };
 }

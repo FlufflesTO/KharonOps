@@ -3,12 +3,12 @@ import type { JobRow, SessionUser, UserRow } from "@kharon/domain";
 import { buildDocumentTokens } from "../../apps/api/src/services/documentTokens";
 
 const job: JobRow = {
-  job_uid: "JOB-00042",
-  client_uid: "CLT-001",
-  site_uid: "SITE-007",
-  technician_uid: "TECH-009",
+  job_id: "JOB-00042",
+  client_id: "CLT-001",
+  site_id: "SITE-007",
+  technician_id: "TECH-009",
   title: "Quarterly CCTV and access control service",
-  status: "performed",  scheduled_start: "2026-04-11T08:00:00.000Z",
+  status: "performed", scheduled_start: "2026-04-11T08:00:00.000Z",
   scheduled_end: "2026-04-11T10:00:00.000Z",
   last_note: "Client requested a report pack with service evidence.",
   row_version: 4,
@@ -18,22 +18,22 @@ const job: JobRow = {
 };
 
 const actor: SessionUser = {
-  user_uid: "USR-ADMIN",
+  user_id: "USR-ADMIN",
   email: "connor@kharon.co.za",
   role: "admin",
   display_name: "Operations Admin",
-  client_uid: "",
-  technician_uid: ""
+  client_id: "",
+  technician_id: ""
 };
 
 const users: UserRow[] = [
   {
-    user_uid: "USR-CLIENT",
+    user_id: "USR-CLIENT",
     email: "connor@kharon.co.za",
     display_name: "Client Contact",
     role: "client",
-    client_uid: "CLT-001",
-    technician_uid: "",
+    client_id: "CLT-001",
+    technician_id: "",
     active: "true",
     row_version: 1,
     updated_at: "2026-04-11T07:00:00.000Z",
@@ -41,12 +41,12 @@ const users: UserRow[] = [
     correlation_id: "corr-2"
   },
   {
-    user_uid: "USR-TECH",
+    user_id: "USR-TECH",
     email: "connor@kharon.co.za",
     display_name: "Field Technician",
     role: "technician",
-    client_uid: "",
-    technician_uid: "TECH-009",
+    client_id: "",
+    technician_id: "TECH-009",
     active: "true",
     row_version: 1,
     updated_at: "2026-04-11T07:00:00.000Z",
@@ -58,7 +58,7 @@ const users: UserRow[] = [
 describe("buildDocumentTokens", () => {
   it("builds a richer default token contract for document templates", () => {
     const tokens = buildDocumentTokens({
-      documentUid: "DOC-123",
+      documentid: "DOC-123",
       documentType: "service_report",
       job,
       actor,
@@ -70,9 +70,9 @@ describe("buildDocumentTokens", () => {
     if (brandToken?.type === "text") {
       expect(brandToken.value).toBe("Kharon Fire & Security Solutions");
     }
-    const docUidToken = tokens.document_uid;
-    if (docUidToken?.type === "text") {
-      expect(docUidToken.value).toBe("DOC-123");
+    const docidToken = tokens.document_id;
+    if (docidToken?.type === "text") {
+      expect(docidToken.value).toBe("DOC-123");
     }
     const docTypeLabel = tokens.document_type_label;
     if (docTypeLabel?.type === "text") {
@@ -133,7 +133,7 @@ describe("buildDocumentTokens", () => {
 
   it("allows explicit request tokens to override defaults", () => {
     const tokens = buildDocumentTokens({
-      documentUid: "DOC-123",
+      documentid: "DOC-123",
       documentType: "jobcard",
       job,
       actor,

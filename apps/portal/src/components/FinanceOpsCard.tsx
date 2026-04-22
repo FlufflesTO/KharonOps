@@ -16,11 +16,11 @@ interface FinanceOpsCardProps {
   documents: Array<Record<string, unknown>>;
   store: UpgradeWorkspaceState;
   onRefreshStore: () => void;
-  onCreateQuote: (payload: { job_uid: string; client_uid: string; description: string; amount: number }) => void;
-  onUpdateQuoteStatus: (quoteUid: string, status: "draft" | "sent" | "approved" | "rejected" | "invoiced") => void;
-  onCreateInvoiceFromQuote: (quoteUid: string, dueDate: string) => void;
-  onReconcileInvoice: (invoiceUid: string) => void;
-  onLockEscrow: (documentUid: string, invoiceUid: string) => void;
+  onCreateQuote: (payload: { job_id: string; client_id: string; description: string; amount: number }) => void;
+  onUpdateQuoteStatus: (quoteid: string, status: "draft" | "sent" | "approved" | "rejected" | "invoiced") => void;
+  onCreateInvoiceFromQuote: (quoteid: string, dueDate: string) => void;
+  onReconcileInvoice: (invoiceid: string) => void;
+  onLockEscrow: (documentid: string, invoiceid: string) => void;
   onRebuildAnalytics: () => void;
 }
 
@@ -30,7 +30,7 @@ function asMoney(value: number): string {
 
 function deriveJobValue(job: JobRecord): number {
   const base = 3200;
-  const uidSeed = Number((job.job_uid.match(/\d+/)?.[0] ?? "0")) % 7;
+  const idSeed = Number((job.job_id.match(/\d+/)?.[0] ?? "0")) % 7;
   const statusFactor: Record<JobRecord["status"], number> = {
     draft: 1.0,
     performed: 1.35,
@@ -39,7 +39,7 @@ function deriveJobValue(job: JobRecord): number {
     certified: 1.6,
     cancelled: 0
   };
-  return Math.round((base + uidSeed * 850) * statusFactor[job.status]);
+  return Math.round((base + idSeed * 850) * statusFactor[job.status]);
 }
 
 export function FinanceOpsCard({
@@ -55,14 +55,14 @@ export function FinanceOpsCard({
   onRebuildAnalytics
 }: FinanceOpsCardProps): React.JSX.Element {
   const [moduleIndex, setModuleIndex] = useState(0);
-  const [quoteJobUid, setQuoteJobUid] = useState("");
-  const [quoteClientUid, setQuoteClientUid] = useState("");
+  const [quoteJobid, setQuoteJobid] = useState("");
+  const [quoteClientid, setQuoteClientid] = useState("");
   const [quoteDescription, setQuoteDescription] = useState("Remedial works proposal");
   const [quoteAmount, setQuoteAmount] = useState("0");
   const [invoiceDueDate, setInvoiceDueDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
-  const [selectedQuoteUid, setSelectedQuoteUid] = useState("");
-  const [selectedInvoiceUid, setSelectedInvoiceUid] = useState("");
-  const [selectedEscrowDocumentUid, setSelectedEscrowDocumentUid] = useState("");
+  const [selectedQuoteid, setSelectedQuoteid] = useState("");
+  const [selectedInvoiceid, setSelectedInvoiceid] = useState("");
+  const [selectedEscrowDocumentid, setSelectedEscrowDocumentid] = useState("");
 
   const financials = useMemo(() => {
     const activeJobs = jobs.filter((job) => job.status !== "cancelled");
@@ -90,7 +90,7 @@ export function FinanceOpsCard({
     [documents]
   );
 
-  const selectedQuote = store.quotes.find((item) => item.quote_uid === selectedQuoteUid) ?? null;
+  const selectedQuote = store.quotes.find((item) => item.quote_id === selectedQuoteid) ?? null;
 
   return (
     <article className="workspace-card workspace-card--primary">
@@ -154,12 +154,12 @@ export function FinanceOpsCard({
           <div className="control-stack">
             <div className="form-grid">
               <label className="field-stack">
-                <span>Job UID</span>
-                <input value={quoteJobUid} onChange={(event) => setQuoteJobUid(event.target.value)} placeholder="JOB-1001" />
+                <span>Job id</span>
+                <input value={quoteJobid} onChange={(event) => setQuoteJobid(event.target.value)} placeholder="JOB-1001" />
               </label>
               <label className="field-stack">
-                <span>Client UID</span>
-                <input value={quoteClientUid} onChange={(event) => setQuoteClientUid(event.target.value)} placeholder="CLI-001" />
+                <span>Client id</span>
+                <input value={quoteClientid} onChange={(event) => setQuoteClientid(event.target.value)} placeholder="CLI-001" />
               </label>
               <label className="field-stack">
                 <span>Description</span>
@@ -176,10 +176,10 @@ export function FinanceOpsCard({
                 type="button"
                 onClick={() => {
                   const amount = Number(quoteAmount);
-                  if (!quoteJobUid.trim() || !quoteClientUid.trim() || !Number.isFinite(amount) || amount <= 0) return;
+                  if (!quoteJobid.trim() || !quoteClientid.trim() || !Number.isFinite(amount) || amount <= 0) return;
                   onCreateQuote({
-                    job_uid: quoteJobUid.trim(),
-                    client_uid: quoteClientUid.trim(),
+                    job_id: quoteJobid.trim(),
+                    client_id: quoteClientid.trim(),
                     description: quoteDescription.trim(),
                     amount
                   });
@@ -192,15 +192,15 @@ export function FinanceOpsCard({
             </div>
             <div className="history-table">
               {store.quotes.map((quote) => (
-                <div key={quote.quote_uid} className="history-row">
-                  <strong>{quote.quote_uid}</strong>
-                  <span>{quote.job_uid}</span>
+                <div key={quote.quote_id} className="history-row">
+                  <strong>{quote.quote_id}</strong>
+                  <span>{quote.job_id}</span>
                   <span>{asMoney(quote.amount)}</span>
                   <div className="button-row">
-                    <button className="button button--ghost" type="button" onClick={() => setSelectedQuoteUid(quote.quote_uid)}>
+                    <button className="button button--ghost" type="button" onClick={() => setSelectedQuoteid(quote.quote_id)}>
                       Select
                     </button>
-                    <button className="button button--secondary" type="button" onClick={() => onUpdateQuoteStatus(quote.quote_uid, "approved")}>
+                    <button className="button button--secondary" type="button" onClick={() => onUpdateQuoteStatus(quote.quote_id, "approved")}>
                       Approve
                     </button>
                   </div>
@@ -215,13 +215,13 @@ export function FinanceOpsCard({
             <div className="form-grid">
               <label className="field-stack">
                 <span>Selected quote</span>
-                <select value={selectedQuoteUid} onChange={(event) => setSelectedQuoteUid(event.target.value)}>
+                <select value={selectedQuoteid} onChange={(event) => setSelectedQuoteid(event.target.value)}>
                   <option value="">Choose approved quote</option>
                   {store.quotes
                     .filter((quote) => quote.status === "approved")
                     .map((quote) => (
-                      <option key={quote.quote_uid} value={quote.quote_uid}>
-                        {quote.quote_uid} | {quote.job_uid} | {asMoney(quote.amount)}
+                      <option key={quote.quote_id} value={quote.quote_id}>
+                        {quote.quote_id} | {quote.job_id} | {asMoney(quote.amount)}
                       </option>
                     ))}
                 </select>
@@ -237,7 +237,7 @@ export function FinanceOpsCard({
                 type="button"
                 onClick={() => {
                   if (!selectedQuote) return;
-                  onCreateInvoiceFromQuote(selectedQuote.quote_uid, invoiceDueDate);
+                  onCreateInvoiceFromQuote(selectedQuote.quote_id, invoiceDueDate);
                 }}
               >
                 Generate invoice
@@ -245,9 +245,9 @@ export function FinanceOpsCard({
             </div>
             <div className="history-table">
               {store.invoices.map((invoice) => (
-                <div key={invoice.invoice_uid} className="history-row">
-                  <strong>{invoice.invoice_uid}</strong>
-                  <span>{invoice.client_uid}</span>
+                <div key={invoice.invoice_id} className="history-row">
+                  <strong>{invoice.invoice_id}</strong>
+                  <span>{invoice.client_id}</span>
                   <span>{asMoney(invoice.amount)}</span>
                   <span className={`status-chip status-chip--${invoice.status === "paid" ? "active" : "warning"}`}>{invoice.status}</span>
                 </div>
@@ -284,16 +284,15 @@ export function FinanceOpsCard({
                 <p className="muted-copy">No debtors profile computed yet.</p>
               ) : (
                 store.debtors.map((debtor) => (
-                  <div key={debtor.client_uid} className="history-row">
-                    <strong>{debtor.client_uid}</strong>
+                  <div key={debtor.client_id} className="history-row">
+                    <strong>{debtor.client_id}</strong>
                     <span>{asMoney(debtor.total_due)}</span>
                     <span>
                       30d {asMoney(debtor.bucket_30)} | 60d {asMoney(debtor.bucket_60)}
                     </span>
                     <span
-                      className={`status-chip status-chip--${
-                        debtor.risk_band === "high" ? "critical" : debtor.risk_band === "medium" ? "warning" : "active"
-                      }`}
+                      className={`status-chip status-chip--${debtor.risk_band === "high" ? "critical" : debtor.risk_band === "medium" ? "warning" : "active"
+                        }`}
                     >
                       {debtor.risk_band}
                     </span>
@@ -309,22 +308,22 @@ export function FinanceOpsCard({
             <div className="form-grid">
               <label className="field-stack">
                 <span>Invoice for reconciliation</span>
-                <select value={selectedInvoiceUid} onChange={(event) => setSelectedInvoiceUid(event.target.value)}>
+                <select value={selectedInvoiceid} onChange={(event) => setSelectedInvoiceid(event.target.value)}>
                   <option value="">Select invoice</option>
                   {store.invoices.map((invoice) => (
-                    <option key={invoice.invoice_uid} value={invoice.invoice_uid}>
-                      {invoice.invoice_uid} | {invoice.client_uid} | {invoice.status}
+                    <option key={invoice.invoice_id} value={invoice.invoice_id}>
+                      {invoice.invoice_id} | {invoice.client_id} | {invoice.status}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="field-stack">
                 <span>Published document for escrow lock</span>
-                <select value={selectedEscrowDocumentUid} onChange={(event) => setSelectedEscrowDocumentUid(event.target.value)}>
+                <select value={selectedEscrowDocumentid} onChange={(event) => setSelectedEscrowDocumentid(event.target.value)}>
                   <option value="">Select published document</option>
                   {escrowEligibleDocuments.map((doc) => (
-                    <option key={String(doc.document_uid)} value={String(doc.document_uid)}>
-                      {String(doc.document_uid)} | {String(doc.document_type)}
+                    <option key={String(doc.document_id)} value={String(doc.document_id)}>
+                      {String(doc.document_id)} | {String(doc.document_type)}
                     </option>
                   ))}
                 </select>
@@ -335,8 +334,8 @@ export function FinanceOpsCard({
                 className="button button--secondary"
                 type="button"
                 onClick={() => {
-                  if (!selectedEscrowDocumentUid || !selectedInvoiceUid) return;
-                  onLockEscrow(selectedEscrowDocumentUid, selectedInvoiceUid);
+                  if (!selectedEscrowDocumentid || !selectedInvoiceid) return;
+                  onLockEscrow(selectedEscrowDocumentid, selectedInvoiceid);
                 }}
               >
                 Lock certificate escrow
@@ -345,8 +344,8 @@ export function FinanceOpsCard({
                 className="button button--primary"
                 type="button"
                 onClick={() => {
-                  if (!selectedInvoiceUid) return;
-                  onReconcileInvoice(selectedInvoiceUid);
+                  if (!selectedInvoiceid) return;
+                  onReconcileInvoice(selectedInvoiceid);
                 }}
               >
                 Reconcile and release
@@ -357,9 +356,9 @@ export function FinanceOpsCard({
                 <p className="muted-copy">No escrow records yet.</p>
               ) : (
                 store.escrow.map((item) => (
-                  <div key={item.document_uid} className="history-row">
-                    <strong>{item.document_uid}</strong>
-                    <span>{item.invoice_uid}</span>
+                  <div key={item.document_id} className="history-row">
+                    <strong>{item.document_id}</strong>
+                    <span>{item.invoice_id}</span>
                     <span>{item.status === "released" ? item.released_at : item.locked_at}</span>
                     <span className={`status-chip status-chip--${item.status === "released" ? "active" : "warning"}`}>{item.status}</span>
                   </div>
@@ -371,9 +370,9 @@ export function FinanceOpsCard({
                 <p className="muted-copy">No statements generated. Rebuild debtors profile first.</p>
               ) : (
                 store.statements.map((statement) => (
-                  <div key={statement.statement_uid} className="history-row">
-                    <strong>{statement.statement_uid}</strong>
-                    <span>{statement.client_uid}</span>
+                  <div key={statement.statement_id} className="history-row">
+                    <strong>{statement.statement_id}</strong>
+                    <span>{statement.client_id}</span>
                     <span>{statement.period_label}</span>
                     <span>{asMoney(statement.closing_balance)}</span>
                   </div>

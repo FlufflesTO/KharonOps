@@ -76,7 +76,7 @@ Google Sheets remains canonical in the current production design.
 
 ### Name Enrichment
 
-Job records reference clients and technicians by UID only (`client_uid`, `technician_uid`). Display names are enriched at query time using a priority hierarchy:
+Job records reference clients and technicians by id only (`client_id`, `technician_id`). Display names are enriched at query time using a priority hierarchy:
 
 1. **Clients_Master / Technicians_Master** — authoritative registration data
 2. **Users_Master** — portal-provisioned fallback only

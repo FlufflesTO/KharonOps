@@ -25,39 +25,39 @@ import type {
 
 export interface StoreContext {
   correlationId: string;
-  actorUserUid: string;
+  actorUserid: string;
 }
 
 export interface WorkbookStore {
   ensureSchema(): Promise<void>;
   getUserByEmail(email: string): Promise<UserRow | null>;
   listJobsForUser(user: SessionUser): Promise<JobRow[]>;
-  getJob(jobUid: string): Promise<JobRow | null>;
+  getJob(jobid: string): Promise<JobRow | null>;
   updateJobStatus(args: {
-    jobUid: string;
+    jobid: string;
     status: JobRow["status"];
     expectedRowVersion: number;
     ctx: StoreContext;
   }): Promise<{ job: JobRow; conflict: ConflictPayload | null }>;
   appendJobNote(args: {
-    jobUid: string;
+    jobid: string;
     note: string;
     expectedRowVersion: number;
     ctx: StoreContext;
   }): Promise<{ job: JobRow; conflict: ConflictPayload | null }>;
   appendJobEvent(event: JobEventRow): Promise<void>;
   createScheduleRequest(row: ScheduleRequestRow): Promise<void>;
-  getScheduleRequest(requestUid: string): Promise<ScheduleRequestRow | null>;
-  listScheduleRequests(jobUid?: string): Promise<ScheduleRequestRow[]>;
+  getScheduleRequest(requestid: string): Promise<ScheduleRequestRow | null>;
+  listScheduleRequests(jobid?: string): Promise<ScheduleRequestRow[]>;
   upsertScheduleRequest(row: ScheduleRequestRow): Promise<void>;
   createSchedule(row: ScheduleRow): Promise<void>;
-  getSchedule(scheduleUid: string): Promise<ScheduleRow | null>;
-  listSchedules(jobUid?: string): Promise<ScheduleRow[]>;
+  getSchedule(scheduleid: string): Promise<ScheduleRow | null>;
+  listSchedules(jobid?: string): Promise<ScheduleRow[]>;
   upsertSchedule(row: ScheduleRow): Promise<void>;
   createDocument(row: JobDocumentRow): Promise<void>;
-  getDocument(documentUid: string): Promise<JobDocumentRow | null>;
+  getDocument(documentid: string): Promise<JobDocumentRow | null>;
   upsertDocument(row: JobDocumentRow): Promise<void>;
-  listDocuments(jobUid?: string): Promise<JobDocumentRow[]>;
+  listDocuments(jobid?: string): Promise<JobDocumentRow[]>;
   appendAudit(args: {
     action: string;
     payload: Record<string, unknown>;
@@ -66,18 +66,18 @@ export interface WorkbookStore {
   }): Promise<void>;
   listAudits(): Promise<Array<Record<string, string>>>;
   upsertAutomationJob(row: AutomationJobRow): Promise<void>;
-  getAutomationJob(automationJobUid: string): Promise<AutomationJobRow | null>;
+  getAutomationJob(automationJobid: string): Promise<AutomationJobRow | null>;
   listAutomationJobs(): Promise<AutomationJobRow[]>;
   upsertSyncQueue(row: SyncQueueRow): Promise<void>;
-  getSyncQueue(mutationUid: string): Promise<SyncQueueRow | null>;
-  listSyncQueueByJob(jobUid: string): Promise<SyncQueueRow[]>;
+  getSyncQueue(mutationid: string): Promise<SyncQueueRow | null>;
+  listSyncQueueByJob(jobid: string): Promise<SyncQueueRow[]>;
   listUsers(): Promise<UserRow[]>;
   listClients(): Promise<ClientRow[]>;
   listTechnicians(): Promise<TechnicianRow[]>;
   listFinanceQuotes(): Promise<FinanceQuoteRow[]>;
   createFinanceQuote(row: FinanceQuoteRow): Promise<void>;
   updateFinanceQuoteStatus(args: {
-    quote_uid: string;
+    quote_id: string;
     status: FinanceQuoteRow["status"];
     ctx: StoreContext;
   }): Promise<FinanceQuoteRow | null>;
@@ -89,7 +89,7 @@ export interface WorkbookStore {
   listFinanceDebtors(): Promise<FinanceDebtorRow[]>;
   replaceFinanceDebtors(rows: FinanceDebtorRow[]): Promise<void>;
   listEscrowRows(): Promise<EscrowRow[]>;
-  getEscrowByDocument(document_uid: string): Promise<EscrowRow | null>;
+  getEscrowByDocument(document_id: string): Promise<EscrowRow | null>;
   upsertEscrow(row: EscrowRow): Promise<void>;
   listSkillMatrix(): Promise<SkillMatrixRow[]>;
   upsertSkillMatrix(row: SkillMatrixRow): Promise<void>;
@@ -101,7 +101,7 @@ export interface WorkbookStore {
   }): Promise<SyncPushResult>;
   resolveSyncConflict(args: {
     actor: SessionUser;
-    jobUid: string;
+    jobid: string;
     strategy: "server" | "client" | "merge";
     serverRowVersion: number;
     clientRowVersion: number;

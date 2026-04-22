@@ -4,12 +4,12 @@ import type { SessionUser } from "@kharon/domain";
 
 interface SessionPayload {
   sid: string;
-  user_uid: string;
+  user_id: string;
   email: string;
   role: SessionUser["role"];
   display_name: string;
-  client_uid: string;
-  technician_uid: string;
+  client_id: string;
+  technician_id: string;
   exp: number;
 }
 
@@ -56,12 +56,12 @@ export async function createSessionToken(args: {
   const header = base64UrlEncode(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const payload: SessionPayload = {
     sid: crypto.randomUUID(),
-    user_uid: args.user.user_uid,
+    user_id: args.user.user_id,
     email: args.user.email,
     role: args.user.role,
     display_name: args.user.display_name,
-    client_uid: args.user.client_uid,
-    technician_uid: args.user.technician_uid,
+    client_id: args.user.client_id,
+    technician_id: args.user.technician_id,
     exp: Math.floor(Date.now() / 1_000) + args.ttlSeconds
   };
 
@@ -91,12 +91,12 @@ export async function verifySessionToken(args: {
         return null;
       }
       return {
-        user_uid: parsed.user_uid,
+        user_id: parsed.user_id,
         email: parsed.email,
         role: parsed.role,
         display_name: parsed.display_name,
-        client_uid: parsed.client_uid,
-        technician_uid: parsed.technician_uid
+        client_id: parsed.client_id,
+        technician_id: parsed.technician_id
       };
     }
   }

@@ -17,7 +17,7 @@ describe("offline conflict generation", () => {
           {
             mutation_id: "MUT-OFF-1",
             kind: "job_status",
-            job_uid: "JOB-1001",
+            job_id: "JOB-1001",
             expected_row_version: 1,
             payload: { status: "draft" }
           }
@@ -38,7 +38,7 @@ describe("offline conflict generation", () => {
           {
             mutation_id: "MUT-OFF-2",
             kind: "job_note",
-            job_uid: "JOB-1001",
+            job_id: "JOB-1001",
             expected_row_version: 1,
             payload: { note: "late update" }
           }

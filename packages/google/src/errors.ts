@@ -36,8 +36,22 @@ export function mapGoogleHttpError(service: string, status: number, body: unknow
             ? "google_transient_error"
             : "google_request_error";
 
+  let detailMessage = "";
+  if (body && typeof body === "object") {
+    const b = body as any;
+    if (typeof b.error_description === "string") {
+      detailMessage = `: ${b.error_description}`;
+    } else if (b.error && typeof b.error.message === "string") {
+      detailMessage = `: ${b.error.message}`;
+    } else if (typeof b.error === "string") {
+      detailMessage = `: ${b.error}`;
+    } else {
+      detailMessage = `: ${JSON.stringify(body)}`;
+    }
+  }
+
   return new GoogleAdapterError({
-    message: `Google ${service} request failed with ${status}`,
+    message: `Google ${service} request failed with ${status}${detailMessage}`,
     code,
     service,
     status,

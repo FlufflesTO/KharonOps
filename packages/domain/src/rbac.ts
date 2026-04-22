@@ -11,10 +11,10 @@ export function canReadJob(user: SessionUser, job: JobRow): boolean {
     return true;
   }
   if (user.role === "client") {
-    return user.client_uid !== "" && user.client_uid === job.client_uid;
+    return user.client_id !== "" && user.client_id === job.client_id;
   }
   if (user.role === "technician") {
-    return user.technician_uid !== "" && user.technician_uid === job.technician_uid;
+    return user.technician_id !== "" && user.technician_id === job.technician_id;
   }
   return false;
 }
@@ -45,7 +45,7 @@ export function canUpdateJobStatus(user: SessionUser, job: JobRow, requestedStat
   }
   if (user.role === "technician") {
     // Technician must be assigned to the job
-    if (user.technician_uid === "" || user.technician_uid !== job.technician_uid) {
+    if (user.technician_id === "" || user.technician_id !== job.technician_id) {
       return false;
     }
     // Technician can only transition to 'performed' or 'cancelled'

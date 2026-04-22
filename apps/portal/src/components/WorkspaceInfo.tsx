@@ -19,7 +19,7 @@ type WorkspaceRailItem = {
 
 interface WorkspaceInfoProps {
   role: Role;
-  selectedJob: { job_uid: string; status: JobStatus } | null;
+  selectedJob: { job_id: string; status: JobStatus } | null;
   queueCount: number;
   generatedDocumentCount: number;
   networkOnline: boolean;
@@ -38,7 +38,7 @@ export function WorkspaceInfo({
         return {
           title: "Client service visibility",
           body: "A cleaner client workspace focused on live service visibility, scheduling preference capture, and published reports with supporting evidence.",
-          supportTitle: "Client guidance",
+          supportTitle: "Client gidance",
           supportIntro: "This surface should feel calm and readable. It is for visibility, approvals, and records rather than internal operational detail.",
           supportItems: [
             "Track planned maintenance or callout status and the latest service note without calling dispatch.",
@@ -98,7 +98,7 @@ export function WorkspaceInfo({
         return {
           title: "Operations workspace",
           body: "",
-          supportTitle: "Workspace guidance",
+          supportTitle: "Workspace gidance",
           supportIntro: "",
           supportItems: [],
           selectedJobTitle: "Selected job",
@@ -114,7 +114,7 @@ export function WorkspaceInfo({
         return [
           {
             label: "Current visibility",
-            detail: selectedJob ? `${selectedJob.job_uid} is ${selectedJob.status}` : "Select a service record to view live status."
+            detail: selectedJob ? `${selectedJob.job_id} is ${selectedJob.status}` : "Select a service record to view live status."
           },
           {
             label: "Scheduling path",
@@ -129,7 +129,7 @@ export function WorkspaceInfo({
         return [
           {
             label: "Field state",
-            detail: selectedJob ? `Use ${selectedJob.job_uid} as the active work order.` : "Select a work order before posting field updates."
+            detail: selectedJob ? `Use ${selectedJob.job_id} as the active work order.` : "Select a work order before posting field updates."
           },
           {
             label: "Queue posture",
@@ -144,7 +144,7 @@ export function WorkspaceInfo({
         return [
           {
             label: "Control window",
-            detail: selectedJob ? `Dispatch is centred on ${selectedJob.job_uid}.` : "Select a job to expose schedule and outbound controls."
+            detail: selectedJob ? `Dispatch is centred on ${selectedJob.job_id}.` : "Select a job to expose schedule and outbound controls."
           },
           {
             label: "Queue posture",
@@ -159,7 +159,7 @@ export function WorkspaceInfo({
         return [
           {
             label: "Control window",
-            detail: selectedJob ? `Administrative context is anchored on ${selectedJob.job_uid}.` : "Select a job to align governance and operational review."
+            detail: selectedJob ? `Administrative context is anchored on ${selectedJob.job_id}.` : "Select a job to align governance and operational review."
           },
           {
             label: "Audit surface",

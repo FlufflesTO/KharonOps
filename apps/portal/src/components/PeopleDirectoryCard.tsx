@@ -36,14 +36,14 @@ export function PeopleDirectoryCard({ people, skillsState, onUpsertSkill, onSync
     }, {});
   }, [people]);
 
-  function skillFor(userUid: string) {
-    return skillsState.find((item) => item.user_uid === userUid) ?? null;
+  function skillFor(userid: string) {
+    return skillsState.find((item) => item.user_id === userid) ?? null;
   }
 
-  function setSkillField(userUid: string, patch: Partial<{ saqcc_type: string; saqcc_expiry: string; medical_expiry: string; rest_hours_last_24h: number }>): void {
-    const current = skillFor(userUid);
+  function setSkillField(userid: string, patch: Partial<{ saqcc_type: string; saqcc_expiry: string; medical_expiry: string; rest_hours_last_24h: number }>): void {
+    const current = skillFor(userid);
     onUpsertSkill({
-      user_uid: userUid,
+      user_id: userid,
       saqcc_type: patch.saqcc_type ?? current?.saqcc_type ?? "",
       saqcc_expiry: patch.saqcc_expiry ?? current?.saqcc_expiry ?? "",
       medical_expiry: patch.medical_expiry ?? current?.medical_expiry ?? "",
@@ -163,35 +163,35 @@ export function PeopleDirectoryCard({ people, skillsState, onUpsertSkill, onSync
             <p className="muted-copy">No active people records are loaded for this workspace.</p>
           ) : (
             people.map((person) => {
-              const skill = skillFor(person.user_uid);
+              const skill = skillFor(person.user_id);
               const restHours = skill?.rest_hours_last_24h ?? 0;
               const fatigue = restHours < 8;
               const certExpired = skill?.saqcc_expiry ? Date.parse(skill.saqcc_expiry) < Date.now() : false;
               const medicalExpired = skill?.medical_expiry ? Date.parse(skill.medical_expiry) < Date.now() : false;
               return (
-                <div key={person.user_uid} className="history-row history-row--people" style={{ gridTemplateColumns: "1fr 0.9fr 1.4fr 1.2fr" }}>
+                <div key={person.user_id} className="history-row history-row--people" style={{ gridTemplateColumns: "1fr 0.9fr 1.4fr 1.2fr" }}>
                   <div>
                     <strong>{person.display_name}</strong>
                     <span className="job-item__meta">{ROLE_LABELS[person.role] ?? person.role}</span>
                     <span className="job-item__meta">{person.email}</span>
                   </div>
-                  <span className="history-row__url">{person.technician_uid || person.client_uid || person.user_uid}</span>
+                  <span className="history-row__url">{person.technician_id || person.client_id || person.user_id}</span>
                   <div className="form-grid" style={{ gridTemplateColumns: "repeat(2, minmax(110px, 1fr))" }}>
                     <input
                       value={skill?.saqcc_type ?? ""}
-                      onChange={(event) => setSkillField(person.user_uid, { saqcc_type: event.target.value })}
+                      onChange={(event) => setSkillField(person.user_id, { saqcc_type: event.target.value })}
                       placeholder="SAQCC Type"
                     />
                     <input
                       type="date"
                       value={skill?.saqcc_expiry ?? ""}
-                      onChange={(event) => setSkillField(person.user_uid, { saqcc_expiry: event.target.value })}
+                      onChange={(event) => setSkillField(person.user_id, { saqcc_expiry: event.target.value })}
                       title="SAQCC expiry"
                     />
                     <input
                       type="date"
                       value={skill?.medical_expiry ?? ""}
-                      onChange={(event) => setSkillField(person.user_uid, { medical_expiry: event.target.value })}
+                      onChange={(event) => setSkillField(person.user_id, { medical_expiry: event.target.value })}
                       title="Medical expiry"
                     />
                     <input
@@ -199,7 +199,7 @@ export function PeopleDirectoryCard({ people, skillsState, onUpsertSkill, onSync
                       min={0}
                       max={24}
                       value={skill?.rest_hours_last_24h ?? 0}
-                      onChange={(event) => setSkillField(person.user_uid, { rest_hours_last_24h: Number(event.target.value) })}
+                      onChange={(event) => setSkillField(person.user_id, { rest_hours_last_24h: Number(event.target.value) })}
                       title="Rest hours in last 24h"
                     />
                   </div>

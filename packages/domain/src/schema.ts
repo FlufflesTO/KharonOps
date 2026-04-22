@@ -15,7 +15,7 @@ export const noteSchema = z.object({
 });
 
 export const scheduleRequestSchema = z.object({
-  job_uid: z.string().trim().min(1),
+  job_id: z.string().trim().min(1),
   preferred_slots: z.array(z.object({ start_at: z.string().datetime(), end_at: z.string().datetime() })).min(1),
   timezone: z.string().trim().min(1),
   notes: z.string().trim().max(1200).default(""),
@@ -23,36 +23,36 @@ export const scheduleRequestSchema = z.object({
 });
 
 export const scheduleConfirmSchema = z.object({
-  request_uid: z.string().trim().min(1),
+  request_id: z.string().trim().min(1),
   start_at: z.string().datetime(),
   end_at: z.string().datetime(),
-  technician_uid: z.string().trim().min(1),
+  technician_id: z.string().trim().min(1),
   row_version: z.number().int().nonnegative(),
-  job_uid: z.string().trim().min(1).optional()
+  job_id: z.string().trim().min(1).optional()
 });
 
 export const scheduleRescheduleSchema = z.object({
-  schedule_uid: z.string().trim().min(1),
+  schedule_id: z.string().trim().min(1),
   start_at: z.string().datetime(),
   end_at: z.string().datetime(),
   row_version: z.number().int().nonnegative(),
-  job_uid: z.string().trim().min(1).optional(),
-  technician_uid: z.string().trim().min(1).optional(),
-  request_uid: z.string().trim().min(1).optional(),
+  job_id: z.string().trim().min(1).optional(),
+  technician_id: z.string().trim().min(1).optional(),
+  request_id: z.string().trim().min(1).optional(),
   calendar_event_id: z.string().trim().optional()
 });
 
 export const documentGenerateSchema = z.object({
-  job_uid: z.string().trim().min(1),
+  job_id: z.string().trim().min(1),
   document_type: z.enum(["jobcard", "service_report", "certificate"]),
   tokens: z.record(z.string(), z.unknown()).default({})
 });
 
 export const documentPublishSchema = z.object({
-  document_uid: z.string().trim().min(1),
+  document_id: z.string().trim().min(1),
   row_version: z.number().int().nonnegative(),
   client_visible: z.boolean().default(false),
-  job_uid: z.string().trim().min(1).optional(),
+  job_id: z.string().trim().min(1).optional(),
   document_type: z.enum(["jobcard", "service_report", "certificate"]).optional()
 });
 
@@ -60,7 +60,7 @@ export const syncMutationSchema = z.discriminatedUnion("kind", [
   z.object({
     mutation_id: z.string().trim().min(1),
     kind: z.literal("job_status"),
-    job_uid: z.string().trim().min(1),
+    job_id: z.string().trim().min(1),
     expected_row_version: z.number().int().nonnegative(),
     payload: z.object({
       status: z.enum(["draft", "performed", "rejected", "approved", "certified", "cancelled"])
@@ -69,7 +69,7 @@ export const syncMutationSchema = z.discriminatedUnion("kind", [
   z.object({
     mutation_id: z.string().trim().min(1),
     kind: z.literal("job_note"),
-    job_uid: z.string().trim().min(1),
+    job_id: z.string().trim().min(1),
     expected_row_version: z.number().int().nonnegative(),
     payload: z.object({
       note: z.string().trim().min(1).max(4000)
@@ -82,7 +82,7 @@ export const syncPushSchema = z.object({
 });
 
 export const resolveConflictSchema = z.object({
-  job_uid: z.string().trim().min(1),
+  job_id: z.string().trim().min(1),
   strategy: z.enum(["server", "client", "merge"]),
   server_row_version: z.number().int().nonnegative(),
   client_row_version: z.number().int().nonnegative(),
@@ -93,13 +93,13 @@ export const gmailNotifySchema = z.object({
   to: z.string().email(),
   subject: z.string().trim().min(1),
   body: z.string().trim().min(1),
-  job_uid: z.string().trim().min(1)
+  job_id: z.string().trim().min(1)
 });
 
 export const chatAlertSchema = z.object({
   severity: z.enum(["info", "warning", "critical"]),
   message: z.string().trim().min(1),
-  job_uid: z.string().trim().optional()
+  job_id: z.string().trim().optional()
 });
 
 export const peopleSyncSchema = z.object({
@@ -130,8 +130,8 @@ export const publicContactRequestSchema = z.object({
 });
 
 export const financeQuoteCreateSchema = z.object({
-  job_uid: z.string().trim().min(1),
-  client_uid: z.string().trim().min(1),
+  job_id: z.string().trim().min(1),
+  client_id: z.string().trim().min(1),
   description: z.string().trim().min(1).max(4000),
   amount: z.number().positive()
 });
@@ -141,17 +141,17 @@ export const financeQuoteStatusSchema = z.object({
 });
 
 export const financeInvoiceFromQuoteSchema = z.object({
-  quote_uid: z.string().trim().min(1),
+  quote_id: z.string().trim().min(1),
   due_date: z.string().trim().min(1)
 });
 
 export const financeEscrowLockSchema = z.object({
-  document_uid: z.string().trim().min(1),
-  invoice_uid: z.string().trim().min(1)
+  document_id: z.string().trim().min(1),
+  invoice_id: z.string().trim().min(1)
 });
 
 export const skillMatrixUpsertSchema = z.object({
-  user_uid: z.string().trim().min(1),
+  user_id: z.string().trim().min(1),
   saqcc_type: z.string().trim().max(200).default(""),
   saqcc_expiry: z.string().trim().max(40).default(""),
   medical_expiry: z.string().trim().max(40).default(""),

@@ -32,7 +32,7 @@ See `packages/domain/src/workbook.ts` for the canonical `REQUIRED_WORKBOOK_SHEET
 Every mutable row must include:
 - `row_version` — integer, starts at 1, incremented on each write
 - `updated_at` — ISO 8601 timestamp of last mutation
-- `updated_by` — UID of the actor who performed the mutation
+- `updated_by` — id of the actor who performed the mutation
 - `correlation_id` — request-scoped trace identifier
 
 ## Name Enrichment Governance
@@ -48,17 +48,17 @@ Both `Clients_Master` and `Technicians_Master` must have an `active_flag` (alias
 ## Column Definitions
 
 ### Users_Master
-- `user_uid`
+- `user_id`
 - `email`
 - `display_name`
 - `role` (`client|technician|dispatcher|admin`)
-- `client_uid`
-- `technician_uid`
+- `client_id`
+- `technician_id`
 - `active`
 - mutable fields
 
 ### Jobs_Master
-- `job_uid`, `api_locked`, `sync_status`, `last_sync_at`, `last_sync_error`
+- `job_id`, `api_locked`, `sync_status`, `last_sync_at`, `last_sync_error`
 - `source_system`, `source_submission_id`, `legacy_job_id`
 - `client_id`, `client_group`, `client_name`, `account`
 - `site_id`, `site`, `system_type`, `system_confidence`
@@ -111,15 +111,15 @@ Both `Clients_Master` and `Technicians_Master` must have an `active_flag` (alias
 - mutable fields
 
 ### Job_Events
-- `event_uid`, `job_uid`, `legacy_job_id`
+- `event_id`, `job_id`, `legacy_job_id`
 - `event_type`, `event_date`, `actor`, `actor_type`
 - `event_source`, `trigger_type`, `automation_rule_id`, `retry_count`, `success_flag`
 - `source_sheet`, `source_row`, `old_value`, `new_value`, `notes`
 - mutable fields
 
 ### Job_Documents
-- `document_uid`, `sync_status`, `last_sync_at`, `last_sync_error`, `legacy_document_id`
-- `job_uid`, `legacy_job_id`, `client_id`, `site_id`, `contract_id`
+- `document_id`, `sync_status`, `last_sync_at`, `last_sync_error`, `legacy_document_id`
+- `job_id`, `legacy_job_id`, `client_id`, `site_id`, `contract_id`
 - `link_status`, `document_status`, `status_raw`
 - `job_owner`, `assigned_to`, `requested_at`, `due_at`, `date_scheduled`, `date_completed`
 - `sent_at`, `approved_at`, `client_viewed_at`, `client_acknowledged_at`
@@ -131,7 +131,7 @@ Both `Clients_Master` and `Technicians_Master` must have an `active_flag` (alias
 - mutable fields
 
 ### Portal_Files
-- `file_uid`, `job_uid`, `legacy_job_id`, `client_id`, `site_id`, `contract_id`
+- `file_id`, `job_id`, `legacy_job_id`, `client_id`, `site_id`, `contract_id`
 - `file_role`, `file_category`, `storage_provider`
 - `drive_file_id`, `drive_folder_id`, `portal_visible`, `visible_to_client`
 - `uploaded_at`, `captured_at`, `uploaded_by`, `captured_by`
@@ -140,52 +140,52 @@ Both `Clients_Master` and `Technicians_Master` must have an `active_flag` (alias
 - mutable fields
 
 ### Schedule_Requests
-- `request_uid`, `job_uid`, `client_uid`
+- `request_id`, `job_id`, `client_id`
 - `preferred_slots_json`, `timezone`, `notes`
 - `status` (`requested|confirmed|rescheduled`)
 - mutable fields
 
 ### Schedules_Master
-- `schedule_uid`, `request_uid`, `job_uid`
-- `calendar_event_id`, `start_at`, `end_at`, `technician_uid`
+- `schedule_id`, `request_id`, `job_id`
+- `calendar_event_id`, `start_at`, `end_at`, `technician_id`
 - `status` (`confirmed|rescheduled`)
 - mutable fields
 
 ### Automation_Jobs
-- `automation_job_uid`, `action`, `payload_json`
+- `automation_job_id`, `action`, `payload_json`
 - `status` (`queued|done|failed`), `retry_count`, `last_error`
 - mutable fields
 
 ### Sync_Queue
-- `mutation_uid`, `job_uid`, `actor_uid`
+- `mutation_id`, `job_id`, `actor_id`
 - `payload_json`, `status` (`applied|conflict|failed`), `last_result`
 - mutable fields
 
 ### Finance_Quotes
-- `quote_uid`, `job_uid`, `client_uid`, `description`, `amount`
+- `quote_id`, `job_id`, `client_id`, `description`, `amount`
 - `status` (`draft|sent|accepted|rejected`), `created_at`
 - mutable fields
 
 ### Finance_Invoices
-- `invoice_uid`, `job_uid`, `quote_uid`, `client_uid`, `amount`
+- `invoice_id`, `job_id`, `quote_id`, `client_id`, `amount`
 - `due_date`, `status` (`issued|paid|overdue|cancelled`), `reconciled_at`
 - mutable fields
 
 ### Finance_Statements
-- `statement_uid`, `client_uid`, `period_label`
+- `statement_id`, `client_id`, `period_label`
 - `opening_balance`, `billed`, `paid`, `closing_balance`, `generated_at`
 - mutable fields
 
 ### Finance_Debtors
-- `client_uid`, `total_due`, `current_bucket`, `bucket_30`, `bucket_60`, `bucket_90_plus`
+- `client_id`, `total_due`, `current_bucket`, `bucket_30`, `bucket_60`, `bucket_90_plus`
 - `risk_band`, mutable fields
 
 ### Compliance_Escrow
-- `document_uid`, `invoice_uid`, `status` (`locked|released`), `locked_at`, `released_at`
+- `document_id`, `invoice_id`, `status` (`locked|released`), `locked_at`, `released_at`
 - mutable fields
 
 ### HR_Skills_Matrix
-- `user_uid`, `saqcc_type`, `saqcc_expiry`, `medical_expiry`, `rest_hours_last_24h`
+- `user_id`, `saqcc_type`, `saqcc_expiry`, `medical_expiry`, `rest_hours_last_24h`
 - mutable fields
 
 ### System_Config
@@ -193,7 +193,7 @@ Both `Clients_Master` and `Technicians_Master` must have an `active_flag` (alias
 - mutable fields
 
 ### Ledger
-- `ledger_uid`, `entry_type`, `action`, `entity_type`, `entity_id`, `payload_json`
+- `ledger_id`, `entry_type`, `action`, `entity_type`, `entity_id`, `payload_json`
 - mutable fields
 
 ## Schema Migration
@@ -221,13 +221,13 @@ npm run workbook:fix
 ```
 
 Fix scope:
-- Align active technician `Users_Master.technician_uid` values to canonical `Technicians_Master.technician_id` values (`TECH-###`) by display-name match.
-- Resolve duplicate `Users_Master.user_uid` values by deterministic suffixing (`-2`, `-3`, ...).
+- Align active technician `Users_Master.technician_id` values to canonical `Technicians_Master.technician_id` values (`TECH-###`) by display-name match.
+- Resolve duplicate `Users_Master.user_id` values by deterministic suffixing (`-2`, `-3`, ...).
 - Backfill empty `Jobs_Master.job_status` using the same normalization logic used by API parsing.
-- Auto-create missing `Technicians_Master` rows for unmatched active technician users and map their `technician_uid` values.
+- Auto-create missing `Technicians_Master` rows for unmatched active technician users and map their `technician_id` values.
 
 Production remediation executed on 2026-04-23 (Africa/Johannesburg):
-- 4 technician UID mappings corrected in `Users_Master`.
-- 1 duplicate `user_uid` resolved.
+- 4 technician id mappings corrected in `Users_Master`.
+- 1 duplicate `user_id` resolved.
 - 83 `Jobs_Master.job_status` values backfilled.
 - 1 technician auto-created in `Technicians_Master` (`TECH-009`) and synced back to `Users_Master`.

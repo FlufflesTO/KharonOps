@@ -186,7 +186,7 @@ async function main() {
   const techByName = new Map();
   const existingTechIds = new Set();
   for (const row of techSheet.rows) {
-    const techId = normalizeText(row.data.technician_id || row.data.technician_uid);
+    const techId = normalizeText(row.data.technician_id || row.data.technician_id);
     const display = normalizeText(row.data.display_name || row.data.technician_name);
     if (techId && display) {
       techByName.set(normalizeName(display), techId);
@@ -196,57 +196,57 @@ async function main() {
 
   const updateCells = [];
 
-  const usersByUid = new Map();
+  const usersByid = new Map();
   for (const row of usersSheet.rows) {
-    const userUid = normalizeText(row.data.user_uid);
-    if (!userUid) continue;
-    const list = usersByUid.get(userUid) ?? [];
+    const userid = normalizeText(row.data.user_id);
+    if (!userid) continue;
+    const list = usersByid.get(userid) ?? [];
     list.push(row);
-    usersByUid.set(userUid, list);
+    usersByid.set(userid, list);
   }
 
-  const existingUserUids = new Set(
-    usersSheet.rows.map((row) => normalizeText(row.data.user_uid)).filter((value) => value !== "")
+  const existingUserids = new Set(
+    usersSheet.rows.map((row) => normalizeText(row.data.user_id)).filter((value) => value !== "")
   );
 
-  const duplicateUidChanges = [];
-  for (const [userUid, rows] of usersByUid.entries()) {
+  const duplicateidChanges = [];
+  for (const [userid, rows] of usersByid.entries()) {
     if (rows.length < 2) continue;
     const ordered = rows.slice().sort((a, b) => a.rowNumber - b.rowNumber);
     let counter = 2;
     for (const row of ordered.slice(1)) {
-      let nextUid = `${userUid}-${counter}`;
-      while (existingUserUids.has(nextUid)) {
+      let nextid = `${userid}-${counter}`;
+      while (existingUserids.has(nextid)) {
         counter += 1;
-        nextUid = `${userUid}-${counter}`;
+        nextid = `${userid}-${counter}`;
       }
-      existingUserUids.add(nextUid);
-      duplicateUidChanges.push({ row: row.rowNumber, from: userUid, to: nextUid });
+      existingUserids.add(nextid);
+      duplicateidChanges.push({ row: row.rowNumber, from: userid, to: nextid });
 
-      const col = usersSheet.headerMap.get("user_uid");
+      const col = usersSheet.headerMap.get("user_id");
       if (col !== undefined) {
         updateCells.push({
           range: `'Users_Master'!${columnToA1(col)}${row.rowNumber}`,
-          value: nextUid
+          value: nextid
         });
       }
     }
   }
 
-  const techUidChanges = [];
+  const techidChanges = [];
   for (const row of usersSheet.rows) {
     const role = normalizeText(row.data.role).toLowerCase();
     const active = boolValue(row.data.active || row.data.active_flag);
     if (role !== "technician" || !active) continue;
     const displayName = normalizeText(row.data.display_name);
     const mappedTechId = techByName.get(normalizeName(displayName));
-    const current = normalizeText(row.data.technician_uid || row.data.technician_id);
+    const current = normalizeText(row.data.technician_id || row.data.technician_id);
     if (!mappedTechId || mappedTechId === current) continue;
-    const col = usersSheet.headerMap.get("technician_uid");
+    const col = usersSheet.headerMap.get("technician_id");
     if (col === undefined) continue;
-    techUidChanges.push({
+    techidChanges.push({
       row: row.rowNumber,
-      user_uid: normalizeText(row.data.user_uid),
+      user_id: normalizeText(row.data.user_id),
       email: normalizeText(row.data.email),
       display_name: displayName,
       from: current,
@@ -262,14 +262,14 @@ async function main() {
   const primaryTechIdCol = jobsSheet.headerMap.get("primary_technician_id");
   const primaryTechNameCol = jobsSheet.headerMap.get("primary_technician_name");
   for (const row of jobsSheet.rows) {
-    const current = normalizeText(row.data.primary_technician_id || row.data.technician_uid);
+    const current = normalizeText(row.data.primary_technician_id || row.data.technician_id);
     if (current !== "") continue;
     const techName = normalizeText(row.data.primary_technician_name);
     const mappedTechId = techByName.get(normalizeName(techName));
     if (!mappedTechId || primaryTechIdCol === undefined) continue;
     jobTechIdChanges.push({
       row: row.rowNumber,
-      job_uid: normalizeText(row.data.job_uid),
+      job_id: normalizeText(row.data.job_id),
       from: current,
       to: mappedTechId,
       by_name: techName
@@ -288,7 +288,7 @@ async function main() {
     const normalizedStatus = parseJobStatus(row.data);
     jobStatusChanges.push({
       row: row.rowNumber,
-      job_uid: normalizeText(row.data.job_uid),
+      job_id: normalizeText(row.data.job_id),
       to: normalizedStatus
     });
     updateCells.push({
@@ -302,14 +302,14 @@ async function main() {
     .filter((row) => !techByName.has(normalizeName(row.data.display_name)))
     .map((row) => ({
       row: row.rowNumber,
-      user_uid: normalizeText(row.data.user_uid),
+      user_id: normalizeText(row.data.user_id),
       email: normalizeText(row.data.email),
       display_name: normalizeText(row.data.display_name),
-      technician_uid: normalizeText(row.data.technician_uid)
+      technician_id: normalizeText(row.data.technician_id)
     }));
 
   const createdTechnicians = [];
-  const techUidCol = usersSheet.headerMap.get("technician_uid");
+  const techidCol = usersSheet.headerMap.get("technician_id");
   if (apply && unresolvedTechUsers.length > 0) {
     const techHeaders = techSheet.headers;
     const rowsToAppend = [];
@@ -318,13 +318,13 @@ async function main() {
       existingTechIds.add(generatedTechId);
       techByName.set(normalizeName(unresolved.display_name), generatedTechId);
       createdTechnicians.push({
-        user_uid: unresolved.user_uid,
+        user_id: unresolved.user_id,
         display_name: unresolved.display_name,
         created_technician_id: generatedTechId
       });
 
       const rowData = techHeaders.map((header) => {
-        if (header === "technician_id" || header === "technician_uid") return generatedTechId;
+        if (header === "technician_id" || header === "technician_id") return generatedTechId;
         if (header === "technician_name" || header === "display_name") return unresolved.display_name;
         if (header === "active_flag" || header === "active") return "TRUE";
         if (header === "row_version") return "1";
@@ -335,9 +335,9 @@ async function main() {
       });
       rowsToAppend.push(rowData);
 
-      if (techUidCol !== undefined) {
+      if (techidCol !== undefined) {
         updateCells.push({
-          range: `'Users_Master'!${columnToA1(techUidCol)}${unresolved.row}`,
+          range: `'Users_Master'!${columnToA1(techidCol)}${unresolved.row}`,
           value: generatedTechId
         });
       }
@@ -393,8 +393,8 @@ async function main() {
     pendingCellUpdates: updateCells.length,
     appliedCellUpdates: apply ? updateCells.length : 0,
     fixes: {
-      usersTechnicianUidMapped: techUidChanges.length,
-      duplicateUserUidResolved: duplicateUidChanges.length,
+      usersTechnicianidMapped: techidChanges.length,
+      duplicateUseridResolved: duplicateidChanges.length,
       jobsPrimaryTechnicianMappedFromName: jobTechIdChanges.length,
       jobsStatusBackfilled: jobStatusChanges.length
     },
@@ -402,8 +402,8 @@ async function main() {
       usersTechniciansWithoutTechMasterMatch: apply ? [] : unresolvedTechUsers
     },
     changes: {
-      usersTechnicianUid: techUidChanges,
-      duplicateUserUid: duplicateUidChanges,
+      usersTechnicianid: techidChanges,
+      duplicateUserid: duplicateidChanges,
       jobsPrimaryTechnicianId: jobTechIdChanges.slice(0, 100),
       jobsStatus: jobStatusChanges.slice(0, 100),
       techniciansCreatedFromUsers: createdTechnicians

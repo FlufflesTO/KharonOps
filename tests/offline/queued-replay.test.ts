@@ -7,7 +7,7 @@ describe("offline replay process", () => {
       {
         mutation_id: "MUT-1",
         kind: "job_status",
-        job_uid: "JOB-1001",
+        job_id: "JOB-1001",
         expected_row_version: 1,
         payload: { status: "draft" },
         created_at: "2026-04-09T10:00:00.000Z"
@@ -15,7 +15,7 @@ describe("offline replay process", () => {
       {
         mutation_id: "MUT-2",
         kind: "job_note",
-        job_uid: "JOB-1001",
+        job_id: "JOB-1001",
         expected_row_version: 1,
         payload: { note: "done" },
         created_at: "2026-04-09T10:01:00.000Z"
@@ -23,18 +23,18 @@ describe("offline replay process", () => {
     ];
 
     const decision = decideQueueAfterPush(queue, {
-      applied: [{ mutation_id: "MUT-1", job_uid: "JOB-1001", row_version: 2 }],
+      applied: [{ mutation_id: "MUT-1", job_id: "JOB-1001", row_version: 2 }],
       conflicts: [
         {
           mutation_id: "MUT-2",
-          job_uid: "JOB-1001",
+          job_id: "JOB-1001",
           conflict: {
             type: "row_version_conflict",
             entity: "Jobs_Master",
             entity_id: "JOB-1001",
             client_row_version: 1,
             server_row_version: 2,
-            server_state: { job_uid: "JOB-1001" }
+            server_state: { job_id: "JOB-1001" }
           }
         }
       ],

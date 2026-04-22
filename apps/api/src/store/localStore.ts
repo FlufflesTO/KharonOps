@@ -64,52 +64,52 @@ function makeSeedData(): LocalData {
 
   const userRows: UserRow[] = [
     {
-      user_uid: "USR-CLIENT-1",
+      user_id: "USR-CLIENT-1",
       email: "connor@kharon.co.za",
       display_name: "Client Operator",
       role: "client",
-      client_uid: "CLI-001",
-      technician_uid: "",
+      client_id: "CLI-001",
+      technician_id: "",
       active: "true",
       ...meta
     },
     {
-      user_uid: "USR-TECH-1",
+      user_id: "USR-TECH-1",
       email: "connor@kharon.co.za",
       display_name: "Field Technician",
       role: "technician",
-      client_uid: "",
-      technician_uid: "TECH-001",
+      client_id: "",
+      technician_id: "TECH-001",
       active: "true",
       ...meta
     },
     {
-      user_uid: "USR-DISP-1",
+      user_id: "USR-DISP-1",
       email: "connor@kharon.co.za",
       display_name: "Dispatch Controller",
       role: "dispatcher",
-      client_uid: "",
-      technician_uid: "",
+      client_id: "",
+      technician_id: "",
       active: "true",
       ...meta
     },
     {
-      user_uid: "USR-ADMIN-1",
+      user_id: "USR-ADMIN-1",
       email: "connor@kharon.co.za",
       display_name: "Security Administrator",
       role: "admin",
-      client_uid: "",
-      technician_uid: "",
+      client_id: "",
+      technician_id: "",
       active: "true",
       ...meta
     },
     {
-      user_uid: "USR-FIN-1",
+      user_id: "USR-FIN-1",
       email: "connor@kharon.co.za",
       display_name: "Finance Controller",
       role: "finance" as UserRow["role"],
-      client_uid: "",
-      technician_uid: "",
+      client_id: "",
+      technician_id: "",
       active: "true",
       ...meta
     }
@@ -117,10 +117,10 @@ function makeSeedData(): LocalData {
 
   const jobRows: JobRow[] = [
     {
-      job_uid: "JOB-1001",
-      client_uid: "CLI-001",
-      site_uid: "SITE-001",
-      technician_uid: "TECH-001",
+      job_id: "JOB-1001",
+      client_id: "CLI-001",
+      site_id: "SITE-001",
+      technician_id: "TECH-001",
       title: "Fire panel fault isolation",
       status: "draft",
       scheduled_start: nowIso(),
@@ -129,10 +129,10 @@ function makeSeedData(): LocalData {
       ...meta
     },
     {
-      job_uid: "JOB-2002",
-      client_uid: "CLI-002",
-      site_uid: "SITE-002",
-      technician_uid: "TECH-002",
+      job_id: "JOB-2002",
+      client_id: "CLI-002",
+      site_id: "SITE-002",
+      technician_id: "TECH-002",
       title: "Suppression cylinder pressure test",
       status: "draft",
       scheduled_start: nowIso(),
@@ -143,15 +143,15 @@ function makeSeedData(): LocalData {
   ];
 
   for (const row of userRows) {
-    users.set(row.user_uid, row);
+    users.set(row.user_id, row);
   }
 
   for (const row of jobRows) {
-    jobs.set(row.job_uid, row);
+    jobs.set(row.job_id, row);
   }
 
   automationJobs.set("AUTO-001", {
-    automation_job_uid: "AUTO-001",
+    automation_job_id: "AUTO-001",
     action: "calendar_sync",
     payload_json: "{}",
     status: "queued",
@@ -189,20 +189,20 @@ function normalizeError(message: string, code = "validation_error"): ApiError {
 function toConflict(job: JobRow, expectedRowVersion: number): ConflictPayload {
   return buildConflict({
     entity: "Jobs_Master",
-    entityId: job.job_uid,
+    entityId: job.job_id,
     serverState: job as unknown as Record<string, unknown>,
     clientRowVersion: expectedRowVersion,
     serverRowVersion: job.row_version
   });
 }
 
-function stampEvent(args: { jobUid: string; eventType: string; payload: Record<string, unknown>; ctx: { actorUserUid: string; correlationId: string } }): JobEventRow {
+function stampEvent(args: { jobid: string; eventType: string; payload: Record<string, unknown>; ctx: { actorUserid: string; correlationId: string } }): JobEventRow {
   return {
-    event_uid: `EVT-${crypto.randomUUID()}`,
-    job_uid: args.jobUid,
+    event_id: `EVT-${crypto.randomUUID()}`,
+    job_id: args.jobid,
     event_type: args.eventType,
     payload_json: JSON.stringify(args.payload),
-    ...newMutableMeta(args.ctx.actorUserUid, args.ctx.correlationId)
+    ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
   };
 }
 
@@ -241,22 +241,22 @@ export class LocalWorkbookStore implements WorkbookStore {
   }
 
   async createFinanceQuote(row: FinanceQuoteRow): Promise<void> {
-    this.data.financeQuotes.set(row.quote_uid, immutableClone(row));
+    this.data.financeQuotes.set(row.quote_id, immutableClone(row));
   }
 
   async updateFinanceQuoteStatus(args: {
-    quote_uid: string;
+    quote_id: string;
     status: FinanceQuoteRow["status"];
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
   }): Promise<FinanceQuoteRow | null> {
-    const current = this.data.financeQuotes.get(args.quote_uid);
+    const current = this.data.financeQuotes.get(args.quote_id);
     if (!current) return null;
     const updated: FinanceQuoteRow = {
       ...current,
       status: args.status,
-      ...bumpMutableMeta(current, args.ctx.actorUserUid, args.ctx.correlationId)
+      ...bumpMutableMeta(current, args.ctx.actorUserid, args.ctx.correlationId)
     };
-    this.data.financeQuotes.set(updated.quote_uid, updated);
+    this.data.financeQuotes.set(updated.quote_id, updated);
     return immutableClone(updated);
   }
 
@@ -265,11 +265,11 @@ export class LocalWorkbookStore implements WorkbookStore {
   }
 
   async createFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
-    this.data.financeInvoices.set(row.invoice_uid, immutableClone(row));
+    this.data.financeInvoices.set(row.invoice_id, immutableClone(row));
   }
 
   async updateFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
-    this.data.financeInvoices.set(row.invoice_uid, immutableClone(row));
+    this.data.financeInvoices.set(row.invoice_id, immutableClone(row));
   }
 
   async listFinanceStatements(): Promise<FinanceStatementRow[]> {
@@ -279,7 +279,7 @@ export class LocalWorkbookStore implements WorkbookStore {
   async replaceFinanceStatements(rows: FinanceStatementRow[]): Promise<void> {
     this.data.financeStatements.clear();
     for (const row of rows) {
-      this.data.financeStatements.set(row.statement_uid, immutableClone(row));
+      this.data.financeStatements.set(row.statement_id, immutableClone(row));
     }
   }
 
@@ -290,7 +290,7 @@ export class LocalWorkbookStore implements WorkbookStore {
   async replaceFinanceDebtors(rows: FinanceDebtorRow[]): Promise<void> {
     this.data.financeDebtors.clear();
     for (const row of rows) {
-      this.data.financeDebtors.set(row.client_uid, immutableClone(row));
+      this.data.financeDebtors.set(row.client_id, immutableClone(row));
     }
   }
 
@@ -298,21 +298,21 @@ export class LocalWorkbookStore implements WorkbookStore {
     return [...this.data.escrowRows.values()].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).map(immutableClone);
   }
 
-  async getEscrowByDocument(document_uid: string): Promise<EscrowRow | null> {
-    const row = this.data.escrowRows.get(document_uid);
+  async getEscrowByDocument(document_id: string): Promise<EscrowRow | null> {
+    const row = this.data.escrowRows.get(document_id);
     return row ? immutableClone(row) : null;
   }
 
   async upsertEscrow(row: EscrowRow): Promise<void> {
-    this.data.escrowRows.set(row.document_uid, immutableClone(row));
+    this.data.escrowRows.set(row.document_id, immutableClone(row));
   }
 
   async listSkillMatrix(): Promise<SkillMatrixRow[]> {
-    return [...this.data.skills.values()].sort((a, b) => a.user_uid.localeCompare(b.user_uid)).map(immutableClone);
+    return [...this.data.skills.values()].sort((a, b) => a.user_id.localeCompare(b.user_id)).map(immutableClone);
   }
 
   async upsertSkillMatrix(row: SkillMatrixRow): Promise<void> {
-    this.data.skills.set(row.user_uid, immutableClone(row));
+    this.data.skills.set(row.user_id, immutableClone(row));
   }
 
   async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
@@ -331,20 +331,20 @@ export class LocalWorkbookStore implements WorkbookStore {
     return [...this.data.jobs.values()].filter((job) => canReadJob(user, job)).map((job) => immutableClone(job));
   }
 
-  async getJob(jobUid: string): Promise<JobRow | null> {
-    const job = this.data.jobs.get(jobUid);
+  async getJob(jobid: string): Promise<JobRow | null> {
+    const job = this.data.jobs.get(jobid);
     return job ? immutableClone(job) : null;
   }
 
   async updateJobStatus(args: {
-    jobUid: string;
+    jobid: string;
     status: JobRow["status"];
     expectedRowVersion: number;
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
   }): Promise<{ job: JobRow; conflict: ConflictPayload | null }> {
-    const current = this.data.jobs.get(args.jobUid);
+    const current = this.data.jobs.get(args.jobid);
     if (!current) {
-      throw new Error(`Unknown job ${args.jobUid}`);
+      throw new Error(`Unknown job ${args.jobid}`);
     }
 
     if (current.row_version !== args.expectedRowVersion) {
@@ -361,17 +361,17 @@ export class LocalWorkbookStore implements WorkbookStore {
     const updated: JobRow = {
       ...current,
       status: args.status,
-      ...bumpMutableMeta(current, args.ctx.actorUserUid, args.ctx.correlationId)
+      ...bumpMutableMeta(current, args.ctx.actorUserid, args.ctx.correlationId)
     };
 
-    this.data.jobs.set(updated.job_uid, updated);
+    this.data.jobs.set(updated.job_id, updated);
     const event = stampEvent({
-      jobUid: updated.job_uid,
+      jobid: updated.job_id,
       eventType: "status_changed",
       payload: { from: current.status, to: args.status },
       ctx: args.ctx
     });
-    this.data.jobEvents.set(event.event_uid, event);
+    this.data.jobEvents.set(event.event_id, event);
 
     return {
       job: immutableClone(updated),
@@ -380,14 +380,14 @@ export class LocalWorkbookStore implements WorkbookStore {
   }
 
   async appendJobNote(args: {
-    jobUid: string;
+    jobid: string;
     note: string;
     expectedRowVersion: number;
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
   }): Promise<{ job: JobRow; conflict: ConflictPayload | null }> {
-    const current = this.data.jobs.get(args.jobUid);
+    const current = this.data.jobs.get(args.jobid);
     if (!current) {
-      throw new Error(`Unknown job ${args.jobUid}`);
+      throw new Error(`Unknown job ${args.jobid}`);
     }
 
     if (current.row_version !== args.expectedRowVersion) {
@@ -400,17 +400,17 @@ export class LocalWorkbookStore implements WorkbookStore {
     const updated: JobRow = {
       ...current,
       last_note: args.note,
-      ...bumpMutableMeta(current, args.ctx.actorUserUid, args.ctx.correlationId)
+      ...bumpMutableMeta(current, args.ctx.actorUserid, args.ctx.correlationId)
     };
 
-    this.data.jobs.set(updated.job_uid, updated);
+    this.data.jobs.set(updated.job_id, updated);
     const event = stampEvent({
-      jobUid: updated.job_uid,
+      jobid: updated.job_id,
       eventType: "note_added",
       payload: { note: args.note },
       ctx: args.ctx
     });
-    this.data.jobEvents.set(event.event_uid, event);
+    this.data.jobEvents.set(event.event_id, event);
 
     return {
       job: immutableClone(updated),
@@ -419,80 +419,80 @@ export class LocalWorkbookStore implements WorkbookStore {
   }
 
   async appendJobEvent(event: JobEventRow): Promise<void> {
-    this.data.jobEvents.set(event.event_uid, immutableClone(event));
+    this.data.jobEvents.set(event.event_id, immutableClone(event));
   }
 
   async createScheduleRequest(row: ScheduleRequestRow): Promise<void> {
-    this.data.scheduleRequests.set(row.request_uid, immutableClone(row));
+    this.data.scheduleRequests.set(row.request_id, immutableClone(row));
   }
 
-  async getScheduleRequest(requestUid: string): Promise<ScheduleRequestRow | null> {
-    const row = this.data.scheduleRequests.get(requestUid);
+  async getScheduleRequest(requestid: string): Promise<ScheduleRequestRow | null> {
+    const row = this.data.scheduleRequests.get(requestid);
     return row ? immutableClone(row) : null;
   }
 
-  async listScheduleRequests(jobUid?: string): Promise<ScheduleRequestRow[]> {
+  async listScheduleRequests(jobid?: string): Promise<ScheduleRequestRow[]> {
     return [...this.data.scheduleRequests.values()]
-      .filter((row) => !jobUid || row.job_uid === jobUid)
+      .filter((row) => !jobid || row.job_id === jobid)
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
       .map((row) => immutableClone(row));
   }
 
   async upsertScheduleRequest(row: ScheduleRequestRow): Promise<void> {
-    this.data.scheduleRequests.set(row.request_uid, immutableClone(row));
+    this.data.scheduleRequests.set(row.request_id, immutableClone(row));
   }
 
   async createSchedule(row: ScheduleRow): Promise<void> {
-    this.data.schedules.set(row.schedule_uid, immutableClone(row));
+    this.data.schedules.set(row.schedule_id, immutableClone(row));
   }
 
-  async getSchedule(scheduleUid: string): Promise<ScheduleRow | null> {
-    const row = this.data.schedules.get(scheduleUid);
+  async getSchedule(scheduleid: string): Promise<ScheduleRow | null> {
+    const row = this.data.schedules.get(scheduleid);
     return row ? immutableClone(row) : null;
   }
 
-  async listSchedules(jobUid?: string): Promise<ScheduleRow[]> {
+  async listSchedules(jobid?: string): Promise<ScheduleRow[]> {
     return [...this.data.schedules.values()]
-      .filter((row) => !jobUid || row.job_uid === jobUid)
+      .filter((row) => !jobid || row.job_id === jobid)
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
       .map((row) => immutableClone(row));
   }
 
   async upsertSchedule(row: ScheduleRow): Promise<void> {
-    this.data.schedules.set(row.schedule_uid, immutableClone(row));
+    this.data.schedules.set(row.schedule_id, immutableClone(row));
   }
 
   async createDocument(row: JobDocumentRow): Promise<void> {
-    this.data.documents.set(row.document_uid, immutableClone(row));
+    this.data.documents.set(row.document_id, immutableClone(row));
   }
 
-  async getDocument(documentUid: string): Promise<JobDocumentRow | null> {
-    const row = this.data.documents.get(documentUid);
+  async getDocument(documentid: string): Promise<JobDocumentRow | null> {
+    const row = this.data.documents.get(documentid);
     return row ? immutableClone(row) : null;
   }
 
   async upsertDocument(row: JobDocumentRow): Promise<void> {
-    this.data.documents.set(row.document_uid, immutableClone(row));
+    this.data.documents.set(row.document_id, immutableClone(row));
   }
 
-  async listDocuments(jobUid?: string): Promise<JobDocumentRow[]> {
+  async listDocuments(jobid?: string): Promise<JobDocumentRow[]> {
     return [...this.data.documents.values()]
-      .filter((document) => !jobUid || document.job_uid === jobUid)
+      .filter((document) => !jobid || document.job_id === jobid)
       .map((document) => immutableClone(document));
   }
 
   async appendAudit(args: {
     action: string;
     payload: Record<string, unknown>;
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
     entry_type?: string;
   }): Promise<void> {
     this.data.audits.push({
-      audit_uid: `AUD-${crypto.randomUUID()}`,
+      audit_id: `AUD-${crypto.randomUUID()}`,
       action: args.action,
       entry_type: args.entry_type ?? "system_audit",
       payload_json: JSON.stringify(args.payload),
-      actor_user_uid: args.ctx.actorUserUid,
+      actor_user_id: args.ctx.actorUserid,
       correlation_id: args.ctx.correlationId,
       at: nowIso()
     });
@@ -503,11 +503,11 @@ export class LocalWorkbookStore implements WorkbookStore {
   }
 
   async upsertAutomationJob(row: AutomationJobRow): Promise<void> {
-    this.data.automationJobs.set(row.automation_job_uid, immutableClone(row));
+    this.data.automationJobs.set(row.automation_job_id, immutableClone(row));
   }
 
-  async getAutomationJob(automationJobUid: string): Promise<AutomationJobRow | null> {
-    const row = this.data.automationJobs.get(automationJobUid);
+  async getAutomationJob(automationJobid: string): Promise<AutomationJobRow | null> {
+    const row = this.data.automationJobs.get(automationJobid);
     return row ? immutableClone(row) : null;
   }
 
@@ -518,24 +518,24 @@ export class LocalWorkbookStore implements WorkbookStore {
   }
 
   async upsertSyncQueue(row: SyncQueueRow): Promise<void> {
-    this.data.syncQueue.set(row.mutation_uid, immutableClone(row));
+    this.data.syncQueue.set(row.mutation_id, immutableClone(row));
   }
 
-  async getSyncQueue(mutationUid: string): Promise<SyncQueueRow | null> {
-    const row = this.data.syncQueue.get(mutationUid);
+  async getSyncQueue(mutationid: string): Promise<SyncQueueRow | null> {
+    const row = this.data.syncQueue.get(mutationid);
     return row ? immutableClone(row) : null;
   }
 
-  async listSyncQueueByJob(jobUid: string): Promise<SyncQueueRow[]> {
+  async listSyncQueueByJob(jobid: string): Promise<SyncQueueRow[]> {
     return [...this.data.syncQueue.values()]
-      .filter((row) => row.job_uid === jobUid)
+      .filter((row) => row.job_id === jobid)
       .map((row) => immutableClone(row));
   }
 
   async applySyncMutations(args: {
     actor: SessionUser;
     mutations: SyncMutation[];
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
   }): Promise<SyncPushResult> {
     const result: SyncPushResult = {
       applied: [],
@@ -546,21 +546,21 @@ export class LocalWorkbookStore implements WorkbookStore {
     for (const mutation of args.mutations) {
       const existingQueue = this.data.syncQueue.get(mutation.mutation_id);
       if (existingQueue?.status === "applied") {
-        const job = this.data.jobs.get(mutation.job_uid);
+        const job = this.data.jobs.get(mutation.job_id);
         result.applied.push({
           mutation_id: mutation.mutation_id,
-          job_uid: mutation.job_uid,
+          job_id: mutation.job_id,
           row_version: job?.row_version ?? 0
         });
         continue;
       }
 
-      const job = this.data.jobs.get(mutation.job_uid);
+      const job = this.data.jobs.get(mutation.job_id);
       if (!job) {
         result.failed.push({
           mutation_id: mutation.mutation_id,
-          job_uid: mutation.job_uid,
-          error: normalizeError(`Unknown job ${mutation.job_uid}`, "not_found")
+          job_id: mutation.job_id,
+          error: normalizeError(`Unknown job ${mutation.job_id}`, "not_found")
         });
         continue;
       }
@@ -569,18 +569,18 @@ export class LocalWorkbookStore implements WorkbookStore {
         const conflict = toConflict(job, mutation.expected_row_version);
         result.conflicts.push({
           mutation_id: mutation.mutation_id,
-          job_uid: mutation.job_uid,
+          job_id: mutation.job_id,
           conflict
         });
 
         await this.upsertSyncQueue({
-          mutation_uid: mutation.mutation_id,
-          job_uid: mutation.job_uid,
-          actor_uid: args.actor.user_uid,
+          mutation_id: mutation.mutation_id,
+          job_id: mutation.job_id,
+          actor_id: args.actor.user_id,
           payload_json: JSON.stringify(mutation.payload),
           status: "conflict",
           last_result: JSON.stringify(conflict),
-          ...newMutableMeta(args.ctx.actorUserUid, args.ctx.correlationId)
+          ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
         });
 
         continue;
@@ -605,41 +605,41 @@ export class LocalWorkbookStore implements WorkbookStore {
 
         const updated: JobRow = {
           ...job,
-          ...bumpMutableMeta(job, args.ctx.actorUserUid, args.ctx.correlationId)
+          ...bumpMutableMeta(job, args.ctx.actorUserid, args.ctx.correlationId)
         };
-        this.data.jobs.set(updated.job_uid, updated);
+        this.data.jobs.set(updated.job_id, updated);
 
         await this.upsertSyncQueue({
-          mutation_uid: mutation.mutation_id,
-          job_uid: mutation.job_uid,
-          actor_uid: args.actor.user_uid,
+          mutation_id: mutation.mutation_id,
+          job_id: mutation.job_id,
+          actor_id: args.actor.user_id,
           payload_json: JSON.stringify(mutation.payload),
           status: "applied",
           last_result: "applied",
-          ...newMutableMeta(args.ctx.actorUserUid, args.ctx.correlationId)
+          ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
         });
 
         result.applied.push({
           mutation_id: mutation.mutation_id,
-          job_uid: mutation.job_uid,
+          job_id: mutation.job_id,
           row_version: updated.row_version
         });
       } catch (error) {
         const typedError: ApiError = normalizeError(String(error), "sync_apply_failed");
         result.failed.push({
           mutation_id: mutation.mutation_id,
-          job_uid: mutation.job_uid,
+          job_id: mutation.job_id,
           error: typedError
         });
 
         await this.upsertSyncQueue({
-          mutation_uid: mutation.mutation_id,
-          job_uid: mutation.job_uid,
-          actor_uid: args.actor.user_uid,
+          mutation_id: mutation.mutation_id,
+          job_id: mutation.job_id,
+          actor_id: args.actor.user_id,
           payload_json: JSON.stringify(mutation.payload),
           status: "failed",
           last_result: JSON.stringify(typedError),
-          ...newMutableMeta(args.ctx.actorUserUid, args.ctx.correlationId)
+          ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
         });
       }
     }
@@ -649,16 +649,16 @@ export class LocalWorkbookStore implements WorkbookStore {
 
   async resolveSyncConflict(args: {
     actor: SessionUser;
-    jobUid: string;
+    jobid: string;
     strategy: "server" | "client" | "merge";
     serverRowVersion: number;
     clientRowVersion: number;
     mergePatch?: Record<string, unknown>;
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
   }): Promise<{ job: JobRow; conflict: ConflictPayload | null }> {
-    const job = this.data.jobs.get(args.jobUid);
+    const job = this.data.jobs.get(args.jobid);
     if (!job) {
-      throw new Error(`Unknown job ${args.jobUid}`);
+      throw new Error(`Unknown job ${args.jobid}`);
     }
 
     if (job.row_version !== args.serverRowVersion) {
@@ -687,10 +687,10 @@ export class LocalWorkbookStore implements WorkbookStore {
 
     const updated: JobRow = {
       ...job,
-      ...bumpMutableMeta(job, args.ctx.actorUserUid, args.ctx.correlationId)
+      ...bumpMutableMeta(job, args.ctx.actorUserid, args.ctx.correlationId)
     };
 
-    this.data.jobs.set(updated.job_uid, updated);
+    this.data.jobs.set(updated.job_id, updated);
 
     return {
       job: immutableClone(updated),
@@ -706,7 +706,7 @@ export class LocalWorkbookStore implements WorkbookStore {
       .map((job) => immutableClone(job));
 
     const queue = [...this.data.syncQueue.values()]
-      .filter((entry) => jobs.some((job) => job.job_uid === entry.job_uid))
+      .filter((entry) => jobs.some((job) => job.job_id === entry.job_id))
       .map((entry) => immutableClone(entry));
 
     return { jobs, queue };

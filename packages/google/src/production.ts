@@ -318,14 +318,15 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
         templateId = config.jobcardTemplateId;
       }
 
-      const fileName = `${args.documentType.toUpperCase()}_${args.jobUid}_${Date.now()}`;
+      const fileName = `${args.documentType.toUpperCase()}_${args.jobid}_${Date.now()}`;
 
       const copyResponse = await googleApiRequest<{ id: string }>({
-        config,
+        config: delegatedConfig,
         service: "drive",
         url: `https://www.googleapis.com/drive/v3/files/${templateId}/copy`,
         method: "POST",
         scopes: ["https://www.googleapis.com/auth/drive"],
+        ...delegatedSubjectArgs,
         headers: {
           "content-type": "application/json"
         },
@@ -339,10 +340,11 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       // We use unknown for content since the full Google Docs body structure is massive
       // and we only use batchUpdate to perform the actual replacements.
       const docData = await googleApiRequest<{ body: { content: unknown[] } }>({
-        config,
+        config: delegatedConfig,
         service: "docs",
         url: `https://docs.googleapis.com/v1/documents/${documentId}`,
-        scopes: ["https://www.googleapis.com/auth/documents.readonly"]
+        scopes: ["https://www.googleapis.com/auth/documents.readonly"],
+        ...delegatedSubjectArgs
       });
 
       type GoogleDocsBatchRequest = Record<string, unknown>;
@@ -433,11 +435,12 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
 
       if (batchRequests.length > 0) {
         await googleApiRequest({
-          config,
+          config: delegatedConfig,
           service: "docs",
           url: `https://docs.googleapis.com/v1/documents/${documentId}:batchUpdate`,
           method: "POST",
           scopes: ["https://www.googleapis.com/auth/documents", "https://www.googleapis.com/auth/drive"],
+          ...delegatedSubjectArgs,
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ requests: batchRequests })
         });
@@ -445,10 +448,11 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
 
 
       const pdfBuffer = await googleApiRequest<ArrayBuffer>({
-        config,
+        config: delegatedConfig,
         service: "drive",
         url: `https://www.googleapis.com/drive/v3/files/${documentId}/export?mimeType=application/pdf`,
         scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+        ...delegatedSubjectArgs,
         parse: "arrayBuffer"
       });
 
@@ -467,11 +471,12 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       ]);
 
       const upload = await googleApiRequest<{ id: string }>({
-        config,
+        config: delegatedConfig,
         service: "drive",
         url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
         method: "POST",
         scopes: ["https://www.googleapis.com/auth/drive"],
+        ...delegatedSubjectArgs,
         headers: {
           "content-type": `multipart/related; boundary=${multipart.boundary}`
         },
@@ -490,10 +495,11 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       }
 
       const response = await googleApiRequest<{ files: GoogleFile[] }>({
-        config,
+        config: delegatedConfig,
         service: "drive",
         url: `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q.join(" and "))}&fields=files(id,name,webViewLink,createdTime,mimeType)&orderBy=createdTime%20desc`,
-        scopes: ["https://www.googleapis.com/auth/drive.readonly"]
+        scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+        ...delegatedSubjectArgs
       });
 
       return response.files ?? [];
@@ -507,11 +513,12 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
         const domainScoped = senderDomain !== "";
 
         await googleApiRequest({
-          config,
+          config: delegatedConfig,
           service: "drive",
           url: `https://www.googleapis.com/drive/v3/files/${args.fileId}/permissions`,
           method: "POST",
           scopes: ["https://www.googleapis.com/auth/drive"],
+          ...delegatedSubjectArgs,
           headers: {
             "content-type": "application/json"
           },
@@ -533,10 +540,11 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       }
 
       const file = await googleApiRequest<{ webViewLink?: string }>({
-        config,
+        config: delegatedConfig,
         service: "drive",
         url: `https://www.googleapis.com/drive/v3/files/${args.fileId}?fields=webViewLink`,
-        scopes: ["https://www.googleapis.com/auth/drive.readonly"]
+        scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+        ...delegatedSubjectArgs
       });
 
       return {
@@ -548,8 +556,8 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
   const calendar: CalendarRail = {
     async confirmEvent(args) {
       const body = {
-        summary: `Kharon Job ${args.jobUid}`,
-        description: `Schedule ${args.scheduleUid}`,
+        summary: `Kharon Job ${args.jobid}`,
+        description: `Schedule ${args.scheduleid}`,
         start: { dateTime: args.startAt },
         end: { dateTime: args.endAt }
       };

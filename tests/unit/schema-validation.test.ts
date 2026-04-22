@@ -9,7 +9,7 @@ describe("schema validation", () => {
 
   it("validates schedule request payload", () => {
     const payload = scheduleRequestSchema.parse({
-      job_uid: "JOB-1001",
+      job_id: "JOB-1001",
       preferred_slots: [
         {
           start_at: "2026-04-09T10:00:00.000Z",
@@ -21,7 +21,7 @@ describe("schema validation", () => {
       row_version: 4
     });
 
-    expect(payload.job_uid).toBe("JOB-1001");
+    expect(payload.job_id).toBe("JOB-1001");
   });
 
   it("validates sync push payload", () => {
@@ -30,7 +30,7 @@ describe("schema validation", () => {
         {
           mutation_id: "MUT-1",
           kind: "job_status",
-          job_uid: "JOB-1001",
+          job_id: "JOB-1001",
           expected_row_version: 3,
           payload: {
             status: "performed"

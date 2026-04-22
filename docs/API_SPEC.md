@@ -12,7 +12,7 @@ Every JSON response uses the domain envelope:
 {
   "data": {},
   "error": null,
-  "correlation_id": "uuid",
+  "correlation_id": "uid",
   "row_version": null,
   "conflict": null
 }
@@ -27,7 +27,7 @@ Error example:
     "code": "validation_error",
     "message": "Request validation failed"
   },
-  "correlation_id": "uuid",
+  "correlation_id": "uid",
   "row_version": null,
   "conflict": null
 }
@@ -43,9 +43,9 @@ Error example:
 ## Core Endpoints
 
 - `GET /api/v1/jobs` — returns enriched job records (see Name Enrichment below)
-- `GET /api/v1/jobs/:job_uid` — returns a single enriched job record
-- `POST /api/v1/jobs/:job_uid/status`
-- `POST /api/v1/jobs/:job_uid/note`
+- `GET /api/v1/jobs/:job_id` — returns a single enriched job record
+- `POST /api/v1/jobs/:job_id/status`
+- `POST /api/v1/jobs/:job_id/note`
 - `POST /api/v1/schedules/request-slot`
 - `POST /api/v1/schedules/confirm`
 - `POST /api/v1/schedules/reschedule`
@@ -59,7 +59,7 @@ Error example:
 
 - `GET /api/v1/admin/health`
 - `GET /api/v1/admin/audits`
-- `POST /api/v1/admin/retries/:automation_job_uid`
+- `POST /api/v1/admin/retries/:automation_job_id`
 
 ## Health
 
@@ -67,7 +67,7 @@ Error example:
 
 ## Name Enrichment
 
-The `GET /jobs` and `GET /jobs/:job_uid` endpoints enrich each `JobRow` with two additional display fields:
+The `GET /jobs` and `GET /jobs/:job_id` endpoints enrich each `JobRow` with two additional display fields:
 
 | Field              | Type     | Source Priority                                           |
 |--------------------|----------|-----------------------------------------------------------|

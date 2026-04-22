@@ -292,11 +292,11 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
     let userRow: Awaited<ReturnType<typeof store.getUserByEmail>> = null;
 
-    // Local dev tokens can point to a specific seeded user_uid so role simulation
+    // Local dev tokens can point to a specific seeded user_id so role simulation
     // continues to work even when all users share one mailbox address.
-    if (config.mode === "local" && identity.localUserUid) {
+    if (config.mode === "local" && identity.localUserid) {
       const users = await store.listUsers();
-      userRow = users.find((row) => row.user_uid === identity.localUserUid && row.active === "true") ?? null;
+      userRow = users.find((row) => row.user_id === identity.localUserid && row.active === "true") ?? null;
     }
 
     if (!userRow) {
@@ -327,12 +327,12 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const sessionUser = {
-      user_uid: userRow.user_uid,
+      user_id: userRow.user_id,
       email: userRow.email,
       role: userRow.role,
       display_name: userRow.display_name,
-      client_uid: userRow.client_uid,
-      technician_uid: userRow.technician_uid
+      client_id: userRow.client_id,
+      technician_id: userRow.technician_id
     };
 
     const token = await createSessionToken({
@@ -352,11 +352,11 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       action: "auth.login.success",
       entry_type: "auth_audit",
       payload: {
-        user_uid: sessionUser.user_uid,
+        user_id: sessionUser.user_id,
         email: sessionUser.email,
         role: sessionUser.role
       },
-      ctx: createStoreContext(sessionUser.user_uid, correlationId)
+      ctx: createStoreContext(sessionUser.user_id, correlationId)
     });
 
     return c.json(
@@ -405,16 +405,16 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   api.post("/auth/logout", async (c) => {
     const correlationId = c.get("correlationId");
     const user = c.get("sessionUser");
-    
+
     if (user) {
       await store.appendAudit({
         action: "auth.logout",
         entry_type: "auth_audit",
         payload: {
-          user_uid: user.user_uid,
+          user_id: user.user_id,
           email: user.email
         },
-        ctx: createStoreContext(user.user_uid, correlationId)
+        ctx: createStoreContext(user.user_id, correlationId)
       });
     }
 
@@ -501,7 +501,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   });
 
   // ---------------------------------------------------------------------------
-  // Name-enrichment helper — shared by GET /jobs and GET /jobs/:job_uid
+  // Name-enrichment helper — shared by GET /jobs and GET /jobs/:job_id
   // ---------------------------------------------------------------------------
 
   /**
@@ -548,12 +548,12 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       fetchNameSources(store)
     ]);
 
-    const { clientNameByUid, technicianNameByUid } = buildNameLookups(sources);
+    const { clientNameByid, technicianNameByid } = buildNameLookups(sources);
 
     const enrichedJobs = jobs.map((job) => ({
       ...job,
-      client_name: clientNameByUid.get(job.client_uid) ?? "",
-      technician_name: technicianNameByUid.get(job.technician_uid) ?? ""
+      client_name: clientNameByid.get(job.client_id) ?? "",
+      technician_name: technicianNameByid.get(job.technician_id) ?? ""
     }));
 
     return c.json(
@@ -564,11 +564,11 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     );
   });
 
-  api.get("/jobs/:job_uid", requireSession(), async (c) => {
+  api.get("/jobs/:job_id", requireSession(), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const jobUid = c.req.param("job_uid");
-    const job = await store.getJob(jobUid);
+    const jobid = c.req.param("job_id");
+    const job = await store.getJob(jobid);
 
     if (!job) {
       return c.json(
@@ -598,12 +598,12 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
     // Enrich the single-job view using the shared name-lookup helper.
     const sources = await fetchNameSources(store);
-    const { clientNameByUid, technicianNameByUid } = buildNameLookups(sources);
+    const { clientNameByid, technicianNameByid } = buildNameLookups(sources);
 
     const enrichedJob = {
       ...job,
-      client_name: clientNameByUid.get(job.client_uid) ?? "",
-      technician_name: technicianNameByUid.get(job.technician_uid) ?? ""
+      client_name: clientNameByid.get(job.client_id) ?? "",
+      technician_name: technicianNameByid.get(job.technician_id) ?? ""
     };
 
     return c.json(
@@ -615,13 +615,13 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     );
   });
 
-  api.post("/jobs/:job_uid/status", requireSession(), async (c) => {
+  api.post("/jobs/:job_id/status", requireSession(), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const jobUid = c.req.param("job_uid");
+    const jobid = c.req.param("job_id");
     const body = await parseJsonBody(c.req.raw, statusUpdateSchema);
 
-    const existing = await store.getJob(jobUid);
+    const existing = await store.getJob(jobid);
     if (!existing) {
       return c.json(
         envelopeError({
@@ -665,10 +665,10 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const update = await store.updateJobStatus({
-      jobUid,
+      jobid,
       status: body.status,
       expectedRowVersion: body.row_version,
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     if (update.conflict) {
@@ -679,11 +679,11 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       await store.appendAudit({
         action: "jobs.status.update",
         payload: {
-          job_uid: jobUid,
+          job_id: jobid,
           status: body.status,
           actor_role: user.role
         },
-        ctx: createStoreContext(user.user_uid, correlationId)
+        ctx: createStoreContext(user.user_id, correlationId)
       });
     }
 
@@ -696,13 +696,13 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     );
   });
 
-  api.post("/jobs/:job_uid/note", requireSession(), async (c) => {
+  api.post("/jobs/:job_id/note", requireSession(), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const jobUid = c.req.param("job_uid");
+    const jobid = c.req.param("job_id");
     const body = await parseJsonBody(c.req.raw, noteSchema);
 
-    const existing = await store.getJob(jobUid);
+    const existing = await store.getJob(jobid);
     if (!existing) {
       return c.json(
         envelopeError({
@@ -727,10 +727,10 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const update = await store.appendJobNote({
-      jobUid,
+      jobid,
       note: body.note,
       expectedRowVersion: body.row_version,
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     if (update.conflict) {
@@ -740,10 +740,10 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     await store.appendAudit({
       action: "jobs.note.create",
       payload: {
-        job_uid: jobUid,
+        job_id: jobid,
         note_length: body.note.length
       },
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(
@@ -769,7 +769,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const body = await parseJsonBody(c.req.raw, scheduleRequestSchema);
-    const job = await store.getJob(body.job_uid);
+    const job = await store.getJob(body.job_id);
 
     if (!job) {
       return c.json(
@@ -789,7 +789,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       const conflict = {
         type: "row_version_conflict" as const,
         entity: "Jobs_Master",
-        entity_id: job.job_uid,
+        entity_id: job.job_id,
         client_row_version: body.row_version,
         server_row_version: job.row_version,
         server_state: job as unknown as Record<string, unknown>
@@ -798,14 +798,14 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const row: ScheduleRequestRow = {
-      request_uid: `REQ-${crypto.randomUUID()}`,
-      job_uid: body.job_uid,
-      client_uid: job.client_uid,
+      request_id: `REQ-${crypto.randomUUID()}`,
+      job_id: body.job_id,
+      client_id: job.client_id,
       preferred_slots_json: JSON.stringify(body.preferred_slots),
       timezone: body.timezone,
       notes: body.notes ?? "",
       status: "requested",
-      ...createMutable(user.user_uid, correlationId)
+      ...createMutable(user.user_id, correlationId)
     };
 
     await store.createScheduleRequest(row);
@@ -813,10 +813,10 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     await store.appendAudit({
       action: "schedules.request",
       payload: {
-        job_uid: body.job_uid,
-        request_uid: row.request_uid
+        job_id: body.job_id,
+        request_id: row.request_id
       },
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(
@@ -839,19 +839,19 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const body = await parseJsonBody(c.req.raw, scheduleConfirmSchema);
-    let request = await store.getScheduleRequest(body.request_uid);
-    if (!request && config.mode === "local" && body.job_uid) {
-      const fallbackJob = await store.getJob(body.job_uid);
+    let request = await store.getScheduleRequest(body.request_id);
+    if (!request && config.mode === "local" && body.job_id) {
+      const fallbackJob = await store.getJob(body.job_id);
       if (fallbackJob) {
         request = {
-          request_uid: body.request_uid,
-          job_uid: fallbackJob.job_uid,
-          client_uid: fallbackJob.client_uid,
+          request_id: body.request_id,
+          job_id: fallbackJob.job_id,
+          client_id: fallbackJob.client_id,
           preferred_slots_json: JSON.stringify([{ start_at: body.start_at, end_at: body.end_at }]),
           timezone: "Africa/Johannesburg",
           notes: "auto-created fallback request",
           status: "requested",
-          ...createMutable(user.user_uid, correlationId)
+          ...createMutable(user.user_id, correlationId)
         };
       }
     }
@@ -862,7 +862,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
           correlationId,
           error: {
             code: "not_found",
-            message: "Schedule request not found. Create/request a slot first, then confirm using that request UID."
+            message: "Schedule request not found. Create/request a slot first, then confirm using that request id."
           }
         }),
         404
@@ -873,7 +873,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       const conflict = {
         type: "row_version_conflict" as const,
         entity: "Schedule_Requests",
-        entity_id: request.request_uid,
+        entity_id: request.request_id,
         client_row_version: body.row_version,
         server_row_version: request.row_version,
         server_state: request as unknown as Record<string, unknown>
@@ -881,31 +881,31 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       return c.json(rowVersionConflictResponse(correlationId, request.row_version, conflict), 409);
     }
 
-    const scheduleUid = `SCH-${crypto.randomUUID()}`;
+    const scheduleid = `SCH-${crypto.randomUUID()}`;
     const calendar = await config.rails.calendar.confirmEvent({
-      jobUid: request.job_uid,
-      scheduleUid,
+      jobid: request.job_id,
+      scheduleid,
       startAt: body.start_at,
       endAt: body.end_at,
-      technicianUid: body.technician_uid
+      technicianid: body.technician_id
     });
 
     const updatedRequest: ScheduleRequestRow = {
       ...request,
       status: "confirmed",
-      ...bumpMutableMeta(request, user.user_uid, correlationId)
+      ...bumpMutableMeta(request, user.user_id, correlationId)
     };
 
     const schedule: ScheduleRow = {
-      schedule_uid: scheduleUid,
-      request_uid: request.request_uid,
-      job_uid: request.job_uid,
+      schedule_id: scheduleid,
+      request_id: request.request_id,
+      job_id: request.job_id,
       calendar_event_id: calendar.eventId,
       start_at: body.start_at,
       end_at: body.end_at,
-      technician_uid: body.technician_uid,
+      technician_id: body.technician_id,
       status: "confirmed",
-      ...createMutable(user.user_uid, correlationId)
+      ...createMutable(user.user_id, correlationId)
     };
 
     await store.upsertScheduleRequest(updatedRequest);
@@ -914,10 +914,10 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     await store.appendAudit({
       action: "schedules.confirm",
       payload: {
-        request_uid: request.request_uid,
-        schedule_uid: schedule.schedule_uid
+        request_id: request.request_id,
+        schedule_id: schedule.schedule_id
       },
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(
@@ -940,19 +940,19 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const body = await parseJsonBody(c.req.raw, scheduleRescheduleSchema);
-    let schedule = await store.getSchedule(body.schedule_uid);
-    if (!schedule && config.mode === "local" && body.job_uid) {
-      const fallbackJob = await store.getJob(body.job_uid);
+    let schedule = await store.getSchedule(body.schedule_id);
+    if (!schedule && config.mode === "local" && body.job_id) {
+      const fallbackJob = await store.getJob(body.job_id);
       schedule = {
-        schedule_uid: body.schedule_uid,
-        request_uid: body.request_uid ?? `REQ-${crypto.randomUUID()}`,
-        job_uid: body.job_uid,
+        schedule_id: body.schedule_id,
+        request_id: body.request_id ?? `REQ-${crypto.randomUUID()}`,
+        job_id: body.job_id,
         calendar_event_id: body.calendar_event_id ?? "",
         start_at: body.start_at,
         end_at: body.end_at,
-        technician_uid: body.technician_uid ?? fallbackJob?.technician_uid ?? "TECH-001",
+        technician_id: body.technician_id ?? fallbackJob?.technician_id ?? "TECH-001",
         status: "confirmed",
-        ...createMutable(user.user_uid, correlationId)
+        ...createMutable(user.user_id, correlationId)
       };
     }
 
@@ -962,7 +962,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
           correlationId,
           error: {
             code: "not_found",
-            message: "Schedule not found. Confirm a request first, then reschedule that schedule UID."
+            message: "Schedule not found. Confirm a request first, then reschedule that schedule id."
           }
         }),
         404
@@ -973,7 +973,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       const conflict = {
         type: "row_version_conflict" as const,
         entity: "Schedules_Master",
-        entity_id: schedule.schedule_uid,
+        entity_id: schedule.schedule_id,
         client_row_version: body.row_version,
         server_row_version: schedule.row_version,
         server_state: schedule as unknown as Record<string, unknown>
@@ -982,11 +982,11 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const calendar = await config.rails.calendar.confirmEvent({
-      jobUid: schedule.job_uid,
-      scheduleUid: schedule.schedule_uid,
+      jobid: schedule.job_id,
+      scheduleid: schedule.schedule_id,
       startAt: body.start_at,
       endAt: body.end_at,
-      technicianUid: schedule.technician_uid,
+      technicianid: schedule.technician_id,
       existingEventId: schedule.calendar_event_id
     });
 
@@ -996,7 +996,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       end_at: body.end_at,
       status: "rescheduled",
       calendar_event_id: calendar.eventId,
-      ...bumpMutableMeta(schedule, user.user_uid, correlationId)
+      ...bumpMutableMeta(schedule, user.user_id, correlationId)
     };
 
     await store.upsertSchedule(updated);
@@ -1004,9 +1004,9 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     await store.appendAudit({
       action: "schedules.reschedule",
       payload: {
-        schedule_uid: updated.schedule_uid
+        schedule_id: updated.schedule_id
       },
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(
@@ -1029,7 +1029,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const body = await parseJsonBody(c.req.raw, documentGenerateSchema);
-    const job = await store.getJob(body.job_uid);
+    const job = await store.getJob(body.job_id);
     if (!job) {
       return c.json(
         envelopeError({ correlationId, error: { code: "not_found", message: "Job not found" } }),
@@ -1044,7 +1044,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
 
-    const documentUid = `DOC-${crypto.randomUUID()}`;
+    const documentid = `DOC-${crypto.randomUUID()}`;
     const overrides = body.tokens ?? {};
     const users = await store.listUsers();
     const isGas = job.title.toLowerCase().includes("gas");
@@ -1052,11 +1052,11 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const subType = isGas ? "gas" : "fire";
 
     const generated = await config.rails.docs.generateDocument({
-      jobUid: body.job_uid,
+      jobid: body.job_id,
       documentType: body.document_type,
       subType,
       tokens: buildDocumentTokens({
-        documentUid,
+        documentid,
         documentType: body.document_type,
         job,
         actor: user,
@@ -1066,15 +1066,15 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     });
 
     const document: JobDocumentRow = {
-      document_uid: documentUid,
-      job_uid: body.job_uid,
+      document_id: documentid,
+      job_id: body.job_id,
       document_type: body.document_type,
       status: "generated",
       drive_file_id: generated.drive_file_id,
       pdf_file_id: generated.pdf_file_id,
       published_url: "",
       client_visible: false,
-      ...createMutable(user.user_uid, correlationId)
+      ...createMutable(user.user_id, correlationId)
     };
 
 
@@ -1083,11 +1083,11 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     await store.appendAudit({
       action: "documents.generate",
       payload: {
-        job_uid: body.job_uid,
-        document_uid: documentUid,
+        job_id: body.job_id,
+        document_id: documentid,
         document_type: body.document_type
       },
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(
@@ -1110,18 +1110,18 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const body = await parseJsonBody(c.req.raw, documentPublishSchema);
-    let document = await store.getDocument(body.document_uid);
+    let document = await store.getDocument(body.document_id);
     if (!document && config.mode === "local") {
       document = {
-        document_uid: body.document_uid,
-        job_uid: body.job_uid ?? "JOB-1001",
+        document_id: body.document_id,
+        job_id: body.job_id ?? "JOB-1001",
         document_type: body.document_type ?? "jobcard",
         status: "generated",
-        drive_file_id: body.document_uid,
-        pdf_file_id: body.document_uid,
+        drive_file_id: body.document_id,
+        pdf_file_id: body.document_id,
         published_url: "",
         client_visible: body.client_visible ?? false,
-        ...createMutable(user.user_uid, correlationId)
+        ...createMutable(user.user_id, correlationId)
       };
 
     }
@@ -1132,7 +1132,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
           correlationId,
           error: {
             code: "not_found",
-            message: "Document not found. Generate a document first, then publish using that document UID."
+            message: "Document not found. Generate a document first, then publish using that document id."
           }
         }),
         404
@@ -1143,7 +1143,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       const conflict = {
         type: "row_version_conflict" as const,
         entity: "Job_Documents",
-        entity_id: document.document_uid,
+        entity_id: document.document_id,
         client_row_version: body.row_version,
         server_row_version: document.row_version,
         server_state: document as unknown as Record<string, unknown>
@@ -1161,17 +1161,17 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       status: "published",
       published_url: publish.publishedUrl,
       client_visible: body.client_visible ?? false,
-      ...bumpMutableMeta(document, user.user_uid, correlationId)
+      ...bumpMutableMeta(document, user.user_id, correlationId)
     };
 
     await store.upsertDocument(updated);
     await store.appendAudit({
       action: "documents.publish",
       payload: {
-        document_uid: updated.document_uid,
+        document_id: updated.document_id,
         published_url: updated.published_url
       },
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(
@@ -1186,8 +1186,8 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   api.get("/documents/history", requireSession(), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const jobUid = c.req.query("job_uid");
-    const documents = await store.listDocuments(jobUid);
+    const jobid = c.req.query("job_id");
+    const documents = await store.listDocuments(jobid);
 
     const internalDocumentRoles = new Set(["admin", "dispatcher", "finance", "super_admin"]);
     if (internalDocumentRoles.has(String(user.role))) {
@@ -1200,12 +1200,12 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const readableJobs = await store.listJobsForUser(user);
-    const readableJobUids = new Set(readableJobs.map((job) => job.job_uid));
-    
+    const readableJobids = new Set(readableJobs.map((job) => job.job_id));
+
     // Non-internal roles only see documents that are published AND marked client_visible
-    const visibleDocuments = documents.filter((document) => 
-      readableJobUids.has(document.job_uid) && 
-      document.status === "published" && 
+    const visibleDocuments = documents.filter((document) =>
+      readableJobids.has(document.job_id) &&
+      document.status === "published" &&
       document.client_visible === true
     );
 
@@ -1243,7 +1243,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const result = await store.applySyncMutations({
       actor: user,
       mutations: body.mutations,
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     const status = result.applied.length === 0 && result.conflicts.length > 0 && result.failed.length === 0 ? 409 : 200;
@@ -1252,18 +1252,18 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     return c.json(
       status === 409
         ? envelopeError({
-            correlationId,
-            conflict,
-            error: {
-              code: "sync_conflict",
-              message: "One or more mutations conflicted"
-            }
-          })
+          correlationId,
+          conflict,
+          error: {
+            code: "sync_conflict",
+            message: "One or more mutations conflicted"
+          }
+        })
         : envelopeSuccess({
-            correlationId,
-            conflict,
-            data: result
-          }),
+          correlationId,
+          conflict,
+          data: result
+        }),
       status
     );
   });
@@ -1275,12 +1275,12 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
     const resolved = await store.resolveSyncConflict({
       actor: user,
-      jobUid: body.job_uid,
+      jobid: body.job_id,
       strategy: body.strategy,
       serverRowVersion: body.server_row_version,
       clientRowVersion: body.client_row_version,
       ...(body.merge_patch ? { mergePatch: body.merge_patch } : {}),
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     if (resolved.conflict) {
@@ -1310,7 +1310,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     await store.appendAudit({
       action: "workspace.gmail.notify",
       payload: body,
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(
@@ -1334,7 +1334,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     await store.appendAudit({
       action: "workspace.chat.alert",
       payload: body,
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(
@@ -1362,7 +1362,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     await store.appendAudit({
       action: "workspace.people.sync",
       payload: body,
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(
@@ -1404,35 +1404,35 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const user = getSessionUser(c);
     const body = await parseJsonBody(c.req.raw, financeQuoteCreateSchema);
     const quote = {
-      quote_uid: `QTE-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-      job_uid: body.job_uid,
-      client_uid: body.client_uid,
+      quote_id: `QTE-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+      job_id: body.job_id,
+      client_id: body.client_id,
       description: body.description,
       amount: body.amount,
       status: "draft" as const,
       created_at: nowIso(),
-      ...createMutable(user.user_uid, correlationId)
+      ...createMutable(user.user_id, correlationId)
     };
 
     await store.createFinanceQuote(quote);
     await store.appendAudit({
       action: "workspace.upgrade.finance.quote.create",
       payload: quote,
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(envelopeSuccess({ correlationId, rowVersion: quote.row_version, data: quote }));
   });
 
-  api.post("/workspace/upgrade/quotes/:quote_uid/status", requireSession(), requireRoles("finance", "admin"), async (c) => {
+  api.post("/workspace/upgrade/quotes/:quote_id/status", requireSession(), requireRoles("finance", "admin"), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const quote_uid = c.req.param("quote_uid");
+    const quote_id = c.req.param("quote_id");
     const body = await parseJsonBody(c.req.raw, financeQuoteStatusSchema);
     const updated = await store.updateFinanceQuoteStatus({
-      quote_uid,
+      quote_id,
       status: body.status,
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
     if (!updated) {
       return c.json(
@@ -1451,7 +1451,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const user = getSessionUser(c);
     const body = await parseJsonBody(c.req.raw, financeInvoiceFromQuoteSchema);
     const quotes = await store.listFinanceQuotes();
-    const quote = quotes.find((item) => item.quote_uid === body.quote_uid) ?? null;
+    const quote = quotes.find((item) => item.quote_id === body.quote_id) ?? null;
     if (!quote) {
       return c.json(
         envelopeError({
@@ -1463,33 +1463,33 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const invoice = {
-      invoice_uid: `INV-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-      job_uid: quote.job_uid,
-      quote_uid: quote.quote_uid,
-      client_uid: quote.client_uid,
+      invoice_id: `INV-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+      job_id: quote.job_id,
+      quote_id: quote.quote_id,
+      client_id: quote.client_id,
       amount: quote.amount,
       due_date: body.due_date,
       status: "issued" as const,
       reconciled_at: "",
-      ...createMutable(user.user_uid, correlationId)
+      ...createMutable(user.user_id, correlationId)
     };
 
     await store.createFinanceInvoice(invoice);
     await store.updateFinanceQuoteStatus({
-      quote_uid: quote.quote_uid,
+      quote_id: quote.quote_id,
       status: "invoiced",
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(envelopeSuccess({ correlationId, rowVersion: invoice.row_version, data: invoice }));
   });
 
-  api.post("/workspace/upgrade/invoices/:invoice_uid/reconcile", requireSession(), requireRoles("finance", "admin"), async (c) => {
+  api.post("/workspace/upgrade/invoices/:invoice_id/reconcile", requireSession(), requireRoles("finance", "admin"), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const invoice_uid = c.req.param("invoice_uid");
+    const invoice_id = c.req.param("invoice_id");
     const invoices = await store.listFinanceInvoices();
-    const current = invoices.find((item) => item.invoice_uid === invoice_uid) ?? null;
+    const current = invoices.find((item) => item.invoice_id === invoice_id) ?? null;
     if (!current) {
       return c.json(
         envelopeError({
@@ -1504,17 +1504,17 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       ...current,
       status: "paid" as const,
       reconciled_at: nowIso(),
-      ...bumpMutableMeta(current, user.user_uid, correlationId)
+      ...bumpMutableMeta(current, user.user_id, correlationId)
     };
     await store.updateFinanceInvoice(updated);
 
     const escrowRows = await store.listEscrowRows();
-    for (const escrow of escrowRows.filter((item) => item.invoice_uid === invoice_uid && item.status === "locked")) {
+    for (const escrow of escrowRows.filter((item) => item.invoice_id === invoice_id && item.status === "locked")) {
       await store.upsertEscrow({
         ...escrow,
         status: "released",
         released_at: nowIso(),
-        ...bumpMutableMeta(escrow, user.user_uid, correlationId)
+        ...bumpMutableMeta(escrow, user.user_id, correlationId)
       });
     }
 
@@ -1525,44 +1525,44 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
     const body = await parseJsonBody(c.req.raw, financeEscrowLockSchema);
-    const existing = await store.getEscrowByDocument(body.document_uid);
+    const existing = await store.getEscrowByDocument(body.document_id);
     const row = {
-      document_uid: body.document_uid,
-      invoice_uid: body.invoice_uid,
+      document_id: body.document_id,
+      invoice_id: body.invoice_id,
       status: "locked" as const,
       locked_at: existing?.locked_at || nowIso(),
       released_at: "",
       ...(existing
-        ? bumpMutableMeta(existing, user.user_uid, correlationId)
-        : createMutable(user.user_uid, correlationId))
+        ? bumpMutableMeta(existing, user.user_id, correlationId)
+        : createMutable(user.user_id, correlationId))
     };
     await store.upsertEscrow(row);
     return c.json(envelopeSuccess({ correlationId, rowVersion: row.row_version, data: row }));
   });
 
-  api.get("/workspace/upgrade/escrow/:document_uid", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
+  api.get("/workspace/upgrade/escrow/:document_id", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
     const correlationId = c.get("correlationId");
-    const document_uid = c.req.param("document_uid");
-    const row = await store.getEscrowByDocument(document_uid);
+    const document_id = c.req.param("document_id");
+    const row = await store.getEscrowByDocument(document_id);
     return c.json(envelopeSuccess({ correlationId, data: row }));
   });
 
-  api.put("/workspace/upgrade/skills/:user_uid", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
+  api.put("/workspace/upgrade/skills/:user_id", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const user_uid = c.req.param("user_uid");
+    const user_id = c.req.param("user_id");
     const body = await parseJsonBody(c.req.raw, skillMatrixUpsertSchema);
     const skills = await store.listSkillMatrix();
-    const existing = skills.find((item) => item.user_uid === user_uid) ?? null;
+    const existing = skills.find((item) => item.user_id === user_id) ?? null;
     const row = {
-      user_uid,
+      user_id,
       saqcc_type: body.saqcc_type ?? "",
       saqcc_expiry: body.saqcc_expiry ?? "",
       medical_expiry: body.medical_expiry ?? "",
       rest_hours_last_24h: body.rest_hours_last_24h,
       ...(existing
-        ? bumpMutableMeta(existing, user.user_uid, correlationId)
-        : createMutable(user.user_uid, correlationId))
+        ? bumpMutableMeta(existing, user.user_id, correlationId)
+        : createMutable(user.user_id, correlationId))
     };
     await store.upsertSkillMatrix(row);
     return c.json(envelopeSuccess({ correlationId, rowVersion: row.row_version, data: row }));
@@ -1574,9 +1574,9 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const invoices = await store.listFinanceInvoices();
     const byClient = new Map<string, FinanceInvoiceRow[]>();
     for (const invoice of invoices) {
-      const list = byClient.get(invoice.client_uid) ?? [];
+      const list = byClient.get(invoice.client_id) ?? [];
       list.push(invoice);
-      byClient.set(invoice.client_uid, list);
+      byClient.set(invoice.client_id, list);
     }
 
     const debtors: FinanceDebtorRow[] = [];
@@ -1584,7 +1584,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const today = Date.now();
     const period = nowIso().slice(0, 7);
 
-    for (const [client_uid, rows] of byClient.entries()) {
+    for (const [client_id, rows] of byClient.entries()) {
       let total = 0;
       let c0 = 0;
       let c30 = 0;
@@ -1609,27 +1609,27 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
       const risk_band: FinanceDebtorRow["risk_band"] = c90 > 0 ? "high" : c60 > 0 ? "medium" : "low";
       debtors.push({
-        client_uid,
+        client_id,
         total_due: total,
         current_bucket: c0,
         bucket_30: c30,
         bucket_60: c60,
         bucket_90_plus: c90,
         risk_band,
-        ...createMutable(user.user_uid, correlationId)
+        ...createMutable(user.user_id, correlationId)
       });
 
-      const safeClient = client_uid.replace(/[^A-Za-z0-9]/g, "").slice(0, 10).toUpperCase();
+      const safeClient = client_id.replace(/[^A-Za-z0-9]/g, "").slice(0, 10).toUpperCase();
       statements.push({
-        statement_uid: `STM-${period.replace("-", "")}-${safeClient || "CLIENT"}`,
-        client_uid,
+        statement_id: `STM-${period.replace("-", "")}-${safeClient || "CLIENT"}`,
+        client_id,
         period_label: period,
         opening_balance: Math.max(0, total - billed + paid),
         billed,
         paid,
         closing_balance: total,
         generated_at: nowIso(),
-        ...createMutable(user.user_uid, correlationId)
+        ...createMutable(user.user_id, correlationId)
       });
     }
 
@@ -1650,22 +1650,22 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   api.get("/workspace/dispatch-context", requireSession(), requireRoles("dispatcher", "admin"), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const jobUid = (c.req.query("job_uid") ?? "").trim();
+    const jobid = (c.req.query("job_id") ?? "").trim();
 
-    if (jobUid === "") {
+    if (jobid === "") {
       return c.json(
         envelopeError({
           correlationId,
           error: {
             code: "validation_error",
-            message: "job_uid query parameter is required"
+            message: "job_id query parameter is required"
           }
         }),
         400
       );
     }
 
-    const job = await store.getJob(jobUid);
+    const job = await store.getJob(jobid);
     if (!job) {
       return c.json(
         envelopeError({
@@ -1693,9 +1693,9 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
 
     const [requests, schedules, documents, users] = await Promise.all([
-      store.listScheduleRequests(jobUid),
-      store.listSchedules(jobUid),
-      store.listDocuments(jobUid),
+      store.listScheduleRequests(jobid),
+      store.listSchedules(jobid),
+      store.listDocuments(jobid),
       store.listUsers()
     ]);
 
@@ -1766,11 +1766,11 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     );
   });
 
-  api.post("/admin/retries/:automation_job_uid", requireSession(), requireRoles("admin"), async (c) => {
+  api.post("/admin/retries/:automation_job_id", requireSession(), requireRoles("admin"), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const automationJobUid = c.req.param("automation_job_uid");
-    const automationJob = await store.getAutomationJob(automationJobUid);
+    const automationJobid = c.req.param("automation_job_id");
+    const automationJob = await store.getAutomationJob(automationJobid);
 
     if (!automationJob) {
       return c.json(
@@ -1790,18 +1790,18 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       status: "queued" as const,
       retry_count: automationJob.retry_count + 1,
       last_error: "",
-      ...bumpMutableMeta(automationJob, user.user_uid, correlationId)
+      ...bumpMutableMeta(automationJob, user.user_id, correlationId)
     };
 
     await store.upsertAutomationJob(updated);
     await store.appendAudit({
       action: "admin.automation.retry",
       payload: {
-        automation_job_uid: automationJobUid,
+        automation_job_id: automationJobid,
         retry_count: updated.retry_count,
-        trigger_user_uid: user.user_uid
+        trigger_user_id: user.user_id
       },
-      ctx: createStoreContext(user.user_uid, correlationId)
+      ctx: createStoreContext(user.user_id, correlationId)
     });
 
     return c.json(

@@ -4,18 +4,18 @@ import type { EscrowRecord } from "../apiClient";
 
 interface DocumentHistoryCardProps {
   documents: Array<Record<string, unknown>>;
-  selectedJobUid: string;
+  selectedJobid: string;
   role: string;
-  escrowByDocumentUid: Record<string, EscrowRecord | undefined>;
+  escrowByDocumentid: Record<string, EscrowRecord | undefined>;
   onRefresh: () => void;
-  onPublish: (documentUid: string, rowVersion: number, clientVisible: boolean) => void;
+  onPublish: (documentid: string, rowVersion: number, clientVisible: boolean) => void;
 }
 
 export function DocumentHistoryCard({
   documents,
-  selectedJobUid,
+  selectedJobid,
   role,
-  escrowByDocumentUid,
+  escrowByDocumentid,
   onRefresh,
   onPublish,
 
@@ -34,28 +34,28 @@ export function DocumentHistoryCard({
         </button>
       </div>
       <p className="muted-copy">
-        {selectedJobUid ? `Current context: ${selectedJobUid}` : "No job is currently selected."}
+        {selectedJobid ? `Current context: ${selectedJobid}` : "No job is currently selected."}
       </p>
       <div className="history-table">
         {(documents ?? []).length === 0 ? (
           <p className="muted-copy">No document history loaded for the current context.</p>
         ) : (
           (documents ?? []).map((document) => {
-            const docUid = String(document.document_uid);
+            const docid = String(document.document_id);
             const rowVersion = Number(document.row_version ?? 1);
             const status = String(document.status);
-            const escrow = escrowByDocumentUid[docUid] ?? null;
+            const escrow = escrowByDocumentid[docid] ?? null;
             const escrowLocked = escrow?.status === "locked";
-            
+
             return (
-              <div key={docUid} className="history-row">
+              <div key={docid} className="history-row">
                 <div className="field-stack">
-                  <span className="doc-uid">{docUid}</span>
+                  <span className="doc-id">{docid}</span>
                   <span className="doc-type-label">{String(document.document_type)}</span>
                 </div>
-                
+
                 <span className={`status-chip status-chip--${statusTone(status)}`}>{status}</span>
-                
+
                 <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>
                   <div>Gen: {document.created_at ? new Date(String(document.created_at)).toLocaleDateString() : "n/a"}</div>
                   <div>Pub: {document.published_at ? new Date(String(document.published_at)).toLocaleDateString() : "pending"}</div>
@@ -64,9 +64,9 @@ export function DocumentHistoryCard({
                 <div className="history-row__actions">
                   {status === "generated" && isInternal && !escrowLocked && (
                     <div className="button-group">
-                      <button 
-                        className="button button--secondary button--compact" 
-                        onClick={() => onPublish(docUid, rowVersion, true)}
+                      <button
+                        className="button button--secondary button--compact"
+                        onClick={() => onPublish(docid, rowVersion, true)}
                         title="Publish and make visible to client"
                       >
                         Publish (Client)

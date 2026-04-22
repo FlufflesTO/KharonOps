@@ -10,7 +10,7 @@ Unified public website and operations portal for Kharon Fire and Security Soluti
 - Upgrade workspace state moved from browser-local storage to shared backend workbook tables and API flows so finance, skills, and escrow state is consistent across users/devices.
 - Platform Governance now includes an explicit `End Emulation` control when role emulation is active.
 - Portal layout and tile structure tuned to reduce stretched cards and large empty regions, especially in workspace/history panels.
-- Job list cards now render with human-readable names (`Client Name`, `Technician Name`) instead of raw UID-only labels.
+- Job list cards now render with human-readable names (`Client Name`, `Technician Name`) instead of raw id-only labels.
 - Job list wording was simplified from technical phrasing to plain-language labels such as `Jobs List`.
 - Document generation now guards stale selections and refreshes job state when a selected job no longer exists server-side.
 - Technician and compliance workflows upgraded:
@@ -114,8 +114,8 @@ npm run workbook:fix
 ```
 
 `workbook:fix` normalizes workbook identity/status quality for portal compatibility, including:
-- technician UID mapping in `Users_Master` -> canonical `TECH-###`
-- duplicate `user_uid` conflict resolution
+- technician id mapping in `Users_Master` -> canonical `TECH-###`
+- duplicate `user_id` conflict resolution
 - `Jobs_Master.job_status` backfill where empty
 - optional technician auto-provisioning into `Technicians_Master` when active technician users have no master record
 

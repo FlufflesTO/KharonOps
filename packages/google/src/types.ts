@@ -41,7 +41,7 @@ export interface DocsGenerationResult {
 
 export interface DocsRail {
   generateDocument: (args: {
-    jobUid: string;
+    jobid: string;
     documentType: DocumentType;
     subType?: "fire" | "gas";
     tokens: Record<string, StructuralToken>;
@@ -65,11 +65,11 @@ export interface DriveRail {
 
 export interface CalendarRail {
   confirmEvent: (args: {
-    jobUid: string;
-    scheduleUid: string;
+    jobid: string;
+    scheduleid: string;
     startAt: string;
     endAt: string;
-    technicianUid: string;
+    technicianid: string;
     existingEventId?: string;
   }) => Promise<{ eventId: string }>;
 }

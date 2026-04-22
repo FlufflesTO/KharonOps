@@ -70,12 +70,12 @@ function requireData<T>(result: ApiEnvelope<T>, message: string): T {
 
 export interface PortalSession {
   session: {
-    user_uid: string;
+    user_id: string;
     email: string;
     role: Role;
     display_name: string;
-    client_uid: string;
-    technician_uid: string;
+    client_id: string;
+    technician_id: string;
   };
   mode: "local" | "production";
   rails_mode: "local" | "production";
@@ -105,9 +105,9 @@ export type PeopleDirectoryEntry = UserRow;
 export type AutomationJobEntry = AutomationJobRow;
 
 export interface FinanceQuoteRecord {
-  quote_uid: string;
-  job_uid: string;
-  client_uid: string;
+  quote_id: string;
+  job_id: string;
+  client_id: string;
   description: string;
   amount: number;
   status: "draft" | "sent" | "approved" | "rejected" | "invoiced";
@@ -115,10 +115,10 @@ export interface FinanceQuoteRecord {
 }
 
 export interface FinanceInvoiceRecord {
-  invoice_uid: string;
-  job_uid: string;
-  quote_uid: string;
-  client_uid: string;
+  invoice_id: string;
+  job_id: string;
+  quote_id: string;
+  client_id: string;
   amount: number;
   due_date: string;
   status: "issued" | "part_paid" | "paid" | "overdue";
@@ -126,8 +126,8 @@ export interface FinanceInvoiceRecord {
 }
 
 export interface FinanceStatementRecord {
-  statement_uid: string;
-  client_uid: string;
+  statement_id: string;
+  client_id: string;
   period_label: string;
   opening_balance: number;
   billed: number;
@@ -137,7 +137,7 @@ export interface FinanceStatementRecord {
 }
 
 export interface FinanceDebtorRecord {
-  client_uid: string;
+  client_id: string;
   total_due: number;
   current_bucket: number;
   bucket_30: number;
@@ -147,15 +147,15 @@ export interface FinanceDebtorRecord {
 }
 
 export interface EscrowRecord {
-  document_uid: string;
-  invoice_uid: string;
+  document_id: string;
+  invoice_id: string;
   status: "locked" | "released";
   locked_at: string;
   released_at: string;
 }
 
 export interface SkillMatrixRecord {
-  user_uid: string;
+  user_id: string;
   saqcc_type: string;
   saqcc_expiry: string;
   medical_expiry: string;
@@ -222,29 +222,29 @@ export const apiClient = {
     });
     return result.data ?? [];
   },
-  async getJob(jobUid: string) {
-    const result = await request<Record<string, unknown>>(`/api/v1/jobs/${jobUid}`, {
+  async getJob(jobid: string) {
+    const result = await request<Record<string, unknown>>(`/api/v1/jobs/${jobid}`, {
       method: "GET"
     });
     return result;
   },
-  async updateStatus(jobUid: string, status: string, rowVersion: number) {
-    return request<Record<string, unknown>>(`/api/v1/jobs/${jobUid}/status`, {
+  async updateStatus(jobid: string, status: string, rowVersion: number) {
+    return request<Record<string, unknown>>(`/api/v1/jobs/${jobid}/status`, {
       method: "POST",
       body: JSON.stringify({ status, row_version: rowVersion })
     });
   },
-  async addNote(jobUid: string, note: string, rowVersion: number) {
-    return request<Record<string, unknown>>(`/api/v1/jobs/${jobUid}/note`, {
+  async addNote(jobid: string, note: string, rowVersion: number) {
+    return request<Record<string, unknown>>(`/api/v1/jobs/${jobid}/note`, {
       method: "POST",
       body: JSON.stringify({ note, row_version: rowVersion })
     });
   },
-  async requestSchedule(jobUid: string, slot: { start_at: string; end_at: string }, timezone: string, rowVersion: number) {
+  async requestSchedule(jobid: string, slot: { start_at: string; end_at: string }, timezone: string, rowVersion: number) {
     return request<Record<string, unknown>>("/api/v1/schedules/request-slot", {
       method: "POST",
       body: JSON.stringify({
-        job_uid: jobUid,
+        job_id: jobid,
         preferred_slots: [slot],
         timezone,
         notes: "",
@@ -253,99 +253,99 @@ export const apiClient = {
     });
   },
   async confirmSchedule(
-    requestUid: string,
+    requestid: string,
     startAt: string,
     endAt: string,
-    technicianUid: string,
+    technicianid: string,
     rowVersion: number,
-    options?: { job_uid?: string }
+    options?: { job_id?: string }
   ) {
     return request<Record<string, unknown>>("/api/v1/schedules/confirm", {
       method: "POST",
       body: JSON.stringify({
-        request_uid: requestUid,
+        request_id: requestid,
         start_at: startAt,
         end_at: endAt,
-        technician_uid: technicianUid,
+        technician_id: technicianid,
         row_version: rowVersion,
-        ...(options?.job_uid ? { job_uid: options.job_uid } : {})
+        ...(options?.job_id ? { job_id: options.job_id } : {})
       })
     });
   },
   async reschedule(
-    scheduleUid: string,
+    scheduleid: string,
     startAt: string,
     endAt: string,
     rowVersion: number,
     options?: {
-      job_uid?: string;
-      technician_uid?: string;
-      request_uid?: string;
+      job_id?: string;
+      technician_id?: string;
+      request_id?: string;
       calendar_event_id?: string;
     }
   ) {
     return request<Record<string, unknown>>("/api/v1/schedules/reschedule", {
       method: "POST",
       body: JSON.stringify({
-        schedule_uid: scheduleUid,
+        schedule_id: scheduleid,
         start_at: startAt,
         end_at: endAt,
         row_version: rowVersion,
-        ...(options?.job_uid ? { job_uid: options.job_uid } : {}),
-        ...(options?.technician_uid ? { technician_uid: options.technician_uid } : {}),
-        ...(options?.request_uid ? { request_uid: options.request_uid } : {}),
+        ...(options?.job_id ? { job_id: options.job_id } : {}),
+        ...(options?.technician_id ? { technician_id: options.technician_id } : {}),
+        ...(options?.request_id ? { request_id: options.request_id } : {}),
         ...(options?.calendar_event_id ? { calendar_event_id: options.calendar_event_id } : {})
       })
     });
   },
-  async generateDocument(jobUid: string, documentType: "jobcard" | "service_report" | "certificate", tokens: Record<string, string> = {}) {
+  async generateDocument(jobid: string, documentType: "jobcard" | "service_report" | "certificate", tokens: Record<string, string> = {}) {
     return request<Record<string, unknown>>("/api/v1/documents/generate", {
       method: "POST",
       body: JSON.stringify({
-        job_uid: jobUid,
+        job_id: jobid,
         document_type: documentType,
         tokens
       })
     });
   },
   async publishDocument(
-    documentUid: string,
+    documentid: string,
     rowVersion: number,
-    options?: { job_uid?: string; document_type?: "jobcard" | "service_report" | "certificate"; client_visible?: boolean }
+    options?: { job_id?: string; document_type?: "jobcard" | "service_report" | "certificate"; client_visible?: boolean }
   ) {
     return request<Record<string, unknown>>("/api/v1/documents/publish", {
       method: "POST",
       body: JSON.stringify({
-        document_uid: documentUid,
+        document_id: documentid,
         row_version: rowVersion,
         client_visible: options?.client_visible ?? false,
-        ...(options?.job_uid ? { job_uid: options.job_uid } : {}),
+        ...(options?.job_id ? { job_id: options.job_id } : {}),
         ...(options?.document_type ? { document_type: options.document_type } : {})
       })
     });
   },
-  async history(jobUid?: string) {
-    const suffix = jobUid ? `?job_uid=${encodeURIComponent(jobUid)}` : "";
+  async history(jobid?: string) {
+    const suffix = jobid ? `?job_id=${encodeURIComponent(jobid)}` : "";
     return request<Array<Record<string, unknown>>>(`/api/v1/documents/history${suffix}`, {
       method: "GET"
     });
   },
-  async dispatchContext(jobUid: string): Promise<PortalDispatchContext> {
-    const result = await request<PortalDispatchContext>(`/api/v1/workspace/dispatch-context?job_uid=${encodeURIComponent(jobUid)}`, {
+  async dispatchContext(jobid: string): Promise<PortalDispatchContext> {
+    const result = await request<PortalDispatchContext>(`/api/v1/workspace/dispatch-context?job_id=${encodeURIComponent(jobid)}`, {
       method: "GET"
     });
     return requireData(result, "Dispatch context request succeeded but the server returned no data.");
   },
-  async sendGmailNotification(to: string, subject: string, body: string, jobUid: string) {
+  async sendGmailNotification(to: string, subject: string, body: string, jobid: string) {
     return request<Record<string, unknown>>("/api/v1/workspace/gmail/notify", {
       method: "POST",
-      body: JSON.stringify({ to, subject, body, job_uid: jobUid })
+      body: JSON.stringify({ to, subject, body, job_id: jobid })
     });
   },
-  async sendChatAlert(message: string, severity: "info" | "warning" | "critical", jobUid: string) {
+  async sendChatAlert(message: string, severity: "info" | "warning" | "critical", jobid: string) {
     return request<Record<string, unknown>>("/api/v1/workspace/chat/alert", {
       method: "POST",
-      body: JSON.stringify({ message, severity, job_uid: jobUid })
+      body: JSON.stringify({ message, severity, job_id: jobid })
     });
   },
   async syncPerson(name: string, email: string, phone: string, roleHint: string) {
@@ -381,8 +381,8 @@ export const apiClient = {
     });
     return result.data ?? [];
   },
-  async retryAutomation(automationJobUid: string) {
-    return request<Record<string, unknown>>(`/api/v1/admin/retries/${automationJobUid}`, {
+  async retryAutomation(automationJobid: string) {
+    return request<Record<string, unknown>>(`/api/v1/admin/retries/${automationJobid}`, {
       method: "POST"
     });
   },
@@ -393,8 +393,8 @@ export const apiClient = {
     return requireData(result, "Upgrade state request succeeded but no state payload was returned.");
   },
   async createFinanceQuote(payload: {
-    job_uid: string;
-    client_uid: string;
+    job_id: string;
+    client_id: string;
     description: string;
     amount: number;
   }): Promise<FinanceQuoteRecord> {
@@ -404,41 +404,41 @@ export const apiClient = {
     });
     return requireData(result, "Quote creation succeeded but no quote payload was returned.");
   },
-  async updateFinanceQuoteStatus(quote_uid: string, status: FinanceQuoteRecord["status"]): Promise<FinanceQuoteRecord> {
-    const result = await request<FinanceQuoteRecord>(`/api/v1/workspace/upgrade/quotes/${encodeURIComponent(quote_uid)}/status`, {
+  async updateFinanceQuoteStatus(quote_id: string, status: FinanceQuoteRecord["status"]): Promise<FinanceQuoteRecord> {
+    const result = await request<FinanceQuoteRecord>(`/api/v1/workspace/upgrade/quotes/${encodeURIComponent(quote_id)}/status`, {
       method: "POST",
       body: JSON.stringify({ status })
     });
     return requireData(result, "Quote status update succeeded but no quote payload was returned.");
   },
-  async createInvoiceFromQuote(quote_uid: string, due_date: string): Promise<FinanceInvoiceRecord> {
+  async createInvoiceFromQuote(quote_id: string, due_date: string): Promise<FinanceInvoiceRecord> {
     const result = await request<FinanceInvoiceRecord>("/api/v1/workspace/upgrade/invoices/from-quote", {
       method: "POST",
-      body: JSON.stringify({ quote_uid, due_date })
+      body: JSON.stringify({ quote_id, due_date })
     });
     return requireData(result, "Invoice creation succeeded but no invoice payload was returned.");
   },
-  async reconcileInvoice(invoice_uid: string): Promise<FinanceInvoiceRecord> {
-    const result = await request<FinanceInvoiceRecord>(`/api/v1/workspace/upgrade/invoices/${encodeURIComponent(invoice_uid)}/reconcile`, {
+  async reconcileInvoice(invoice_id: string): Promise<FinanceInvoiceRecord> {
+    const result = await request<FinanceInvoiceRecord>(`/api/v1/workspace/upgrade/invoices/${encodeURIComponent(invoice_id)}/reconcile`, {
       method: "POST"
     });
     return requireData(result, "Invoice reconcile succeeded but no invoice payload was returned.");
   },
-  async lockEscrow(document_uid: string, invoice_uid: string): Promise<EscrowRecord> {
+  async lockEscrow(document_id: string, invoice_id: string): Promise<EscrowRecord> {
     const result = await request<EscrowRecord>("/api/v1/workspace/upgrade/escrow/lock", {
       method: "POST",
-      body: JSON.stringify({ document_uid, invoice_uid })
+      body: JSON.stringify({ document_id, invoice_id })
     });
     return requireData(result, "Escrow lock succeeded but no escrow payload was returned.");
   },
-  async getEscrowByDocument(document_uid: string): Promise<EscrowRecord | null> {
-    const result = await request<EscrowRecord | null>(`/api/v1/workspace/upgrade/escrow/${encodeURIComponent(document_uid)}`, {
+  async getEscrowByDocument(document_id: string): Promise<EscrowRecord | null> {
+    const result = await request<EscrowRecord | null>(`/api/v1/workspace/upgrade/escrow/${encodeURIComponent(document_id)}`, {
       method: "GET"
     });
     return result.data ?? null;
   },
   async upsertSkillMatrix(payload: SkillMatrixRecord): Promise<SkillMatrixRecord> {
-    const result = await request<SkillMatrixRecord>(`/api/v1/workspace/upgrade/skills/${encodeURIComponent(payload.user_uid)}`, {
+    const result = await request<SkillMatrixRecord>(`/api/v1/workspace/upgrade/skills/${encodeURIComponent(payload.user_id)}`, {
       method: "PUT",
       body: JSON.stringify(payload)
     });

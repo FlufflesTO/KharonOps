@@ -7,13 +7,13 @@ function errorMessage(error: unknown): string {
 }
 
 interface CommunicationRailsCardProps {
-  selectedJobUid: string;
+  selectedJobid: string;
   selectedJobTitle: string;
   onFeedback: (msg: string) => void;
 }
 
 export function CommunicationRailsCard({
-  selectedJobUid,
+  selectedJobid,
   selectedJobTitle,
   onFeedback
 }: CommunicationRailsCardProps): React.JSX.Element {
@@ -24,19 +24,19 @@ export function CommunicationRailsCard({
   const [chatSeverity, setChatSeverity] = useState<"info" | "warning" | "critical">("info");
 
   useEffect(() => {
-    if (selectedJobUid === "") {
+    if (selectedJobid === "") {
       setGmailSubject("");
       setGmailBody("");
       setChatMessage("");
       return;
     }
 
-    setGmailSubject(`Service update | ${selectedJobUid}`);
+    setGmailSubject(`Service update | ${selectedJobid}`);
     setGmailBody(selectedJobTitle ? `Update for ${selectedJobTitle}.` : "");
-    setChatMessage(`Dispatch update for ${selectedJobUid}.`);
-  }, [selectedJobTitle, selectedJobUid]);
+    setChatMessage(`Dispatch update for ${selectedJobid}.`);
+  }, [selectedJobTitle, selectedJobid]);
 
-  const disabled = selectedJobUid === "";
+  const disabled = selectedJobid === "";
 
   return (
     <article className="workspace-card">
@@ -48,7 +48,7 @@ export function CommunicationRailsCard({
       <p className="muted-copy">
         {disabled
           ? "Select a job before sending Gmail or Chat notifications."
-          : `Linked to ${selectedJobUid}${selectedJobTitle ? ` | ${selectedJobTitle}` : ""}.`}
+          : `Linked to ${selectedJobid}${selectedJobTitle ? ` | ${selectedJobTitle}` : ""}.`}
       </p>
 
       <div className="control-block">
@@ -102,7 +102,7 @@ export function CommunicationRailsCard({
                 }
 
                 try {
-                  await apiClient.sendGmailNotification(gmailTo.trim(), gmailSubject.trim(), gmailBody.trim(), selectedJobUid);
+                  await apiClient.sendGmailNotification(gmailTo.trim(), gmailSubject.trim(), gmailBody.trim(), selectedJobid);
                   onFeedback("Gmail notification sent.");
                 } catch (error) {
                   onFeedback(errorMessage(error));
@@ -156,7 +156,7 @@ export function CommunicationRailsCard({
                 }
 
                 try {
-                  await apiClient.sendChatAlert(chatMessage.trim(), chatSeverity, selectedJobUid);
+                  await apiClient.sendChatAlert(chatMessage.trim(), chatSeverity, selectedJobid);
                   onFeedback("Chat alert sent.");
                 } catch (error) {
                   onFeedback(errorMessage(error));

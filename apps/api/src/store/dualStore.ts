@@ -317,16 +317,16 @@ export class DualWorkbookStore implements WorkbookStore {
 
   async createFinanceQuote(row: FinanceQuoteRow): Promise<void> {
     await this.primary.createFinanceQuote(row);
-    await this._mirrorWrite("createFinanceQuote", row.quote_uid, () => this.mirror.createFinanceQuote(row));
+    await this._mirrorWrite("createFinanceQuote", row.quote_id, () => this.mirror.createFinanceQuote(row));
   }
 
   async updateFinanceQuoteStatus(args: {
-    quote_uid: string;
+    quote_id: string;
     status: FinanceQuoteRow["status"];
     ctx: StoreContext;
   }): Promise<FinanceQuoteRow | null> {
     const result = await this.primary.updateFinanceQuoteStatus(args);
-    await this._mirrorWrite("updateFinanceQuoteStatus", args.quote_uid, () => this.mirror.updateFinanceQuoteStatus(args));
+    await this._mirrorWrite("updateFinanceQuoteStatus", args.quote_id, () => this.mirror.updateFinanceQuoteStatus(args));
     return result;
   }
 
@@ -336,12 +336,12 @@ export class DualWorkbookStore implements WorkbookStore {
 
   async createFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
     await this.primary.createFinanceInvoice(row);
-    await this._mirrorWrite("createFinanceInvoice", row.invoice_uid, () => this.mirror.createFinanceInvoice(row));
+    await this._mirrorWrite("createFinanceInvoice", row.invoice_id, () => this.mirror.createFinanceInvoice(row));
   }
 
   async updateFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
     await this.primary.updateFinanceInvoice(row);
-    await this._mirrorWrite("updateFinanceInvoice", row.invoice_uid, () => this.mirror.updateFinanceInvoice(row));
+    await this._mirrorWrite("updateFinanceInvoice", row.invoice_id, () => this.mirror.updateFinanceInvoice(row));
   }
 
   async listFinanceStatements(): Promise<FinanceStatementRow[]> {
@@ -366,13 +366,13 @@ export class DualWorkbookStore implements WorkbookStore {
     return this.primary.listEscrowRows();
   }
 
-  async getEscrowByDocument(document_uid: string): Promise<EscrowRow | null> {
-    return this.primary.getEscrowByDocument(document_uid);
+  async getEscrowByDocument(document_id: string): Promise<EscrowRow | null> {
+    return this.primary.getEscrowByDocument(document_id);
   }
 
   async upsertEscrow(row: EscrowRow): Promise<void> {
     await this.primary.upsertEscrow(row);
-    await this._mirrorWrite("upsertEscrow", row.document_uid, () => this.mirror.upsertEscrow(row));
+    await this._mirrorWrite("upsertEscrow", row.document_id, () => this.mirror.upsertEscrow(row));
   }
 
   async listSkillMatrix(): Promise<SkillMatrixRow[]> {
@@ -381,7 +381,7 @@ export class DualWorkbookStore implements WorkbookStore {
 
   async upsertSkillMatrix(row: SkillMatrixRow): Promise<void> {
     await this.primary.upsertSkillMatrix(row);
-    await this._mirrorWrite("upsertSkillMatrix", row.user_uid, () => this.mirror.upsertSkillMatrix(row));
+    await this._mirrorWrite("upsertSkillMatrix", row.user_id, () => this.mirror.upsertSkillMatrix(row));
   }
 
   async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
@@ -394,12 +394,12 @@ export class DualWorkbookStore implements WorkbookStore {
     return this.primary.listJobsForUser(user);
   }
 
-  async getJob(jobUid: string): Promise<JobRow | null> {
-    return this.primary.getJob(jobUid);
+  async getJob(jobid: string): Promise<JobRow | null> {
+    return this.primary.getJob(jobid);
   }
 
   async updateJobStatus(args: {
-    jobUid: string;
+    jobid: string;
     status: JobRow["status"];
     expectedRowVersion: number;
     ctx: StoreContext;
@@ -408,19 +408,19 @@ export class DualWorkbookStore implements WorkbookStore {
 
     await this._mirrorWrite(
       "updateJobStatus",
-      args.jobUid,
+      args.jobid,
       () => this.mirror.updateJobStatus(args)
     );
 
     if (this.config.verifyWrites && primaryResult.conflict === null) {
-      await this._verifyJobConsistency(args.jobUid);
+      await this._verifyJobConsistency(args.jobid);
     }
 
     return primaryResult;
   }
 
   async appendJobNote(args: {
-    jobUid: string;
+    jobid: string;
     note: string;
     expectedRowVersion: number;
     ctx: StoreContext;
@@ -429,12 +429,12 @@ export class DualWorkbookStore implements WorkbookStore {
 
     await this._mirrorWrite(
       "appendJobNote",
-      args.jobUid,
+      args.jobid,
       () => this.mirror.appendJobNote(args)
     );
 
     if (this.config.verifyWrites && primaryResult.conflict === null) {
-      await this._verifyJobConsistency(args.jobUid);
+      await this._verifyJobConsistency(args.jobid);
     }
 
     return primaryResult;
@@ -444,7 +444,7 @@ export class DualWorkbookStore implements WorkbookStore {
     await this.primary.appendJobEvent(event);
     await this._mirrorWrite(
       "appendJobEvent",
-      event.job_uid,
+      event.job_id,
       () => this.mirror.appendJobEvent(event)
     );
   }
@@ -455,24 +455,24 @@ export class DualWorkbookStore implements WorkbookStore {
     await this.primary.createScheduleRequest(row);
     await this._mirrorWrite(
       "createScheduleRequest",
-      row.request_uid,
+      row.request_id,
       () => this.mirror.createScheduleRequest(row)
     );
   }
 
-  async getScheduleRequest(requestUid: string): Promise<ScheduleRequestRow | null> {
-    return this.primary.getScheduleRequest(requestUid);
+  async getScheduleRequest(requestid: string): Promise<ScheduleRequestRow | null> {
+    return this.primary.getScheduleRequest(requestid);
   }
 
-  async listScheduleRequests(jobUid?: string): Promise<ScheduleRequestRow[]> {
-    return this.primary.listScheduleRequests(jobUid);
+  async listScheduleRequests(jobid?: string): Promise<ScheduleRequestRow[]> {
+    return this.primary.listScheduleRequests(jobid);
   }
 
   async upsertScheduleRequest(row: ScheduleRequestRow): Promise<void> {
     await this.primary.upsertScheduleRequest(row);
     await this._mirrorWrite(
       "upsertScheduleRequest",
-      row.request_uid,
+      row.request_id,
       () => this.mirror.upsertScheduleRequest(row)
     );
   }
@@ -481,24 +481,24 @@ export class DualWorkbookStore implements WorkbookStore {
     await this.primary.createSchedule(row);
     await this._mirrorWrite(
       "createSchedule",
-      row.schedule_uid,
+      row.schedule_id,
       () => this.mirror.createSchedule(row)
     );
   }
 
-  async getSchedule(scheduleUid: string): Promise<ScheduleRow | null> {
-    return this.primary.getSchedule(scheduleUid);
+  async getSchedule(scheduleid: string): Promise<ScheduleRow | null> {
+    return this.primary.getSchedule(scheduleid);
   }
 
-  async listSchedules(jobUid?: string): Promise<ScheduleRow[]> {
-    return this.primary.listSchedules(jobUid);
+  async listSchedules(jobid?: string): Promise<ScheduleRow[]> {
+    return this.primary.listSchedules(jobid);
   }
 
   async upsertSchedule(row: ScheduleRow): Promise<void> {
     await this.primary.upsertSchedule(row);
     await this._mirrorWrite(
       "upsertSchedule",
-      row.schedule_uid,
+      row.schedule_id,
       () => this.mirror.upsertSchedule(row)
     );
   }
@@ -509,26 +509,26 @@ export class DualWorkbookStore implements WorkbookStore {
     await this.primary.createDocument(row);
     await this._mirrorWrite(
       "createDocument",
-      row.document_uid,
+      row.document_id,
       () => this.mirror.createDocument(row)
     );
   }
 
-  async getDocument(documentUid: string): Promise<JobDocumentRow | null> {
-    return this.primary.getDocument(documentUid);
+  async getDocument(documentid: string): Promise<JobDocumentRow | null> {
+    return this.primary.getDocument(documentid);
   }
 
   async upsertDocument(row: JobDocumentRow): Promise<void> {
     await this.primary.upsertDocument(row);
     await this._mirrorWrite(
       "upsertDocument",
-      row.document_uid,
+      row.document_id,
       () => this.mirror.upsertDocument(row)
     );
   }
 
-  async listDocuments(jobUid?: string): Promise<JobDocumentRow[]> {
-    return this.primary.listDocuments(jobUid);
+  async listDocuments(jobid?: string): Promise<JobDocumentRow[]> {
+    return this.primary.listDocuments(jobid);
   }
 
   // -- Audit operations ----------------------------------------------------
@@ -557,13 +557,13 @@ export class DualWorkbookStore implements WorkbookStore {
     await this.primary.upsertAutomationJob(row);
     await this._mirrorWrite(
       "upsertAutomationJob",
-      row.automation_job_uid,
+      row.automation_job_id,
       () => this.mirror.upsertAutomationJob(row)
     );
   }
 
-  async getAutomationJob(automationJobUid: string): Promise<AutomationJobRow | null> {
-    return this.primary.getAutomationJob(automationJobUid);
+  async getAutomationJob(automationJobid: string): Promise<AutomationJobRow | null> {
+    return this.primary.getAutomationJob(automationJobid);
   }
 
   async listAutomationJobs(): Promise<AutomationJobRow[]> {
@@ -576,17 +576,17 @@ export class DualWorkbookStore implements WorkbookStore {
     await this.primary.upsertSyncQueue(row);
     await this._mirrorWrite(
       "upsertSyncQueue",
-      row.mutation_uid,
+      row.mutation_id,
       () => this.mirror.upsertSyncQueue(row)
     );
   }
 
-  async getSyncQueue(mutationUid: string): Promise<SyncQueueRow | null> {
-    return this.primary.getSyncQueue(mutationUid);
+  async getSyncQueue(mutationid: string): Promise<SyncQueueRow | null> {
+    return this.primary.getSyncQueue(mutationid);
   }
 
-  async listSyncQueueByJob(jobUid: string): Promise<SyncQueueRow[]> {
-    return this.primary.listSyncQueueByJob(jobUid);
+  async listSyncQueueByJob(jobid: string): Promise<SyncQueueRow[]> {
+    return this.primary.listSyncQueueByJob(jobid);
   }
 
   // -- Sync operations -----------------------------------------------------
@@ -609,7 +609,7 @@ export class DualWorkbookStore implements WorkbookStore {
 
   async resolveSyncConflict(args: {
     actor: SessionUser;
-    jobUid: string;
+    jobid: string;
     strategy: "server" | "client" | "merge";
     serverRowVersion: number;
     clientRowVersion: number;
@@ -620,12 +620,12 @@ export class DualWorkbookStore implements WorkbookStore {
 
     await this._mirrorWrite(
       "resolveSyncConflict",
-      args.jobUid,
+      args.jobid,
       () => this.mirror.resolveSyncConflict(args)
     );
 
     if (this.config.verifyWrites && primaryResult.conflict === null) {
-      await this._verifyJobConsistency(args.jobUid);
+      await this._verifyJobConsistency(args.jobid);
     }
 
     return primaryResult;
@@ -653,7 +653,7 @@ export class DualWorkbookStore implements WorkbookStore {
         const mirrorUser = await this.mirror.getUserByEmail(user.email);
         const primaryObj = user as unknown as Record<string, unknown>;
         const mirrorObj = mirrorUser ? (mirrorUser as unknown as Record<string, unknown>) : null;
-        const userDiscrepancies = compareRecords("User", user.user_uid, primaryObj, mirrorObj);
+        const userDiscrepancies = compareRecords("User", user.user_id, primaryObj, mirrorObj);
         discrepancies.push(...userDiscrepancies);
       }
     } catch (err) {
@@ -663,19 +663,19 @@ export class DualWorkbookStore implements WorkbookStore {
     // Check jobs
     try {
       const syntheticUser: SessionUser = {
-        user_uid: "SYSTEM",
+        user_id: "SYSTEM",
         email: "system@kharon.local",
         role: "admin",
         display_name: "System",
-        client_uid: "",
-        technician_uid: ""
+        client_id: "",
+        technician_id: ""
       };
       const primaryJobs = await this.primary.listJobsForUser(syntheticUser);
       for (const job of primaryJobs) {
-        const mirrorJob = await this.mirror.getJob(job.job_uid);
+        const mirrorJob = await this.mirror.getJob(job.job_id);
         const primaryObj = job as unknown as Record<string, unknown>;
         const mirrorObj = mirrorJob ? (mirrorJob as unknown as Record<string, unknown>) : null;
-        const jobDiscrepancies = compareRecords("Job", job.job_uid, primaryObj, mirrorObj);
+        const jobDiscrepancies = compareRecords("Job", job.job_id, primaryObj, mirrorObj);
         discrepancies.push(...jobDiscrepancies);
       }
     } catch (err) {
@@ -750,27 +750,27 @@ export class DualWorkbookStore implements WorkbookStore {
   /**
    * Verify that a job is consistent between primary and mirror stores.
    */
-  private async _verifyJobConsistency(jobUid: string): Promise<void> {
+  private async _verifyJobConsistency(jobid: string): Promise<void> {
     try {
       const [primaryJob, mirrorJob] = await Promise.all([
-        this.primary.getJob(jobUid),
-        this.mirror.getJob(jobUid)
+        this.primary.getJob(jobid),
+        this.mirror.getJob(jobid)
       ]);
 
       const primaryObj = primaryJob ? (primaryJob as unknown as Record<string, unknown>) : null;
       const mirrorObj = mirrorJob ? (mirrorJob as unknown as Record<string, unknown>) : null;
-      const discrepancies = compareRecords("Job", jobUid, primaryObj, mirrorObj);
+      const discrepancies = compareRecords("Job", jobid, primaryObj, mirrorObj);
 
       if (discrepancies.length > 0) {
         log("warn", this.label, "Job consistency verification failed", {
-          jobUid,
+          jobid,
           discrepancyCount: discrepancies.length,
           fields: discrepancies.map((d) => d.field)
         });
       }
     } catch (err) {
       log("error", this.label, "Job consistency verification error", {
-        jobUid,
+        jobid,
         error: String(err)
       });
     }

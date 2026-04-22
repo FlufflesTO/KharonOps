@@ -44,24 +44,24 @@ function formatScheduleWindow(job: JobRow): string {
   return `${formatTimeOnly(job.scheduled_start)} - ${formatTimeOnly(job.scheduled_end)}`;
 }
 
-function resolveClientUser(users: UserRow[], clientUid: string): UserRow | undefined {
+function resolveClientUser(users: UserRow[], clientid: string): UserRow | undefined {
   return (
-    users.find((u) => u.client_uid === clientUid && u.role === "client" && u.active === "true") ??
-    users.find((u) => u.client_uid === clientUid && u.active === "true") ??
-    users.find((u) => u.user_uid === clientUid)
+    users.find((u) => u.client_id === clientid && u.role === "client" && u.active === "true") ??
+    users.find((u) => u.client_id === clientid && u.active === "true") ??
+    users.find((u) => u.user_id === clientid)
   );
 }
 
-function resolveTechnicianUser(users: UserRow[], technicianUid: string): UserRow | undefined {
+function resolveTechnicianUser(users: UserRow[], technicianid: string): UserRow | undefined {
   return (
-    users.find((u) => u.technician_uid === technicianUid && u.role === "technician" && u.active === "true") ??
-    users.find((u) => u.technician_uid === technicianUid && u.active === "true") ??
-    users.find((u) => u.user_uid === technicianUid)
+    users.find((u) => u.technician_id === technicianid && u.role === "technician" && u.active === "true") ??
+    users.find((u) => u.technician_id === technicianid && u.active === "true") ??
+    users.find((u) => u.user_id === technicianid)
   );
 }
 
 export function buildDocumentTokens(args: {
-  documentUid: string;
+  documentid: string;
   documentType: DocumentType;
   job: JobRow;
   actor: SessionUser;
@@ -71,8 +71,8 @@ export function buildDocumentTokens(args: {
 }): Record<string, StructuralToken> {
   const generatedAt = args.generatedAt ?? new Date();
   const generatedAtIso = generatedAt.toISOString();
-  const clientUser = resolveClientUser(args.users, args.job.client_uid);
-  const technicianUser = resolveTechnicianUser(args.users, args.job.technician_uid);
+  const clientUser = resolveClientUser(args.users, args.job.client_id);
+  const technicianUser = resolveTechnicianUser(args.users, args.job.technician_id);
   const documentTypeLabel = args.documentType === "jobcard" ? "Jobcard" : "Service Report";
 
   const checklistRows: Array<Record<string, string>> = [];
@@ -89,20 +89,20 @@ export function buildDocumentTokens(args: {
     brand_name: { type: "text", value: BRAND_NAME },
     brand_short_name: { type: "text", value: BRAND_SHORT_NAME },
     brand_portal_name: { type: "text", value: BRAND_PORTAL_NAME },
-    document_uid: { type: "text", value: args.documentUid },
+    document_id: { type: "text", value: args.documentid },
     document_type: { type: "text", value: args.documentType },
     document_type_label: { type: "text", value: documentTypeLabel },
-    document_title: { type: "text", value: `${documentTypeLabel} ${args.job.job_uid}` },
-    job_uid: { type: "text", value: args.job.job_uid },
-    job_reference: { type: "text", value: args.job.job_uid },
+    document_title: { type: "text", value: `${documentTypeLabel} ${args.job.job_id}` },
+    job_id: { type: "text", value: args.job.job_id },
+    job_reference: { type: "text", value: args.job.job_id },
     job_title: { type: "text", value: args.job.title },
     job_status: { type: "text", value: args.job.status },
     job_status_label: { type: "text", value: formatLabel(args.job.status) },
-    client_uid: { type: "text", value: args.job.client_uid },
+    client_id: { type: "text", value: args.job.client_id },
     client_display_name: { type: "text", value: clientUser?.display_name ?? "" },
     client_email: { type: "text", value: clientUser?.email ?? "" },
-    site_uid: { type: "text", value: args.job.site_uid },
-    technician_uid: { type: "text", value: args.job.technician_uid },
+    site_id: { type: "text", value: args.job.site_id },
+    technician_id: { type: "text", value: args.job.technician_id },
     technician_display_name: { type: "text", value: technicianUser?.display_name ?? "" },
     technician_email: { type: "text", value: technicianUser?.email ?? "" },
     scheduled_start: { type: "text", value: args.job.scheduled_start },
@@ -127,9 +127,9 @@ export function buildDocumentTokens(args: {
 
     // Level 2 Structural Tokens
     compliance_matrix: { type: "matrix", rows: checklistRows },
-    document_qr: { 
-      type: "image", 
-      dataUri: generateQrDataUri(`https://www.tequit.co.za/p/doc/${args.documentUid}`) 
+    document_qr: {
+      type: "image",
+      dataUri: generateQrDataUri(`https://www.tequit.co.za/p/doc/${args.documentid}`)
     }
   };
 

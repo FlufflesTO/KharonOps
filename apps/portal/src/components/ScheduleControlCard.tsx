@@ -2,31 +2,31 @@ import React, { useMemo, useState } from "react";
 import type { JobDocumentRow, ScheduleRequestRow, ScheduleRow, UserRow } from "@kharon/domain";
 
 interface ScheduleControlCardProps {
-  selectedJobUid: string;
+  selectedJobid: string;
   preferredStart: string;
   setPreferredStart: (value: string) => void;
   preferredEnd: string;
   setPreferredEnd: (value: string) => void;
   requests: ScheduleRequestRow[];
-  selectedRequestUid: string;
-  setSelectedRequestUid: (uid: string) => void;
+  selectedRequestid: string;
+  setSelectedRequestid: (id: string) => void;
   confirmStart: string;
   setConfirmStart: (value: string) => void;
   confirmEnd: string;
   setConfirmEnd: (value: string) => void;
-  confirmTechUid: string;
-  setConfirmTechUid: (uid: string) => void;
+  confirmTechid: string;
+  setConfirmTechid: (id: string) => void;
   technicians: UserRow[];
   schedules: ScheduleRow[];
-  selectedScheduleUid: string;
-  setSelectedScheduleUid: (uid: string) => void;
+  selectedScheduleid: string;
+  setSelectedScheduleid: (id: string) => void;
   rescheduleStart: string;
   setRescheduleStart: (value: string) => void;
   rescheduleEnd: string;
   setRescheduleEnd: (value: string) => void;
   documents: JobDocumentRow[];
-  selectedDocumentUid: string;
-  setSelectedDocumentUid: (uid: string) => void;
+  selectedDocumentid: string;
+  setSelectedDocumentid: (id: string) => void;
   rescheduleRowVersion: number;
   setRescheduleRowVersion: (v: number) => void;
 
@@ -55,24 +55,24 @@ function parseRequestedSlot(request: ScheduleRequestRow | null): string {
 }
 
 export function ScheduleControlCard({
-  selectedJobUid,
+  selectedJobid,
   preferredStart,
   setPreferredStart,
   preferredEnd,
   setPreferredEnd,
   requests,
-  selectedRequestUid,
-  setSelectedRequestUid,
+  selectedRequestid,
+  setSelectedRequestid,
   confirmStart,
   setConfirmStart,
   confirmEnd,
   setConfirmEnd,
-  confirmTechUid,
-  setConfirmTechUid,
+  confirmTechid,
+  setConfirmTechid,
   technicians,
   schedules,
-  selectedScheduleUid,
-  setSelectedScheduleUid,
+  selectedScheduleid,
+  setSelectedScheduleid,
   rescheduleStart,
   setRescheduleStart,
   rescheduleEnd,
@@ -80,8 +80,8 @@ export function ScheduleControlCard({
   rescheduleRowVersion,
   setRescheduleRowVersion,
   documents,
-  selectedDocumentUid,
-  setSelectedDocumentUid,
+  selectedDocumentid,
+  setSelectedDocumentid,
   onScheduleRequest,
   onScheduleConfirm,
   onReschedule,
@@ -90,10 +90,10 @@ export function ScheduleControlCard({
 
 }: ScheduleControlCardProps): React.JSX.Element {
   const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>({});
-  const selectedRequest = requests.find((request) => request.request_uid === selectedRequestUid) ?? null;
-  const selectedSchedule = schedules.find((schedule) => schedule.schedule_uid === selectedScheduleUid) ?? null;
-  const selectedDocument = documents.find((document) => document.document_uid === selectedDocumentUid) ?? null;
-  const disableActions = selectedJobUid === "";
+  const selectedRequest = requests.find((request) => request.request_id === selectedRequestid) ?? null;
+  const selectedSchedule = schedules.find((schedule) => schedule.schedule_id === selectedScheduleid) ?? null;
+  const selectedDocument = documents.find((document) => document.document_id === selectedDocumentid) ?? null;
+  const disableActions = selectedJobid === "";
 
   const requestSla = useMemo(() => {
     return requests.map((request) => {
@@ -104,7 +104,7 @@ export function ScheduleControlCard({
       const mins = Math.max(0, Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000)));
       const breached = remainingMs <= 0;
       return {
-        request_uid: request.request_uid,
+        request_id: request.request_id,
         text: breached ? "SLA breached" : `${hours}h ${mins}m left`,
         breached
       };
@@ -114,7 +114,7 @@ export function ScheduleControlCard({
   const capacityByTech = useMemo(() => {
     const counts = new Map<string, number>();
     for (const req of requests) {
-      const tech = draftAssignments[req.request_uid];
+      const tech = draftAssignments[req.request_id];
       if (!tech) continue;
       counts.set(tech, (counts.get(tech) ?? 0) + 1);
     }
@@ -141,17 +141,17 @@ export function ScheduleControlCard({
           <div className="form-grid" style={{ gridTemplateColumns: "1fr 2fr", alignItems: "start" }}>
             <div className="history-table" style={{ maxHeight: "420px" }}>
               {requests.map((request) => {
-                const sla = requestSla.find((item) => item.request_uid === request.request_uid);
-                const assigned = draftAssignments[request.request_uid];
+                const sla = requestSla.find((item) => item.request_id === request.request_id);
+                const assigned = draftAssignments[request.request_id];
                 return (
                   <div
-                    key={request.request_uid}
+                    key={request.request_id}
                     className="history-row"
                     draggable
-                    onDragStart={(event) => event.dataTransfer.setData("text/plain", request.request_uid)}
+                    onDragStart={(event) => event.dataTransfer.setData("text/plain", request.request_id)}
                     style={{ cursor: "grab" }}
                   >
-                    <strong>{request.request_uid}</strong>
+                    <strong>{request.request_id}</strong>
                     <span>{request.status}</span>
                     <span className={`status-chip status-chip--${sla?.breached ? "critical" : "warning"}`}>{sla?.text ?? "SLA n/a"}</span>
                     <span>{assigned ? `Draft -> ${assigned}` : "Unassigned"}</span>
@@ -161,22 +161,22 @@ export function ScheduleControlCard({
             </div>
             <div className="posture-grid">
               {technicians.map((technician) => {
-                const techUid = technician.technician_uid;
-                const load = capacityByTech.get(techUid) ?? 0;
+                const techid = technician.technician_id;
+                const load = capacityByTech.get(techid) ?? 0;
                 const overloaded = load > 3;
                 return (
                   <div
-                    key={technician.user_uid}
+                    key={technician.user_id}
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => {
-                      const requestUid = event.dataTransfer.getData("text/plain");
-                      if (!requestUid) return;
-                      setDraftAssignments((prev) => ({ ...prev, [requestUid]: techUid }));
+                      const requestid = event.dataTransfer.getData("text/plain");
+                      if (!requestid) return;
+                      setDraftAssignments((prev) => ({ ...prev, [requestid]: techid }));
                     }}
                     style={{ minHeight: "120px", border: "1px dashed rgba(255,255,255,0.2)" }}
                   >
                     <span>{technician.display_name}</span>
-                    <strong>{techUid || "n/a"}</strong>
+                    <strong>{techid || "n/a"}</strong>
                     <small className={`status-chip status-chip--${overloaded ? "critical" : "active"}`}>{load} assigned</small>
                     <small>{overloaded ? "Over capacity" : "Within capacity"}</small>
                   </div>
@@ -190,7 +190,7 @@ export function ScheduleControlCard({
       <div className="control-block">
         <div className="control-block__head">
           <h3>Preferred slot request</h3>
-          <p>Dispatch requests are tied directly to {selectedJobUid || "the selected job"}.</p>
+          <p>Dispatch requests are tied directly to {selectedJobid || "the selected job"}.</p>
         </div>
         <div className="form-grid form-grid--three">
           <label className="field-stack">
@@ -234,14 +234,14 @@ export function ScheduleControlCard({
             <label className="field-stack">
               <span>Request</span>
               <select
-                name="confirm_request_uid"
-                value={selectedRequestUid}
-                onChange={(event) => setSelectedRequestUid(event.target.value)}
+                name="confirm_request_id"
+                value={selectedRequestid}
+                onChange={(event) => setSelectedRequestid(event.target.value)}
                 disabled={disableActions}
               >
                 {requests.map((request) => (
-                  <option key={request.request_uid} value={request.request_uid}>
-                    {request.request_uid} | {request.status}
+                  <option key={request.request_id} value={request.request_id}>
+                    {request.request_id} | {request.status}
                   </option>
                 ))}
               </select>
@@ -249,14 +249,14 @@ export function ScheduleControlCard({
             <label className="field-stack">
               <span>Technician</span>
               <select
-                name="confirm_technician_uid"
-                value={confirmTechUid}
-                onChange={(event) => setConfirmTechUid(event.target.value)}
+                name="confirm_technician_id"
+                value={confirmTechid}
+                onChange={(event) => setConfirmTechid(event.target.value)}
                 disabled={disableActions || technicians.length === 0}
               >
                 {technicians.map((technician) => (
-                  <option key={technician.user_uid} value={technician.technician_uid}>
-                    {technician.display_name} | {technician.technician_uid}
+                  <option key={technician.user_id} value={technician.technician_id}>
+                    {technician.display_name} | {technician.technician_id}
                   </option>
                 ))}
               </select>
@@ -265,7 +265,7 @@ export function ScheduleControlCard({
               <span>Draft assignment</span>
               <input
                 name="draft_assignment"
-                value={selectedRequestUid ? draftAssignments[selectedRequestUid] ?? "None" : "None"}
+                value={selectedRequestid ? draftAssignments[selectedRequestid] ?? "None" : "None"}
                 readOnly
               />
             </label>
@@ -299,18 +299,18 @@ export function ScheduleControlCard({
                 <button
                   className="button button--ghost"
                   type="button"
-                  disabled={!selectedRequestUid || !draftAssignments[selectedRequestUid]}
+                  disabled={!selectedRequestid || !draftAssignments[selectedRequestid]}
                   onClick={() => {
-                    const draft = draftAssignments[selectedRequestUid];
+                    const draft = draftAssignments[selectedRequestid];
                     if (!draft) return;
-                    setConfirmTechUid(draft);
+                    setConfirmTechid(draft);
                   }}
                 >
                   Use draft assignment
                 </button>
-              <button className="button button--primary" type="button" onClick={onScheduleConfirm} disabled={disableActions}>
-                Confirm request
-              </button>
+                <button className="button button--primary" type="button" onClick={onScheduleConfirm} disabled={disableActions}>
+                  Confirm request
+                </button>
               </div>
             </div>
           </div>
@@ -329,14 +329,14 @@ export function ScheduleControlCard({
             <label className="field-stack">
               <span>Schedule</span>
               <select
-                name="reschedule_uid"
-                value={selectedScheduleUid}
-                onChange={(event) => setSelectedScheduleUid(event.target.value)}
+                name="reschedule_id"
+                value={selectedScheduleid}
+                onChange={(event) => setSelectedScheduleid(event.target.value)}
                 disabled={disableActions}
               >
                 {schedules.map((schedule) => (
-                  <option key={schedule.schedule_uid} value={schedule.schedule_uid}>
-                    {schedule.schedule_uid} | {schedule.status}
+                  <option key={schedule.schedule_id} value={schedule.schedule_id}>
+                    {schedule.schedule_id} | {schedule.status}
                   </option>
                 ))}
               </select>
@@ -391,14 +391,14 @@ export function ScheduleControlCard({
             <label className="field-stack">
               <span>Document</span>
               <select
-                name="publish_document_uid"
-                value={selectedDocumentUid}
-                onChange={(event) => setSelectedDocumentUid(event.target.value)}
+                name="publish_document_id"
+                value={selectedDocumentid}
+                onChange={(event) => setSelectedDocumentid(event.target.value)}
                 disabled={disableActions}
               >
                 {documents.map((document) => (
-                  <option key={document.document_uid} value={document.document_uid}>
-                    {document.document_uid} | {document.document_type} | {document.status}
+                  <option key={document.document_id} value={document.document_id}>
+                    {document.document_id} | {document.document_type} | {document.status}
                   </option>
                 ))}
               </select>

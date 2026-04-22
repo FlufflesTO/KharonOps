@@ -15,9 +15,9 @@ describe("contract: admin automation surface", () => {
 
     expect(listResponse.status).toBe(200);
     const listBody = (await listResponse.json()) as {
-      data: Array<{ automation_job_uid: string; retry_count: number }>;
+      data: Array<{ automation_job_id: string; retry_count: number }>;
     };
-    expect(listBody.data.some((job) => job.automation_job_uid === "AUTO-001")).toBe(true);
+    expect(listBody.data.some((job) => job.automation_job_id === "AUTO-001")).toBe(true);
 
     const retryResponse = await app.request("/api/v1/admin/retries/AUTO-001", {
       method: "POST",
@@ -35,9 +35,9 @@ describe("contract: admin automation surface", () => {
     });
     expect(afterResponse.status).toBe(200);
     const afterBody = (await afterResponse.json()) as {
-      data: Array<{ automation_job_uid: string; retry_count: number; status: string }>;
+      data: Array<{ automation_job_id: string; retry_count: number; status: string }>;
     };
-    const retriedJob = afterBody.data.find((job) => job.automation_job_uid === "AUTO-001");
+    const retriedJob = afterBody.data.find((job) => job.automation_job_id === "AUTO-001");
     expect(retriedJob?.retry_count).toBe(1);
     expect(retriedJob?.status).toBe("queued");
   });

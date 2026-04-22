@@ -33,19 +33,19 @@ function asJob(record: Record<string, unknown>): JobRecord {
   const status = String(record.status ?? "draft") as JobStatus;
 
   return {
-    job_uid: String(record.job_uid ?? ""),
+    job_id: String(record.job_id ?? ""),
     title: String(record.title ?? ""),
     status,
     row_version: Number(record.row_version ?? 0),
-    client_uid: String(record.client_uid ?? ""),
-    technician_uid: String(record.technician_uid ?? ""),
+    client_id: String(record.client_id ?? ""),
+    technician_id: String(record.technician_id ?? ""),
     client_name: String(record.client_name ?? ""),
     technician_name: String(record.technician_name ?? ""),
     last_note: String(record.last_note ?? ""),
     // Metadata preservation for contextual dispatch
-    active_request_uid: String(record.active_request_uid ?? ""),
-    active_document_uid: String(record.active_document_uid ?? ""),
-    suggested_technician_uid: String(record.suggested_technician_uid ?? "")
+    active_request_id: String(record.active_request_id ?? ""),
+    active_document_id: String(record.active_document_id ?? ""),
+    suggested_technician_id: String(record.suggested_technician_id ?? "")
   };
 }
 
@@ -139,7 +139,7 @@ export function PortalApp(): React.JSX.Element {
   const [session, setSession] = useState<PortalSession | null>(null);
   const [authConfig, setAuthConfig] = useState<PortalAuthConfig | null>(null);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
-  const [selectedJobUid, setSelectedJobUid] = useState("");
+  const [selectedJobid, setSelectedJobid] = useState("");
   const [portalView, setPortalView] = useState<"dashboard" | "workspace">("dashboard");
   const [activeWorkspaceTool, setActiveWorkspaceTool] = useState("jobs");
   const [statusTarget, setStatusTarget] = useState<JobStatus>("draft");
@@ -147,15 +147,15 @@ export function PortalApp(): React.JSX.Element {
   const [loginToken, setLoginToken] = useState("dev-client");
   const [preferredStart, setPreferredStart] = useState(nowPlusHours(4));
   const [preferredEnd, setPreferredEnd] = useState(nowPlusHours(5));
-  const [selectedRequestUid, setSelectedRequestUid] = useState("");
+  const [selectedRequestid, setSelectedRequestid] = useState("");
   const [confirmStart, setConfirmStart] = useState(nowPlusHours(6));
   const [confirmEnd, setConfirmEnd] = useState(nowPlusHours(7));
-  const [confirmTechUid, setConfirmTechUid] = useState("");
-  const [selectedScheduleUid, setSelectedScheduleUid] = useState("");
+  const [confirmTechid, setConfirmTechid] = useState("");
+  const [selectedScheduleid, setSelectedScheduleid] = useState("");
   const [rescheduleStart, setRescheduleStart] = useState(nowPlusHours(8));
   const [rescheduleEnd, setRescheduleEnd] = useState(nowPlusHours(9));
   const [documentType, setDocumentType] = useState<"jobcard" | "service_report" | "certificate">("jobcard");
-  const [selectedDocumentUid, setSelectedDocumentUid] = useState("");
+  const [selectedDocumentid, setSelectedDocumentid] = useState("");
   const [offlineEnabled, setOfflineEnabled] = useState(false);
   const [networkOnline, setNetworkOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [queueCount, setQueueCount] = useState(0);
@@ -168,12 +168,12 @@ export function PortalApp(): React.JSX.Element {
   const [adminAutomationJobs, setAdminAutomationJobs] = useState<Array<Record<string, unknown>>>([]);
   const [adminAuditCount, setAdminAuditCount] = useState(0);
   const [automationJobs, setAutomationJobs] = useState<AutomationJobEntry[]>([]);
-  const [selectedAutomationJobUid, setSelectedAutomationJobUid] = useState("");
+  const [selectedAutomationJobid, setSelectedAutomationJobid] = useState("");
   const [actionPending, setActionPending] = useState(false);
   const [emulatedRole, setEmulatedRole] = useState<Role | "">("");
   const [checklistData, setChecklistData] = useState<Record<string, string>>({});
-  const [confirmRequestUid, setConfirmRequestUid] = useState("");
-  const [publishDocumentUid, setPublishDocumentUid] = useState("");
+  const [confirmRequestid, setConfirmRequestid] = useState("");
+  const [publishDocumentid, setPublishDocumentid] = useState("");
   const [confirmRowVersion, setConfirmRowVersion] = useState(0);
   const [publishRowVersion, setPublishRowVersion] = useState(0);
   const [rescheduleRowVersion, setRescheduleRowVersion] = useState(0);
@@ -207,7 +207,7 @@ export function PortalApp(): React.JSX.Element {
     activeWorkspaceTool === "comms" ||
     activeWorkspaceTool === "finance";
 
-  const selectedJob = useMemo(() => jobs.find((job) => job.job_uid === selectedJobUid) ?? null, [jobs, selectedJobUid]);
+  const selectedJob = useMemo(() => jobs.find((job) => job.job_id === selectedJobid) ?? null, [jobs, selectedJobid]);
   const selectableStatuses = useMemo<JobStatus[]>(
     () => {
       if (!selectedJob) return ["draft"];
@@ -226,16 +226,16 @@ export function PortalApp(): React.JSX.Element {
   const technicians = dispatchContext?.technicians ?? [];
 
   const selectedRequest = useMemo(
-    () => dispatchRequests.find((request) => request.request_uid === selectedRequestUid) ?? null,
-    [dispatchRequests, selectedRequestUid]
+    () => dispatchRequests.find((request) => request.request_id === selectedRequestid) ?? null,
+    [dispatchRequests, selectedRequestid]
   );
   const selectedSchedule = useMemo(
-    () => dispatchSchedules.find((schedule) => schedule.schedule_uid === selectedScheduleUid) ?? null,
-    [dispatchSchedules, selectedScheduleUid]
+    () => dispatchSchedules.find((schedule) => schedule.schedule_id === selectedScheduleid) ?? null,
+    [dispatchSchedules, selectedScheduleid]
   );
   const selectedDispatchDocument = useMemo(
-    () => dispatchDocuments.find((document) => document.document_uid === selectedDocumentUid) ?? null,
-    [dispatchDocuments, selectedDocumentUid]
+    () => dispatchDocuments.find((document) => document.document_id === selectedDocumentid) ?? null,
+    [dispatchDocuments, selectedDocumentid]
   );
 
   const openJobCount = jobs.filter((job) => job.status !== "certified" && job.status !== "cancelled").length;
@@ -282,8 +282,8 @@ export function PortalApp(): React.JSX.Element {
       const mapped = data.map(asJob);
       startTransition(() => {
         setJobs(mapped);
-        if (!mapped.some((job) => job.job_uid === selectedJobUid)) {
-          setSelectedJobUid(mapped[0]?.job_uid ?? "");
+        if (!mapped.some((job) => job.job_id === selectedJobid)) {
+          setSelectedJobid(mapped[0]?.job_id ?? "");
         }
       });
     } catch (error) {
@@ -291,15 +291,15 @@ export function PortalApp(): React.JSX.Element {
     }
   }
 
-  // Contextual dispatch: auto-populate UIDs from selected job metadata
+  // Contextual dispatch: auto-populate ids from selected job metadata
   useEffect(() => {
     let isActive = true;
     if (selectedJob && isActive) {
       // Prioritize preserving the row_version logic for the target job
-      if (selectedJob.active_request_uid) setConfirmRequestUid(selectedJob.active_request_uid);
-      if (selectedJob.active_document_uid) setPublishDocumentUid(selectedJob.active_document_uid);
-      if (selectedJob.suggested_technician_uid) setConfirmTechUid(selectedJob.suggested_technician_uid);
-      
+      if (selectedJob.active_request_id) setConfirmRequestid(selectedJob.active_request_id);
+      if (selectedJob.active_document_id) setPublishDocumentid(selectedJob.active_document_id);
+      if (selectedJob.suggested_technician_id) setConfirmTechid(selectedJob.suggested_technician_id);
+
       // Safety: always ensure row versions are synced to the selection
 
       setConfirmRowVersion(selectedJob.row_version);
@@ -307,14 +307,14 @@ export function PortalApp(): React.JSX.Element {
       setRescheduleRowVersion(selectedJob.row_version);
     }
     return () => { isActive = false; };
-  }, [selectedJobUid, selectedJob?.row_version]);
+  }, [selectedJobid, selectedJob?.row_version]);
 
-  async function refreshDocuments(jobUid?: string): Promise<void> {
+  async function refreshDocuments(jobid?: string): Promise<void> {
     if (documentAccessDenied) {
       return;
     }
     try {
-      const response = await apiClient.history(jobUid);
+      const response = await apiClient.history(jobid);
       startTransition(() => {
         setDocuments(response.data ?? []);
       });
@@ -329,12 +329,12 @@ export function PortalApp(): React.JSX.Element {
     }
   }
 
-  async function refreshDispatchContext(jobUid: string): Promise<void> {
+  async function refreshDispatchContext(jobid: string): Promise<void> {
     if (!isDispatchRole || dispatchAccessDenied) {
       return;
     }
     try {
-      const data = await apiClient.dispatchContext(jobUid);
+      const data = await apiClient.dispatchContext(jobid);
       startTransition(() => {
         setDispatchContext(data);
       });
@@ -429,7 +429,7 @@ export function PortalApp(): React.JSX.Element {
   useEffect(() => {
     if (!session) {
       setJobs([]);
-      setSelectedJobUid("");
+      setSelectedJobid("");
       setDocuments([]);
       setDispatchContext(null);
       setPeopleDirectory([]);
@@ -448,19 +448,19 @@ export function PortalApp(): React.JSX.Element {
   }, [session, effectiveRole]);
 
   useEffect(() => {
-    if (!session || !selectedJobUid) {
+    if (!session || !selectedJobid) {
       setDocuments([]);
       setDispatchContext(null);
       return;
     }
 
     if (activeWorkspaceTool === "jobs" || activeWorkspaceTool === "documents" || activeWorkspaceTool === "finance") {
-      void refreshDocuments(selectedJobUid);
+      void refreshDocuments(selectedJobid);
     }
     if (activeWorkspaceTool === "schedule" && isDispatchRole) {
-      void refreshDispatchContext(selectedJobUid);
+      void refreshDispatchContext(selectedJobid);
     }
-  }, [activeWorkspaceTool, isDispatchRole, selectedJobUid, session]);
+  }, [activeWorkspaceTool, isDispatchRole, selectedJobid, session]);
 
   useEffect(() => {
     if (activeWorkspaceTool === "people" && canAccessPeopleDirectory) {
@@ -503,53 +503,53 @@ export function PortalApp(): React.JSX.Element {
 
   useEffect(() => {
     if (dispatchRequests.length === 0) {
-      setSelectedRequestUid("");
+      setSelectedRequestid("");
       return;
     }
-    if (!dispatchRequests.some((request) => request.request_uid === selectedRequestUid)) {
-      setSelectedRequestUid(dispatchRequests[0]?.request_uid ?? "");
+    if (!dispatchRequests.some((request) => request.request_id === selectedRequestid)) {
+      setSelectedRequestid(dispatchRequests[0]?.request_id ?? "");
     }
-  }, [dispatchRequests, selectedRequestUid]);
+  }, [dispatchRequests, selectedRequestid]);
 
   useEffect(() => {
     if (dispatchSchedules.length === 0) {
-      setSelectedScheduleUid("");
+      setSelectedScheduleid("");
       return;
     }
-    if (!dispatchSchedules.some((schedule) => schedule.schedule_uid === selectedScheduleUid)) {
-      setSelectedScheduleUid(dispatchSchedules[0]?.schedule_uid ?? "");
+    if (!dispatchSchedules.some((schedule) => schedule.schedule_id === selectedScheduleid)) {
+      setSelectedScheduleid(dispatchSchedules[0]?.schedule_id ?? "");
     }
-  }, [dispatchSchedules, selectedScheduleUid]);
+  }, [dispatchSchedules, selectedScheduleid]);
 
   useEffect(() => {
     if (dispatchDocuments.length === 0) {
-      setSelectedDocumentUid("");
+      setSelectedDocumentid("");
       return;
     }
-    if (!dispatchDocuments.some((document) => document.document_uid === selectedDocumentUid)) {
-      setSelectedDocumentUid(dispatchDocuments[0]?.document_uid ?? "");
+    if (!dispatchDocuments.some((document) => document.document_id === selectedDocumentid)) {
+      setSelectedDocumentid(dispatchDocuments[0]?.document_id ?? "");
     }
-  }, [dispatchDocuments, selectedDocumentUid]);
+  }, [dispatchDocuments, selectedDocumentid]);
 
   useEffect(() => {
     if (automationJobs.length === 0) {
-      setSelectedAutomationJobUid("");
+      setSelectedAutomationJobid("");
       return;
     }
-    if (!automationJobs.some((job) => job.automation_job_uid === selectedAutomationJobUid)) {
-      setSelectedAutomationJobUid(automationJobs[0]?.automation_job_uid ?? "");
+    if (!automationJobs.some((job) => job.automation_job_id === selectedAutomationJobid)) {
+      setSelectedAutomationJobid(automationJobs[0]?.automation_job_id ?? "");
     }
-  }, [automationJobs, selectedAutomationJobUid]);
+  }, [automationJobs, selectedAutomationJobid]);
 
   useEffect(() => {
     if (technicians.length === 0) {
-      setConfirmTechUid("");
+      setConfirmTechid("");
       return;
     }
-    if (!technicians.some((technician) => technician.technician_uid === confirmTechUid)) {
-      setConfirmTechUid(technicians[0]?.technician_uid ?? "");
+    if (!technicians.some((technician) => technician.technician_id === confirmTechid)) {
+      setConfirmTechid(technicians[0]?.technician_id ?? "");
     }
-  }, [confirmTechUid, technicians]);
+  }, [confirmTechid, technicians]);
 
   useEffect(() => {
     const preferredSlot = firstRequestedSlot(selectedRequest);
@@ -624,7 +624,7 @@ export function PortalApp(): React.JSX.Element {
       await queueMutation({
         mutation_id: `MUT-${crypto.randomUUID()}`,
         kind: "job_status",
-        job_uid: selectedJob.job_uid,
+        job_id: selectedJob.job_id,
         expected_row_version: selectedJob.row_version,
         payload: {
           status: statusTarget
@@ -634,7 +634,7 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
 
-    await apiClient.updateStatus(selectedJob.job_uid, statusTarget, selectedJob.row_version);
+    await apiClient.updateStatus(selectedJob.job_id, statusTarget, selectedJob.row_version);
     await refreshJobs();
     setFeedback("Status updated.");
   }
@@ -649,7 +649,7 @@ export function PortalApp(): React.JSX.Element {
       await queueMutation({
         mutation_id: `MUT-${crypto.randomUUID()}`,
         kind: "job_note",
-        job_uid: selectedJob.job_uid,
+        job_id: selectedJob.job_id,
         expected_row_version: selectedJob.row_version,
         payload: {
           note: noteValue
@@ -660,7 +660,7 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
 
-    await apiClient.addNote(selectedJob.job_uid, noteValue, selectedJob.row_version);
+    await apiClient.addNote(selectedJob.job_id, noteValue, selectedJob.row_version);
     setNoteValue("");
     await refreshJobs();
     setFeedback("Job note written.");
@@ -692,7 +692,7 @@ export function PortalApp(): React.JSX.Element {
     }
 
     const response = await apiClient.requestSchedule(
-      selectedJob.job_uid,
+      selectedJob.job_id,
       {
         start_at: startIso,
         end_at: endIso
@@ -701,12 +701,12 @@ export function PortalApp(): React.JSX.Element {
       selectedJob.row_version
     );
 
-    const createdRequestUid = String(response.data?.request_uid ?? "");
-    await refreshDispatchContext(selectedJob.job_uid);
-    if (createdRequestUid) {
-      setSelectedRequestUid(createdRequestUid);
+    const createdRequestid = String(response.data?.request_id ?? "");
+    await refreshDispatchContext(selectedJob.job_id);
+    if (createdRequestid) {
+      setSelectedRequestid(createdRequestid);
     }
-    setFeedback(createdRequestUid ? `Preferred slot request submitted (${createdRequestUid}).` : "Preferred slot request submitted.");
+    setFeedback(createdRequestid ? `Preferred slot request submitted (${createdRequestid}).` : "Preferred slot request submitted.");
   }
 
   async function handleScheduleConfirm(): Promise<void> {
@@ -714,7 +714,7 @@ export function PortalApp(): React.JSX.Element {
       setFeedback("Select a stored request before confirming a schedule.");
       return;
     }
-    if (confirmTechUid.trim() === "") {
+    if (confirmTechid.trim() === "") {
       setFeedback("Select a technician before confirming the schedule.");
       return;
     }
@@ -731,23 +731,23 @@ export function PortalApp(): React.JSX.Element {
     }
 
     const response = await apiClient.confirmSchedule(
-      selectedRequest.request_uid,
+      selectedRequest.request_id,
       startIso,
       endIso,
-      confirmTechUid.trim(),
+      confirmTechid.trim(),
       selectedRequest.row_version,
-      selectedJob ? { job_uid: selectedJob.job_uid } : undefined
+      selectedJob ? { job_id: selectedJob.job_id } : undefined
     );
 
-    const createdScheduleUid = String(response.data?.schedule_uid ?? "");
+    const createdScheduleid = String(response.data?.schedule_id ?? "");
     if (selectedJob) {
-      await refreshDispatchContext(selectedJob.job_uid);
+      await refreshDispatchContext(selectedJob.job_id);
     }
-    if (createdScheduleUid) {
-      setSelectedScheduleUid(createdScheduleUid);
+    if (createdScheduleid) {
+      setSelectedScheduleid(createdScheduleid);
     }
 
-    setFeedback(createdScheduleUid ? `Schedule confirmed (${createdScheduleUid}).` : "Schedule confirmed.");
+    setFeedback(createdScheduleid ? `Schedule confirmed (${createdScheduleid}).` : "Schedule confirmed.");
   }
 
   async function handleReschedule(): Promise<void> {
@@ -767,16 +767,16 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
 
-    await apiClient.reschedule(selectedSchedule.schedule_uid, startIso, endIso, selectedSchedule.row_version, {
-      job_uid: selectedSchedule.job_uid,
-      technician_uid: selectedSchedule.technician_uid,
-      request_uid: selectedSchedule.request_uid,
+    await apiClient.reschedule(selectedSchedule.schedule_id, startIso, endIso, selectedSchedule.row_version, {
+      job_id: selectedSchedule.job_id,
+      technician_id: selectedSchedule.technician_id,
+      request_id: selectedSchedule.request_id,
       calendar_event_id: selectedSchedule.calendar_event_id ?? ""
     });
 
 
     if (selectedJob) {
-      await refreshDispatchContext(selectedJob.job_uid);
+      await refreshDispatchContext(selectedJob.job_id);
     }
     setFeedback("Schedule rescheduled.");
   }
@@ -785,8 +785,8 @@ export function PortalApp(): React.JSX.Element {
     if (!selectedJob) {
       return;
     }
-    const jobUid = selectedJob.job_uid.trim();
-    if (jobUid === "") {
+    const jobid = selectedJob.job_id.trim();
+    if (jobid === "") {
       setFeedback("Document generation requires a valid job selection.");
       return;
     }
@@ -797,7 +797,7 @@ export function PortalApp(): React.JSX.Element {
 
     let response: Awaited<ReturnType<typeof apiClient.generateDocument>>;
     try {
-      response = await apiClient.generateDocument(jobUid, documentType, checklistData);
+      response = await apiClient.generateDocument(jobid, documentType, checklistData);
     } catch (error) {
       if (errorCode(error) === "not_found") {
         await refreshJobs();
@@ -806,27 +806,27 @@ export function PortalApp(): React.JSX.Element {
       }
       throw error;
     }
-    const generatedDocumentUid = String(response.data?.document_uid ?? "");
+    const generatedDocumentid = String(response.data?.document_id ?? "");
 
-    await refreshDocuments(jobUid);
+    await refreshDocuments(jobid);
     if (isDispatchRole) {
-      await refreshDispatchContext(jobUid);
+      await refreshDispatchContext(jobid);
     }
-    if (generatedDocumentUid) {
-      setSelectedDocumentUid(generatedDocumentUid);
+    if (generatedDocumentid) {
+      setSelectedDocumentid(generatedDocumentid);
     }
 
-    setFeedback(generatedDocumentUid ? `${documentType} generated (${generatedDocumentUid}).` : `${documentType} generated.`);
+    setFeedback(generatedDocumentid ? `${documentType} generated (${generatedDocumentid}).` : `${documentType} generated.`);
   }
 
-  async function handleDocumentPublishInline(documentUid: string, rowVersion: number, clientVisible: boolean): Promise<void> {
-    await apiClient.publishDocument(documentUid, rowVersion, {
-      ...(selectedJob ? { job_uid: selectedJob.job_uid } : {}),
+  async function handleDocumentPublishInline(documentid: string, rowVersion: number, clientVisible: boolean): Promise<void> {
+    await apiClient.publishDocument(documentid, rowVersion, {
+      ...(selectedJob ? { job_id: selectedJob.job_id } : {}),
       client_visible: clientVisible
     });
 
-    await refreshDocuments(selectedJob?.job_uid);
-    setFeedback(`Document ${documentUid} published (Visibility: ${clientVisible ? 'Client' : 'Internal'}).`);
+    await refreshDocuments(selectedJob?.job_id);
+    setFeedback(`Document ${documentid} published (Visibility: ${clientVisible ? 'Client' : 'Internal'}).`);
   }
 
   async function handleDocumentPublish(): Promise<void> {
@@ -836,14 +836,14 @@ export function PortalApp(): React.JSX.Element {
       return;
     }
 
-    await apiClient.publishDocument(document.document_uid, document.row_version, {
-      job_uid: document.job_uid,
+    await apiClient.publishDocument(document.document_id, document.row_version, {
+      job_id: document.job_id,
       document_type: document.document_type
     });
 
-    await refreshDocuments(selectedJob?.job_uid);
+    await refreshDocuments(selectedJob?.job_id);
     if (selectedJob && isDispatchRole) {
-      await refreshDispatchContext(selectedJob.job_uid);
+      await refreshDispatchContext(selectedJob.job_id);
     }
     setFeedback("Document published.");
   }
@@ -870,10 +870,10 @@ export function PortalApp(): React.JSX.Element {
   }
 
 
-  async function handleRetryAutomation(uid: string): Promise<void> {
-    await apiClient.retryAutomation(uid);
+  async function handleRetryAutomation(id: string): Promise<void> {
+    await apiClient.retryAutomation(id);
     await loadAdminAutomationJobs();
-    setFeedback(`Retry queued for ${uid}.`);
+    setFeedback(`Retry queued for ${id}.`);
   }
 
   async function handlePeopleSync(payload: { name: string; email: string; phone: string; roleHint: string }): Promise<void> {
@@ -882,10 +882,10 @@ export function PortalApp(): React.JSX.Element {
     setFeedback("People sync executed.");
   }
 
-  async function handleAutomationRetry(automationJobUid: string): Promise<void> {
-    await apiClient.retryAutomation(automationJobUid);
+  async function handleAutomationRetry(automationJobid: string): Promise<void> {
+    await apiClient.retryAutomation(automationJobid);
     await refreshAutomationJobs();
-    setFeedback(`Automation retry requested (${automationJobUid}).`);
+    setFeedback(`Automation retry requested (${automationJobid}).`);
   }
 
 
@@ -983,23 +983,23 @@ export function PortalApp(): React.JSX.Element {
           <aside className="portal-sidebar">
             <JobListView
               jobs={jobs}
-              selectedJobUid={selectedJobUid}
-              onSelectJob={setSelectedJobUid}
+              selectedJobid={selectedJobid}
+              onSelectJob={setSelectedJobid}
               title="Jobs List"
             />
           </aside>
         ) : null}
 
         <main className="portal-main">
-            <SummaryBoard
-              role={effectiveRole || "client"}
-              openJobCount={openJobCount}
-              selectedJobStatus={selectedJobStatus}
-              queueCount={queueCount}
-              generatedDocumentCount={generatedDocumentCount}
-              adminAuditCount={adminAuditCount}
-              networkOnline={networkOnline}
-            />
+          <SummaryBoard
+            role={effectiveRole || "client"}
+            openJobCount={openJobCount}
+            selectedJobStatus={selectedJobStatus}
+            queueCount={queueCount}
+            generatedDocumentCount={generatedDocumentCount}
+            adminAuditCount={adminAuditCount}
+            networkOnline={networkOnline}
+          />
 
 
           <section className="workspace-grid">
@@ -1035,24 +1035,24 @@ export function PortalApp(): React.JSX.Element {
 
             {activeWorkspaceTool === "schedule" && isDispatchRole && !dispatchAccessDenied ? (
               <ScheduleControlCard
-                selectedJobUid={selectedJob?.job_uid ?? ""}
+                selectedJobid={selectedJob?.job_id ?? ""}
                 preferredStart={preferredStart}
                 setPreferredStart={setPreferredStart}
                 preferredEnd={preferredEnd}
                 setPreferredEnd={setPreferredEnd}
                 requests={dispatchRequests}
-                selectedRequestUid={selectedRequestUid}
-                setSelectedRequestUid={setSelectedRequestUid}
+                selectedRequestid={selectedRequestid}
+                setSelectedRequestid={setSelectedRequestid}
                 confirmStart={confirmStart}
                 setConfirmStart={setConfirmStart}
                 confirmEnd={confirmEnd}
                 setConfirmEnd={setConfirmEnd}
-                confirmTechUid={confirmTechUid}
-                setConfirmTechUid={setConfirmTechUid}
+                confirmTechid={confirmTechid}
+                setConfirmTechid={setConfirmTechid}
                 technicians={technicians}
                 schedules={dispatchSchedules}
-                selectedScheduleUid={selectedScheduleUid}
-                setSelectedScheduleUid={setSelectedScheduleUid}
+                selectedScheduleid={selectedScheduleid}
+                setSelectedScheduleid={setSelectedScheduleid}
                 rescheduleStart={rescheduleStart}
                 setRescheduleStart={setRescheduleStart}
                 rescheduleEnd={rescheduleEnd}
@@ -1060,8 +1060,8 @@ export function PortalApp(): React.JSX.Element {
                 rescheduleRowVersion={rescheduleRowVersion}
                 setRescheduleRowVersion={setRescheduleRowVersion}
                 documents={dispatchDocuments}
-                selectedDocumentUid={selectedDocumentUid}
-                setSelectedDocumentUid={setSelectedDocumentUid}
+                selectedDocumentid={selectedDocumentid}
+                setSelectedDocumentid={setSelectedDocumentid}
                 onScheduleRequest={() => runAction(handleScheduleRequest)}
                 onScheduleConfirm={() => runAction(handleScheduleConfirm)}
                 onReschedule={() => runAction(handleReschedule)}
@@ -1073,7 +1073,7 @@ export function PortalApp(): React.JSX.Element {
 
             {activeWorkspaceTool === "comms" && isDispatchRole ? (
               <CommunicationRailsCard
-                selectedJobUid={selectedJob?.job_uid ?? ""}
+                selectedJobid={selectedJob?.job_id ?? ""}
                 selectedJobTitle={selectedJob?.title ?? ""}
                 onFeedback={setFeedback}
               />
@@ -1086,12 +1086,12 @@ export function PortalApp(): React.JSX.Element {
                 adminAutomationJobs={adminAutomationJobs}
                 adminAuditCount={adminAuditCount}
                 automationJobs={automationJobs}
-                selectedAutomationJobUid={selectedAutomationJobUid}
-                setSelectedAutomationJobUid={setSelectedAutomationJobUid}
+                selectedAutomationJobid={selectedAutomationJobid}
+                setSelectedAutomationJobid={setSelectedAutomationJobid}
                 onLoadHealth={() => runAction(loadAdminHealth)}
                 onLoadAudits={() => runAction(loadAdminAudits)}
                 onLoadAutomationJobs={() => runAction(loadAdminAutomationJobs)}
-                onRetryAutomation={(uid) => runAction(() => handleRetryAutomation(uid))}
+                onRetryAutomation={(id) => runAction(() => handleRetryAutomation(id))}
                 onFeedback={setFeedback}
                 emulatedRole={emulatedRole}
                 onEmulateRole={(role) => {
@@ -1106,12 +1106,12 @@ export function PortalApp(): React.JSX.Element {
             {activeWorkspaceTool === "documents" ? (
               <DocumentHistoryCard
                 documents={documents}
-                selectedJobUid={selectedJob?.job_uid ?? ""}
+                selectedJobid={selectedJob?.job_id ?? ""}
                 role={effectiveRole ?? "client"}
-                escrowByDocumentUid={Object.fromEntries(upgradeState.escrow.map((row) => [row.document_uid, row]))}
+                escrowByDocumentid={Object.fromEntries(upgradeState.escrow.map((row) => [row.document_id, row]))}
 
-                onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_uid))}
-                onPublish={(uid, ver, vis) => runAction(() => handleDocumentPublishInline(uid, ver, vis))}
+                onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_id))}
+                onPublish={(id, ver, vis) => runAction(() => handleDocumentPublishInline(id, ver, vis))}
               />
             ) : null}
 
@@ -1127,28 +1127,28 @@ export function PortalApp(): React.JSX.Element {
                     await refreshUpgradeWorkspaceState();
                   })
                 }
-                onUpdateQuoteStatus={(quoteUid, status) =>
+                onUpdateQuoteStatus={(quoteid, status) =>
                   runAction(async () => {
-                    await apiClient.updateFinanceQuoteStatus(quoteUid, status);
+                    await apiClient.updateFinanceQuoteStatus(quoteid, status);
                     await refreshUpgradeWorkspaceState();
                   })
                 }
-                onCreateInvoiceFromQuote={(quoteUid, dueDate) =>
+                onCreateInvoiceFromQuote={(quoteid, dueDate) =>
                   runAction(async () => {
-                    await apiClient.createInvoiceFromQuote(quoteUid, dueDate);
+                    await apiClient.createInvoiceFromQuote(quoteid, dueDate);
                     await refreshUpgradeWorkspaceState();
                   })
                 }
-                onReconcileInvoice={(invoiceUid) =>
+                onReconcileInvoice={(invoiceid) =>
                   runAction(async () => {
-                    await apiClient.reconcileInvoice(invoiceUid);
+                    await apiClient.reconcileInvoice(invoiceid);
                     await apiClient.rebuildUpgradeAnalytics();
                     await refreshUpgradeWorkspaceState();
                   })
                 }
-                onLockEscrow={(documentUid, invoiceUid) =>
+                onLockEscrow={(documentid, invoiceid) =>
                   runAction(async () => {
-                    await apiClient.lockEscrow(documentUid, invoiceUid);
+                    await apiClient.lockEscrow(documentid, invoiceid);
                     await refreshUpgradeWorkspaceState();
                   })
                 }

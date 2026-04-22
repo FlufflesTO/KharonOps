@@ -29,14 +29,14 @@ export function ResourcesPage(): React.JSX.Element {
         <title>Resources | Kharon Fire and Security</title>
         <meta
           name="description"
-          content="Practical guidance for maintenance planning, compliance documentation, and fire and security governance."
+          content="Practical gidance for maintenance planning, compliance documentation, and fire and security governance."
         />
       </Helmet>
 
       <section className="site-section">
         <div className="section-heading">
           <p className="section-kicker">Resources</p>
-          <h2>Guidance designed to improve operational and compliance outcomes.</h2>
+          <h2>Gidance designed to improve operational and compliance outcomes.</h2>
           <p className="section-subtitle">
             Each resource request routes into a structured intake flow so Kharon can respond with the relevant reference,
             follow-up context, and next-step recommendation.

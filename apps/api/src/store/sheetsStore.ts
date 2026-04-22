@@ -32,7 +32,7 @@ import type { WorkbookStore } from "./types.js";
 
 type Row = Record<string, string>;
 
-const PORTAL_FILE_DOCUMENT_NOTE_PREFIX = "Managed by KharonOps app for document_uid:";
+const PORTAL_FILE_DOCUMENT_NOTE_PREFIX = "Managed by KharonOps app for document_id:";
 
 function normalizeValue(value: unknown): string {
   return String(value ?? "").trim();
@@ -162,7 +162,7 @@ function parseJobStatus(row: Row): JobRow["status"] {
   ) {
     return "performed";
   }
-  
+
   if (field(row, "date_completed") !== "") {
     return "performed";
   }
@@ -180,22 +180,22 @@ function parseJobTitle(row: Row): string {
     return requestType;
   }
 
-  return firstNonEmpty(field(row, "system_type"), field(row, "site"), field(row, "job_uid"));
+  return firstNonEmpty(field(row, "system_type"), field(row, "site"), field(row, "job_id"));
 }
 
 function parseUserRow(row: Row): UserRow {
   return {
-    user_uid: field(row, "user_uid"),
+    user_id: field(row, "user_id"),
     email: field(row, "email"),
     display_name: field(row, "display_name"),
     role: field(row, "role") as UserRow["role"],
-    client_uid: field(row, "client_uid", "client_id"),
-    technician_uid: field(row, "technician_uid", "technician_id"),
+    client_id: field(row, "client_id", "client_id"),
+    technician_id: field(row, "technician_id", "technician_id"),
     active: boolString(field(row, "active", "active_flag")),
     row_version: Math.max(1, toNum(field(row, "row_version"))),
     updated_at: firstNonEmpty(field(row, "updated_at"), field(row, "last_sync_at")),
     updated_by: firstNonEmpty(field(row, "updated_by"), field(row, "display_name")),
-    correlation_id: firstNonEmpty(field(row, "correlation_id"), field(row, "email"), field(row, "user_uid"))
+    correlation_id: firstNonEmpty(field(row, "correlation_id"), field(row, "email"), field(row, "user_id"))
   };
 }
 
@@ -203,11 +203,11 @@ function parseUserRow(row: Row): UserRow {
  * parseClientRow — maps a raw Clients_Master row to a ClientRow.
  * Root cause: Jobs_Master references client_id (CLT-xxxx) which resolves
  * exclusively in Clients_Master, not in Users_Master (which has no client rows).
- * Alias fallback order: client_id → client_uid (tolerates future renames).
+ * Alias fallback order: client_id → client_id (tolerates future renames).
  */
 function parseClientRow(row: Row): ClientRow {
   return {
-    client_id: field(row, "client_id", "client_uid"),
+    client_id: field(row, "client_id", "client_id"),
     client_name: firstNonEmpty(field(row, "client_name"), field(row, "account"), field(row, "billing_entity")),
     billing_entity: firstNonEmpty(field(row, "billing_entity"), field(row, "client_name")),
     ops_email: field(row, "ops_email", "email"),
@@ -223,7 +223,7 @@ function parseClientRow(row: Row): ClientRow {
  */
 function parseTechnicianRow(row: Row): TechnicianRow {
   return {
-    technician_id: field(row, "technician_id", "technician_uid"),
+    technician_id: field(row, "technician_id", "technician_id"),
     display_name: firstNonEmpty(field(row, "display_name"), field(row, "technician_name")),
     active: boolString(field(row, "active_flag", "active"))
   };
@@ -231,10 +231,10 @@ function parseTechnicianRow(row: Row): TechnicianRow {
 
 function parseJobRow(row: Row): JobRow {
   return {
-    job_uid: field(row, "job_uid"),
-    client_uid: field(row, "client_uid", "client_id"),
-    site_uid: field(row, "site_uid", "site_id"),
-    technician_uid: field(row, "technician_uid", "primary_technician_id"),
+    job_id: field(row, "job_id"),
+    client_id: field(row, "client_id", "client_id"),
+    site_id: field(row, "site_id", "site_id"),
+    technician_id: field(row, "technician_id", "primary_technician_id"),
     title: parseJobTitle(row),
     status: parseJobStatus(row),
     scheduled_start: firstNonEmpty(field(row, "scheduled_start"), field(row, "date_scheduled"), field(row, "initial_date"), field(row, "response_due_at")),
@@ -243,15 +243,15 @@ function parseJobRow(row: Row): JobRow {
     row_version: Math.max(1, toNum(field(row, "row_version"))),
     updated_at: firstNonEmpty(field(row, "updated_at"), field(row, "last_sync_at"), field(row, "last_contact_at"), field(row, "date_completed"), field(row, "initial_date")),
     updated_by: firstNonEmpty(field(row, "updated_by"), field(row, "dispatcher_owner"), field(row, "job_owner"), field(row, "primary_technician_name")),
-    correlation_id: firstNonEmpty(field(row, "correlation_id"), field(row, "source_refs"), field(row, "source_submission_id"), field(row, "legacy_job_id"), field(row, "job_uid"))
+    correlation_id: firstNonEmpty(field(row, "correlation_id"), field(row, "source_refs"), field(row, "source_submission_id"), field(row, "legacy_job_id"), field(row, "job_id"))
   };
 }
 
 function parseScheduleRequest(row: Row): ScheduleRequestRow {
   return {
-    request_uid: field(row, "request_uid"),
-    job_uid: field(row, "job_uid"),
-    client_uid: field(row, "client_uid"),
+    request_id: field(row, "request_id"),
+    job_id: field(row, "job_id"),
+    client_id: field(row, "client_id"),
     preferred_slots_json: field(row, "preferred_slots_json"),
     timezone: field(row, "timezone"),
     notes: field(row, "notes"),
@@ -265,13 +265,13 @@ function parseScheduleRequest(row: Row): ScheduleRequestRow {
 
 function parseSchedule(row: Row): ScheduleRow {
   return {
-    schedule_uid: field(row, "schedule_uid"),
-    request_uid: field(row, "request_uid"),
-    job_uid: field(row, "job_uid"),
+    schedule_id: field(row, "schedule_id"),
+    request_id: field(row, "request_id"),
+    job_id: field(row, "job_id"),
     calendar_event_id: field(row, "calendar_event_id"),
     start_at: field(row, "start_at"),
     end_at: field(row, "end_at"),
-    technician_uid: field(row, "technician_uid"),
+    technician_id: field(row, "technician_id"),
     status: field(row, "status") as ScheduleRow["status"],
     row_version: toNum(field(row, "row_version")),
     updated_at: field(row, "updated_at"),
@@ -304,9 +304,9 @@ function parseDocumentStatus(row: Row, portalFile?: Row | null): JobDocumentRow[
   return "generated";
 }
 
-function portalFileDocumentUid(row: Row): string {
+function portalFileDocumentid(row: Row): string {
   const notes = field(row, "notes");
-  const match = notes.match(/document_uid:([A-Za-z0-9-]+)/);
+  const match = notes.match(/document_id:([A-Za-z0-9-]+)/);
   return match?.[1] ?? "";
 }
 
@@ -332,23 +332,23 @@ function fileCategoryForDocumentType(documentType: string): string {
   return "report";
 }
 
-function fileUidForDocument(documentUid: string): string {
-  return `FIL-${documentUid.replace(/^DOC-/, "")}`;
+function fileidForDocument(documentid: string): string {
+  return `FIL-${documentid.replace(/^DOC-/, "")}`;
 }
 
-function managedPortalFileNote(documentUid: string): string {
-  return `${PORTAL_FILE_DOCUMENT_NOTE_PREFIX}${documentUid}`;
+function managedPortalFileNote(documentid: string): string {
+  return `${PORTAL_FILE_DOCUMENT_NOTE_PREFIX}${documentid}`;
 }
 
 function findPortalFileForDocument(documentRow: Row, portalFiles: Row[]): Row | null {
-  const documentUid = field(documentRow, "document_uid");
-  const managed = portalFiles.find((file) => portalFileDocumentUid(file) === documentUid);
+  const documentid = field(documentRow, "document_id");
+  const managed = portalFiles.find((file) => portalFileDocumentid(file) === documentid);
   if (managed) {
     return managed;
   }
 
-  const jobUid = field(documentRow, "job_uid");
-  const sameJob = portalFiles.filter((file) => field(file, "job_uid") === jobUid);
+  const jobid = field(documentRow, "job_id");
+  const sameJob = portalFiles.filter((file) => field(file, "job_id") === jobid);
   if (sameJob.length === 0) {
     return null;
   }
@@ -361,8 +361,8 @@ function findPortalFileForDocument(documentRow: Row, portalFiles: Row[]): Row | 
 function parseDocument(row: Row, portalFile?: Row | null): JobDocumentRow {
   const status = parseDocumentStatus(row, portalFile);
   return {
-    document_uid: field(row, "document_uid"),
-    job_uid: field(row, "job_uid"),
+    document_id: field(row, "document_id"),
+    job_id: field(row, "job_id"),
     document_type: parseDocumentType(field(row, "document_type")),
     status,
     drive_file_id: field(row, "drive_file_id"),
@@ -372,14 +372,14 @@ function parseDocument(row: Row, portalFile?: Row | null): JobDocumentRow {
     row_version: Math.max(1, toNum(field(row, "row_version"))),
     updated_at: firstNonEmpty(field(row, "updated_at"), field(row, "last_sync_at"), field(row, "sent_at"), field(row, "requested_at")),
     updated_by: firstNonEmpty(field(row, "updated_by"), field(row, "assigned_to"), field(row, "requested_by"), field(row, "job_owner")),
-    correlation_id: firstNonEmpty(field(row, "correlation_id"), field(row, "source_refs"), field(row, "legacy_document_id"), field(row, "document_uid"))
+    correlation_id: firstNonEmpty(field(row, "correlation_id"), field(row, "source_refs"), field(row, "legacy_document_id"), field(row, "document_id"))
   };
 }
 
 
 function parseAutomation(row: Row): AutomationJobRow {
   return {
-    automation_job_uid: field(row, "automation_job_uid"),
+    automation_job_id: field(row, "automation_job_id"),
     action: field(row, "action"),
     payload_json: field(row, "payload_json"),
     status: field(row, "status") as AutomationJobRow["status"],
@@ -394,9 +394,9 @@ function parseAutomation(row: Row): AutomationJobRow {
 
 function parseSyncQueue(row: Row): SyncQueueRow {
   return {
-    mutation_uid: field(row, "mutation_uid"),
-    job_uid: field(row, "job_uid"),
-    actor_uid: field(row, "actor_uid"),
+    mutation_id: field(row, "mutation_id"),
+    job_id: field(row, "job_id"),
+    actor_id: field(row, "actor_id"),
     payload_json: field(row, "payload_json"),
     status: field(row, "status") as SyncQueueRow["status"],
     last_result: field(row, "last_result"),
@@ -409,9 +409,9 @@ function parseSyncQueue(row: Row): SyncQueueRow {
 
 function parseFinanceQuote(row: Row): FinanceQuoteRow {
   return {
-    quote_uid: field(row, "quote_uid"),
-    job_uid: field(row, "job_uid"),
-    client_uid: field(row, "client_uid"),
+    quote_id: field(row, "quote_id"),
+    job_id: field(row, "job_id"),
+    client_id: field(row, "client_id"),
     description: field(row, "description"),
     amount: toNum(field(row, "amount")),
     status: field(row, "status") as FinanceQuoteRow["status"],
@@ -425,10 +425,10 @@ function parseFinanceQuote(row: Row): FinanceQuoteRow {
 
 function parseFinanceInvoice(row: Row): FinanceInvoiceRow {
   return {
-    invoice_uid: field(row, "invoice_uid"),
-    job_uid: field(row, "job_uid"),
-    quote_uid: field(row, "quote_uid"),
-    client_uid: field(row, "client_uid"),
+    invoice_id: field(row, "invoice_id"),
+    job_id: field(row, "job_id"),
+    quote_id: field(row, "quote_id"),
+    client_id: field(row, "client_id"),
     amount: toNum(field(row, "amount")),
     due_date: field(row, "due_date"),
     status: field(row, "status") as FinanceInvoiceRow["status"],
@@ -442,8 +442,8 @@ function parseFinanceInvoice(row: Row): FinanceInvoiceRow {
 
 function parseFinanceStatement(row: Row): FinanceStatementRow {
   return {
-    statement_uid: field(row, "statement_uid"),
-    client_uid: field(row, "client_uid"),
+    statement_id: field(row, "statement_id"),
+    client_id: field(row, "client_id"),
     period_label: field(row, "period_label"),
     opening_balance: toNum(field(row, "opening_balance")),
     billed: toNum(field(row, "billed")),
@@ -459,7 +459,7 @@ function parseFinanceStatement(row: Row): FinanceStatementRow {
 
 function parseFinanceDebtor(row: Row): FinanceDebtorRow {
   return {
-    client_uid: field(row, "client_uid"),
+    client_id: field(row, "client_id"),
     total_due: toNum(field(row, "total_due")),
     current_bucket: toNum(field(row, "current_bucket")),
     bucket_30: toNum(field(row, "bucket_30")),
@@ -475,8 +475,8 @@ function parseFinanceDebtor(row: Row): FinanceDebtorRow {
 
 function parseEscrow(row: Row): EscrowRow {
   return {
-    document_uid: field(row, "document_uid"),
-    invoice_uid: field(row, "invoice_uid"),
+    document_id: field(row, "document_id"),
+    invoice_id: field(row, "invoice_id"),
     status: field(row, "status") as EscrowRow["status"],
     locked_at: field(row, "locked_at"),
     released_at: field(row, "released_at"),
@@ -489,7 +489,7 @@ function parseEscrow(row: Row): EscrowRow {
 
 function parseSkillMatrix(row: Row): SkillMatrixRow {
   return {
-    user_uid: field(row, "user_uid"),
+    user_id: field(row, "user_id"),
     saqcc_type: field(row, "saqcc_type"),
     saqcc_expiry: field(row, "saqcc_expiry"),
     medical_expiry: field(row, "medical_expiry"),
@@ -504,7 +504,7 @@ function parseSkillMatrix(row: Row): SkillMatrixRow {
 function conflictFor(job: JobRow, expected: number): ConflictPayload {
   return buildConflict({
     entity: "Jobs_Master",
-    entityId: job.job_uid,
+    entityId: job.job_id,
     serverState: job as unknown as Record<string, unknown>,
     clientRowVersion: expected,
     serverRowVersion: job.row_version
@@ -528,18 +528,18 @@ function nowIso(): string {
 
 function serializeJobRow(record: JobRow, existing: Row = {}): Row {
   const row = { ...existing };
-  row.job_uid = record.job_uid;
+  row.job_id = record.job_id;
   row.row_version = String(record.row_version);
   row.api_locked = firstNonEmpty(field(existing, "api_locked"), "FALSE");
   row.sync_status = firstNonEmpty(field(existing, "sync_status"), "ready");
   row.last_sync_at = record.updated_at;
   row.last_sync_error = "";
   row.source_system = firstNonEmpty(field(existing, "source_system"), "kharon_portal");
-  row.client_id = record.client_uid;
-  row.site_id = record.site_uid;
-  row.primary_technician_id = record.technician_uid;
-  if (record.technician_uid !== "" && field(existing, "technician_raw") === "") {
-    row.technician_raw = record.technician_uid;
+  row.client_id = record.client_id;
+  row.site_id = record.site_id;
+  row.primary_technician_id = record.technician_id;
+  if (record.technician_id !== "" && field(existing, "technician_raw") === "") {
+    row.technician_raw = record.technician_id;
   }
   row.job_status = record.status;
   row.status_raw = jobStatusLabel(record.status);
@@ -574,8 +574,8 @@ function serializeJobRow(record: JobRow, existing: Row = {}): Row {
 function serializeJobEventRow(event: JobEventRow, existing: Row = {}): Row {
   const payload = safeJsonParse(event.payload_json);
   const row = { ...existing };
-  row.event_uid = event.event_uid;
-  row.job_uid = event.job_uid;
+  row.event_id = event.event_id;
+  row.job_id = event.job_id;
   row.event_type = event.event_type;
   row.event_date = asDateCell(event.updated_at);
   row.actor = event.updated_by;
@@ -595,12 +595,12 @@ function serializeJobEventRow(event: JobEventRow, existing: Row = {}): Row {
 
 function serializeDocumentRow(record: JobDocumentRow, existing: Row = {}, relatedJob: Row = {}): Row {
   const row = { ...existing };
-  row.document_uid = record.document_uid;
+  row.document_id = record.document_id;
   row.row_version = String(record.row_version);
   row.sync_status = record.status === "published" ? "published" : firstNonEmpty(field(existing, "sync_status"), "ready");
   row.last_sync_at = record.updated_at;
   row.last_sync_error = "";
-  row.job_uid = record.job_uid;
+  row.job_id = record.job_id;
   row.legacy_job_id = firstNonEmpty(field(existing, "legacy_job_id"), field(relatedJob, "legacy_job_id"));
   row.client_id = firstNonEmpty(field(existing, "client_id"), field(relatedJob, "client_id"));
   row.site_id = firstNonEmpty(field(existing, "site_id"), field(relatedJob, "site_id"));
@@ -642,8 +642,8 @@ function serializeDocumentRow(record: JobDocumentRow, existing: Row = {}, relate
 
 function serializePortalFileRow(record: JobDocumentRow, existing: Row = {}, relatedJob: Row = {}): Row {
   const row = { ...existing };
-  row.file_uid = firstNonEmpty(field(existing, "file_uid"), fileUidForDocument(record.document_uid));
-  row.job_uid = record.job_uid;
+  row.file_id = firstNonEmpty(field(existing, "file_id"), fileidForDocument(record.document_id));
+  row.job_id = record.job_id;
   row.legacy_job_id = firstNonEmpty(field(existing, "legacy_job_id"), field(relatedJob, "legacy_job_id"));
   row.client_id = firstNonEmpty(field(existing, "client_id"), field(relatedJob, "client_id"));
   row.site_id = firstNonEmpty(field(existing, "site_id"), field(relatedJob, "site_id"));
@@ -665,12 +665,12 @@ function serializePortalFileRow(record: JobDocumentRow, existing: Row = {}, rela
   row.is_after_photo = firstNonEmpty(field(existing, "is_after_photo"), "FALSE");
   row.sort_order = firstNonEmpty(field(existing, "sort_order"), "1");
   row.source_url = record.published_url;
-  row.notes = managedPortalFileNote(record.document_uid);
+  row.notes = managedPortalFileNote(record.document_id);
   return row;
 }
 
 export class SheetsWorkbookStore implements WorkbookStore {
-  constructor(private readonly rails: WorkspaceRails) {}
+  constructor(private readonly rails: WorkspaceRails) { }
 
   private async rows(sheetName: string): Promise<Row[]> {
     try {
@@ -689,12 +689,12 @@ export class SheetsWorkbookStore implements WorkbookStore {
     return rows.find((row) => field(row, keyField) === normalizedTarget) ?? null;
   }
 
-  private async getRawJobRow(jobUid: string): Promise<Row | null> {
-    return this.findRow("Jobs_Master", "job_uid", jobUid);
+  private async getRawJobRow(jobid: string): Promise<Row | null> {
+    return this.findRow("Jobs_Master", "job_id", jobid);
   }
 
-  private async getRawDocumentRow(documentUid: string): Promise<Row | null> {
-    return this.findRow("Job_Documents", "document_uid", documentUid);
+  private async getRawDocumentRow(documentid: string): Promise<Row | null> {
+    return this.findRow("Job_Documents", "document_id", documentid);
   }
 
   async ensureSchema(): Promise<void> {
@@ -715,7 +715,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
   /**
    * listClients — reads Clients_Master as the authoritative source for
    * client display names. Users_Master is NOT used here; it has no client rows
-   * with valid client_uid values.
+   * with valid client_id values.
    */
   async listClients(): Promise<ClientRow[]> {
     return (await this.rows("Clients_Master")).map(parseClientRow);
@@ -736,23 +736,23 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async createFinanceQuote(row: FinanceQuoteRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Finance_Quotes", "quote_uid", stringifyRow(row));
+    await this.rails.sheets.upsertRow("Finance_Quotes", "quote_id", stringifyRow(row));
   }
 
   async updateFinanceQuoteStatus(args: {
-    quote_uid: string;
+    quote_id: string;
     status: FinanceQuoteRow["status"];
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
   }): Promise<FinanceQuoteRow | null> {
-    const existing = await this.findRow("Finance_Quotes", "quote_uid", args.quote_uid);
+    const existing = await this.findRow("Finance_Quotes", "quote_id", args.quote_id);
     if (!existing) return null;
     const current = parseFinanceQuote(existing);
     const updated: FinanceQuoteRow = {
       ...current,
       status: args.status,
-      ...bumpMutableMeta(current, args.ctx.actorUserUid, args.ctx.correlationId)
+      ...bumpMutableMeta(current, args.ctx.actorUserid, args.ctx.correlationId)
     };
-    await this.rails.sheets.upsertRow("Finance_Quotes", "quote_uid", stringifyRow(updated));
+    await this.rails.sheets.upsertRow("Finance_Quotes", "quote_id", stringifyRow(updated));
     return updated;
   }
 
@@ -761,11 +761,11 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async createFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Finance_Invoices", "invoice_uid", stringifyRow(row));
+    await this.rails.sheets.upsertRow("Finance_Invoices", "invoice_id", stringifyRow(row));
   }
 
   async updateFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Finance_Invoices", "invoice_uid", stringifyRow(row));
+    await this.rails.sheets.upsertRow("Finance_Invoices", "invoice_id", stringifyRow(row));
   }
 
   async listFinanceStatements(): Promise<FinanceStatementRow[]> {
@@ -774,7 +774,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
 
   async replaceFinanceStatements(rows: FinanceStatementRow[]): Promise<void> {
     for (const row of rows) {
-      await this.rails.sheets.upsertRow("Finance_Statements", "statement_uid", stringifyRow(row));
+      await this.rails.sheets.upsertRow("Finance_Statements", "statement_id", stringifyRow(row));
     }
   }
 
@@ -784,7 +784,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
 
   async replaceFinanceDebtors(rows: FinanceDebtorRow[]): Promise<void> {
     for (const row of rows) {
-      await this.rails.sheets.upsertRow("Finance_Debtors", "client_uid", stringifyRow(row));
+      await this.rails.sheets.upsertRow("Finance_Debtors", "client_id", stringifyRow(row));
     }
   }
 
@@ -792,21 +792,21 @@ export class SheetsWorkbookStore implements WorkbookStore {
     return (await this.rows("Compliance_Escrow")).map(parseEscrow).sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   }
 
-  async getEscrowByDocument(document_uid: string): Promise<EscrowRow | null> {
-    const row = await this.findRow("Compliance_Escrow", "document_uid", document_uid);
+  async getEscrowByDocument(document_id: string): Promise<EscrowRow | null> {
+    const row = await this.findRow("Compliance_Escrow", "document_id", document_id);
     return row ? parseEscrow(row) : null;
   }
 
   async upsertEscrow(row: EscrowRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Compliance_Escrow", "document_uid", stringifyRow(row));
+    await this.rails.sheets.upsertRow("Compliance_Escrow", "document_id", stringifyRow(row));
   }
 
   async listSkillMatrix(): Promise<SkillMatrixRow[]> {
-    return (await this.rows("HR_Skills_Matrix")).map(parseSkillMatrix).sort((a, b) => a.user_uid.localeCompare(b.user_uid));
+    return (await this.rows("HR_Skills_Matrix")).map(parseSkillMatrix).sort((a, b) => a.user_id.localeCompare(b.user_id));
   }
 
   async upsertSkillMatrix(row: SkillMatrixRow): Promise<void> {
-    await this.rails.sheets.upsertRow("HR_Skills_Matrix", "user_uid", stringifyRow(row));
+    await this.rails.sheets.upsertRow("HR_Skills_Matrix", "user_id", stringifyRow(row));
   }
 
   async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
@@ -825,20 +825,20 @@ export class SheetsWorkbookStore implements WorkbookStore {
     return (await this.rows("Jobs_Master")).map(parseJobRow).filter((job) => canReadJob(user, job));
   }
 
-  async getJob(jobUid: string): Promise<JobRow | null> {
-    const row = await this.getRawJobRow(jobUid);
+  async getJob(jobid: string): Promise<JobRow | null> {
+    const row = await this.getRawJobRow(jobid);
     return row ? parseJobRow(row) : null;
   }
 
   async updateJobStatus(args: {
-    jobUid: string;
+    jobid: string;
     status: JobRow["status"];
     expectedRowVersion: number;
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
   }): Promise<{ job: JobRow; conflict: ConflictPayload | null }> {
-    const currentRaw = await this.getRawJobRow(args.jobUid);
+    const currentRaw = await this.getRawJobRow(args.jobid);
     if (!currentRaw) {
-      throw new Error(`Unknown job ${args.jobUid}`);
+      throw new Error(`Unknown job ${args.jobid}`);
     }
 
     const current = parseJobRow(currentRaw);
@@ -853,18 +853,18 @@ export class SheetsWorkbookStore implements WorkbookStore {
     const updated: JobRow = {
       ...current,
       status: args.status,
-      ...bumpMutableMeta(current, args.ctx.actorUserUid, args.ctx.correlationId)
+      ...bumpMutableMeta(current, args.ctx.actorUserid, args.ctx.correlationId)
     };
 
-    await this.rails.sheets.upsertRow("Jobs_Master", "job_uid", serializeJobRow(updated, currentRaw));
+    await this.rails.sheets.upsertRow("Jobs_Master", "job_id", serializeJobRow(updated, currentRaw));
     await this.appendJobEvent({
-      event_uid: `EVT-${crypto.randomUUID()}`,
-      job_uid: updated.job_uid,
+      event_id: `EVT-${crypto.randomUUID()}`,
+      job_id: updated.job_id,
       event_type: "status_changed",
       payload_json: JSON.stringify({ from: current.status, to: updated.status }),
       row_version: 1,
       updated_at: nowIso(),
-      updated_by: args.ctx.actorUserUid,
+      updated_by: args.ctx.actorUserid,
       correlation_id: args.ctx.correlationId
     });
 
@@ -872,14 +872,14 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async appendJobNote(args: {
-    jobUid: string;
+    jobid: string;
     note: string;
     expectedRowVersion: number;
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
   }): Promise<{ job: JobRow; conflict: ConflictPayload | null }> {
-    const currentRaw = await this.getRawJobRow(args.jobUid);
+    const currentRaw = await this.getRawJobRow(args.jobid);
     if (!currentRaw) {
-      throw new Error(`Unknown job ${args.jobUid}`);
+      throw new Error(`Unknown job ${args.jobid}`);
     }
 
     const current = parseJobRow(currentRaw);
@@ -890,18 +890,18 @@ export class SheetsWorkbookStore implements WorkbookStore {
     const updated: JobRow = {
       ...current,
       last_note: args.note,
-      ...bumpMutableMeta(current, args.ctx.actorUserUid, args.ctx.correlationId)
+      ...bumpMutableMeta(current, args.ctx.actorUserid, args.ctx.correlationId)
     };
 
-    await this.rails.sheets.upsertRow("Jobs_Master", "job_uid", serializeJobRow(updated, currentRaw));
+    await this.rails.sheets.upsertRow("Jobs_Master", "job_id", serializeJobRow(updated, currentRaw));
     await this.appendJobEvent({
-      event_uid: `EVT-${crypto.randomUUID()}`,
-      job_uid: updated.job_uid,
+      event_id: `EVT-${crypto.randomUUID()}`,
+      job_id: updated.job_id,
       event_type: "note_added",
       payload_json: JSON.stringify({ note: args.note }),
       row_version: 1,
       updated_at: nowIso(),
-      updated_by: args.ctx.actorUserUid,
+      updated_by: args.ctx.actorUserid,
       correlation_id: args.ctx.correlationId
     });
 
@@ -916,50 +916,50 @@ export class SheetsWorkbookStore implements WorkbookStore {
     await this.rails.sheets.appendRow("Schedule_Requests", stringifyRow(row));
   }
 
-  async getScheduleRequest(requestUid: string): Promise<ScheduleRequestRow | null> {
-    const row = await this.findRow("Schedule_Requests", "request_uid", requestUid);
+  async getScheduleRequest(requestid: string): Promise<ScheduleRequestRow | null> {
+    const row = await this.findRow("Schedule_Requests", "request_id", requestid);
     return row ? parseScheduleRequest(row) : null;
   }
 
-  async listScheduleRequests(jobUid?: string): Promise<ScheduleRequestRow[]> {
+  async listScheduleRequests(jobid?: string): Promise<ScheduleRequestRow[]> {
     return (await this.rows("Schedule_Requests"))
       .map(parseScheduleRequest)
-      .filter((row) => (jobUid ? row.job_uid === jobUid : true))
+      .filter((row) => (jobid ? row.job_id === jobid : true))
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   }
 
   async upsertScheduleRequest(row: ScheduleRequestRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Schedule_Requests", "request_uid", stringifyRow(row));
+    await this.rails.sheets.upsertRow("Schedule_Requests", "request_id", stringifyRow(row));
   }
 
   async createSchedule(row: ScheduleRow): Promise<void> {
     await this.rails.sheets.appendRow("Schedules_Master", stringifyRow(row));
   }
 
-  async getSchedule(scheduleUid: string): Promise<ScheduleRow | null> {
-    const row = await this.findRow("Schedules_Master", "schedule_uid", scheduleUid);
+  async getSchedule(scheduleid: string): Promise<ScheduleRow | null> {
+    const row = await this.findRow("Schedules_Master", "schedule_id", scheduleid);
     return row ? parseSchedule(row) : null;
   }
 
-  async listSchedules(jobUid?: string): Promise<ScheduleRow[]> {
+  async listSchedules(jobid?: string): Promise<ScheduleRow[]> {
     return (await this.rows("Schedules_Master"))
       .map(parseSchedule)
-      .filter((row) => (jobUid ? row.job_uid === jobUid : true))
+      .filter((row) => (jobid ? row.job_id === jobid : true))
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   }
 
   async upsertSchedule(row: ScheduleRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Schedules_Master", "schedule_uid", stringifyRow(row));
+    await this.rails.sheets.upsertRow("Schedules_Master", "schedule_id", stringifyRow(row));
   }
 
   async createDocument(row: JobDocumentRow): Promise<void> {
-    const relatedJob = (await this.getRawJobRow(row.job_uid)) ?? {};
+    const relatedJob = (await this.getRawJobRow(row.job_id)) ?? {};
     await this.rails.sheets.appendRow("Job_Documents", serializeDocumentRow(row, {}, relatedJob));
-    await this.rails.sheets.upsertRow("Portal_Files", "file_uid", serializePortalFileRow(row, {}, relatedJob));
+    await this.rails.sheets.upsertRow("Portal_Files", "file_id", serializePortalFileRow(row, {}, relatedJob));
   }
 
-  async getDocument(documentUid: string): Promise<JobDocumentRow | null> {
-    const row = await this.getRawDocumentRow(documentUid);
+  async getDocument(documentid: string): Promise<JobDocumentRow | null> {
+    const row = await this.getRawDocumentRow(documentid);
     if (!row) {
       return null;
     }
@@ -969,42 +969,42 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async upsertDocument(row: JobDocumentRow): Promise<void> {
-    const existingDocument = (await this.getRawDocumentRow(row.document_uid)) ?? {};
-    const relatedJob = (await this.getRawJobRow(row.job_uid)) ?? {};
+    const existingDocument = (await this.getRawDocumentRow(row.document_id)) ?? {};
+    const relatedJob = (await this.getRawJobRow(row.job_id)) ?? {};
     const portalFiles = await this.rows("Portal_Files");
     const portalLookupSource =
-      field(existingDocument, "document_uid") !== ""
+      field(existingDocument, "document_id") !== ""
         ? existingDocument
-        : { document_uid: row.document_uid, job_uid: row.job_uid, document_type: String(row.document_type) };
+        : { document_id: row.document_id, job_id: row.job_id, document_type: String(row.document_type) };
     const existingPortalFile = findPortalFileForDocument(portalLookupSource as Row, portalFiles) ?? {};
 
-    await this.rails.sheets.upsertRow("Job_Documents", "document_uid", serializeDocumentRow(row, existingDocument, relatedJob));
-    await this.rails.sheets.upsertRow("Portal_Files", "file_uid", serializePortalFileRow(row, existingPortalFile, relatedJob));
+    await this.rails.sheets.upsertRow("Job_Documents", "document_id", serializeDocumentRow(row, existingDocument, relatedJob));
+    await this.rails.sheets.upsertRow("Portal_Files", "file_id", serializePortalFileRow(row, existingPortalFile, relatedJob));
   }
 
-  async listDocuments(jobUid?: string): Promise<JobDocumentRow[]> {
+  async listDocuments(jobid?: string): Promise<JobDocumentRow[]> {
     const [documentRows, portalFiles] = await Promise.all([this.rows("Job_Documents"), this.rows("Portal_Files")]);
     return documentRows
-      .filter((row) => (jobUid ? field(row, "job_uid") === jobUid : true))
+      .filter((row) => (jobid ? field(row, "job_id") === jobid : true))
       .map((row) => parseDocument(row, findPortalFileForDocument(row, portalFiles)));
   }
 
   async appendAudit(args: {
     action: string;
     payload: Record<string, unknown>;
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
     entry_type?: string;
   }): Promise<void> {
     await this.rails.sheets.appendRow("Ledger", {
-      ledger_uid: `AUD-${crypto.randomUUID()}`,
+      ledger_id: `AUD-${crypto.randomUUID()}`,
       entry_type: args.entry_type || "system_audit",
       action: args.action,
       entity_type: String(args.payload.entity || "system"),
-      entity_id: String(args.payload.id || args.payload.job_uid || ""),
+      entity_id: String(args.payload.id || args.payload.job_id || ""),
       payload_json: JSON.stringify(args.payload),
       row_version: "1",
       updated_at: nowIso(),
-      updated_by: args.ctx.actorUserUid,
+      updated_by: args.ctx.actorUserid,
       correlation_id: args.ctx.correlationId
     });
   }
@@ -1014,11 +1014,11 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async upsertAutomationJob(row: AutomationJobRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Automation_Jobs", "automation_job_uid", stringifyRow(row));
+    await this.rails.sheets.upsertRow("Automation_Jobs", "automation_job_id", stringifyRow(row));
   }
 
-  async getAutomationJob(automationJobUid: string): Promise<AutomationJobRow | null> {
-    const row = await this.findRow("Automation_Jobs", "automation_job_uid", automationJobUid);
+  async getAutomationJob(automationJobid: string): Promise<AutomationJobRow | null> {
+    const row = await this.findRow("Automation_Jobs", "automation_job_id", automationJobid);
     return row ? parseAutomation(row) : null;
   }
 
@@ -1029,64 +1029,64 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async upsertSyncQueue(row: SyncQueueRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Sync_Queue", "mutation_uid", stringifyRow(row));
+    await this.rails.sheets.upsertRow("Sync_Queue", "mutation_id", stringifyRow(row));
   }
 
-  async getSyncQueue(mutationUid: string): Promise<SyncQueueRow | null> {
-    const row = await this.findRow("Sync_Queue", "mutation_uid", mutationUid);
+  async getSyncQueue(mutationid: string): Promise<SyncQueueRow | null> {
+    const row = await this.findRow("Sync_Queue", "mutation_id", mutationid);
     return row ? parseSyncQueue(row) : null;
   }
 
-  async listSyncQueueByJob(jobUid: string): Promise<SyncQueueRow[]> {
+  async listSyncQueueByJob(jobid: string): Promise<SyncQueueRow[]> {
     return (await this.rows("Sync_Queue"))
       .map(parseSyncQueue)
-      .filter((row) => row.job_uid === jobUid);
+      .filter((row) => row.job_id === jobid);
   }
 
   async applySyncMutations(args: {
     actor: SessionUser;
     mutations: SyncMutation[];
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
   }): Promise<SyncPushResult> {
     const result: SyncPushResult = { applied: [], conflicts: [], failed: [] };
 
     for (const mutation of args.mutations) {
       const existing = await this.getSyncQueue(mutation.mutation_id);
       if (existing?.status === "applied") {
-        const job = await this.getJob(mutation.job_uid);
+        const job = await this.getJob(mutation.job_id);
         result.applied.push({
           mutation_id: mutation.mutation_id,
-          job_uid: mutation.job_uid,
+          job_id: mutation.job_id,
           row_version: job?.row_version ?? 0
         });
         continue;
       }
 
-      const rawJob = await this.getRawJobRow(mutation.job_uid);
+      const rawJob = await this.getRawJobRow(mutation.job_id);
       const job = rawJob ? parseJobRow(rawJob) : null;
       if (!job || !rawJob) {
         result.failed.push({
           mutation_id: mutation.mutation_id,
-          job_uid: mutation.job_uid,
-          error: { code: "not_found", message: `Unknown job ${mutation.job_uid}` }
+          job_id: mutation.job_id,
+          error: { code: "not_found", message: `Unknown job ${mutation.job_id}` }
         });
         continue;
       }
 
       if (job.row_version !== mutation.expected_row_version) {
         const conflict = conflictFor(job, mutation.expected_row_version);
-        result.conflicts.push({ mutation_id: mutation.mutation_id, job_uid: mutation.job_uid, conflict });
+        result.conflicts.push({ mutation_id: mutation.mutation_id, job_id: mutation.job_id, conflict });
 
         await this.upsertSyncQueue({
-          mutation_uid: mutation.mutation_id,
-          job_uid: mutation.job_uid,
-          actor_uid: args.actor.user_uid,
+          mutation_id: mutation.mutation_id,
+          job_id: mutation.job_id,
+          actor_id: args.actor.user_id,
           payload_json: JSON.stringify(mutation.payload),
           status: "conflict",
           last_result: JSON.stringify(conflict),
           row_version: existing ? existing.row_version + 1 : 1,
           updated_at: nowIso(),
-          updated_by: args.ctx.actorUserUid,
+          updated_by: args.ctx.actorUserid,
           correlation_id: args.ctx.correlationId
         });
         continue;
@@ -1111,37 +1111,37 @@ export class SheetsWorkbookStore implements WorkbookStore {
 
         const updated = {
           ...job,
-          ...bumpMutableMeta(job, args.ctx.actorUserUid, args.ctx.correlationId)
+          ...bumpMutableMeta(job, args.ctx.actorUserid, args.ctx.correlationId)
         };
 
-        await this.rails.sheets.upsertRow("Jobs_Master", "job_uid", serializeJobRow(updated, rawJob));
+        await this.rails.sheets.upsertRow("Jobs_Master", "job_id", serializeJobRow(updated, rawJob));
         await this.upsertSyncQueue({
-          mutation_uid: mutation.mutation_id,
-          job_uid: mutation.job_uid,
-          actor_uid: args.actor.user_uid,
+          mutation_id: mutation.mutation_id,
+          job_id: mutation.job_id,
+          actor_id: args.actor.user_id,
           payload_json: JSON.stringify(mutation.payload),
           status: "applied",
           last_result: "applied",
           row_version: existing ? existing.row_version + 1 : 1,
           updated_at: nowIso(),
-          updated_by: args.ctx.actorUserUid,
+          updated_by: args.ctx.actorUserid,
           correlation_id: args.ctx.correlationId
         });
 
-        result.applied.push({ mutation_id: mutation.mutation_id, job_uid: mutation.job_uid, row_version: updated.row_version });
+        result.applied.push({ mutation_id: mutation.mutation_id, job_id: mutation.job_id, row_version: updated.row_version });
       } catch (error) {
         const typed: ApiError = { code: "sync_apply_failed", message: String(error) };
-        result.failed.push({ mutation_id: mutation.mutation_id, job_uid: mutation.job_uid, error: typed });
+        result.failed.push({ mutation_id: mutation.mutation_id, job_id: mutation.job_id, error: typed });
         await this.upsertSyncQueue({
-          mutation_uid: mutation.mutation_id,
-          job_uid: mutation.job_uid,
-          actor_uid: args.actor.user_uid,
+          mutation_id: mutation.mutation_id,
+          job_id: mutation.job_id,
+          actor_id: args.actor.user_id,
           payload_json: JSON.stringify(mutation.payload),
           status: "failed",
           last_result: JSON.stringify(typed),
           row_version: existing ? existing.row_version + 1 : 1,
           updated_at: nowIso(),
-          updated_by: args.ctx.actorUserUid,
+          updated_by: args.ctx.actorUserid,
           correlation_id: args.ctx.correlationId
         });
       }
@@ -1152,17 +1152,17 @@ export class SheetsWorkbookStore implements WorkbookStore {
 
   async resolveSyncConflict(args: {
     actor: SessionUser;
-    jobUid: string;
+    jobid: string;
     strategy: "server" | "client" | "merge";
     serverRowVersion: number;
     clientRowVersion: number;
     mergePatch?: Record<string, unknown>;
-    ctx: { correlationId: string; actorUserUid: string };
+    ctx: { correlationId: string; actorUserid: string };
   }): Promise<{ job: JobRow; conflict: ConflictPayload | null }> {
-    const rawJob = await this.getRawJobRow(args.jobUid);
+    const rawJob = await this.getRawJobRow(args.jobid);
     const job = rawJob ? parseJobRow(rawJob) : null;
     if (!job || !rawJob) {
-      throw new Error(`Unknown job ${args.jobUid}`);
+      throw new Error(`Unknown job ${args.jobid}`);
     }
 
     if (job.row_version !== args.serverRowVersion) {
@@ -1183,9 +1183,9 @@ export class SheetsWorkbookStore implements WorkbookStore {
 
     const updated = {
       ...job,
-      ...bumpMutableMeta(job, args.ctx.actorUserUid, args.ctx.correlationId)
+      ...bumpMutableMeta(job, args.ctx.actorUserid, args.ctx.correlationId)
     };
-    await this.rails.sheets.upsertRow("Jobs_Master", "job_uid", serializeJobRow(updated, rawJob));
+    await this.rails.sheets.upsertRow("Jobs_Master", "job_id", serializeJobRow(updated, rawJob));
 
     return { job: updated, conflict: null };
   }
@@ -1198,7 +1198,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
 
     const queue = (await this.rows("Sync_Queue"))
       .map(parseSyncQueue)
-      .filter((entry) => jobs.some((job) => job.job_uid === entry.job_uid));
+      .filter((entry) => jobs.some((job) => job.job_id === entry.job_id));
 
     return { jobs, queue };
   }

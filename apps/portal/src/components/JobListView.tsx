@@ -11,18 +11,18 @@ const JOB_STATUS_LABELS: Record<JobStatus, string> = {
 };
 
 export interface JobRecord {
-  job_uid: string;
+  job_id: string;
   title: string;
   status: JobStatus;
   row_version: number;
-  client_uid: string;
-  technician_uid: string;
+  client_id: string;
+  technician_id: string;
   client_name?: string;
   technician_name?: string;
   last_note: string;
-  active_request_uid?: string;
-  active_document_uid?: string;
-  suggested_technician_uid?: string;
+  active_request_id?: string;
+  active_document_id?: string;
+  suggested_technician_id?: string;
 }
 
 export function statusTone(status: string): "active" | "warning" | "critical" | "neutral" {
@@ -44,7 +44,7 @@ export function statusTone(status: string): "active" | "warning" | "critical" | 
 interface JobItemProps {
   job: JobRecord;
   isActive: boolean;
-  onClick: (uid: string) => void;
+  onClick: (id: string) => void;
 }
 
 function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
@@ -65,9 +65,9 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
   const technicianDisplay = job.technician_name?.trim() || "Pending Assignment";
 
   return (
-    <button type="button" className={isActive ? "job-item job-item--active" : "job-item"} onClick={() => onClick(job.job_uid)}>
+    <button type="button" className={isActive ? "job-item job-item--active" : "job-item"} onClick={() => onClick(job.job_id)}>
       <div className="job-item__top">
-        <strong>{job.job_uid}</strong>
+        <strong>{job.job_id}</strong>
         <span className={`status-chip status-chip--${statusTone(job.status)}`}>{JOB_STATUS_LABELS[job.status]}</span>
       </div>
       <span className="job-item__title">{job.title}</span>
@@ -89,12 +89,12 @@ const DEFAULT_STATUS_FILTER: StatusFilter = "open";
 
 interface JobListViewProps {
   jobs: JobRecord[];
-  selectedJobUid: string;
-  onSelectJob: (uid: string) => void;
+  selectedJobid: string;
+  onSelectJob: (id: string) => void;
   title: string;
 }
 
-export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobListViewProps): React.JSX.Element {
+export function JobListView({ jobs, selectedJobid, onSelectJob, title }: JobListViewProps): React.JSX.Element {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(DEFAULT_STATUS_FILTER);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -111,10 +111,10 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
     if (query !== "") {
       result = result.filter(
         (job) =>
-          job.job_uid.toLowerCase().includes(query) ||
+          job.job_id.toLowerCase().includes(query) ||
           job.title.toLowerCase().includes(query) ||
-          job.client_uid.toLowerCase().includes(query) ||
-          job.technician_uid.toLowerCase().includes(query) ||
+          job.client_id.toLowerCase().includes(query) ||
+          job.technician_id.toLowerCase().includes(query) ||
           (job.client_name ?? "").toLowerCase().includes(query) ||
           (job.technician_name ?? "").toLowerCase().includes(query)
       );
@@ -201,7 +201,7 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
               : "No jobs match the current filter. Adjust the search or status filter above."}
           </p>
         ) : (
-          filtered.map((job) => <JobItem key={job.job_uid} job={job} isActive={job.job_uid === selectedJobUid} onClick={onSelectJob} />)
+          filtered.map((job) => <JobItem key={job.job_id} job={job} isActive={job.job_id === selectedJobid} onClick={onSelectJob} />)
         )}
       </div>
     </section>

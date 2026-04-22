@@ -17,7 +17,7 @@ describe("contract: conflict response shape", () => {
           {
             mutation_id: "MUT-CONFLICT-1",
             kind: "job_status",
-            job_uid: "JOB-1001",
+            job_id: "JOB-1001",
             expected_row_version: 999,
             payload: {
               status: "performed"
@@ -52,6 +52,6 @@ describe("contract: conflict response shape", () => {
     expect(body.conflict.entity_id).toBe("JOB-1001");
     expect(body.conflict.client_row_version).toBe(999);
     expect(body.conflict.server_row_version).toBeGreaterThan(0);
-    expect(body.conflict.server_state.job_uid).toBe("JOB-1001");
+    expect(body.conflict.server_state.job_id).toBe("JOB-1001");
   });
 });

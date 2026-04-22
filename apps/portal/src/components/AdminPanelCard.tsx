@@ -8,12 +8,12 @@ interface AdminPanelCardProps {
   adminAutomationJobs: Array<Record<string, unknown>>;
   adminAuditCount: number;
   automationJobs: AutomationJobEntry[];
-  selectedAutomationJobUid: string;
-  setSelectedAutomationJobUid: (uid: string) => void;
+  selectedAutomationJobid: string;
+  setSelectedAutomationJobid: (id: string) => void;
   onLoadHealth: () => void;
   onLoadAudits: () => void;
   onLoadAutomationJobs: () => void;
-  onRetryAutomation: (uid: string) => void;
+  onRetryAutomation: (id: string) => void;
   onFeedback: (msg: string) => void;
   emulatedRole: Role | "";
   onEmulateRole: (role: Role | "") => void;
@@ -25,8 +25,8 @@ export function AdminPanelCard({
   adminAutomationJobs,
   adminAuditCount,
   automationJobs: _automationJobs,
-  selectedAutomationJobUid: _selectedAutomationJobUid,
-  setSelectedAutomationJobUid: _setSelectedAutomationJobUid,
+  selectedAutomationJobid: _selectedAutomationJobid,
+  setSelectedAutomationJobid: _setSelectedAutomationJobid,
   onLoadHealth,
   onLoadAudits,
   onLoadAutomationJobs,
@@ -94,10 +94,10 @@ export function AdminPanelCard({
             <p className="muted-copy">No automation jobs loaded.</p>
           ) : (
             adminAutomationJobs.map((job) => {
-              const uid = String(job.automation_job_uid);
+              const id = String(job.automation_job_id);
               const status = String(job.status);
               return (
-                <div key={uid} className="automation-row" style={{
+                <div key={id} className="automation-row" style={{
                   padding: "0.75rem",
                   background: "rgba(255,255,255,0.03)",
                   borderRadius: "8px",
@@ -107,7 +107,7 @@ export function AdminPanelCard({
                   border: "1px solid rgba(255,255,255,0.05)"
                 }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontWeight: 600, fontSize: "0.85rem" }}>{uid}</span>
+                    <span style={{ fontWeight: 600, fontSize: "0.85rem" }}>{id}</span>
                     <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>{String(job.action)}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -115,7 +115,7 @@ export function AdminPanelCard({
                       {status}
                     </span>
                     {status === "failed" ? (
-                      <button className="button button--ghost button--compact" onClick={() => onRetryAutomation(uid)}>
+                      <button className="button button--ghost button--compact" onClick={() => onRetryAutomation(id)}>
                         Retry
                       </button>
                     ) : null}
@@ -141,8 +141,8 @@ export function AdminPanelCard({
                 const hash = btoa(`${prevHash}:${payload}`).slice(0, 24);
                 const anomaly = typeof entry.action !== "string" || String(entry.action).trim() === "";
                 const row = (
-                  <div key={`${String(entry.audit_uid ?? index)}-${index}`} className="history-row">
-                    <strong>{String(entry.audit_uid ?? `AUD-${index}`)}</strong>
+                  <div key={`${String(entry.audit_id ?? index)}-${index}`} className="history-row">
+                    <strong>{String(entry.audit_id ?? `AUD-${index}`)}</strong>
                     <span>{String(entry.action ?? "unknown_action")}</span>
                     <span>{String(entry.at ?? entry.updated_at ?? "n/a")}</span>
                     <span className="history-row__url">{hash}</span>

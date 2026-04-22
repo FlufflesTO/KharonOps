@@ -5,12 +5,12 @@ describe("contract: super admin middleware access", () => {
   it("allows a super admin session through admin middleware surfaces", async () => {
     const app = makeTestApp();
     const cookie = await issueSessionCookie({
-      user_uid: "USR-SUPER-1",
+      user_id: "USR-SUPER-1",
       email: "super.admin@kharon.invalid",
       role: "super_admin",
       display_name: "Platform Command",
-      client_uid: "",
-      technician_uid: ""
+      client_id: "",
+      technician_id: ""
     });
 
     const response = await app.request("/api/v1/admin/health", {

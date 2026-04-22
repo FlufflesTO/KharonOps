@@ -17,7 +17,7 @@ describe("offline conflict resolution flow", () => {
           {
             mutation_id: "MUT-RESOLVE-1",
             kind: "job_status",
-            job_uid: "JOB-1001",
+            job_id: "JOB-1001",
             expected_row_version: 1,
             payload: { status: "draft" }
           }
@@ -38,7 +38,7 @@ describe("offline conflict resolution flow", () => {
           {
             mutation_id: "MUT-RESOLVE-2",
             kind: "job_note",
-            job_uid: "JOB-1001",
+            job_id: "JOB-1001",
             expected_row_version: 1,
             payload: { note: "queued note" }
           }
@@ -60,7 +60,7 @@ describe("offline conflict resolution flow", () => {
         "content-type": "application/json"
       },
       body: JSON.stringify({
-        job_uid: "JOB-1001",
+        job_id: "JOB-1001",
         strategy: "merge",
         server_row_version: conflictBody.conflict.server_row_version,
         client_row_version: 1,

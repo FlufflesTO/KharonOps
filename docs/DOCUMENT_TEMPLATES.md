@@ -23,20 +23,20 @@ These tokens are populated by default during document generation:
 - `{{brand_name}}`
 - `{{brand_short_name}}`
 - `{{brand_portal_name}}`
-- `{{document_uid}}`
+- `{{document_id}}`
 - `{{document_type}}`
 - `{{document_type_label}}`
 - `{{document_title}}`
-- `{{job_uid}}`
+- `{{job_id}}`
 - `{{job_reference}}`
 - `{{job_title}}`
 - `{{job_status}}`
 - `{{job_status_label}}`
-- `{{client_uid}}`
+- `{{client_id}}`
 - `{{client_display_name}}` — resolved from Clients_Master (primary) or Users_Master (fallback)
 - `{{client_email}}`
-- `{{site_uid}}`
-- `{{technician_uid}}`
+- `{{site_id}}`
+- `{{technician_id}}`
 - `{{technician_display_name}}` — resolved from Technicians_Master (primary) or Users_Master (fallback)
 - `{{technician_email}}`
 - `{{scheduled_start}}`
@@ -64,13 +64,13 @@ Caller-supplied tokens may still be passed and will override defaults when neede
 ### Jobcard
 
 - Branded masthead with logo, company identity, and document title
-- Reference band for job UID, site UID, client, technician, and current status
+- Reference band for job id, site id, client, technician, and current status
 - Scheduled service window
 - Job scope or work title
 - Work execution notes or instructions block
 - Technician sign-off block
 - Client acknowledgement block
-- Footer with document UID, generation timestamp, and page numbering
+- Footer with document id, generation timestamp, and page numbering
 
 ### Service report
 
@@ -82,7 +82,7 @@ Caller-supplied tokens may still be passed and will override defaults when neede
 - Evidence or attachment references section
 - Next actions / recommendations section
 - Approval or acknowledgement section
-- Footer with `{{document_uid}}` and `{{generated_at_display}}`
+- Footer with `{{document_id}}` and `{{generated_at_display}}`
 
 ## Next quality step
 

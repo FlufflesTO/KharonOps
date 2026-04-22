@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { canPublishDocument, canReadJob, canUpdateJobStatus, type JobRow, type SessionUser } from "@kharon/domain";
 
 const job: JobRow = {
-  job_uid: "JOB-1001",
-  client_uid: "CLI-001",
-  site_uid: "SITE-001",
-  technician_uid: "TECH-001",
+  job_id: "JOB-1001",
+  client_id: "CLI-001",
+  site_id: "SITE-001",
+  technician_id: "TECH-001",
   title: "Test",
   status: "draft",
   scheduled_start: "2026-04-09T00:00:00.000Z",
@@ -17,14 +17,14 @@ const job: JobRow = {
   correlation_id: "seed"
 };
 
-function user(role: SessionUser["role"], clientUid = "", techUid = ""): SessionUser {
+function user(role: SessionUser["role"], clientid = "", techid = ""): SessionUser {
   return {
-    user_uid: `${role}-1`,
+    user_id: `${role}-1`,
     email: `${role}@example.com`,
     role,
     display_name: role,
-    client_uid: clientUid,
-    technician_uid: techUid
+    client_id: clientid,
+    technician_id: techid
   };
 }
 

@@ -2,11 +2,11 @@ import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 
 const importSpec = [
-  { file: "users.json", table: "svr_users", key: "user_uid" },
-  { file: "jobs.json", table: "svr_jobs", key: "job_uid" },
-  { file: "job_documents.json", table: "svr_job_documents", key: "document_uid" },
-  { file: "schedule_requests.json", table: "svr_schedule_requests", key: "request_uid" },
-  { file: "schedules.json", table: "svr_schedules", key: "schedule_uid" }
+  { file: "users.json", table: "svr_users", key: "user_id" },
+  { file: "jobs.json", table: "svr_jobs", key: "job_id" },
+  { file: "job_documents.json", table: "svr_job_documents", key: "document_id" },
+  { file: "schedule_requests.json", table: "svr_schedule_requests", key: "request_id" },
+  { file: "schedules.json", table: "svr_schedules", key: "schedule_id" }
 ];
 
 function resolveConnectionString() {
