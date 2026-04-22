@@ -8,3 +8,4 @@ coverage/
 *.tfstate.backup
 .terraform/
 *.tfvars
+desktop.ini
