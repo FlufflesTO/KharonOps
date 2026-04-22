@@ -502,11 +502,28 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
     const jobs = await store.listJobsForUser(user);
+    const users = await store.listUsers();
+    const technicianNameByUid = new Map(
+      users
+        .filter((row) => row.active === "true" && row.role === "technician" && row.technician_uid.trim() !== "")
+        .map((row) => [row.technician_uid, row.display_name] as const)
+    );
+    const clientNameByUid = new Map(
+      users
+        .filter((row) => row.active === "true" && row.role === "client" && row.client_uid.trim() !== "")
+        .map((row) => [row.client_uid, row.display_name] as const)
+    );
+
+    const enrichedJobs = jobs.map((job) => ({
+      ...job,
+      client_name: clientNameByUid.get(job.client_uid) ?? "",
+      technician_name: technicianNameByUid.get(job.technician_uid) ?? ""
+    }));
 
     return c.json(
       envelopeSuccess({
         correlationId,
-        data: jobs
+        data: enrichedJobs
       })
     );
   });

@@ -17,6 +17,8 @@ export interface JobRecord {
   row_version: number;
   client_uid: string;
   technician_uid: string;
+  client_name?: string;
+  technician_name?: string;
   last_note: string;
   active_request_uid?: string;
   active_document_uid?: string;
@@ -59,6 +61,9 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
     return Math.min(99, baseByStatus[job.status] + noteBoost);
   })();
 
+  const clientDisplay = job.client_name?.trim() || "Client Not Assigned";
+  const technicianDisplay = job.technician_name?.trim() || "Technician Pending";
+
   return (
     <button type="button" className={isActive ? "job-item job-item--active" : "job-item"} onClick={() => onClick(job.job_uid)}>
       <div className="job-item__top">
@@ -67,10 +72,10 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
       </div>
       <span className="job-item__title">{job.title}</span>
       <span className="job-item__meta">
-        client {job.client_uid || "unassigned"} | tech {job.technician_uid || "pending"}
+        Client {clientDisplay} | Tech {technicianDisplay}
       </span>
       <span className="job-item__meta">
-        risk score {riskScore}
+        Risk Score {riskScore}
       </span>
     </button>
   );
@@ -106,7 +111,9 @@ export function JobListView({ jobs, selectedJobUid, onSelectJob, title }: JobLis
           job.job_uid.toLowerCase().includes(query) ||
           job.title.toLowerCase().includes(query) ||
           job.client_uid.toLowerCase().includes(query) ||
-          job.technician_uid.toLowerCase().includes(query)
+          job.technician_uid.toLowerCase().includes(query) ||
+          (job.client_name ?? "").toLowerCase().includes(query) ||
+          (job.technician_name ?? "").toLowerCase().includes(query)
       );
     }
 

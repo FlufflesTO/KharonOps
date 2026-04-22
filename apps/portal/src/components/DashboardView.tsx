@@ -130,6 +130,14 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
 
         <DashSection title="Dispatch">
           <ActionCard
+            icon={ICONS.jobs}
+            label="Job Workspace"
+            description="Open job details, notes, and document generation context."
+            onClick={() => onEnterWorkspace("jobs")}
+            accent="blue"
+            badge={openJobCount}
+          />
+          <ActionCard
             icon={ICONS.dispatch}
             label="Job Queue"
             description="Assign and schedule open engagements."
@@ -263,6 +271,14 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
             description="Review quoting, invoicing, debtors, and statements."
             onClick={() => onEnterWorkspace("finance")}
             accent="green"
+          />
+          <ActionCard
+            icon={ICONS.jobs}
+            label="Job Portfolio"
+            description="Review operational job context linked to financial workflows."
+            onClick={() => onEnterWorkspace("jobs")}
+            accent="blue"
+            badge={openJobCount}
           />
           <ActionCard
             icon={ICONS.documents}

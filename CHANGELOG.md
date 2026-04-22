@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-04-22
+
+### Changed
+- **Jobs List Readability and Naming** (`apps/api/src/index.ts`, `apps/portal/src/components/JobListView.tsx`, `apps/portal/src/App.tsx`, `apps/portal/src/styles.css`):
+  - Enriched job list payloads with `client_name` and `technician_name` and updated tiles to display human-readable names instead of raw UID-only labels.
+  - Renamed sidebar header from `Operational Engagements` to `Jobs List` for clearer user-facing language.
+  - Tightened tile overflow/wrapping behavior to prevent text bleed outside card bounds.
+- **Role Dashboard Coverage** (`apps/portal/src/components/DashboardView.tsx`):
+  - Added missing job workspace entry points for dispatcher and finance dashboards so role-applicable functions are discoverable from dashboard.
+
+### Fixed
+- **Document Generation Retry Noise** (`apps/portal/src/App.tsx`):
+  - Added stale selection guard for `/api/v1/documents/generate` failures where selected `job_uid` is no longer found, with automatic job refresh and actionable feedback instead of repeated failing requests.
+
 ## [1.5.0] - 2026-04-22
 
 ### Added

@@ -39,6 +39,8 @@ function asJob(record: Record<string, unknown>): JobRecord {
     row_version: Number(record.row_version ?? 0),
     client_uid: String(record.client_uid ?? ""),
     technician_uid: String(record.technician_uid ?? ""),
+    client_name: String(record.client_name ?? ""),
+    technician_name: String(record.technician_name ?? ""),
     last_note: String(record.last_note ?? ""),
     // Metadata preservation for contextual dispatch
     active_request_uid: String(record.active_request_uid ?? ""),
@@ -190,6 +192,12 @@ export function PortalApp(): React.JSX.Element {
   const canGenerateDocuments = effectiveRole === "technician" || effectiveRole === "dispatcher" || effectiveRole === "super_admin";
   const isAdmin = effectiveRole === "admin" || effectiveRole === "super_admin";
   const isSuperAdmin = effectiveRole === "super_admin";
+  const showOperationalEngagements =
+    activeWorkspaceTool === "jobs" ||
+    activeWorkspaceTool === "schedule" ||
+    activeWorkspaceTool === "documents" ||
+    activeWorkspaceTool === "comms" ||
+    activeWorkspaceTool === "finance";
 
   const selectedJob = useMemo(() => jobs.find((job) => job.job_uid === selectedJobUid) ?? null, [jobs, selectedJobUid]);
   const selectableStatuses = useMemo<JobStatus[]>(
@@ -755,17 +763,32 @@ export function PortalApp(): React.JSX.Element {
     if (!selectedJob) {
       return;
     }
+    const jobUid = selectedJob.job_uid.trim();
+    if (jobUid === "") {
+      setFeedback("Document generation requires a valid job selection.");
+      return;
+    }
     if (!canGenerateDocuments || documentAccessDenied) {
       setFeedback("Document generation is disabled for this role/account.");
       return;
     }
 
-    const response = await apiClient.generateDocument(selectedJob.job_uid, documentType, checklistData);
+    let response: Awaited<ReturnType<typeof apiClient.generateDocument>>;
+    try {
+      response = await apiClient.generateDocument(jobUid, documentType, checklistData);
+    } catch (error) {
+      if (errorCode(error) === "not_found") {
+        await refreshJobs();
+        setFeedback("Selected job was not found on the server. Job list refreshed; select a valid job and retry.");
+        return;
+      }
+      throw error;
+    }
     const generatedDocumentUid = String(response.data?.document_uid ?? "");
 
-    await refreshDocuments(selectedJob.job_uid);
+    await refreshDocuments(jobUid);
     if (isDispatchRole) {
-      await refreshDispatchContext(selectedJob.job_uid);
+      await refreshDispatchContext(jobUid);
     }
     if (generatedDocumentUid) {
       setSelectedDocumentUid(generatedDocumentUid);
@@ -933,15 +956,17 @@ export function PortalApp(): React.JSX.Element {
         </div>
       </header>
 
-      <div className="portal-layout">
-        <aside className="portal-sidebar">
-          <JobListView
-            jobs={jobs}
-            selectedJobUid={selectedJobUid}
-            onSelectJob={setSelectedJobUid}
-            title="Operational Engagements"
-          />
-        </aside>
+      <div className={`portal-layout ${showOperationalEngagements ? "" : "portal-layout--no-sidebar"}`}>
+        {showOperationalEngagements ? (
+          <aside className="portal-sidebar">
+            <JobListView
+              jobs={jobs}
+              selectedJobUid={selectedJobUid}
+              onSelectJob={setSelectedJobUid}
+              title="Jobs List"
+            />
+          </aside>
+        ) : null}
 
         <main className="portal-main">
             <SummaryBoard
