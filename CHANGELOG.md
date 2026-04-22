@@ -2,6 +2,25 @@
 
 All notable changes to the KharonOps project are documented in this file.
 
+## [Unreleased] - 2026-04-23
+
+### [Added]
+- `scripts/workbook-governance.mjs` automation for workbook auditing and repair.
+- npm commands:
+  - `npm run workbook:audit`
+  - `npm run workbook:fix`
+- Google Sheets 429 retry/backoff handling in workbook governance automation.
+
+### [Changed]
+- Workbook governance fix mode now auto-provisions missing technician master rows from active `Users_Master` technician records, then syncs generated `TECH-###` IDs back to users.
+
+### [Fixed]
+- Applied production workbook remediation:
+  - mapped legacy technician IDs in `Users_Master` to canonical `TECH-###`
+  - resolved duplicate `Users_Master.user_uid`
+  - backfilled empty `Jobs_Master.job_status` cells
+  - created missing technician record and linked it back to `Users_Master`
+
 ## [Unreleased] — 2026-04-22
 
 ### [Added]
@@ -33,3 +52,5 @@ All notable changes to the KharonOps project are documented in this file.
 - `DOCUMENT_TEMPLATES.md` — annotated `client_display_name` and `technician_display_name` tokens with source hierarchy.
 - `SECURITY_MODEL.md` — added system actor UID naming convention.
 - Created `CHANGELOG.md`.
+
+

@@ -205,3 +205,29 @@ node scripts/migrate-workbook.mjs
 ```
 
 The migration script ensures tabs and headers exist in the workbook.
+
+## Workbook Governance Automation
+
+Run audit only:
+
+```bash
+npm run workbook:audit
+```
+
+Apply automated fixes:
+
+```bash
+npm run workbook:fix
+```
+
+Fix scope:
+- Align active technician `Users_Master.technician_uid` values to canonical `Technicians_Master.technician_id` values (`TECH-###`) by display-name match.
+- Resolve duplicate `Users_Master.user_uid` values by deterministic suffixing (`-2`, `-3`, ...).
+- Backfill empty `Jobs_Master.job_status` using the same normalization logic used by API parsing.
+- Auto-create missing `Technicians_Master` rows for unmatched active technician users and map their `technician_uid` values.
+
+Production remediation executed on 2026-04-23 (Africa/Johannesburg):
+- 4 technician UID mappings corrected in `Users_Master`.
+- 1 duplicate `user_uid` resolved.
+- 83 `Jobs_Master.job_status` values backfilled.
+- 1 technician auto-created in `Technicians_Master` (`TECH-009`) and synced back to `Users_Master`.

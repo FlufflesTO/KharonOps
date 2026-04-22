@@ -69,6 +69,20 @@ function parseJobStatus(row) {
   return "draft";
 }
 
+function nextTechId(existingIds) {
+  let max = 0;
+  for (const id of existingIds) {
+    const match = /^TECH-(\d{3})$/.exec(id);
+    if (!match) continue;
+    const value = Number(match[1]);
+    if (Number.isFinite(value) && value > max) {
+      max = value;
+    }
+  }
+  const next = max + 1;
+  return `TECH-${String(next).padStart(3, "0")}`;
+}
+
 async function main() {
   const apply = process.argv.includes("--apply");
   const env = parseEnvFile(".env");
@@ -101,7 +115,7 @@ async function main() {
     ["https://www.googleapis.com/auth/spreadsheets"]
   );
 
-  async function api(url, init) {
+  async function api(url, init, attempt = 0) {
     const response = await fetch(url, {
       ...init,
       headers: {
@@ -115,6 +129,11 @@ async function main() {
       payload = JSON.parse(text);
     } catch {
       payload = { raw: text };
+    }
+    if (response.status === 429 && attempt < 6) {
+      const delayMs = 500 * 2 ** attempt;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return api(url, init, attempt + 1);
     }
     if (!response.ok) {
       throw new Error(`${response.status} ${response.statusText} ${JSON.stringify(payload)}`);
@@ -165,11 +184,13 @@ async function main() {
   }
 
   const techByName = new Map();
+  const existingTechIds = new Set();
   for (const row of techSheet.rows) {
     const techId = normalizeText(row.data.technician_id || row.data.technician_uid);
     const display = normalizeText(row.data.display_name || row.data.technician_name);
     if (techId && display) {
       techByName.set(normalizeName(display), techId);
+      existingTechIds.add(techId);
     }
   }
 
@@ -287,6 +308,55 @@ async function main() {
       technician_uid: normalizeText(row.data.technician_uid)
     }));
 
+  const createdTechnicians = [];
+  const techUidCol = usersSheet.headerMap.get("technician_uid");
+  if (apply && unresolvedTechUsers.length > 0) {
+    const techHeaders = techSheet.headers;
+    const rowsToAppend = [];
+    for (const unresolved of unresolvedTechUsers) {
+      const generatedTechId = nextTechId(existingTechIds);
+      existingTechIds.add(generatedTechId);
+      techByName.set(normalizeName(unresolved.display_name), generatedTechId);
+      createdTechnicians.push({
+        user_uid: unresolved.user_uid,
+        display_name: unresolved.display_name,
+        created_technician_id: generatedTechId
+      });
+
+      const rowData = techHeaders.map((header) => {
+        if (header === "technician_id" || header === "technician_uid") return generatedTechId;
+        if (header === "technician_name" || header === "display_name") return unresolved.display_name;
+        if (header === "active_flag" || header === "active") return "TRUE";
+        if (header === "row_version") return "1";
+        if (header === "updated_at") return new Date().toISOString();
+        if (header === "updated_by") return "workbook-governance";
+        if (header === "correlation_id") return `workbook-governance:${Date.now()}`;
+        return "";
+      });
+      rowsToAppend.push(rowData);
+
+      if (techUidCol !== undefined) {
+        updateCells.push({
+          range: `'Users_Master'!${columnToA1(techUidCol)}${unresolved.row}`,
+          value: generatedTechId
+        });
+      }
+    }
+
+    if (rowsToAppend.length > 0) {
+      const appendRange = encodeURIComponent("'Technicians_Master'!A:ZZ");
+      await api(`https://sheets.googleapis.com/v4/spreadsheets/${workbookId}/values/${appendRange}:append?valueInputOption=RAW`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          values: rowsToAppend
+        })
+      });
+    }
+  }
+
   const schemaSummary = [];
   for (const [name, sheet] of sheets.entries()) {
     const expected = WORKBOOK_HEADERS[name] ?? null;
@@ -329,13 +399,14 @@ async function main() {
       jobsStatusBackfilled: jobStatusChanges.length
     },
     unresolved: {
-      usersTechniciansWithoutTechMasterMatch: unresolvedTechUsers
+      usersTechniciansWithoutTechMasterMatch: apply ? [] : unresolvedTechUsers
     },
     changes: {
       usersTechnicianUid: techUidChanges,
       duplicateUserUid: duplicateUidChanges,
       jobsPrimaryTechnicianId: jobTechIdChanges.slice(0, 100),
-      jobsStatus: jobStatusChanges.slice(0, 100)
+      jobsStatus: jobStatusChanges.slice(0, 100),
+      techniciansCreatedFromUsers: createdTechnicians
     },
     schema: schemaSummary
   };

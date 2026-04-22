@@ -106,6 +106,19 @@ npm run deploy:worker
 npm run deploy:public
 ```
 
+Workbook governance:
+
+```bash
+npm run workbook:audit
+npm run workbook:fix
+```
+
+`workbook:fix` normalizes workbook identity/status quality for portal compatibility, including:
+- technician UID mapping in `Users_Master` -> canonical `TECH-###`
+- duplicate `user_uid` conflict resolution
+- `Jobs_Master.job_status` backfill where empty
+- optional technician auto-provisioning into `Technicians_Master` when active technician users have no master record
+
 Staging:
 
 ```bash
