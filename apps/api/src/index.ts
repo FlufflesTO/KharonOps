@@ -346,7 +346,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
 
-    console.error(`[API Error] ${correlationId}:`, error);
+    console.error(`[API Error] ${correlationId}:`, error instanceof Error ? error.stack : error);
 
     return c.json(
       envelopeError({
@@ -1676,7 +1676,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const users = await store.listUsers();
     const activeUsers = users
       .filter((row) => row.active === "true")
-      .sort((a, b) => a.display_name.localeCompare(b.display_name));
+      .sort((a, b) => (a.display_name || "").localeCompare(b.display_name || ""));
     await putCachedJson(c.env, cacheKey, activeUsers, 60);
 
     return c.json(

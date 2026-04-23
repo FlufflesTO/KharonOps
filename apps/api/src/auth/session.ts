@@ -84,20 +84,25 @@ export async function verifySessionToken(args: {
   const unsigned = `${header}.${payload}`;
 
   for (const signingKey of args.signingKeys) {
-    const computedSignature = await sign(unsigned, signingKey);
-    if (computedSignature === providedSignature) {
-      const parsed = JSON.parse(base64UrlDecode(payload)) as SessionPayload;
-      if (parsed.exp <= Math.floor(Date.now() / 1_000)) {
-        return null;
+    try {
+      const computedSignature = await sign(unsigned, signingKey);
+      if (computedSignature === providedSignature) {
+        const parsed = JSON.parse(base64UrlDecode(payload)) as SessionPayload;
+        if (parsed.exp <= Math.floor(Date.now() / 1_000)) {
+          return null;
+        }
+        return {
+          user_id: parsed.user_id,
+          email: parsed.email,
+          role: parsed.role,
+          display_name: parsed.display_name,
+          client_id: parsed.client_id,
+          technician_id: parsed.technician_id
+        };
       }
-      return {
-        user_id: parsed.user_id,
-        email: parsed.email,
-        role: parsed.role,
-        display_name: parsed.display_name,
-        client_id: parsed.client_id,
-        technician_id: parsed.technician_id
-      };
+    } catch {
+      // If parsing fails for one key, continue to next key or return null
+      continue;
     }
   }
 
