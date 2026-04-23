@@ -60,55 +60,63 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
   }
 
   return (
-    <div className="side-sheet glass-panel">
+    <div className="side-sheet glass-panel" role="complementary" aria-label="Job details panel">
       <div className="side-sheet__content">
         
         {/* Header Section */}
-        <header className="detail-header">
+        <header className="detail-header" role="banner">
           <div className="title-block">
             <span className="eyebrow">RECORD: {selectedJob.job_id}</span>
-            <h1 className="truncate">{selectedJob.title}</h1>
+            <h1 className="truncate" id="job-detail-title">{selectedJob.title}</h1>
           </div>
-          <div className={`status-badge status-badge--${statusTone(selectedJob.status)}`}>
+          <div className={`status-badge status-badge--${statusTone(selectedJob.status)}`} role="status" aria-live="polite">
             {selectedJob.status}
           </div>
         </header>
 
         {/* Telemetry Grid */}
-        <section className="detail-section">
-          <div className="telemetry-grid">
-            <div className="telemetry-cell">
-              <label>Client Reference</label>
-              <div className="val truncate">{selectedJob.client_name || "N/A"}</div>
+        <section className="detail-section" aria-labelledby="telemetry-heading">
+          <h2 id="telemetry-heading" className="sr-only">Job Telemetry Information</h2>
+          <div className="telemetry-grid" role="list">
+            <div className="telemetry-cell" role="listitem">
+              <label id="client-label">Client Reference</label>
+              <div className="val truncate" aria-labelledby="client-label">{selectedJob.client_name || "N/A"}</div>
             </div>
-            <div className="telemetry-cell">
-              <label>Assigned Resource</label>
-              <div className="val truncate">{selectedJob.technician_name || "Unassigned"}</div>
+            <div className="telemetry-cell" role="listitem">
+              <label id="resource-label">Assigned Resource</label>
+              <div className="val truncate" aria-labelledby="resource-label">{selectedJob.technician_name || "Unassigned"}</div>
             </div>
-            <div className="telemetry-cell">
-              <label>System Version</label>
-              <div className="val mono">v{selectedJob.row_version}</div>
+            <div className="telemetry-cell" role="listitem">
+              <label id="version-label">System Version</label>
+              <div className="val mono" aria-labelledby="version-label">v{selectedJob.row_version}</div>
             </div>
-            <div className="telemetry-cell">
-              <label>Last Updated</label>
-              <div className="val">{new Date(selectedJob.updated_at || "").toLocaleDateString()}</div>
+            <div className="telemetry-cell" role="listitem">
+              <label id="updated-label">Last Updated</label>
+              <div className="val" aria-labelledby="updated-label">{new Date(selectedJob.updated_at || "").toLocaleDateString()}</div>
             </div>
           </div>
         </section>
 
         {/* Primary Controls */}
-        <section className="detail-section command-center">
+        <section className="detail-section command-center" aria-labelledby="controls-heading">
+          <h2 id="controls-heading" className="eyebrow">Primary Controls</h2>
           <div className="control-group">
-            <label className="eyebrow">GOVERNANCE UPDATE</label>
+            <label className="eyebrow" id="governance-label">GOVERNANCE UPDATE</label>
             <div className="input-stack">
               <div className="combo-input">
-                <select value={statusTarget} onChange={(e) => setStatusTarget(e.target.value as JobStatus)}>
+                <select 
+                  value={statusTarget} 
+                  onChange={(e) => setStatusTarget(e.target.value as JobStatus)}
+                  aria-labelledby="governance-label"
+                  className="input"
+                >
                   {selectableStatuses.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <button 
                   className="btn-primary" 
                   onClick={onStatusUpdate}
                   disabled={statusTarget === selectedJob.status}
+                  aria-label={`Transition job status to ${statusTarget}`}
                 >
                   Confirm Transition
                 </button>
@@ -117,17 +125,25 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
           </div>
 
           <div className="control-group">
-            <label className="eyebrow">APPEND COMMENTARY</label>
+            <label className="eyebrow" id="commentary-label">APPEND COMMENTARY</label>
             <div className="note-input-wrapper">
               <textarea 
                 placeholder="Type forensic note..."
                 value={noteValue}
                 onChange={(e) => setNoteValue(e.target.value)}
+                aria-labelledby="commentary-label"
+                aria-describedby="note-help"
+                rows={4}
+                className="input"
+                maxLength={500}
               />
+              <span id="note-help" className="sr-only">Add detailed notes about job progress or issues. Maximum 500 characters.</span>
+              <div className="char-counter" aria-live="polite">{noteValue.length}/500</div>
               <button 
                 className="btn-secondary" 
                 onClick={onNote}
                 disabled={!noteValue.trim()}
+                aria-label="Commit note to job record"
               >
                 Commit Note
               </button>
@@ -136,11 +152,17 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
         </section>
 
         {/* Document Generation */}
-        <section className="detail-section">
+        <section className="detail-section" aria-labelledby="documents-heading">
+          <h2 id="documents-heading" className="eyebrow">Compliance & Evidence Generation</h2>
           <div className="control-group">
-            <label className="eyebrow">COMPLIANCE & EVIDENCE GENERATION</label>
+            <label className="eyebrow" id="document-type-label">DOCUMENT TYPE</label>
             <div className="combo-input">
-              <select value={props.documentType} onChange={(e) => props.setDocumentType(e.target.value as DocumentType)}>
+              <select 
+                value={props.documentType} 
+                onChange={(e) => props.setDocumentType(e.target.value as DocumentType)}
+                aria-labelledby="document-type-label"
+                className="input"
+              >
                 <option value="jobcard">Internal Jobcard</option>
                 <option value="service_report">SANS Service Report</option>
                 <option value="certificate">Certificate of Compliance</option>
