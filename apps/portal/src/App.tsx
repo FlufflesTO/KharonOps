@@ -55,6 +55,7 @@ import { ClientOverviewCard } from "./components/ClientOverviewCard";
 import { ClientInvoicesCard } from "./components/ClientInvoicesCard";
 import { ClientSupportCard } from "./components/ClientSupportCard";
 import { PortalChrome } from "./components/PortalChrome";
+import { PortalWorkspace } from "./components/PortalWorkspace";
 import {
  renderComplianceDocument } from "./appShell/renderComplianceDocument";
 import {
@@ -1184,455 +1185,113 @@ export function PortalApp(): React.JSX.Element {
         primaryTools={primaryTools}
         moreTools={moreTools}
       >
-
-        {showOperationalEngagements ? (
-          <aside className="portal-sidebar portal-sidebar--jobs">
-            <JobListView
-              jobs={filteredJobs}
-              selectedJobid={selectedJobid}
-              onSelectJob={setSelectedJobid}
-              
-              globalQuery={searchTerm}
-              onGlobalQueryChange={setSearchTerm}
-              onBulkStatusUpdate={(ids: string[], status: JobStatus) => runAction(() => handleBulkStatusUpdate(ids, status))}
-              title="Jobs List"
-            />
-          </aside>
-        ) : null}
-
-        <main className="portal-main">
-          <section className="workspace-header-card">
-            <h1>{activeToolMeta.label}</h1>
-            <p>{activeToolMeta.helper.replace("documents", COPY_GLOSSARY.documents.toLowerCase())}</p>
-            <div className="workspace-header-card__actions">
-              <input
-                type="search"
-                id="workspace-global-search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search jobs, clients, sites, IDs..."
-                aria-label="Search across workspace data"
-              />
-            </div>
-          </section>
-
-          {notifications.length > 0 ? (
-            <section className="notification-center" aria-live="polite">
-              {notifications.map((item) => (
-                <article key={item.id} className="notification-card">
-                  <span className={`status-chip status-chip--${item.tone}`}>{item.title}</span>
-                  <p>{item.detail}</p>
-                  <button className="button button--ghost" type="button" onClick={() => setDismissedNotifications((prev) => [...prev, item.id])}>
-                    Dismiss
-                  </button>
-                </article>
-              ))}
-              <button className="button button--secondary" type="button" onClick={() => setDismissedNotifications(notifications.map((item) => item.id))}>
-                Dismiss all
-              </button>
-            </section>
-          ) : null}
-
-          {actionPending ? <p className="inline-note">Loading latest updates…</p> : null}
-          {/failed|error|unavailable/i.test(feedback) ? <p className="inline-note">Action could not complete. Check connection and try again.</p> : null}
-
-          <SummaryBoard
-            role={effectiveRole || "client"}
-            openJobCount={openJobCount}
-            selectedJobStatus={selectedJobStatus}
-            queueCount={queueCount}
-            generatedDocumentCount={generatedDocumentCount}
-            adminAuditCount={adminAuditCount}
-            networkOnline={networkOnline}
-            syncPulseText={syncPulseText}
-          />
-
-
-          <section className={`workspace-container ${activeWorkspaceTool === "jobs" && selectedJobid ? "workspace-container--split" : ""}`}>
-            {activeWorkspaceTool === "tech_day" && effectiveRole === "technician" ? (
-              <TechMyDayCard 
-                jobs={jobs} 
-                onSelectJob={setSelectedJobid}
-                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "tech_checkin" && effectiveRole === "technician" ? (
-              <TechCheckInOutCard 
-                selectedJob={selectedJob} 
-                onUpdateStatus={(status) => runAction(async () => {
-                  await apiClient.updateStatus(selectedJob?.job_id ?? "", status, selectedJob?.row_version ?? 0);
-                })}
-                onVerifyLocation={() => runAction(handleVerifyLocation)}
-                geoStatus={geoVerification.status}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "tech_help" && effectiveRole === "technician" ? (
-              <TechHelpCard />
-            ) : null}
-
-            {activeWorkspaceTool === "admin_dashboard" && (isAdmin || isSuperAdmin) ? (
-              <AdminDashboard 
-                opsIntelligence={opsIntelligence} 
-                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
-                isLoading={actionPending}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "dispatch_dashboard" && isDispatchRole ? (
-              <DispatchDashboardCard 
-                opsIntelligence={opsIntelligence} 
-                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
-                isLoading={actionPending}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "dispatch_unassigned" && isDispatchRole ? (
-              <DispatchUnassignedCard 
-                jobs={jobs} 
-                onSelectJob={setSelectedJobid}
-                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "dispatch_daily" && isDispatchRole ? (
-              <DispatchDailyPlanCard jobs={jobs} opsIntelligence={opsIntelligence} />
-            ) : null}
-
-            {activeWorkspaceTool === "client_overview" && effectiveRole === "client" ? (
-              <ClientOverviewCard 
-                jobs={jobs} 
-                store={upgradeState}
-                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "client_invoices" && effectiveRole === "client" ? (
-              <ClientInvoicesCard store={upgradeState} />
-            ) : null}
-
-            {activeWorkspaceTool === "client_support" && effectiveRole === "client" ? (
-              <ClientSupportCard />
-            ) : null}
-
-            {activeWorkspaceTool === "jobs" ? (
-              <JobDetailView
-                selectedJob={selectedJob}
-                role={effectiveRole ?? "client"}
-                selectableStatuses={selectableStatuses}
-                statusTarget={statusTarget}
-                setStatusTarget={setStatusTarget}
-                noteValue={noteValue}
-                setNoteValue={setNoteValue}
-                onStatusUpdate={() => runAction(handleStatusUpdate)}
-                onNote={() => runAction(handleNote)}
-                preferredStart={preferredStart}
-                setPreferredStart={setPreferredStart}
-                preferredEnd={preferredEnd}
-                setPreferredEnd={setPreferredEnd}
-                onScheduleRequest={() => runAction(handleScheduleRequest)}
-                documentType={documentType}
-                setDocumentType={setDocumentType}
-                onDocumentGenerate={() => runAction(handleDocumentGenerate)}
-                canGenerateDocuments={canGenerateDocuments && !documentAccessDenied}
-                documentGenerateDisabledReason={
-                  canGenerateDocuments
-                    ? "Document APIs are currently unavailable for this account. Contact an administrator to restore access."
-                    : "This role can review job status and notes, but cannot generate documents."
-                }
-                onChecklistChange={setChecklistData}
-                selectedJobTitle="Job Detail"
-                documentCountForJob={selectedJobDocumentCount}
-                geoVerification={geoVerification}
-                onVerifyLocation={handleVerifyLocation}
-                syncPulseText={syncPulseText}
-                events={jobEvents}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "schedule" && isDispatchRole && !dispatchAccessDenied ? (
-              <ScheduleControlCard
-                selectedJobid={selectedJob?.job_id ?? ""}
-                preferredStart={preferredStart}
-                setPreferredStart={setPreferredStart}
-                preferredEnd={preferredEnd}
-                setPreferredEnd={setPreferredEnd}
-                requests={dispatchRequests}
-                selectedRequestid={selectedRequestid}
-                setSelectedRequestid={setSelectedRequestid}
-                confirmStart={confirmStart}
-                setConfirmStart={setConfirmStart}
-                confirmEnd={confirmEnd}
-                setConfirmEnd={setConfirmEnd}
-                confirmTechid={confirmTechid}
-                setConfirmTechid={setConfirmTechid}
-                technicians={technicians}
-                schedules={dispatchSchedules}
-                selectedScheduleid={selectedScheduleid}
-                setSelectedScheduleid={setSelectedScheduleid}
-                rescheduleStart={rescheduleStart}
-                setRescheduleStart={setRescheduleStart}
-                rescheduleEnd={rescheduleEnd}
-                setRescheduleEnd={setRescheduleEnd}
-                rescheduleRowVersion={rescheduleRowVersion}
-                setRescheduleRowVersion={setRescheduleRowVersion}
-                documents={dispatchDocuments}
-                selectedDocumentid={selectedDocumentid}
-                setSelectedDocumentid={setSelectedDocumentid}
-                onScheduleRequest={() => runAction(handleScheduleRequest)}
-                onScheduleConfirm={() => runAction(handleScheduleConfirm)}
-                onReschedule={() => runAction(handleReschedule)}
-                onDocumentPublish={() => runAction(handleDocumentPublish)}
-                onFeedback={setFeedback}
-
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "comms" && isDispatchRole ? (
-              <CommunicationRailsCard
-                selectedJobid={selectedJob?.job_id ?? ""}
-                selectedJobTitle={selectedJob?.title ?? ""}
-                onFeedback={setFeedback}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "admin" ? (
-              isAdmin && !isSuperAdmin ? (
-                <AdminSettingsCard
-                  session={session}
-                  defaultWorkspaceTool={defaultWorkspaceTool}
-                  pinnedTools={pinnedTools}
-                  onboardingDismissed={onboardingDismissed}
-                  allowedWorkspaceTools={allowedWorkspaceTools}
-                  onSavePreferences={({ defaultWorkspaceTool: nextTool, pinnedTools: nextPinnedTools, onboardingDismissed: nextOnboardingDismissed }) => {
-                    setDefaultWorkspaceTool(nextTool);
-                    setPinnedTools(nextPinnedTools);
-                    setOnboardingDismissed(nextOnboardingDismissed);
-                  }}
-                />
-              ) : isSuperAdmin ? (
-                <AdminPanelCard
-                  adminHealth={adminHealth}
-                  adminAudits={adminAudits}
-                  adminAutomationJobs={adminAutomationJobs}
-                  adminAuditCount={adminAuditCount}
-                  automationJobs={automationJobs}
-                  selectedAutomationJobid={selectedAutomationJobid}
-                  setSelectedAutomationJobid={setSelectedAutomationJobid}
-                  onLoadHealth={() => runAction(loadAdminHealth)}
-                  onLoadAudits={() => runAction(loadAdminAudits)}
-                  onLoadAutomationJobs={() => runAction(loadAdminAutomationJobs)}
-                  onRetryAutomation={(id) => runAction(() => handleRetryAutomation(id))}
-                  onFeedback={setFeedback}
-                  emulatedRole={emulatedRole}
-                  onEmulateRole={(role) => {
-                    setEmulatedRole(role);
-                    setActiveWorkspaceTool("jobs");
-                    setPortalView("dashboard");
-                  }}
-                  schemaDrift={schemaDrift}
-                  opsIntelligence={opsIntelligence}
-                  onLoadSchemaDrift={() => runAction(loadSchemaDrift)}
-                  onLoadOpsIntelligence={() => runAction(loadOpsIntelligence)}
-                />
-              ) : null
-            ) : null}
-
-
-            {activeWorkspaceTool === "sa_overview" && isSuperAdmin ? (
-              <SuperAdminOverview 
-                opsIntelligence={opsIntelligence} 
-                onRefresh={() => runAction(loadOpsIntelligence)}
-                isLoading={actionPending}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "sa_users" && isSuperAdmin ? (
-              <PeopleDirectoryCard
-                people={peopleDirectory}
-                skillsState={upgradeState.skills}
-                onUpsertSkill={(payload: SkillMatrixRecord) =>
-                  runAction(async () => {
-                    await apiClient.upsertSkillMatrix(payload);
-                    await refreshUpgradeWorkspaceState();
-                  })
-                }
-                onSync={(payload) => handlePeopleSync(payload)}
-                onFeedback={setFeedback}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "sa_units" && isSuperAdmin ? (
-              <SuperAdminBusinessUnits />
-            ) : null}
-
-            {activeWorkspaceTool === "sa_checks" && isSuperAdmin ? (
-              <SuperAdminDataChecks 
-                schemaDrift={schemaDrift} 
-                onRefresh={() => runAction(loadSchemaDrift)}
-                isLoading={actionPending}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "sa_automations" && isSuperAdmin ? (
-              <SuperAdminAutomations 
-                automationJobs={adminAutomationJobs} 
-                onRefresh={() => runAction(loadAdminAutomationJobs)}
-                onRetry={(id) => runAction(() => handleRetryAutomation(id))}
-                isLoading={actionPending}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "sa_health" && isSuperAdmin ? (
-              <SuperAdminSystemHealth 
-                adminHealth={adminHealth} 
-                onRefresh={() => runAction(loadAdminHealth)}
-                isLoading={actionPending}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "sa_activity" && isSuperAdmin ? (
-              <SuperAdminActivityLog 
-                adminAudits={adminAudits} 
-                adminAuditCount={adminAuditCount}
-                onRefresh={() => runAction(loadAdminAudits)}
-                isLoading={actionPending}
-              />
-            ) : null}
-
-
-            {activeWorkspaceTool === "documents" ? (
-              <DocumentHistoryCard
-                documents={documents}
-                selectedJobid={selectedJob?.job_id ?? ""}
-                role={effectiveRole ?? "client"}
-                escrowByDocumentid={Object.fromEntries(upgradeState.escrow.map((row) => [row.document_id, row]))}
-
-                onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_id))}
-                onPublish={(id, ver, vis) => runAction(() => handleDocumentPublishInline(id, ver, vis))}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "finance_overview" && isFinanceRole ? (
-              <FinanceOverviewCard 
-                store={upgradeState} 
-                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
-                isLoading={actionPending}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "finance_quotes" && isFinanceRole ? (
-              <FinanceQuotesCard 
-                store={upgradeState}
-                onCreateQuote={(payload) => runAction(async () => {
-                  await apiClient.createFinanceQuote(payload);
-                  await refreshUpgradeWorkspaceState();
-                })}
-                onUpdateQuoteStatus={(id, status) => runAction(async () => {
-                  await apiClient.updateFinanceQuoteStatus(id, status);
-                  await refreshUpgradeWorkspaceState();
-                })}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "finance_invoices" && isFinanceRole ? (
-              <FinanceInvoicesCard 
-                store={upgradeState}
-                onCreateInvoiceFromQuote={(id, date) => runAction(async () => {
-                  await apiClient.createInvoiceFromQuote(id, date);
-                  await refreshUpgradeWorkspaceState();
-                })}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "finance_payments" && isFinanceRole ? (
-              <FinancePaymentsCard 
-                store={upgradeState}
-                onReconcileInvoice={(id) => runAction(async () => {
-                  await apiClient.reconcileInvoice(id);
-                  await refreshUpgradeWorkspaceState();
-                })}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "finance_debtors" && isFinanceRole ? (
-              <FinanceDebtorsCard 
-                store={upgradeState}
-                onRebuildAnalytics={() => runAction(async () => {
-                  await apiClient.rebuildUpgradeAnalytics();
-                  await refreshUpgradeWorkspaceState();
-                })}
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "finance_statements" && isFinanceRole ? (
-              <FinanceStatementsCard store={upgradeState} />
-            ) : null}
-
-            {activeWorkspaceTool === "finance" && isFinanceRole ? (
-              <FinanceOpsCard
-                jobs={jobs}
-                documents={documents}
-                store={upgradeState}
-                onRefreshStore={() => runAction(refreshUpgradeWorkspaceState)}
-                onCreateQuote={(payload) =>
-                  runAction(async () => {
-                    await apiClient.createFinanceQuote(payload);
-                    await refreshUpgradeWorkspaceState();
-                  })
-                }
-                onUpdateQuoteStatus={(quoteid, status) =>
-                  runAction(async () => {
-                    await apiClient.updateFinanceQuoteStatus(quoteid, status);
-                    await refreshUpgradeWorkspaceState();
-                  })
-                }
-                onCreateInvoiceFromQuote={(quoteid, dueDate) =>
-                  runAction(async () => {
-                    await apiClient.createInvoiceFromQuote(quoteid, dueDate);
-                    await refreshUpgradeWorkspaceState();
-                  })
-                }
-                onReconcileInvoice={(invoiceid) =>
-                  runAction(async () => {
-                    await apiClient.reconcileInvoice(invoiceid);
-                    await apiClient.rebuildUpgradeAnalytics();
-                    await refreshUpgradeWorkspaceState();
-                  })
-                }
-                onLockEscrow={(documentid, invoiceid) =>
-                  runAction(async () => {
-                    await apiClient.lockEscrow(documentid, invoiceid);
-                    await refreshUpgradeWorkspaceState();
-                  })
-                }
-                onRebuildAnalytics={() =>
-                  runAction(async () => {
-                    await apiClient.rebuildUpgradeAnalytics();
-                    await refreshUpgradeWorkspaceState();
-                  })
-                }
-              />
-            ) : null}
-
-            {activeWorkspaceTool === "people" && canAccessPeopleDirectory ? (
-              <PeopleDirectoryCard
-                people={peopleDirectory}
-                skillsState={upgradeState.skills}
-                onUpsertSkill={(payload: SkillMatrixRecord) =>
-                  runAction(async () => {
-                    await apiClient.upsertSkillMatrix(payload);
-                    await refreshUpgradeWorkspaceState();
-                  })
-                }
-                onSync={(payload) => handlePeopleSync(payload)}
-                onFeedback={setFeedback}
-              />
-            ) : null}
-
-          </section>
-        </main>
+        <PortalWorkspace
+          state={{
+            portalView,
+            session,
+            effectiveRole: effectiveRole ?? "",
+            emulatedRole,
+            jobs,
+            selectedJobid,
+            onSelectJobid: setSelectedJobid,
+            searchTerm,
+            onSearchTermChange: setSearchTerm,
+            activeWorkspaceTool,
+            onActiveWorkspaceToolChange: setActiveWorkspaceTool,
+            allowedWorkspaceTools,
+            defaultWorkspaceTool,
+            onboardingDismissed,
+            onDismissOnboarding: () => setOnboardingDismissed(true),
+            openJobCount,
+            selectedJob,
+            selectedJobStatus,
+            selectedJobDocumentCount,
+            selectedRequestid,
+            selectedScheduleid,
+            selectedDocumentid,
+            dispatchRequests,
+            dispatchSchedules,
+            dispatchDocuments,
+            technicians,
+            preferredStart,
+            setPreferredStart,
+            preferredEnd,
+            setPreferredEnd,
+            confirmStart,
+            setConfirmStart,
+            confirmEnd,
+            setConfirmEnd,
+            confirmTechid,
+            setConfirmTechid,
+            rescheduleStart,
+            setRescheduleStart,
+            rescheduleEnd,
+            setRescheduleEnd,
+            rescheduleRowVersion,
+            setRescheduleRowVersion,
+            documentType,
+            setDocumentType,
+            onStatusUpdate: () => runAction(handleStatusUpdate),
+            onNote: () => runAction(handleNote),
+            noteValue,
+            setNoteValue,
+            statusTarget,
+            setStatusTarget,
+            selectableStatuses,
+            onScheduleRequest: () => runAction(handleScheduleRequest),
+            onScheduleConfirm: () => runAction(handleScheduleConfirm),
+            onReschedule: () => runAction(handleReschedule),
+            onDocumentGenerate: () => runAction(handleDocumentGenerate),
+            onDocumentPublish: () => runAction(handleDocumentPublish),
+            onBulkStatusUpdate: (ids: string[], status: JobStatus) => runAction(() => handleBulkStatusUpdate(ids, status)),
+            canGenerateDocuments,
+            documentGenerateDisabledReason: canGenerateDocuments
+              ? "Document APIs are currently unavailable for this account. Contact an administrator to restore access."
+              : "This role can review job status and notes, but cannot generate documents.",
+            documentAccessDenied,
+            dispatchAccessDenied,
+            geoVerification,
+            onVerifyLocation: handleVerifyLocation,
+            syncPulseText,
+            jobEvents,
+            notifications,
+            onDismissNotification: (id: string) => setDismissedNotifications((prev) => [...prev, id]),
+            onDismissAllNotifications: () => setDismissedNotifications(notifications.map((item) => item.id)),
+            actionPending,
+            feedback,
+            generatedDocumentCount,
+            queueCount,
+            adminAuditCount,
+            networkOnline,
+            opsIntelligence,
+            schemaDrift,
+            adminHealth,
+            adminAudits,
+            adminAutomationJobs,
+            adminAutomationJobEntries: adminAutomationJobs,
+            automationJobs,
+            selectedAutomationJobid,
+            onSelectAutomationJobid: setSelectedAutomationJobid,
+            onLoadHealth: () => runAction(loadAdminHealth),
+            onLoadAudits: () => runAction(loadAdminAudits),
+            onLoadAutomationJobs: () => runAction(loadAdminAutomationJobs),
+            onRetryAutomation: (id: string) => runAction(() => handleRetryAutomation(id)),
+            onEmulateRole: setEmulatedRole,
+            onLoadSchemaDrift: () => runAction(loadSchemaDrift),
+            onLoadOpsIntelligence: () => runAction(loadOpsIntelligence),
+            peopleDirectory,
+            upgradeState,
+            setFeedback,
+            refreshUpgradeWorkspaceState,
+            onUpsertSkill: (payload: SkillMatrixRecord) =>
+              runAction(async () => {
+                await apiClient.upsertSkillMatrix(payload);
+                await refreshUpgradeWorkspaceState();
+              }),
+            onPeopleSync: (payload: unknown) => handlePeopleSync(payload),
+            selectedJobTitle: selectedJob?.title ?? ""
+          }}
+        />
       </PortalChrome>
 
       <footer className="portal-statusbar">
@@ -1650,4 +1309,5 @@ export function PortalApp(): React.JSX.Element {
     </div>
   );
 }
+
 
