@@ -32,6 +32,8 @@ export function GovernanceWorkspacePanel({ state }: GovernanceWorkspacePanelProp
     opsIntelligence,
     schemaDrift,
     adminHealth,
+    adminHealthState,
+    adminHealthMessage,
     adminAudits,
     adminAutomationJobs,
     adminAuditCount,
@@ -79,6 +81,8 @@ export function GovernanceWorkspacePanel({ state }: GovernanceWorkspacePanelProp
         ) : effectiveRole === "super_admin" ? (
           <AdminPanelCard
             adminHealth={adminHealth}
+            adminHealthState={adminHealthState}
+            adminHealthMessage={adminHealthMessage}
             adminAudits={adminAudits}
             adminAutomationJobs={adminAutomationJobs}
             adminAuditCount={adminAuditCount}
@@ -111,7 +115,15 @@ export function GovernanceWorkspacePanel({ state }: GovernanceWorkspacePanelProp
       {state.activeWorkspaceTool === "sa_units" && effectiveRole === "super_admin" ? <SuperAdminBusinessUnits /> : null}
       {state.activeWorkspaceTool === "sa_checks" && effectiveRole === "super_admin" ? <SuperAdminDataChecks schemaDrift={schemaDrift} onRefresh={onLoadSchemaDrift} isLoading={actionPending} /> : null}
       {state.activeWorkspaceTool === "sa_automations" && effectiveRole === "super_admin" ? <SuperAdminAutomations automationJobs={adminAutomationJobs} onRefresh={onLoadAutomationJobs} onRetry={onRetryAutomation} isLoading={actionPending} /> : null}
-      {state.activeWorkspaceTool === "sa_health" && effectiveRole === "super_admin" ? <SuperAdminSystemHealth adminHealth={adminHealth} onRefresh={onLoadHealth} isLoading={actionPending} /> : null}
+      {state.activeWorkspaceTool === "sa_health" && effectiveRole === "super_admin" ? (
+        <SuperAdminSystemHealth
+          adminHealth={adminHealth}
+          adminHealthState={adminHealthState}
+          adminHealthMessage={adminHealthMessage}
+          onRefresh={onLoadHealth}
+          isLoading={actionPending}
+        />
+      ) : null}
       {state.activeWorkspaceTool === "sa_activity" && effectiveRole === "super_admin" ? <SuperAdminActivityLog adminAudits={adminAudits} adminAuditCount={adminAuditCount} onRefresh={onLoadAudits} isLoading={actionPending} /> : null}
     </>
   );

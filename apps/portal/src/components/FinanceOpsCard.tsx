@@ -191,7 +191,7 @@ export function FinanceOpsCard({
             </div>
             <div className="history-table mt-8">
               {store.quotes.map((quote) => {
-                const quoteDescription = String((quote as Record<string, unknown>).description ?? "Quote");
+                const quoteDescription = String(quote.description ?? "Quote");
                 const job = jobLookup.get(String(quote.job_id));
                 return (
                   <div key={quote.quote_id} className="history-row">
@@ -227,7 +227,7 @@ export function FinanceOpsCard({
                   {store.quotes
                     .filter((quote) => quote.status === "approved")
                     .map((quote) => {
-                      const description = String((quote as Record<string, unknown>).description ?? quote.quote_id);
+                      const description = String(quote.description ?? quote.quote_id);
                       const job = jobLookup.get(String(quote.job_id));
                       return (
                         <option key={quote.quote_id} value={quote.quote_id}>
@@ -257,8 +257,8 @@ export function FinanceOpsCard({
             </div>
             <div className="history-table mt-8">
               {store.invoices.map((invoice) => {
-                const invoiceClient = String((invoice as Record<string, unknown>).client_name ?? invoice.client_id);
-                const invoiceJob = String((invoice as Record<string, unknown>).job_id ?? "");
+                const invoiceClient = String(invoice.client_id);
+                const invoiceJob = String(invoice.job_id ?? "");
                 const job = invoiceJob ? jobLookup.get(invoiceJob) ?? null : null;
                 return (
                   <div key={invoice.invoice_id} className="history-row">
@@ -343,7 +343,7 @@ export function FinanceOpsCard({
                 <select value={selectedInvoiceid} onChange={(e) => setSelectedInvoiceid(e.target.value)}>
                   <option value="">Select invoice</option>
                   {store.invoices.map((invoice) => {
-                    const invoiceClient = String((invoice as Record<string, unknown>).client_name ?? invoice.client_id);
+                    const invoiceClient = String(invoice.client_id);
                     return (
                       <option key={invoice.invoice_id} value={invoice.invoice_id}>
                         {invoiceClient} | {invoice.invoice_id} | {invoice.status}

@@ -1,5 +1,5 @@
 ﻿import { startTransition, useCallback } from "react";
-import type { JobDocumentRow, JobStatus, Role } from "@kharon/domain";
+import type { JobDocumentRow, JobStatus, OfflineQueueItem, Role } from "@kharon/domain";
 import type {
   AutomationJobEntry,
   OpsIntelligencePayload,
@@ -12,6 +12,7 @@ import type {
   UpgradeWorkspaceState
 } from "../apiClient";
 import { apiClient } from "../apiClient";
+import type { JobRecord } from "../components/JobListView";
 import type { DocumentPayload } from "../pdfs/types";
 import { enqueueMutation } from "../offline/queue";
 import { replayQueuedMutations } from "../offline/replay";
@@ -76,6 +77,7 @@ type SelectedSchedule = {
 };
 
 type SelectedDispatchDocument = JobDocumentRow | null;
+type QueuedMutationDraft = Omit<OfflineQueueItem, "created_at">;
 
 export function usePortalActionControllers(args: {
   session: PortalSession | null;
@@ -114,7 +116,7 @@ export function usePortalActionControllers(args: {
   canGenerateDocuments: boolean;
   effectiveRole: Role | null;
   dispatchContext: PortalDispatchContext | null;
-  jobs: Array<{ job_id: string; row_version: number }>;
+  jobs: JobRecord[];
   technicians: PeopleDirectoryEntry[];
   refreshJobs: () => Promise<void>;
   refreshDocuments: (jobid?: string) => Promise<void>;
@@ -131,7 +133,7 @@ export function usePortalActionControllers(args: {
   setPortalView: React.Dispatch<React.SetStateAction<"dashboard" | "workspace">>;
   setActiveWorkspaceTool: React.Dispatch<React.SetStateAction<string>>;
   setFeedback: (value: string) => void;
-  setJobs: React.Dispatch<React.SetStateAction<Array<{ job_id: string; row_version: number }>>>;
+  setJobs: React.Dispatch<React.SetStateAction<JobRecord[]>>;
   setDocuments: React.Dispatch<React.SetStateAction<Array<Record<string, unknown>>>>;
   setDispatchContext: React.Dispatch<React.SetStateAction<PortalDispatchContext | null>>;
   setDocumentAccessDenied: React.Dispatch<React.SetStateAction<boolean>>;
@@ -391,7 +393,7 @@ export function usePortalActionControllers(args: {
     }
   }, [setActiveWorkspaceTool, setEmulatedRole, setFeedback, setPortalView, setSession]);
 
-  const queueMutation = useCallback(async (mutation: Parameters<typeof enqueueMutation>[0]): Promise<void> => {
+  const queueMutation = useCallback(async (mutation: QueuedMutationDraft): Promise<void> => {
     await enqueueMutation({
       ...mutation,
       created_at: new Date().toISOString()
@@ -595,7 +597,7 @@ export function usePortalActionControllers(args: {
     setFeedback(`Generating ${documentType.replace("_", " ")}...`);
 
     try {
-      const isGas = selectedJob.title?.toLowerCase().includes("gas");
+      const isGas = Boolean(selectedJob.title?.toLowerCase().includes("gas"));
       const payload: DocumentPayload = {
         jobMeta: {
           jobId: selectedJob.job_id,
