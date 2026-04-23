@@ -210,10 +210,67 @@ export function PortalApp(): React.JSX.Element {
     [isRealSuperAdmin, realRole, setFeedback]
   );
 
+  const activeToolMeta = WORKSPACE_TOOL_META[activeWorkspaceTool] ?? {
+    label: "Workspace",
+    helper: "Use the sidebar to move between sections"
+  };
+  const filteredJobs = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) {
+      return jobs;
+    }
+    return jobs.filter((job) =>
+      [job.job_id, job.title, job.client_id, job.technician_id, job.client_name ?? "", job.technician_name ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [searchTerm, jobs]);
+
+  const selectedJob = useMemo(() => filteredJobs.find((job) => job.job_id === selectedJobid) ?? null, [filteredJobs, selectedJobid]);
+  const selectableStatuses = useMemo<JobStatus[]>(
+    () => {
+      if (!selectedJob) return ["draft"];
+      const allowed = listAllowedStatusTransitions(selectedJob.status);
+      if (effectiveRole === "technician") {
+        return allowed.filter(s => s === "performed" || s === "cancelled");
+      }
+      return allowed;
+    },
+    [selectedJob, effectiveRole]
+  );
+
+  const dispatchRequests = dispatchContext?.requests ?? [];
+  const dispatchSchedules = dispatchContext?.schedules ?? [];
+  const dispatchDocuments = dispatchContext?.documents ?? [];
+  const technicians = dispatchContext?.technicians ?? [];
+
+  const selectedRequest = useMemo(
+    () => dispatchRequests.find((request) => request.request_id === selectedRequestid) ?? null,
+    [dispatchRequests, selectedRequestid]
+  );
+  const selectedSchedule = useMemo(
+    () => dispatchSchedules.find((schedule) => schedule.schedule_id === selectedScheduleid) ?? null,
+    [dispatchSchedules, selectedScheduleid]
+  );
+  const selectedDispatchDocument = useMemo(
+    () => dispatchDocuments.find((document) => document.document_id === selectedDocumentid) ?? null,
+    [dispatchDocuments, selectedDocumentid]
+  );
+
+  const openJobCount = filteredJobs.filter((job) => job.status !== "certified" && job.status !== "cancelled").length;
+  const generatedDocumentCount = documents.length;
+  const selectedJobDocumentCount = selectedJob ? documents.filter((document) => String(document.job_id) === selectedJob.job_id).length : 0;
+  const selectedJobStatus = selectedJob?.status ?? "No selection";
+  const syncPulseText = syncPulse.at
+    ? `Last sync ${new Date(syncPulse.at).toLocaleTimeString()} (jobs ${syncPulse.jobsChanged}, queue ${syncPulse.queueChanged})`
+    : "Sync pulse idle";
+  const productionAuth = authConfig?.mode === "production";
+
   const portalActions = usePortalActionControllers({
     session,
     authConfig,
-    productionAuth: authConfig?.mode === "production",
+    productionAuth,
     loginToken,
     installPromptEvent,
     setInstallPromptEvent,
@@ -226,7 +283,7 @@ export function PortalApp(): React.JSX.Element {
     selectedDocumentid,
     selectedScheduleid,
     selectedRequestid,
-    selectedJobStatus: selectedJob?.status ?? "No selection",
+    selectedJobStatus,
     selectableStatuses,
     statusTarget,
     noteValue,
@@ -291,62 +348,6 @@ export function PortalApp(): React.JSX.Element {
     setOpsIntelligence
   });
 
-  const activeToolMeta = WORKSPACE_TOOL_META[activeWorkspaceTool] ?? {
-    label: "Workspace",
-    helper: "Use the sidebar to move between sections"
-  };
-  const filteredJobs = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    if (!query) {
-      return jobs;
-    }
-    return jobs.filter((job) =>
-      [job.job_id, job.title, job.client_id, job.technician_id, job.client_name ?? "", job.technician_name ?? ""]
-        .join(" ")
-        .toLowerCase()
-        .includes(query)
-    );
-  }, [searchTerm, jobs]);
-
-  const selectedJob = useMemo(() => filteredJobs.find((job) => job.job_id === selectedJobid) ?? null, [filteredJobs, selectedJobid]);
-  const selectableStatuses = useMemo<JobStatus[]>(
-    () => {
-      if (!selectedJob) return ["draft"];
-      const allowed = listAllowedStatusTransitions(selectedJob.status);
-      if (effectiveRole === "technician") {
-        return allowed.filter(s => s === "performed" || s === "cancelled");
-      }
-      return allowed;
-    },
-    [selectedJob, effectiveRole]
-  );
-
-  const dispatchRequests = dispatchContext?.requests ?? [];
-  const dispatchSchedules = dispatchContext?.schedules ?? [];
-  const dispatchDocuments = dispatchContext?.documents ?? [];
-  const technicians = dispatchContext?.technicians ?? [];
-
-  const selectedRequest = useMemo(
-    () => dispatchRequests.find((request) => request.request_id === selectedRequestid) ?? null,
-    [dispatchRequests, selectedRequestid]
-  );
-  const selectedSchedule = useMemo(
-    () => dispatchSchedules.find((schedule) => schedule.schedule_id === selectedScheduleid) ?? null,
-    [dispatchSchedules, selectedScheduleid]
-  );
-  const selectedDispatchDocument = useMemo(
-    () => dispatchDocuments.find((document) => document.document_id === selectedDocumentid) ?? null,
-    [dispatchDocuments, selectedDocumentid]
-  );
-
-  const openJobCount = filteredJobs.filter((job) => job.status !== "certified" && job.status !== "cancelled").length;
-  const generatedDocumentCount = documents.length;
-  const selectedJobDocumentCount = selectedJob ? documents.filter((document) => String(document.job_id) === selectedJob.job_id).length : 0;
-  const selectedJobStatus = selectedJob?.status ?? "No selection";
-  const syncPulseText = syncPulse.at
-    ? `Last sync ${new Date(syncPulse.at).toLocaleTimeString()} (jobs ${syncPulse.jobsChanged}, queue ${syncPulse.queueChanged})`
-    : "Sync pulse idle";
-  const productionAuth = authConfig?.mode === "production";
   const notifications = useMemo(() => {
     const items: Array<{ id: string; tone: "warning" | "critical" | "active"; title: string; detail: string }> = [];
     if (!networkOnline || queueCount > 0) {
