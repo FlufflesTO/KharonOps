@@ -6,8 +6,10 @@ import { DashboardView } from "../../components/DashboardView";
 import { COPY_GLOSSARY, WORKSPACE_TOOL_META } from "../../appShell/helpers";
 import { WorkspaceContent } from "./WorkspaceContent";
 
+import type { PortalWorkspaceState } from "../../components/PortalWorkspace";
+
 interface SharedWorkspacePanelProps {
-  state: any;
+  state: PortalWorkspaceState;
 }
 
 export function SharedWorkspacePanel({ state }: SharedWorkspacePanelProps): React.JSX.Element {
@@ -85,7 +87,7 @@ export function SharedWorkspacePanel({ state }: SharedWorkspacePanelProps): Reac
 
         {state.notifications.length > 0 ? (
           <section className="notification-center" aria-live="polite">
-            {state.notifications.map((item: any) => (
+            {state.notifications.map((item) => (
               <article key={item.id} className="notification-card">
                 <span className={`status-chip status-chip--${item.tone}`}>{item.title}</span>
                 <p>{item.detail}</p>

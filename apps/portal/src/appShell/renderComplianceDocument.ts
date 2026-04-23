@@ -1,4 +1,5 @@
 import React from "react";
+import type { DocumentProps } from "@react-pdf/renderer";
 import type { DocumentPayload } from "../pdfs/types";
 
 export async function renderComplianceDocument(args: {
@@ -22,5 +23,5 @@ export async function renderComplianceDocument(args: {
           ? React.createElement(Documents.GasCertificatePDF, { data: args.payload })
           : React.createElement(Documents.FireCertificatePDF, { data: args.payload });
 
-  return pdf(docElement as React.ReactElement<any>).toBlob();
+  return pdf(docElement as unknown as React.ReactElement<DocumentProps>).toBlob();
 }

@@ -16,9 +16,10 @@ import { SuperAdminSystemHealth } from "../../components/SuperAdminSystemHealth"
 import { SuperAdminActivityLog } from "../../components/SuperAdminActivityLog";
 import { SuperAdminBusinessUnits } from "../../components/SuperAdminBusinessUnits";
 import { PeopleDirectoryCard } from "../../components/PeopleDirectoryCard";
+import type { PortalWorkspaceState } from "../../components/PortalWorkspace";
 
 interface GovernanceWorkspacePanelProps {
-  state: any;
+  state: PortalWorkspaceState;
 }
 
 export function GovernanceWorkspacePanel({ state }: GovernanceWorkspacePanelProps): React.JSX.Element {

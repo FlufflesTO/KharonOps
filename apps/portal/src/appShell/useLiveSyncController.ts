@@ -1,4 +1,4 @@
-import { startTransition, useEffect } from "react";
+import { startTransition, useEffect, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { JobEventRow } from "@kharon/domain";
 import { apiClient } from "../apiClient";
@@ -24,6 +24,11 @@ export function useLiveSyncController(args: {
     setJobEvents
   } = args;
 
+  const lastPullRef = useRef(lastSyncPullAt);
+  useEffect(() => {
+    lastPullRef.current = lastSyncPullAt;
+  }, [lastSyncPullAt]);
+
   useEffect(() => {
     if (!sessionActive || !networkOnline) {
       return;
@@ -31,7 +36,7 @@ export function useLiveSyncController(args: {
 
     const poll = async () => {
       try {
-        const since = lastSyncPullAt || new Date(0).toISOString();
+        const since = lastPullRef.current || new Date(0).toISOString();
         const response = await apiClient.syncPull(since);
         const jobsChanged = response.jobs?.length ?? 0;
         const queueChanged = response.queue?.length ?? 0;
@@ -87,5 +92,5 @@ export function useLiveSyncController(args: {
     void poll();
     const intervalId = window.setInterval(poll, 60000);
     return () => window.clearInterval(intervalId);
-  }, [lastSyncPullAt, networkOnline, sessionActive, setJobEvents, setJobs, setLastSyncPullAt, setSyncPulse]);
+  }, [networkOnline, sessionActive, setJobEvents, setJobs, setLastSyncPullAt, setSyncPulse]);
 }

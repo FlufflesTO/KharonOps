@@ -68,13 +68,14 @@ import {
   formatApiFailure,
   isUnauthorizedError,
   looksLikeJwt,
-  normalizeDocument,
+ normalizeDocument,
   normalizeSchedule,
   normalizeScheduleRequest,
   normalizeUser,
   nowPlusHours,
   toIsoOrNull,
   toLocalInputValue,
+  ROLE_PRIMARY_TOOLS,
   WORKSPACE_TOOL_META
 } from "./appShell/helpers";
 import { getWorkspaceToolGroups } from "./appShell/navigation";
@@ -188,25 +189,15 @@ export function PortalApp(): React.JSX.Element {
   const effectiveRole = emulatedRole || realRole;
 
   const isDispatchRole = effectiveRole === "dispatcher" || effectiveRole === "super_admin";
-  const isFinanceRole = effectiveRole === "finance" || effectiveRole === "super_admin";
   const canAccessPeopleDirectory = effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin";
   const canGenerateDocuments = effectiveRole === "technician" || effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin";
   const isAdmin = effectiveRole === "admin" || effectiveRole === "super_admin";
-  const isSuperAdmin = effectiveRole === "super_admin";
 
   const allowedWorkspaceTools = useMemo(() => {
-    const tools = ["jobs", "documents"] as string[];
-    if (isDispatchRole) tools.push("schedule", "comms");
-    if (isFinanceRole) tools.push("finance");
-    if (canAccessPeopleDirectory) tools.push("people");
-    if (isAdmin) tools.push("admin");
-    
-    if (isSuperAdmin) {
-      tools.push("sa_overview", "sa_users", "sa_units", "sa_checks", "sa_automations", "sa_health", "sa_activity");
-    }
-    
-    return tools;
-  }, [canAccessPeopleDirectory, isAdmin, isDispatchRole, isFinanceRole, isSuperAdmin]);
+    const roleKey = effectiveRole || "client";
+    const tools = ROLE_PRIMARY_TOOLS[roleKey] ?? ROLE_PRIMARY_TOOLS.client ?? ["jobs"];
+    return [...tools];
+  }, [effectiveRole]);
   const showOperationalEngagements = activeWorkspaceTool === "jobs";
   const { primaryTools } = useMemo(
     () => getWorkspaceToolGroups(effectiveRole ?? "client", allowedWorkspaceTools),
@@ -370,9 +361,15 @@ export function PortalApp(): React.JSX.Element {
 
   useEffect(() => {
     if (!allowedWorkspaceTools.includes(defaultWorkspaceTool)) {
-      setDefaultWorkspaceTool(allowedWorkspaceTools[0] ?? "jobs");
+      setDefaultWorkspaceTool(landingWorkspaceTool);
     }
-  }, [allowedWorkspaceTools, defaultWorkspaceTool]);
+  }, [allowedWorkspaceTools, defaultWorkspaceTool, landingWorkspaceTool]);
+
+  useEffect(() => {
+    if (!allowedWorkspaceTools.includes(activeWorkspaceTool)) {
+      setActiveWorkspaceTool(landingWorkspaceTool);
+    }
+  }, [activeWorkspaceTool, allowedWorkspaceTools, landingWorkspaceTool]);
 
   useEffect(() => {
     if (!effectiveRole) {
@@ -628,6 +625,24 @@ export function PortalApp(): React.JSX.Element {
     void runAction(() => portalActions.handleRetryAutomation(id));
   }, [portalActions.handleRetryAutomation, runAction]);
 
+  const handleSaveWorkspacePreferences = useCallback(
+    (preferences: {
+      defaultWorkspaceTool: string;
+      pinnedTools: string[];
+      onboardingDismissed: boolean;
+    }) => {
+      const nextDefaultTool = allowedWorkspaceTools.includes(preferences.defaultWorkspaceTool)
+        ? preferences.defaultWorkspaceTool
+        : landingWorkspaceTool;
+
+      setDefaultWorkspaceTool(nextDefaultTool);
+      setPinnedTools(preferences.pinnedTools.filter((tool) => allowedWorkspaceTools.includes(tool)));
+      setOnboardingDismissed(Boolean(preferences.onboardingDismissed));
+      setFeedback("Workspace preferences saved.");
+    },
+    [allowedWorkspaceTools, landingWorkspaceTool]
+  );
+
   // Contextual dispatch: auto-populate ids from selected job metadata
   useEffect(() => {
     let isActive = true;
@@ -677,8 +692,8 @@ export function PortalApp(): React.JSX.Element {
           onboardingDismissed={onboardingDismissed}
           onDismissOnboarding={() => setOnboardingDismissed(true)}
           onEnterWorkspace={(tool) => {
-            const targetTool = tool === "jobs" ? landingWorkspaceTool : tool;
-            setActiveWorkspaceTool(allowedWorkspaceTools.includes(targetTool) ? targetTool : tool);
+            const targetTool = allowedWorkspaceTools.includes(tool) ? tool : landingWorkspaceTool;
+            setActiveWorkspaceTool(targetTool);
             setPortalView("workspace");
           }}
           onLogout={() => runAction(portalActions.handleLogout)}
@@ -730,8 +745,10 @@ export function PortalApp(): React.JSX.Element {
             onActiveWorkspaceToolChange: setActiveWorkspaceTool,
             allowedWorkspaceTools,
             defaultWorkspaceTool,
+            pinnedTools,
             onboardingDismissed,
             onDismissOnboarding: () => setOnboardingDismissed(true),
+            onSaveWorkspacePreferences: handleSaveWorkspacePreferences,
             openJobCount,
             selectedJob,
             selectedJobStatus,
@@ -814,6 +831,7 @@ export function PortalApp(): React.JSX.Element {
             peopleDirectory,
             upgradeState,
             setFeedback,
+            onFeedback: setFeedback,
             onUpsertSkill: (payload: SkillMatrixRecord) =>
               runAction(async () => {
                 await apiClient.upsertSkillMatrix(payload);

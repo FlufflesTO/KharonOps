@@ -1,5 +1,5 @@
 import React from "react";
-import type { JobStatus } from "@kharon/domain";
+import type { JobStatus, JobEventRow } from "@kharon/domain";
 import type { JobRecord } from "../../components/JobListView";
 import { TechMyDayCard } from "../../components/TechMyDayCard";
 import { TechCheckInOutCard } from "../../components/TechCheckInOutCard";
@@ -45,7 +45,7 @@ interface TechnicianWorkspacePanelProps {
   canGenerateDocuments: boolean;
   documentGenerateDisabledReason: string;
   syncPulseText: string;
-  jobEvents: Array<Record<string, unknown>>;
+  jobEvents: JobEventRow[];
 }
 
 export function TechnicianWorkspacePanel({

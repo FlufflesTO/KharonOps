@@ -19,7 +19,8 @@ const localTokenMap: Record<string, VerifiedIdentity> = {
   "dev-technician": { localUserid: "USR-TECH-1", email: "dev.technician@kharon.invalid", displayName: "Field Technician" },
   "dev-dispatcher": { localUserid: "USR-DISP-1", email: "dev.dispatcher@kharon.invalid", displayName: "Dispatch Controller" },
   "dev-finance": { localUserid: "USR-FIN-1", email: "dev.finance@kharon.invalid", displayName: "Finance Controller" },
-  "dev-admin": { localUserid: "USR-ADMIN-1", email: "dev.admin@kharon.invalid", displayName: "Security Admin" }
+  "dev-admin": { localUserid: "USR-ADMIN-1", email: "dev.admin@kharon.invalid", displayName: "Security Admin" },
+  "dev-super-admin": { localUserid: "USR-SUPER-1", email: "dev.super-admin@kharon.invalid", displayName: "Super Administrator" }
 };
 
 export async function verifyIdentity(args: {

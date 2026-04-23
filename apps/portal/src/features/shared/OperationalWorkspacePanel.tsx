@@ -14,9 +14,10 @@ import { ClientSupportCard } from "../../components/ClientSupportCard";
 import { DispatchDashboardCard } from "../../components/DispatchDashboardCard";
 import { DispatchUnassignedCard } from "../../components/DispatchUnassignedCard";
 import { DispatchDailyPlanCard } from "../../components/DispatchDailyPlanCard";
+import type { PortalWorkspaceState } from "../../components/PortalWorkspace";
 
 interface OperationalWorkspacePanelProps {
-  state: any;
+  state: PortalWorkspaceState;
 }
 
 export function OperationalWorkspacePanel({ state }: OperationalWorkspacePanelProps): React.JSX.Element {

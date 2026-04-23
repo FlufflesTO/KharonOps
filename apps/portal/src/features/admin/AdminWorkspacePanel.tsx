@@ -1,6 +1,6 @@
 import React from "react";
 import type { Role } from "@kharon/domain";
-import type { OpsIntelligencePayload, SchemaDriftPayload, AutomationJobEntry } from "../../apiClient";
+import type { OpsIntelligencePayload, SchemaDriftPayload, AutomationJobEntry, PortalSession } from "../../apiClient";
 import { AdminDashboard } from "../../components/AdminDashboard";
 import { AdminSettingsCard } from "../../components/AdminSettingsCard";
 import { AdminPanelCard } from "../../components/AdminPanelCard";
@@ -10,11 +10,16 @@ interface AdminWorkspacePanelProps {
   effectiveRole: string;
   isRealSuperAdmin: boolean;
   emulatedRole: Role | "";
-  session: any;
+  session: PortalSession | null;
   defaultWorkspaceTool: string;
   onboardingDismissed: boolean;
   allowedWorkspaceTools: string[];
   pinnedTools: string[];
+  onSaveWorkspacePreferences: (preferences: {
+    defaultWorkspaceTool: string;
+    pinnedTools: string[];
+    onboardingDismissed: boolean;
+  }) => void;
   onActiveWorkspaceToolChange: (tool: string) => void;
   opsIntelligence: OpsIntelligencePayload | null;
   adminHealth: Record<string, unknown> | null;
@@ -48,6 +53,7 @@ export function AdminWorkspacePanel({
   onboardingDismissed,
   allowedWorkspaceTools,
   pinnedTools,
+  onSaveWorkspacePreferences,
   onActiveWorkspaceToolChange,
   opsIntelligence,
   adminHealth,
@@ -91,7 +97,7 @@ export function AdminWorkspacePanel({
           pinnedTools={pinnedTools}
           onboardingDismissed={onboardingDismissed}
           allowedWorkspaceTools={allowedWorkspaceTools}
-          onSavePreferences={() => undefined}
+          onSavePreferences={onSaveWorkspacePreferences}
         />
       ) : null}
       {activeWorkspaceTool === "admin" && effectiveRole === "super_admin" ? (

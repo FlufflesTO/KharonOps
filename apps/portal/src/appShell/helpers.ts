@@ -270,7 +270,7 @@ export const ROLE_PRIMARY_TOOLS: Record<string, string[]> = {
   technician: ["tech_day", "jobs", "tech_checkin", "documents", "tech_help"],
   dispatcher: ["dispatch_dashboard", "schedule", "dispatch_unassigned", "people", "comms", "dispatch_daily"],
   finance: ["finance_overview", "finance_quotes", "finance_invoices", "finance_payments", "finance_debtors", "finance_statements"],
-  admin: ["admin_dashboard", "jobs", "people", "documents", "schedule", "admin"],
+  admin: ["admin_dashboard", "jobs", "people", "documents", "schedule", "admin", "sa_health"],
   super_admin: ["sa_overview", "sa_users", "sa_units", "sa_checks", "sa_automations", "sa_health", "sa_activity"]
 };
 

@@ -76,7 +76,7 @@ export function DispatchWorkspacePanel({
   opsIntelligence,
   onActiveWorkspaceToolChange
 }: DispatchWorkspacePanelProps): React.JSX.Element | null {
-  if (effectiveRole !== "dispatcher" && effectiveRole !== "super_admin") return null;
+  if (effectiveRole !== "dispatcher" && effectiveRole !== "admin" && effectiveRole !== "super_admin") return null;
 
   const dispatchRequests = dispatchContext?.requests ?? [];
   const dispatchSchedules = dispatchContext?.schedules ?? [];

@@ -83,6 +83,7 @@ export function PortalAuth({
                   <QuickLoginButton label="dispatch" token="dev-dispatcher" onClick={onLogin} />
                   <QuickLoginButton label="finance" token="dev-finance" onClick={onLogin} />
                   <QuickLoginButton label="admin" token="dev-admin" onClick={onLogin} />
+                  <QuickLoginButton label="super" token="dev-super-admin" onClick={onLogin} />
                 </div>
               </div>
             ) : (

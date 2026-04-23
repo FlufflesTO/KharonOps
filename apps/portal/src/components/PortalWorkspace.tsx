@@ -34,108 +34,117 @@ type GeoVerification = {
   longitude: number | null;
 };
 
-interface PortalWorkspaceProps {
-  state: {
-    portalView: "dashboard" | "workspace";
-    session: PortalSession | null;
-    isRealSuperAdmin: boolean;
-    effectiveRole: Role | "";
-    emulatedRole: Role | "";
-    jobs: JobRecord[];
-    selectedJobid: string;
-    onSelectJobid: (id: string) => void;
-    searchTerm: string;
-    onSearchTermChange: (q: string) => void;
-    activeWorkspaceTool: string;
-    onActiveWorkspaceToolChange: (tool: string) => void;
-    allowedWorkspaceTools: string[];
+export interface PortalWorkspaceState {
+  portalView: "dashboard" | "workspace";
+  session: PortalSession | null;
+  isRealSuperAdmin: boolean;
+  effectiveRole: Role | "";
+  emulatedRole: Role | "";
+  jobs: JobRecord[];
+  selectedJobid: string;
+  onSelectJobid: (id: string) => void;
+  searchTerm: string;
+  onSearchTermChange: (q: string) => void;
+  activeWorkspaceTool: string;
+  onActiveWorkspaceToolChange: (tool: string) => void;
+  allowedWorkspaceTools: string[];
+  defaultWorkspaceTool: string;
+  pinnedTools: string[];
+  onboardingDismissed: boolean;
+  onDismissOnboarding: () => void;
+  onSaveWorkspacePreferences: (preferences: {
     defaultWorkspaceTool: string;
+    pinnedTools: string[];
     onboardingDismissed: boolean;
-    onDismissOnboarding: () => void;
-    openJobCount: number;
-    selectedJob: JobRecord | null;
-    selectedJobStatus: string;
-    selectedJobDocumentCount: number;
-    selectedRequestid: string;
-    selectedScheduleid: string;
-    selectedDocumentid: string;
-    dispatchRequests: ScheduleRequestRow[];
-    dispatchSchedules: ScheduleRow[];
-    dispatchDocuments: JobDocumentRow[];
-    technicians: PeopleDirectoryEntry[];
-    preferredStart: string;
-    setPreferredStart: (v: string) => void;
-    preferredEnd: string;
-    setPreferredEnd: (v: string) => void;
-    confirmStart: string;
-    setConfirmStart: (v: string) => void;
-    confirmEnd: string;
-    setConfirmEnd: (v: string) => void;
-    confirmTechid: string;
-    setConfirmTechid: (v: string) => void;
-    rescheduleStart: string;
-    setRescheduleStart: (v: string) => void;
-    rescheduleEnd: string;
-    setRescheduleEnd: (v: string) => void;
-    rescheduleRowVersion: number;
-    setRescheduleRowVersion: (v: number) => void;
-    documentType: "jobcard" | "service_report" | "certificate";
-    setDocumentType: (v: "jobcard" | "service_report" | "certificate") => void;
-    onStatusUpdate: () => void;
-    onNote: () => void;
-    noteValue: string;
-    setNoteValue: (v: string) => void;
-    statusTarget: JobStatus;
-    setStatusTarget: (s: JobStatus) => void;
-    selectableStatuses: JobStatus[];
-    onScheduleRequest: () => void;
-    onScheduleConfirm: () => void;
-    onReschedule: () => void;
-    onDocumentGenerate: () => void;
-    onDocumentPublish: () => void;
-    onBulkStatusUpdate: (ids: string[], status: JobStatus) => void;
-    canGenerateDocuments: boolean;
-    documentGenerateDisabledReason: string;
-    documentAccessDenied: boolean;
-    dispatchAccessDenied: boolean;
-    geoVerification: GeoVerification;
-    onVerifyLocation: () => void;
-    syncPulseText: string;
-    jobEvents: JobEventRow[];
-    notifications: Array<{ id: string; tone: "warning" | "critical" | "active"; title: string; detail: string }>;
-    onDismissNotification: (id: string) => void;
-    onDismissAllNotifications: () => void;
-    actionPending: boolean;
-    feedback: string;
-    generatedDocumentCount: number;
-    queueCount: number;
-    adminAuditCount: number;
-    networkOnline: boolean;
-    opsIntelligence: OpsIntelligencePayload | null;
-    schemaDrift: SchemaDriftPayload | null;
-    adminHealth: Record<string, unknown> | null;
-    adminHealthState: "idle" | "loading" | "ready" | "error" | "unauthorized";
-    adminHealthMessage: string;
-    adminAudits: Array<Record<string, unknown>>;
-    adminAutomationJobs: Array<Record<string, unknown>>;
-    automationJobs: AutomationJobEntry[];
-    selectedAutomationJobid: string;
-    onSelectAutomationJobid: (id: string) => void;
-    onLoadHealth: () => void;
-    onLoadAudits: () => void;
-    onLoadAutomationJobs: () => void;
-    onRetryAutomation: (id: string) => void;
-    onEmulateRole: (role: Role | "") => void;
-    onLoadSchemaDrift: () => void;
-    onLoadOpsIntelligence: () => void;
-    peopleDirectory: PeopleDirectoryEntry[];
-    upgradeState: UpgradeWorkspaceState;
-    setFeedback: (f: string) => void;
-    onUpsertSkill: (payload: SkillMatrixRecord) => void;
-    onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => Promise<void>;
-    selectedJobTitle: string;
-    onLogout: () => void;
-  };
+  }) => void;
+  openJobCount: number;
+  selectedJob: JobRecord | null;
+  selectedJobStatus: string;
+  selectedJobDocumentCount: number;
+  selectedRequestid: string;
+  selectedScheduleid: string;
+  selectedDocumentid: string;
+  dispatchRequests: ScheduleRequestRow[];
+  dispatchSchedules: ScheduleRow[];
+  dispatchDocuments: JobDocumentRow[];
+  technicians: PeopleDirectoryEntry[];
+  preferredStart: string;
+  setPreferredStart: (v: string) => void;
+  preferredEnd: string;
+  setPreferredEnd: (v: string) => void;
+  confirmStart: string;
+  setConfirmStart: (v: string) => void;
+  confirmEnd: string;
+  setConfirmEnd: (v: string) => void;
+  confirmTechid: string;
+  setConfirmTechid: (v: string) => void;
+  rescheduleStart: string;
+  setRescheduleStart: (v: string) => void;
+  rescheduleEnd: string;
+  setRescheduleEnd: (v: string) => void;
+  rescheduleRowVersion: number;
+  setRescheduleRowVersion: (v: number) => void;
+  documentType: "jobcard" | "service_report" | "certificate";
+  setDocumentType: (v: "jobcard" | "service_report" | "certificate") => void;
+  onStatusUpdate: () => void;
+  onNote: () => void;
+  noteValue: string;
+  setNoteValue: (v: string) => void;
+  statusTarget: JobStatus;
+  setStatusTarget: (s: JobStatus) => void;
+  selectableStatuses: JobStatus[];
+  onScheduleRequest: () => void;
+  onScheduleConfirm: () => void;
+  onReschedule: () => void;
+  onDocumentGenerate: () => void;
+  onDocumentPublish: () => void;
+  onBulkStatusUpdate: (ids: string[], status: JobStatus) => void;
+  canGenerateDocuments: boolean;
+  documentGenerateDisabledReason: string;
+  documentAccessDenied: boolean;
+  dispatchAccessDenied: boolean;
+  geoVerification: GeoVerification;
+  onVerifyLocation: () => void;
+  syncPulseText: string;
+  jobEvents: JobEventRow[];
+  notifications: Array<{ id: string; tone: "warning" | "critical" | "active"; title: string; detail: string }>;
+  onDismissNotification: (id: string) => void;
+  onDismissAllNotifications: () => void;
+  actionPending: boolean;
+  feedback: string;
+  generatedDocumentCount: number;
+  queueCount: number;
+  adminAuditCount: number;
+  networkOnline: boolean;
+  opsIntelligence: OpsIntelligencePayload | null;
+  schemaDrift: SchemaDriftPayload | null;
+  adminHealth: Record<string, unknown> | null;
+  adminHealthState: "idle" | "loading" | "ready" | "error" | "unauthorized";
+  adminHealthMessage: string;
+  adminAudits: Array<Record<string, unknown>>;
+  adminAutomationJobs: Array<Record<string, unknown>>;
+  automationJobs: AutomationJobEntry[];
+  selectedAutomationJobid: string;
+  onSelectAutomationJobid: (id: string) => void;
+  onLoadHealth: () => void;
+  onLoadAudits: () => void;
+  onLoadAutomationJobs: () => void;
+  onRetryAutomation: (id: string) => void;
+  onEmulateRole: (role: Role | "") => void;
+  onLoadSchemaDrift: () => void;
+  onLoadOpsIntelligence: () => void;
+  peopleDirectory: PeopleDirectoryEntry[];
+  upgradeState: UpgradeWorkspaceState;
+  setFeedback: (f: string) => void;
+  onFeedback: (msg: string) => void;
+  onUpsertSkill: (payload: SkillMatrixRecord) => void;
+  onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => Promise<void>;
+  selectedJobTitle: string;
+  onLogout: () => void;
+}
+
+interface PortalWorkspaceProps {
+  state: PortalWorkspaceState;
 }
 
 export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Element {
@@ -154,8 +163,10 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
     onActiveWorkspaceToolChange,
     allowedWorkspaceTools,
     defaultWorkspaceTool,
+    pinnedTools,
     onboardingDismissed,
     onDismissOnboarding,
+    onSaveWorkspacePreferences,
     openJobCount,
     selectedJob,
     selectedJobStatus,
@@ -355,7 +366,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             canGenerateDocuments={canGenerateDocuments && !documentAccessDenied}
             documentGenerateDisabledReason={documentGenerateDisabledReason}
             syncPulseText={syncPulseText}
-            jobEvents={jobEvents as any}
+            jobEvents={jobEvents}
           />
 
           <ClientWorkspacePanel
@@ -452,9 +463,10 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             emulatedRole={emulatedRole}
             session={session}
             defaultWorkspaceTool={defaultWorkspaceTool}
+            pinnedTools={pinnedTools}
             onboardingDismissed={onboardingDismissed}
             allowedWorkspaceTools={allowedWorkspaceTools}
-            pinnedTools={[]}
+            onSaveWorkspacePreferences={onSaveWorkspacePreferences}
             onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
             opsIntelligence={opsIntelligence}
             adminHealth={adminHealth}
@@ -499,7 +511,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             onLoadSchemaDrift={onLoadSchemaDrift}
             onLoadOpsIntelligence={onLoadOpsIntelligence}
             peopleDirectory={peopleDirectory}
-            upgradeState={{ skills: upgradeState.skills }}
+            upgradeState={upgradeState}
             onUpsertSkill={onUpsertSkill}
             onPeopleSync={onPeopleSync}
             onFeedback={setFeedback}

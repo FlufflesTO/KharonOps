@@ -1,5 +1,13 @@
 import React from "react";
-import type { OpsIntelligencePayload, SchemaDriftPayload, AutomationJobEntry, PeopleDirectoryEntry } from "../../apiClient";
+import type { Role } from "@kharon/domain";
+import type { 
+  OpsIntelligencePayload, 
+  SchemaDriftPayload, 
+  AutomationJobEntry, 
+  PeopleDirectoryEntry,
+  UpgradeWorkspaceState,
+  SkillMatrixRecord
+} from "../../apiClient";
 import { SuperAdminOverview } from "../../components/SuperAdminOverview";
 import { SuperAdminDataChecks } from "../../components/SuperAdminDataChecks";
 import { SuperAdminAutomations } from "../../components/SuperAdminAutomations";
@@ -29,8 +37,8 @@ interface SuperAdminWorkspacePanelProps {
   onLoadSchemaDrift: () => void;
   onLoadOpsIntelligence: () => void;
   peopleDirectory: PeopleDirectoryEntry[];
-  upgradeState: { skills: any };
-  onUpsertSkill: (payload: any) => void;
+  upgradeState: UpgradeWorkspaceState;
+  onUpsertSkill: (payload: SkillMatrixRecord) => void;
   onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => Promise<void>;
   onFeedback: (msg: string) => void;
   actionPending: boolean;
@@ -63,18 +71,19 @@ export function SuperAdminWorkspacePanel({
   onFeedback,
   actionPending
 }: SuperAdminWorkspacePanelProps): React.JSX.Element | null {
-  if (effectiveRole !== "super_admin") return null;
+  const canViewRecovery = effectiveRole === "admin" || effectiveRole === "super_admin";
+  if (effectiveRole !== "super_admin" && !canViewRecovery) return null;
 
   return (
     <>
       {activeWorkspaceTool === "sa_overview" ? <SuperAdminOverview opsIntelligence={opsIntelligence} onRefresh={onLoadOpsIntelligence} isLoading={actionPending} /> : null}
       {activeWorkspaceTool === "sa_users" ? (
-        <PeopleDirectoryCard people={peopleDirectory as any} skillsState={upgradeState.skills} onUpsertSkill={onUpsertSkill} onSync={onPeopleSync as any} onFeedback={onFeedback} />
+        <PeopleDirectoryCard people={peopleDirectory} skillsState={upgradeState.skills} onUpsertSkill={onUpsertSkill} onSync={onPeopleSync} onFeedback={onFeedback} />
       ) : null}
       {activeWorkspaceTool === "sa_units" ? <SuperAdminBusinessUnits /> : null}
       {activeWorkspaceTool === "sa_checks" ? <SuperAdminDataChecks schemaDrift={schemaDrift} onRefresh={onLoadSchemaDrift} isLoading={actionPending} /> : null}
       {activeWorkspaceTool === "sa_automations" ? <SuperAdminAutomations automationJobs={adminAutomationJobs} onRefresh={onLoadAutomationJobs} onRetry={onRetryAutomation} isLoading={actionPending} /> : null}
-      {activeWorkspaceTool === "sa_health" ? (
+      {activeWorkspaceTool === "sa_health" && canViewRecovery ? (
         <SuperAdminSystemHealth
           adminHealth={adminHealth}
           adminHealthState={adminHealthState}

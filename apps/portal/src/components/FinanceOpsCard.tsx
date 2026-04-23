@@ -448,8 +448,8 @@ export function FinanceOpsCard({
         .font-bold { font-weight: 700; }
         .opacity-50 { opacity: 0.5; }
         .opacity-75 { opacity: 0.75; }
-        .bg-white\/5 { background-color: rgba(255, 255, 255, 0.05); }
-        .border-white\/10 { border-color: rgba(255, 255, 255, 0.1); }
+        .bg-white/5 { background-color: rgba(255, 255, 255, 0.05); }
+        .border-white/10 { border-color: rgba(255, 255, 255, 0.1); }
         .rounded-lg { border-radius: 0.5rem; }
         .module-tabs {
           display: flex;

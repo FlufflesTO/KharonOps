@@ -1,9 +1,10 @@
 import React from "react";
 import { OperationalWorkspacePanel } from "./OperationalWorkspacePanel";
 import { GovernanceWorkspacePanel } from "./GovernanceWorkspacePanel";
+import type { PortalWorkspaceState } from "../../components/PortalWorkspace";
 
 interface WorkspaceContentProps {
-  state: any;
+  state: PortalWorkspaceState;
 }
 
 export function WorkspaceContent({ state }: WorkspaceContentProps): React.JSX.Element {
