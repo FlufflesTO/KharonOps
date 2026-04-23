@@ -1433,32 +1433,45 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
     const jobid = c.req.query("job_id");
-    const documents = await store.listDocuments(jobid);
 
-    const internalDocumentRoles = new Set(["admin", "dispatcher", "finance", "super_admin"]);
-    if (internalDocumentRoles.has(String(user.role))) {
+    const version = await getCacheVersion(c.env);
+    const cacheKey = `doc_history:${version}:${user.user_id}:${jobid || "all"}`;
+    const cached = await getCachedJson<JobDocumentRow[]>(c.env, cacheKey);
+    
+    if (cached) {
       return c.json(
         envelopeSuccess({
           correlationId,
-          data: documents
+          data: cached
         })
       );
     }
 
-    const readableJobs = await store.listJobsForUser(user);
-    const readableJobids = new Set(readableJobs.map((job) => job.job_id));
+    const documents = await store.listDocuments(jobid);
 
-    // Non-internal roles only see documents that are published AND marked client_visible
-    const visibleDocuments = documents.filter((document) =>
-      readableJobids.has(document.job_id) &&
-      document.status === "published" &&
-      document.client_visible === true
-    );
+    const internalDocumentRoles = new Set(["admin", "dispatcher", "finance", "super_admin"]);
+    let data: JobDocumentRow[];
+
+    if (internalDocumentRoles.has(String(user.role))) {
+      data = documents;
+    } else {
+      const readableJobs = await store.listJobsForUser(user);
+      const readableJobids = new Set(readableJobs.map((job) => job.job_id));
+
+      // Non-internal roles only see documents that are published AND marked client_visible
+      data = documents.filter((document) =>
+        readableJobids.has(document.job_id) &&
+        document.status === "published" &&
+        document.client_visible === true
+      );
+    }
+
+    await putCachedJson(c.env, cacheKey, data, 60);
 
     return c.json(
       envelopeSuccess({
         correlationId,
-        data: visibleDocuments
+        data
       })
     );
   });
