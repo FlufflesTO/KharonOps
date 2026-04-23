@@ -155,6 +155,9 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
           padding: 1rem;
           border-radius: 12px;
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
         }
         .job-card-wrapper--active .job-card {
           background: rgba(var(--color-primary-rgb), 0.1);
@@ -169,9 +172,10 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
         .job-card__header {
           display: flex;
           justify-content: space-between;
-          align-items: center;
+          align-items: flex-start;
           margin-bottom: 0.75rem;
-          gap: 1rem;
+          gap: 0.5rem;
+          flex-wrap: wrap;
         }
         .job-card__id {
           font-family: monospace;
@@ -179,23 +183,34 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
           color: var(--color-primary);
           opacity: 0.8;
           font-weight: 600;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .job-card__title {
           font-size: 1rem;
           font-weight: 700;
           margin-bottom: 0.25rem;
           color: #fff;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .job-card__client {
           font-size: 0.8rem;
           color: rgba(255, 255, 255, 0.5);
           margin-bottom: 1rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .job-card__meta {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 1rem;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+          margin-top: auto;
         }
         .job-card__meta-item {
           display: flex;
@@ -203,6 +218,15 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
           gap: 0.4rem;
           font-size: 0.75rem;
           color: rgba(255, 255, 255, 0.4);
+          min-width: 0;
+        }
+        .job-card__meta-item span:not(.meta-icon) {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .meta-icon {
+          flex-shrink: 0;
         }
         .risk-indicator {
           width: 100px;
@@ -214,6 +238,7 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
           display: flex;
           align-items: center;
           justify-content: center;
+          flex-shrink: 0;
         }
         .risk-indicator span {
           position: relative;

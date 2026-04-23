@@ -47,6 +47,8 @@ export interface JobEventRow extends MutableMeta {
   job_id: string;
   event_type: string;
   payload_json: string;
+  created_at: string;
+  created_by: string;
 }
 
 export interface JobDocumentRow extends MutableMeta {

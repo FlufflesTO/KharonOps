@@ -37,9 +37,11 @@ import {
   type FinanceInvoiceRow,
   type FinanceStatementRow,
   type JobDocumentRow,
+  type JobEventRow,
   type JobRow,
   type ScheduleRequestRow,
   type ScheduleRow,
+  type SyncQueueRow,
   type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";

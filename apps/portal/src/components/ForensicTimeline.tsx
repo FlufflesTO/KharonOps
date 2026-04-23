@@ -235,7 +235,7 @@ const TimelineItem: React.FC<{ event: JobEventRow; isLatest: boolean }> = ({ eve
   };
 
   return (
-    <div className={\`forensic-item \${isLatest ? 'forensic-item--latest' : ''}\`}>
+    <div className={`forensic-item ${isLatest ? 'forensic-item--latest' : ''}`}>
       <div className="node-marker" />
       <div className="item-content">
         <div className="item-meta">
