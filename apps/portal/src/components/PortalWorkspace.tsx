@@ -23,7 +23,6 @@ import { DispatchWorkspacePanel } from "../features/dispatch/DispatchWorkspacePa
 import { FinanceWorkspacePanel } from "../features/finance/FinanceWorkspacePanel";
 import { AdminWorkspacePanel } from "../features/admin/AdminWorkspacePanel";
 import { SuperAdminWorkspacePanel } from "../features/superAdmin/SuperAdminWorkspacePanel";
-import { SharedWorkspacePanel } from "../features/shared/SharedWorkspacePanel";
 
 type GeoVerification = {
   status: "idle" | "verified" | "warning" | "error";
@@ -116,7 +115,6 @@ interface PortalWorkspaceProps {
     adminHealth: Record<string, unknown> | null;
     adminAudits: Array<Record<string, unknown>>;
     adminAutomationJobs: Array<Record<string, unknown>>;
-    adminAutomationJobEntries: Array<Record<string, unknown>>;
     automationJobs: AutomationJobEntry[];
     selectedAutomationJobid: string;
     onSelectAutomationJobid: (id: string) => void;
@@ -130,7 +128,6 @@ interface PortalWorkspaceProps {
     peopleDirectory: PeopleDirectoryEntry[];
     upgradeState: UpgradeWorkspaceState;
     setFeedback: (f: string) => void;
-    refreshUpgradeWorkspaceState: () => Promise<void>;
     onUpsertSkill: (payload: SkillMatrixRecord) => void;
     onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => Promise<void>;
     selectedJobTitle: string;
@@ -252,13 +249,11 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
         overrideRole={effectiveRole as Role}
         onboardingDismissed={onboardingDismissed}
         onDismissOnboarding={onDismissOnboarding}
-        onEnterWorkspace={(tool) => onActiveWorkspaceToolChange(tool)}
+        onEnterWorkspace={(tool: string) => onActiveWorkspaceToolChange(tool)}
         onLogout={onLogout}
       />
     );
   }
-
-  return <SharedWorkspacePanel state={state} />;
 
   return (
     <>
@@ -353,7 +348,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             canGenerateDocuments={canGenerateDocuments && !documentAccessDenied}
             documentGenerateDisabledReason={documentGenerateDisabledReason}
             syncPulseText={syncPulseText}
-            jobEvents={jobEvents}
+            jobEvents={jobEvents as any}
           />
 
           <ClientWorkspacePanel
@@ -373,7 +368,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
               schedules: dispatchSchedules,
               documents: dispatchDocuments,
               technicians
-            } as any}
+            }}
             selectedJob={selectedJob}
             selectedRequestid={selectedRequestid}
             selectedScheduleid={selectedScheduleid}
@@ -490,9 +485,9 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             onRetryAutomation={onRetryAutomation}
             onLoadSchemaDrift={onLoadSchemaDrift}
             onLoadOpsIntelligence={onLoadOpsIntelligence}
-            peopleDirectory={peopleDirectory as Array<Record<string, unknown>>}
+            peopleDirectory={peopleDirectory}
             upgradeState={{ skills: upgradeState.skills }}
-            onUpsertSkill={onUpsertSkill as any}
+            onUpsertSkill={onUpsertSkill}
             onPeopleSync={onPeopleSync}
             onFeedback={setFeedback}
             actionPending={actionPending}
@@ -502,7 +497,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             <DocumentHistoryCard
               documents={[]}
               selectedJobid={selectedJob?.job_id ?? ""}
-              role={effectiveRole ?? "client"}
+              role={(effectiveRole || "client") as Role}
               escrowByDocumentid={{}}
               onRefresh={() => undefined}
               onPublish={() => undefined}

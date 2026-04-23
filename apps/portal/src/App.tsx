@@ -1,4 +1,4 @@
-import React, { startTransition, useEffect, useMemo, useState } from "react";
+﻿import React, { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import type { JobDocumentRow, OfflineQueueItem, ScheduleRequestRow, ScheduleRow, UserRow, JobStatus, Role, JobEventRow } from "@kharon/domain";
 import { listAllowedStatusTransitions } from "@kharon/domain";
 import {
@@ -193,6 +193,18 @@ export function PortalApp(): React.JSX.Element {
     [effectiveRole, allowedWorkspaceTools]
   );
   const landingWorkspaceTool = useMemo(() => getRoleLandingTool(effectiveRole ?? "client"), [effectiveRole]);
+
+  const handleEmulateRole = useCallback(
+    (role: Role | "") => {
+      setEmulatedRole(role);
+      const targetRole = role || realRole || "client";
+      const targetTool = getRoleLandingTool(targetRole as Role);
+      setActiveWorkspaceTool(targetTool);
+      setPortalView("workspace");
+    },
+    [realRole]
+  );
+
   const activeToolMeta = WORKSPACE_TOOL_META[activeWorkspaceTool] ?? {
     label: "Workspace",
     helper: "Use the sidebar to move between sections"
@@ -1115,7 +1127,7 @@ export function PortalApp(): React.JSX.Element {
   if (loading) {
     return (
       <div className="portal-shell portal-shell--loading">
-        <div className="loading-card">Loading portal workspace…</div>
+        <div className="loading-card">Loading portal workspaceâ€¦</div>
       </div>
     );
   }
@@ -1274,7 +1286,7 @@ export function PortalApp(): React.JSX.Element {
             onLoadAudits: () => runAction(loadAdminAudits),
             onLoadAutomationJobs: () => runAction(loadAdminAutomationJobs),
             onRetryAutomation: (id: string) => runAction(() => handleRetryAutomation(id)),
-            onEmulateRole: setEmulatedRole,
+            onEmulateRole: handleEmulateRole,
             onLoadSchemaDrift: () => runAction(loadSchemaDrift),
             onLoadOpsIntelligence: () => runAction(loadOpsIntelligence),
             peopleDirectory,
@@ -1308,5 +1320,4 @@ export function PortalApp(): React.JSX.Element {
     </div>
   );
 }
-
 

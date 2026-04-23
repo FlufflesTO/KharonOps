@@ -1,13 +1,25 @@
 import React from "react";
+import type { Role } from "@kharon/domain";
 import type { OpsIntelligencePayload } from "../apiClient";
 
 interface AdminDashboardProps {
   opsIntelligence: OpsIntelligencePayload | null;
   onEnterTool: (tool: string) => void;
+  emulatedRole: Role | "";
+  onEmulateRole: (role: Role | "") => void;
   isLoading: boolean;
 }
 
-export function AdminDashboard({ opsIntelligence, onEnterTool, isLoading }: AdminDashboardProps): React.JSX.Element {
+const ROLE_CHOICES: Array<{ role: Role | ""; label: string }> = [
+  { role: "client", label: "Client" },
+  { role: "technician", label: "Technician" },
+  { role: "dispatcher", label: "Dispatcher" },
+  { role: "finance", label: "Finance" },
+  { role: "admin", label: "Admin" },
+  { role: "", label: "Clear" }
+];
+
+export function AdminDashboard({ opsIntelligence, onEnterTool, emulatedRole, onEmulateRole, isLoading }: AdminDashboardProps): React.JSX.Element {
   return (
     <article className="workspace-card">
       <div className="panel-heading">
@@ -21,6 +33,25 @@ export function AdminDashboard({ opsIntelligence, onEnterTool, isLoading }: Admi
         </div>
       ) : (
         <div className="admin-grid">
+          <section className="control-block">
+            <div className="control-block__head">
+              <h3>View as role</h3>
+              <p>Switch into a role to verify what that person sees and can do.</p>
+            </div>
+            <div className="button-row">
+              {ROLE_CHOICES.map((choice) => (
+                <button
+                  key={choice.label}
+                  className={`button ${emulatedRole === choice.role ? "button--primary" : "button--secondary"}`}
+                  type="button"
+                  onClick={() => onEmulateRole(choice.role)}
+                >
+                  {choice.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
           <section className="summary-grid">
             <div className="summary-card" onClick={() => onEnterTool("jobs")} style={{ cursor: 'pointer' }}>
               <span className="summary-card__label">Jobs Needing Attention</span>

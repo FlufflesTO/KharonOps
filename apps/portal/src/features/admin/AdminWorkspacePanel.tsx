@@ -8,6 +8,7 @@ import { AdminPanelCard } from "../../components/AdminPanelCard";
 interface AdminWorkspacePanelProps {
   activeWorkspaceTool: string;
   effectiveRole: string;
+  emulatedRole: Role | "";
   session: any;
   defaultWorkspaceTool: string;
   onboardingDismissed: boolean;
@@ -37,6 +38,7 @@ interface AdminWorkspacePanelProps {
 export function AdminWorkspacePanel({
   activeWorkspaceTool,
   effectiveRole,
+  emulatedRole,
   session,
   defaultWorkspaceTool,
   onboardingDismissed,
@@ -66,7 +68,15 @@ export function AdminWorkspacePanel({
 
   return (
     <>
-      {activeWorkspaceTool === "admin_dashboard" ? <AdminDashboard opsIntelligence={opsIntelligence} onEnterTool={onActiveWorkspaceToolChange} isLoading={actionPending} /> : null}
+      {activeWorkspaceTool === "admin_dashboard" ? (
+        <AdminDashboard
+          opsIntelligence={opsIntelligence}
+          onEnterTool={onActiveWorkspaceToolChange}
+          emulatedRole={emulatedRole}
+          onEmulateRole={onEmulateRole}
+          isLoading={actionPending}
+        />
+      ) : null}
       {activeWorkspaceTool === "admin" && effectiveRole === "admin" ? (
         <AdminSettingsCard
           session={session}
@@ -91,7 +101,7 @@ export function AdminWorkspacePanel({
           onLoadAutomationJobs={onLoadAutomationJobs}
           onRetryAutomation={onRetryAutomation}
           onFeedback={onFeedback}
-          emulatedRole={""}
+          emulatedRole={emulatedRole}
           onEmulateRole={onEmulateRole}
           schemaDrift={schemaDrift}
           opsIntelligence={opsIntelligence}
