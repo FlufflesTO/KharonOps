@@ -14,12 +14,14 @@ export function CtaSection(): React.JSX.Element {
           <Link className="site-button site-button--primary" to="/contact?intent=project">
             Request a Quote
           </Link>
-          <Link className="site-button site-button--secondary" to="/contact?intent=maintenance">
-            Book Maintenance
-          </Link>
-          <Link className="site-button site-button--secondary" to="/contact?intent=urgent_callout">
-            Emergency Callout
-          </Link>
+          <div className="cta-panel__secondary-actions">
+            <Link className="site-button site-button--outline" to="/contact?intent=maintenance">
+              Book Maintenance
+            </Link>
+            <Link className="site-button site-button--outline" to="/contact?intent=urgent_callout">
+              Emergency Callout
+            </Link>
+          </div>
         </div>
       </div>
     </section>

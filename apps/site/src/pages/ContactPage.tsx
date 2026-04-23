@@ -55,7 +55,6 @@ export function ContactPage(): React.JSX.Element {
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
-  const telHref = `tel:+${companyProfile.phone.replace(/\D+/g, "")}`;
 
   useEffect(() => {
     setForm(initialState);
@@ -66,27 +65,27 @@ export function ContactPage(): React.JSX.Element {
     event.preventDefault();
 
     if (form.name.trim() === "") {
-      setStatusMessage("Enter the contact name before submitting the request.");
+      setStatusMessage("Enter your name before submitting.");
       nameRef.current?.focus();
       return;
     }
     if (form.email.trim() === "") {
-      setStatusMessage("Enter the email address before submitting the request.");
+      setStatusMessage("Enter your work email address.");
       emailRef.current?.focus();
       return;
     }
     if (form.phone.trim() === "") {
-      setStatusMessage("Enter the phone number before submitting the request.");
+      setStatusMessage("Enter a valid phone number.");
       return;
     }
     if (form.message.trim() === "") {
-      setStatusMessage("Describe the site, issue, or requested resource before submitting.");
+      setStatusMessage("Please provide a brief description of your request.");
       messageRef.current?.focus();
       return;
     }
 
     setSubmitting(true);
-    setStatusMessage("Submitting request…");
+    setStatusMessage("Sending request...");
 
     try {
       const response = await fetch("/api/v1/public/contact", {
@@ -103,7 +102,7 @@ export function ContactPage(): React.JSX.Element {
       }
 
       setForm(makeInitialForm(intent, resourceName));
-      setStatusMessage("Request submitted. Kharon will direct it to the right team.");
+      setStatusMessage("Request sent. Our team will contact you shortly.");
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -114,7 +113,7 @@ export function ContactPage(): React.JSX.Element {
   return (
     <>
       <Helmet>
-        <title>Contact | Kharon Fire and Security</title>
+        <title>Connect | Kharon Fire and Security</title>
         <meta
           name="description"
           content="Request a quote, book maintenance, or ask for urgent help from Kharon Fire and Security Solutions."
@@ -123,47 +122,33 @@ export function ContactPage(): React.JSX.Element {
 
       <section className="site-section contact-page">
         <div className="section-heading">
-          <p className="section-kicker">Contact</p>
-          <h2>Tell us what you need and we’ll direct it to the right team.</h2>
+          <p className="section-kicker">Connect</p>
+          <h2>Tell us what you need.</h2>
           <p className="section-subtitle">
-            Choose the path that best matches your request, then send the simplest form that gets the job moving.
+            Complete the simplest form that gets your request moving. We'll direct it to the right team immediately.
           </p>
-        </div>
-
-        <div className="contact-paths" aria-label="Request paths">
-          {contactPaths.map((path) => (
-            <button
-              key={path.value}
-              type="button"
-              className={`contact-path${form.enquiry_type === path.value ? " contact-path--active" : ""}`}
-              onClick={() => setForm((current) => ({ ...current, enquiry_type: path.value }))}
-            >
-              <strong>{path.label}</strong>
-              <span>{path.summary}</span>
-            </button>
-          ))}
         </div>
 
         <div className="contact-layout">
           <article className="operations-flow">
             <div className="operations-flow__header">
-              <h3>Contact form</h3>
+              <h3>Service Request</h3>
             </div>
             <form className="site-form" onSubmit={handleSubmit} noValidate>
               <div className="site-form__grid">
                 <label className="site-form__field">
-                  <span>Name</span>
+                  <span>Full Name</span>
                   <input
                     ref={nameRef}
                     name="name"
                     autoComplete="name"
                     value={form.name}
                     onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                    placeholder="Primary contact name"
+                    placeholder="Contact name"
                   />
                 </label>
                 <label className="site-form__field">
-                  <span>Email</span>
+                  <span>Work Email</span>
                   <input
                     ref={emailRef}
                     name="email"
@@ -172,131 +157,115 @@ export function ContactPage(): React.JSX.Element {
                     spellCheck={false}
                     value={form.email}
                     onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-                    placeholder="name@example.com"
+                    placeholder="name@company.com"
                   />
                 </label>
                 <label className="site-form__field">
-                  <span>Phone</span>
+                  <span>Phone Number</span>
                   <input
                     name="phone"
                     type="tel"
                     autoComplete="tel"
                     value={form.phone}
                     onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                    placeholder="+27 61 234 5678"
+                    placeholder="+27"
                   />
                 </label>
                 <label className="site-form__field">
-                  <span>Message</span>
+                  <span>Service Type</span>
+                  <select
+                    name="enquiry_type"
+                    value={form.enquiry_type}
+                    onChange={(event) => setForm((current) => ({ ...current, enquiry_type: event.target.value as EnquiryType }))}
+                  >
+                    {contactPaths.map((path) => (
+                      <option key={path.value} value={path.value}>
+                        {path.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="site-form__field">
+                  <span>Company / Site Name</span>
+                  <input
+                    name="company"
+                    autoComplete="organization"
+                    value={form.company}
+                    onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
+                    placeholder="Company name"
+                  />
+                </label>
+                <label className="site-form__field">
+                  <span>Location</span>
+                  <input
+                    name="site_location"
+                    autoComplete="street-address"
+                    value={form.site_location}
+                    onChange={(event) => setForm((current) => ({ ...current, site_location: event.target.value }))}
+                    placeholder="City or area"
+                  />
+                </label>
+                <label className="site-form__field site-form__field--full">
+                  <span>Message / Scope</span>
                   <textarea
                     ref={messageRef}
                     name="message"
-                    rows={6}
+                    rows={4}
                     value={form.message}
                     onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
-                    placeholder="Tell us about the site, the system, and timing"
+                    placeholder="Briefly describe the site and requirements"
+                  />
+                </label>
+                <label className="site-form__field site-form__field--hidden" aria-hidden="true">
+                  <span>Leave this field empty</span>
+                  <input
+                    name="honey"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={form.honey}
+                    onChange={(event) => setForm((current) => ({ ...current, honey: event.target.value }))}
                   />
                 </label>
               </div>
 
-              <details className="contact-details" open={form.enquiry_type !== "general"}>
-                <summary>More details</summary>
-                <div className="site-form__grid contact-details__grid">
-                  <label className="site-form__field">
-                    <span>Company</span>
-                    <input
-                      name="company"
-                      autoComplete="organization"
-                      value={form.company}
-                      onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
-                      placeholder="Company or site owner"
-                    />
-                  </label>
-                  <label className="site-form__field">
-                    <span>Site location</span>
-                    <input
-                      name="site_location"
-                      autoComplete="street-address"
-                      value={form.site_location}
-                      onChange={(event) => setForm((current) => ({ ...current, site_location: event.target.value }))}
-                      placeholder="Address, suburb, or city"
-                    />
-                  </label>
-                  <label className="site-form__field">
-                    <span>Service type</span>
-                    <select
-                      name="enquiry_type"
-                      value={form.enquiry_type}
-                      onChange={(event) => setForm((current) => ({ ...current, enquiry_type: event.target.value as EnquiryType }))}
-                    >
-                      <option value="general">General enquiry</option>
-                      {contactPaths
-                        .filter((path) => path.value !== "general")
-                        .map((path) => (
-                          <option key={path.value} value={path.value}>
-                            {path.label}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
-                  <label className="site-form__field site-form__field--hidden" aria-hidden="true">
-                    <span>Leave this field empty</span>
-                    <input
-                      name="honey"
-                      tabIndex={-1}
-                      autoComplete="off"
-                      value={form.honey}
-                      onChange={(event) => setForm((current) => ({ ...current, honey: event.target.value }))}
-                    />
-                  </label>
-                </div>
-              </details>
-
               <div className="site-form__meta" aria-live="polite">
-                {resourceName ? <p>Requested resource: {resourceName}</p> : null}
-                <p>
-                  Personal information submitted here is processed for service delivery, follow-up, and recordkeeping. See
-                  the <Link to="/privacy">privacy notice</Link> for more detail.
+                {resourceName ? <p className="requested-resource">Requested resource: <strong>{resourceName}</strong></p> : null}
+                <p className="privacy-hint">
+                  Your data is used strictly for service delivery. See the <Link to="/privacy">privacy notice</Link>.
                 </p>
-                <p className="site-form__status">{statusMessage}</p>
+                {statusMessage && <p className="site-form__status">{statusMessage}</p>}
               </div>
 
-              <div className="detail-actions contact-actions">
-                <button className="site-button site-button--primary" type="submit" disabled={submitting}>
-                  {submitting ? "Submitting…" : "Submit request"}
+              <div className="site-form__actions">
+                <button className="site-button site-button--primary site-button--large" type="submit" disabled={submitting}>
+                  {submitting ? "Sending..." : "Submit Request"}
                 </button>
-                <a className="site-button site-button--secondary" href={telHref}>
-                  Call emergency line
-                </a>
-                <a className="site-button site-button--secondary" href={`mailto:${companyProfile.email}`}>
-                  Email operations
-                </a>
               </div>
             </form>
           </article>
 
           <aside className="assurance-panel">
-            <h3>How we can help</h3>
+            <h3>Support & Context</h3>
             <div className="assurance-list">
               <article className="assurance-list__item">
-                <span>Request paths</span>
-                <p>Quote, maintenance, emergency callout, general enquiry, and resource requests are handled separately.</p>
-              </article>
-              <article className="assurance-list__item">
-                <span>Contact</span>
+                <span>Immediate Help</span>
                 <p>
-                  T: {companyProfile.phone}
+                  <strong>{companyProfile.phone}</strong>
                   <br />
-                  E: {companyProfile.email}
+                  For emergencies and faults.
                 </p>
               </article>
               <article className="assurance-list__item">
-                <span>Coverage and hours</span>
+                <span>Coverage</span>
                 <p>
                   {companyProfile.serviceFootprint.join(", ")}
                   <br />
                   {companyProfile.officeHours}
                 </p>
+              </article>
+              <article className="assurance-list__item">
+                <span>Direct Email</span>
+                <p>{companyProfile.email}</p>
               </article>
             </div>
           </aside>
