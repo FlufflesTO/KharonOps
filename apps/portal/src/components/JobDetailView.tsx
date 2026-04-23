@@ -69,7 +69,7 @@ export function JobDetailView({
 }: JobDetailViewProps): React.JSX.Element {
   const isFieldRole = role === "technician" || role === "dispatcher" || role === "admin" || role === "super_admin";
   const statusOrder: JobStatus[] = ["draft", "approved", "performed", "certified", "cancelled"];
-  const selectedStatusIndex = Math.max(0, statusOrder.indexOf(selectedJob.status));
+  const selectedStatusIndex = selectedJob ? Math.max(0, statusOrder.indexOf(selectedJob.status)) : 0;
 
   const postureItems = [
     {

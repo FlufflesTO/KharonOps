@@ -38,11 +38,11 @@ export function mapGoogleHttpError(service: string, status: number, body: unknow
 
   let detailMessage = "";
   if (body && typeof body === "object") {
-    const b = body as any;
+    const b = body as Record<string, unknown>;
     if (typeof b.error_description === "string") {
       detailMessage = `: ${b.error_description}`;
-    } else if (b.error && typeof b.error.message === "string") {
-      detailMessage = `: ${b.error.message}`;
+    } else if (b.error && typeof b.error === "object" && "message" in b.error && typeof (b.error as Record<string, unknown>).message === "string") {
+      detailMessage = `: ${(b.error as Record<string, unknown>).message}`;
     } else if (typeof b.error === "string") {
       detailMessage = `: ${b.error}`;
     } else {

@@ -146,7 +146,7 @@ type KvLikeNamespace = {
 const memoryCache = new Map<string, { expiresAt: number; value: string }>();
 let memoryCacheVersion = 1;
 
-function getKvNamespace(env: Record<string, unknown>): KvLikeNamespace | null {
+function getKvNamespace(env: AppBindings["Bindings"]): KvLikeNamespace | null {
   const candidate = env.KHARON_CACHE as Partial<KvLikeNamespace> | undefined;
   if (candidate && typeof candidate.get === "function" && typeof candidate.put === "function") {
     return candidate as KvLikeNamespace;
@@ -154,32 +154,43 @@ function getKvNamespace(env: Record<string, unknown>): KvLikeNamespace | null {
   return null;
 }
 
-async function getCacheVersion(env: Record<string, unknown>): Promise<number> {
+async function getCacheVersion(env: AppBindings["Bindings"]): Promise<number> {
   const kv = getKvNamespace(env);
   if (!kv) {
     return memoryCacheVersion;
   }
-  const raw = await kv.get("cache:workspace:version");
-  const parsed = Number(raw ?? "1");
-  if (Number.isFinite(parsed) && parsed > 0) {
-    return parsed;
+  try {
+    const raw = await kv.get("cache:workspace:version");
+    const parsed = Number(raw ?? "1");
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+    await kv.put("cache:workspace:version", "1");
+    return 1;
+  } catch (error) {
+    console.error("KV getCacheVersion failed, falling back to memory:", error);
+    return memoryCacheVersion;
   }
-  await kv.put("cache:workspace:version", "1");
-  return 1;
 }
 
-async function bumpCacheVersion(env: Record<string, unknown>): Promise<void> {
+async function bumpCacheVersion(env: AppBindings["Bindings"]): Promise<void> {
   const kv = getKvNamespace(env);
   if (!kv) {
     memoryCacheVersion += 1;
     memoryCache.clear();
     return;
   }
-  const current = await getCacheVersion(env);
-  await kv.put("cache:workspace:version", String(current + 1));
+  try {
+    const current = await getCacheVersion(env);
+    await kv.put("cache:workspace:version", String(current + 1));
+  } catch (error) {
+    console.error("KV bumpCacheVersion failed, falling back to memory:", error);
+    memoryCacheVersion += 1;
+    memoryCache.clear();
+  }
 }
 
-async function getCachedJson<T>(env: Record<string, unknown>, key: string): Promise<T | null> {
+async function getCachedJson<T>(env: AppBindings["Bindings"], key: string): Promise<T | null> {
   const kv = getKvNamespace(env);
   if (!kv) {
     const hit = memoryCache.get(key);
@@ -188,21 +199,31 @@ async function getCachedJson<T>(env: Record<string, unknown>, key: string): Prom
     }
     return JSON.parse(hit.value) as T;
   }
-  const value = await kv.get(key);
-  if (!value) {
+  try {
+    const value = await kv.get(key);
+    if (!value) {
+      return null;
+    }
+    return JSON.parse(value) as T;
+  } catch (error) {
+    console.error("KV getCachedJson failed:", error);
     return null;
   }
-  return JSON.parse(value) as T;
 }
 
-async function putCachedJson(env: Record<string, unknown>, key: string, value: unknown, ttlSeconds = 45): Promise<void> {
+async function putCachedJson(env: AppBindings["Bindings"], key: string, value: unknown, ttlSeconds = 60): Promise<void> {
   const payload = JSON.stringify(value);
   const kv = getKvNamespace(env);
   if (!kv) {
     memoryCache.set(key, { value: payload, expiresAt: Date.now() + ttlSeconds * 1000 });
     return;
   }
-  await kv.put(key, payload, { expirationTtl: ttlSeconds });
+  try {
+    await kv.put(key, payload, { expirationTtl: ttlSeconds });
+  } catch (error) {
+    console.error("KV putCachedJson failed, falling back to memory:", error);
+    memoryCache.set(key, { value: payload, expiresAt: Date.now() + ttlSeconds * 1000 });
+  }
 }
 
 export function createApp(env: Record<string, string | undefined> = {}): Hono<AppBindings> {
@@ -243,7 +264,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       return;
     }
     try {
-      await bumpCacheVersion(c.env as Record<string, unknown>);
+      await bumpCacheVersion(c.env);
     } catch (error) {
       logApiEvent("warn", "cache.version.bump_failed", {
         correlationId: c.get("correlationId"),
@@ -722,9 +743,9 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   api.get("/jobs", requireSession(), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const version = await getCacheVersion(c.env as Record<string, unknown>);
+    const version = await getCacheVersion(c.env);
     const cacheKey = `jobs:${version}:${user.user_id}:${user.role}`;
-    const cached = await getCachedJson<Array<Record<string, unknown>>>(c.env as Record<string, unknown>, cacheKey);
+    const cached = await getCachedJson<Array<Record<string, unknown>>>(c.env, cacheKey);
 
     if (cached) {
       return c.json(
@@ -748,7 +769,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       technician_name: technicianNameByid.get(job.technician_id) ?? ""
     }));
 
-    await putCachedJson(c.env as Record<string, unknown>, cacheKey, enrichedJobs, 30);
+    await putCachedJson(c.env, cacheKey, enrichedJobs, 60);
 
     return c.json(
       envelopeSuccess({
@@ -1596,9 +1617,9 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   api.get("/workspace/people", requireSession(), requireRoles("dispatcher", "admin"), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const version = await getCacheVersion(c.env as Record<string, unknown>);
+    const version = await getCacheVersion(c.env);
     const cacheKey = `people:${version}:${user.role}`;
-    const cached = await getCachedJson<UserRow[]>(c.env as Record<string, unknown>, cacheKey);
+    const cached = await getCachedJson<UserRow[]>(c.env, cacheKey);
     if (cached) {
       return c.json(
         envelopeSuccess({
@@ -1611,7 +1632,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const activeUsers = users
       .filter((row) => row.active === "true")
       .sort((a, b) => a.display_name.localeCompare(b.display_name));
-    await putCachedJson(c.env as Record<string, unknown>, cacheKey, activeUsers, 60);
+    await putCachedJson(c.env, cacheKey, activeUsers, 60);
 
     return c.json(
       envelopeSuccess({
@@ -1624,9 +1645,9 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   api.get("/workspace/upgrade/state", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
-    const version = await getCacheVersion(c.env as Record<string, unknown>);
+    const version = await getCacheVersion(c.env);
     const cacheKey = `upgrade:${version}:${user.role}`;
-    const cached = await getCachedJson<UpgradeWorkspaceState>(c.env as Record<string, unknown>, cacheKey);
+    const cached = await getCachedJson<UpgradeWorkspaceState>(c.env, cacheKey);
     if (cached) {
       return c.json(
         envelopeSuccess({
@@ -1636,7 +1657,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
     const data = await store.getUpgradeWorkspaceState();
-    await putCachedJson(c.env as Record<string, unknown>, cacheKey, data, 45);
+    await putCachedJson(c.env, cacheKey, data, 60);
     return c.json(
       envelopeSuccess({
         correlationId,
@@ -1938,14 +1959,14 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
 
-    const version = await getCacheVersion(c.env as Record<string, unknown>);
+    const version = await getCacheVersion(c.env);
     const cacheKey = `dispatch:${version}:${jobid}:${user.user_id}`;
     const cached = await getCachedJson<{
       requests: ScheduleRequestRow[];
       schedules: ScheduleRow[];
       documents: JobDocumentRow[];
       technicians: UserRow[];
-    }>(c.env as Record<string, unknown>, cacheKey);
+    }>(c.env, cacheKey);
     if (cached) {
       return c.json(
         envelopeSuccess({
@@ -1971,7 +1992,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       documents,
       technicians
     };
-    await putCachedJson(c.env as Record<string, unknown>, cacheKey, payload, 20);
+    await putCachedJson(c.env, cacheKey, payload, 60);
 
     return c.json(
       envelopeSuccess({

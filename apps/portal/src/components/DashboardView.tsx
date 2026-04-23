@@ -2,9 +2,9 @@ import React from "react";
 import type { Role } from "@kharon/domain";
 import type { PortalSession } from "../apiClient";
 
-function Icon({ d, size = 20 }: { d: string; size?: number }): React.JSX.Element {
+function Icon({ d, size = 20, className }: { d: string; size?: number; className?: string }): React.JSX.Element {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
       <path d={d} />
     </svg>
   );
@@ -31,15 +31,16 @@ interface QuickStartCardProps {
   label: string;
   tool: string;
   onClick: (tool: string) => void;
-  badge?: string | number;
+  badge?: string | number | undefined;
 }
 
 function QuickStartCard({ icon, label, tool, onClick, badge }: QuickStartCardProps): React.JSX.Element {
+  const hasBadge = badge !== undefined && (typeof badge === "number" ? badge > 0 : badge.length > 0);
   return (
     <button type="button" className="quick-start-card" onClick={() => onClick(tool)}>
       <div className="quick-start-card__icon">
         <Icon d={icon} size={20} />
-        {badge !== undefined && badge > 0 ? <span className="quick-start-card__badge">{badge}</span> : null}
+        {hasBadge ? <span className="quick-start-card__badge">{badge}</span> : null}
       </div>
       <span className="quick-start-card__label">{label}</span>
       <Icon d={ICONS.arrowRight} size={16} className="quick-start-card__arrow" />

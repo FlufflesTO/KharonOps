@@ -61,6 +61,10 @@ required = [
   "GMAIL_SENDER_ADDRESS"
 ]
 
+[[env.staging.kv_namespaces]]
+binding = "KHARON_CACHE"
+id = "67ae1740081b449f98fd72e70574a341"
+
 [env.public]
 name = "kharon-unified-api-public"
 compatibility_flags = ["nodejs_compat"]
@@ -105,6 +109,10 @@ required = [
   "GMAIL_SENDER_ADDRESS"
 ]
 
+[[env.public.kv_namespaces]]
+binding = "KHARON_CACHE"
+id = "67ae1740081b449f98fd72e70574a341"
+
 [env.staging-public]
 name = "kharon-unified-api-staging-public"
 
@@ -141,6 +149,10 @@ required = [
   "GMAIL_SENDER_ADDRESS"
 ]
 
+[[env.staging-public.kv_namespaces]]
+binding = "KHARON_CACHE"
+id = "67ae1740081b449f98fd72e70574a341"
+
 [secrets]
 required = [
   "SESSION_KEYS",
@@ -156,6 +168,10 @@ required = [
   "GOOGLE_CALENDAR_ID",
   "GMAIL_SENDER_ADDRESS"
 ]
+
+[[kv_namespaces]]
+binding = "KHARON_CACHE"
+id = "67ae1740081b449f98fd72e70574a341"
 
 # Configure secrets via `wrangler secret put`
 # SESSION_KEYS
