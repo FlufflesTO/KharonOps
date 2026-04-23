@@ -22,5 +22,5 @@ export async function renderComplianceDocument(args: {
           ? React.createElement(Documents.GasCertificatePDF, { data: args.payload })
           : React.createElement(Documents.FireCertificatePDF, { data: args.payload });
 
-  return pdf(docElement as any).toBlob();
+  return pdf(docElement as React.ReactElement<any>).toBlob();
 }

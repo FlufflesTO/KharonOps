@@ -5,8 +5,19 @@ All notable changes to the KharonOps project are documented in this file.
 ## [Unreleased] - 2026-04-23
 
 ### [Changed]
-- Updated portal virtualization in `JobListView.tsx` to the `react-window@2` `List` API (`rowComponent` + `rowProps`), replacing the legacy child-render function usage.
-- Tightened cache typing in `workspace.ts` by replacing generic `any` cache payload reads with explicit `DispatchContextPayload` and `OpsIntelligencePayload` types.
+- **Portal UI Redesign:** Re-engineered the portal experience for a task-first, non-technical user base.
+  - **Login Experience:** Simplified sign-in flow with a welcoming, single-card layout. Removed technical jargon ("Operational Command", "Unified engineering control") in favor of plain language.
+  - **SuperAdmin Portal:** Modularized platform controls into specialized views (Overview, Users & Roles, Business Units, Data Checks, Automations, System Health, Activity Log). Implemented progressive disclosure to hide technical diagnostics behind "Show Details" affordances.
+  - **Admin Portal:** Redesigned for office administration, focusing on job monitoring, staff management, and office settings. Introduced a dedicated Office Dashboard for urgent actions.
+  - **Finance Portal:** Transformed from a technical accounting engine into a simple business workspace with dedicated views for Quotes, Invoices, Payments, Money Owed, and Statements.
+  - **Dispatch Portal:** Optimized for operational efficiency with urgency-based groupings (Unassigned, Today, Alerts). Added a Daily Plan view for risk assessment.
+  - **Technician Portal:** Guided, mobile-first experience focusing on "My Day", Check In/Out flows, and simplified reporting.
+  - **Client Portal:** Streamlined for transparency and trust, showing service progress, documents, and invoices in plain business terms.
+- **Global UI Standards:** Enforced a "max 5 items" rule for summary job lists and standardized terminology across all roles.
+
+### [Added]
+- **New Portal Components:** Created 15+ modular React components for role-specific workflows (e.g., `SuperAdminOverview`, `FinanceQuotesCard`, `TechCheckInOutCard`, `AdminDashboard`).
+- **Responsive Navigation:** Implemented a unified sidebar-driven navigation model that adapts from full desktop layouts to collapsed mobile drawers.
 
 ### [Fixed]
 - Restored repo-wide verification green state for:

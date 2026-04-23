@@ -8,7 +8,7 @@ interface TechMyDayCardProps {
 }
 
 export function TechMyDayCard({ jobs, onSelectJob, onEnterTool }: TechMyDayCardProps): React.JSX.Element {
-  const activeJobs = jobs.filter(j => j.status === "performed" || j.status === "confirmed");
+  const activeJobs = jobs.filter(j => j.status === "performed" || j.status === "approved");
   const nextJob = activeJobs[0];
 
   return (

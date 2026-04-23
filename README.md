@@ -20,6 +20,20 @@ Unified public website and operations portal for Kharon Fire and Security Soluti
 - People operations upgraded from a basic directory to an HR and skills matrix (certification, medical, rest and fatigue tracking).
 - Finance operations upgraded from scaffold state to quote, invoice, statement, debtors, and reconciliation workflows.
 
+## Portal UI/UX (Redesign v2)
+
+The portal has been redesigned for task-first, non-technical efficiency across all roles:
+
+- **Universal Experience:** Unified sidebar-driven navigation with progressive disclosure for advanced tools. Optimized for mobile, tablet, and desktop.
+- **Role-Specific Workspaces:**
+  - **SuperAdmin:** Modular platform controls (Health, Data Checks, Automations, Audit Log).
+  - **Admin:** Office management (Dashboard, Jobs, Staff, Settings).
+  - **Finance:** Business-first finance tools (Quotes, Invoices, Payments, Debtors).
+  - **Dispatch:** Operational coordination (Schedule Board, Unassigned Queue, Daily Plan).
+  - **Technician:** Guided field execution (My Day, Check In/Out, Simple Reporting).
+  - **Client:** Trust-based service tracking (Overview, Documents, Invoices).
+- **Design Tokens:** Modern blue/purple/black/gray palette with spacious, responsive card layouts and human-friendly terminology.
+
 ## Stack
 
 - Node.js 22+

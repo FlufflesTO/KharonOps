@@ -9,8 +9,8 @@ interface FinanceOverviewCardProps {
 
 export function FinanceOverviewCard({ store, onEnterTool, isLoading }: FinanceOverviewCardProps): React.JSX.Element {
   const pendingQuotes = store.quotes.filter(q => q.status === "draft").length;
-  const pendingInvoices = store.invoices.filter(i => i.status === "draft").length;
-  const overdueInvoices = store.invoices.filter(i => i.status === "sent" && new Date(i.due_at) < new Date()).length;
+  const pendingInvoices = store.invoices.filter(i => i.status === "issued").length;
+  const overdueInvoices = store.invoices.filter(i => i.status === "issued" && new Date(i.due_date) < new Date()).length;
 
   return (
     <article className="workspace-card">

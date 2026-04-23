@@ -1411,7 +1411,9 @@ export function PortalApp(): React.JSX.Element {
             {activeWorkspaceTool === "tech_checkin" && effectiveRole === "technician" ? (
               <TechCheckInOutCard 
                 selectedJob={selectedJob} 
-                onUpdateStatus={(status) => runAction(() => apiClient.updateStatus(selectedJob?.job_id ?? "", status, selectedJob?.row_version ?? 0))}
+                onUpdateStatus={(status) => runAction(async () => {
+                  await apiClient.updateStatus(selectedJob?.job_id ?? "", status, selectedJob?.row_version ?? 0);
+                })}
                 onVerifyLocation={() => runAction(handleVerifyLocation)}
                 geoStatus={geoVerification.status}
               />
@@ -1548,7 +1550,18 @@ export function PortalApp(): React.JSX.Element {
 
             {activeWorkspaceTool === "admin" ? (
               isAdmin && !isSuperAdmin ? (
-                <AdminSettingsCard session={session} />
+                <AdminSettingsCard
+                  session={session}
+                  defaultWorkspaceTool={defaultWorkspaceTool}
+                  pinnedTools={pinnedTools}
+                  onboardingDismissed={onboardingDismissed}
+                  allowedWorkspaceTools={allowedWorkspaceTools}
+                  onSavePreferences={({ defaultWorkspaceTool: nextTool, pinnedTools: nextPinnedTools, onboardingDismissed: nextOnboardingDismissed }) => {
+                    setDefaultWorkspaceTool(nextTool);
+                    setPinnedTools(nextPinnedTools);
+                    setOnboardingDismissed(nextOnboardingDismissed);
+                  }}
+                />
               ) : isSuperAdmin ? (
                 <AdminPanelCard
                   adminHealth={adminHealth}

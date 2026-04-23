@@ -76,7 +76,7 @@ export function FinanceInvoicesCard({ store, onCreateInvoiceFromQuote }: Finance
                 <div key={invoice.invoice_id} className="history-row">
                   <div className="flex-1">
                     <strong>{invoice.invoice_id}</strong>
-                    <span className="job-item__meta">{invoice.client_id} • Due {invoice.due_at}</span>
+                    <span className="job-item__meta">{invoice.client_id} • Due {invoice.due_date}</span>
                   </div>
                   <div className="button-row">
                     <strong>{asMoney(invoice.amount)}</strong>

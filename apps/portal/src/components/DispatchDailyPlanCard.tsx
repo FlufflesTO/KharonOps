@@ -8,9 +8,9 @@ interface DispatchDailyPlanCardProps {
 }
 
 export function DispatchDailyPlanCard({ jobs, opsIntelligence }: DispatchDailyPlanCardProps): React.JSX.Element {
-  const today = new Date().toISOString().split('T')[0];
-  const todayJobs = jobs.filter(j => j.updated_at.startsWith(today));
-  const lateJobs = jobs.filter(j => j.status === "performed" && j.updated_at < today);
+  const today = new Date().toISOString().split('T')[0] ?? "";
+  const todayJobs = jobs.filter(j => (j.updated_at ?? "").startsWith(today));
+  const lateJobs = jobs.filter(j => j.status === "performed" && (j.updated_at ?? "") < today);
 
   return (
     <article className="workspace-card">

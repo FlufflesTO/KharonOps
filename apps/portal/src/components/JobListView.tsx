@@ -193,7 +193,8 @@ export function JobListView({
     title,
     globalQuery,
     onGlobalQueryChange,
-    onBulkStatusUpdate
+    onBulkStatusUpdate,
+    limit
   }: JobListViewProps): React.JSX.Element {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
