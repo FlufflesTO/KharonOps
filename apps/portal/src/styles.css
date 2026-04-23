@@ -47,7 +47,6 @@
   max-width: var(--max-width);
   margin: 0 auto;
   padding: var(--space-8) var(--container-padding);
-  min-height: calc(100vh - 40px);
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
@@ -256,7 +255,7 @@
 
 /* Dashboard Help Section */
 .dashboard-help {
-  margin-top: auto;
+  margin-top: 0;
 }
 
 .dashboard-help__card {
@@ -888,16 +887,25 @@ summary:focus-visible {
 
 .portal-layout {
   display: grid;
-  grid-template-columns: 240px minmax(280px, var(--sidebar-width)) minmax(0, 1fr);
+  grid-template-columns: 220px minmax(300px, 360px) minmax(0, 1fr);
   align-items: start;
   gap: var(--space-4);
-  width: min(var(--max-width), calc(100% - var(--container-padding)));
+  width: min(1720px, calc(100% - var(--container-padding)));
   margin: 0 auto;
   padding: var(--space-4) 0 var(--space-6);
 }
 
 .portal-layout--no-joblist {
   grid-template-columns: 240px minmax(0, 1fr);
+}
+
+.portal-layout--focus {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.portal-layout--focus .portal-nav,
+.portal-layout--focus .portal-sidebar {
+  display: none;
 }
 
 .portal-nav {
@@ -1086,7 +1094,8 @@ summary:focus-visible {
   width: min(760px, 100%);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: rgba(12, 20, 35, 0.96);
+  background: rgba(14, 24, 42, 0.98);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
   padding: 1rem;
   display: grid;
   gap: 0.7rem;
@@ -1098,6 +1107,21 @@ summary:focus-visible {
   display: grid;
   gap: 0.4rem;
   padding-right: 0.2rem;
+}
+
+.command-palette .portal-nav__item {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: #e7efff;
+}
+
+.command-palette .portal-nav__item small {
+  color: #a8bbd9;
+}
+
+.command-palette .portal-nav__item:hover {
+  border-color: color-mix(in srgb, var(--role-accent) 45%, #6f7f97 55%);
+  background: color-mix(in srgb, var(--role-accent) 12%, transparent 88%);
 }
 
 .mobile-action-bar {
@@ -1837,7 +1861,7 @@ summary:focus-visible {
 }
 
 .workspace-container--split {
-  grid-template-columns: minmax(0, 1fr) minmax(400px, 450px);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 @media (max-width: 1024px) {
@@ -1847,13 +1871,13 @@ summary:focus-visible {
 }
 
 .side-sheet {
-  position: sticky;
-  top: calc(var(--header-height) + var(--space-4));
-  height: calc(100vh - var(--header-height) - var(--space-8));
+  position: static;
+  top: auto;
+  height: auto;
   display: flex;
   flex-direction: column;
   animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
+  overflow: visible;
 }
 
 @keyframes slideInRight {
@@ -1902,6 +1926,13 @@ summary:focus-visible {
   border-color: var(--role-accent);
   background: rgba(99, 102, 241, 0.05);
   box-shadow: 0 0 0 1px var(--role-accent) inset, 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+mark.highlight {
+  background: rgba(99, 102, 241, 0.25);
+  color: #e6e8ff;
+  border-radius: 4px;
+  padding: 0 0.15rem;
 }
 
 .job-card__header {

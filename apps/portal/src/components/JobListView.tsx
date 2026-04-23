@@ -47,6 +47,29 @@ interface JobItemProps {
   checked: boolean;
   onToggle: (id: string) => void;
   onClick: (id: string) => void;
+  query: string;
+}
+
+function Highlight({ text, query }: { text: string; query: string }): React.JSX.Element {
+  const trimmed = query.trim();
+  if (!trimmed) {
+    return <>{text}</>;
+  }
+  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "ig"));
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.toLowerCase() === trimmed.toLowerCase() ? (
+          <mark key={`${part}-${index}`} className="highlight">
+            {part}
+          </mark>
+        ) : (
+          <React.Fragment key={`${part}-${index}`}>{part}</React.Fragment>
+        )
+      )}
+    </>
+  );
 }
 
 function Icon({ d, size = 16 }: { d: string; size?: number }): React.JSX.Element {
@@ -63,7 +86,7 @@ const ICONS = {
   shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
 };
 
-const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, onClick }: JobItemProps): React.JSX.Element {
+const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, onClick, query }: JobItemProps): React.JSX.Element {
   const riskScore = (() => {
     const baseByStatus: Record<JobStatus, number> = {
       draft: 55,
@@ -100,7 +123,7 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
               onClick={(event) => event.stopPropagation()}
               aria-label={`Select ${job.job_id}`}
             />
-            <span>{job.job_id}</span>
+            <span><Highlight text={job.job_id} query={query} /></span>
           </label>
         </div>
         <span className={`status-chip status-chip--${statusTone(job.status)}`}>
@@ -108,15 +131,15 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
         </span>
       </div>
       
-      <div className="job-card__client">{clientDisplay}</div>
+      <div className="job-card__client"><Highlight text={clientDisplay} query={query} /></div>
       <div className="job-item__title" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '-0.25rem' }}>
-        {job.title}
+        <Highlight text={job.title} query={query} />
       </div>
 
       <div className="job-card__meta">
         <div className="job-card__meta-item">
           <Icon d={ICONS.mapPin} size={14} />
-          <span>{technicianDisplay}</span>
+          <span><Highlight text={technicianDisplay} query={query} /></span>
         </div>
         <div className="job-card__meta-item">
           <Icon d={ICONS.shield} size={14} />
@@ -266,7 +289,7 @@ export function JobListView({
 
       <div className="job-list-filters">
         <input
-          id="job-list-search"
+          id="job-search-input"
           name="job_list_search"
           className="job-list-filters__search"
           type="search"
@@ -349,6 +372,7 @@ export function JobListView({
               }
               isActive={job.job_id === selectedJobid}
               onClick={onSelectJob}
+              query={searchQuery}
             />
           ))
         )}

@@ -302,7 +302,8 @@ export function PortalApp(): React.JSX.Element {
   const [documentAccessDenied, setDocumentAccessDenied] = useState(false);
   const [dispatchAccessDenied, setDispatchAccessDenied] = useState(false);
   const [upgradeState, setUpgradeState] = useState<UpgradeWorkspaceState>(EMPTY_UPGRADE_STATE);
-  const [globalSearch, setGlobalSearch] = useState("");
+  const [focusMode, setFocusMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [showMoreNav, setShowMoreNav] = useState(false);
   const [defaultWorkspaceTool, setDefaultWorkspaceTool] = useState("jobs");
@@ -329,12 +330,7 @@ export function PortalApp(): React.JSX.Element {
     if (isAdmin) tools.push("admin");
     return tools;
   }, [canAccessPeopleDirectory, isAdmin, isDispatchRole, isFinanceRole]);
-  const showOperationalEngagements =
-    activeWorkspaceTool === "jobs" ||
-    activeWorkspaceTool === "schedule" ||
-    activeWorkspaceTool === "documents" ||
-    activeWorkspaceTool === "comms" ||
-    activeWorkspaceTool === "finance";
+  const showOperationalEngagements = activeWorkspaceTool === "jobs";
   const primaryRoleTools = ROLE_PRIMARY_TOOLS[effectiveRole ?? "client"] ?? ["jobs", "documents"];
   const primaryNavTools = allowedWorkspaceTools.filter((tool) => primaryRoleTools.includes(tool));
   const orderedPrimaryNavTools = [...primaryNavTools].sort((a, b) => {
@@ -348,7 +344,7 @@ export function PortalApp(): React.JSX.Element {
     helper: "Use the sidebar to move between sections"
   };
   const filteredJobs = useMemo(() => {
-    const query = globalSearch.trim().toLowerCase();
+    const query = searchTerm.trim().toLowerCase();
     if (!query) {
       return jobs;
     }
@@ -358,7 +354,7 @@ export function PortalApp(): React.JSX.Element {
         .toLowerCase()
         .includes(query)
     );
-  }, [globalSearch, jobs]);
+  }, [searchTerm, jobs]);
 
   const selectedJob = useMemo(() => filteredJobs.find((job) => job.job_id === selectedJobid) ?? null, [filteredJobs, selectedJobid]);
   const selectableStatuses = useMemo<JobStatus[]>(
@@ -447,6 +443,36 @@ export function PortalApp(): React.JSX.Element {
   };
 
   useEffect(() => {
+    const saved = localStorage.getItem("kharon_workspace_state");
+    if (!saved) {
+      return;
+    }
+    try {
+      const state = JSON.parse(saved) as {
+        selectedJobid?: string;
+        statusTarget?: JobStatus;
+        activeWorkspaceTool?: string;
+      };
+      if (state.selectedJobid) setSelectedJobid(state.selectedJobid);
+      if (state.statusTarget) setStatusTarget(state.statusTarget);
+      if (state.activeWorkspaceTool) setActiveWorkspaceTool(state.activeWorkspaceTool);
+    } catch (error) {
+      console.warn("Restore failed", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "kharon_workspace_state",
+      JSON.stringify({
+        selectedJobid,
+        statusTarget,
+        activeWorkspaceTool
+      })
+    );
+  }, [selectedJobid, statusTarget, activeWorkspaceTool]);
+
+  useEffect(() => {
     if (!effectiveRole) {
       return;
     }
@@ -492,9 +518,31 @@ export function PortalApp(): React.JSX.Element {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT") {
+        if (event.key === "Escape") {
+          (document.activeElement as HTMLElement | null)?.blur();
+        }
+        return;
+      }
+
+      if (event.key === "/") {
+        event.preventDefault();
+        (document.getElementById("job-search-input") ?? document.getElementById("workspace-global-search"))?.focus();
+      }
+
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setCommandPaletteOpen(true);
+      }
+      if (event.key.toLowerCase() === "j") {
+        setActiveWorkspaceTool("jobs");
+      }
+      if (event.key.toLowerCase() === "d") {
+        setPortalView("dashboard");
+      }
+      if (event.key.toLowerCase() === "f") {
+        setFocusMode((prev) => !prev);
       }
       if (event.key === "Escape") {
         setCommandPaletteOpen(false);
@@ -503,6 +551,14 @@ export function PortalApp(): React.JSX.Element {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  useEffect(() => {
+    if (effectiveRole === "client") {
+      document.documentElement.style.setProperty("--role-accent", "var(--color-primary)");
+    } else {
+      document.documentElement.style.removeProperty("--role-accent");
+    }
+  }, [effectiveRole]);
 
   async function refreshQueueCount(): Promise<void> {
     try {
@@ -1236,6 +1292,14 @@ export function PortalApp(): React.JSX.Element {
             Offline queue mode
           </label>
           <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`}>{networkOnline ? "Online" : "Offline"}</span>
+          <button
+            className={`button ${focusMode ? "button--primary" : "button--ghost"}`}
+            type="button"
+            onClick={() => setFocusMode((prev) => !prev)}
+            title="Toggle Focus Mode (F)"
+          >
+            {focusMode ? "Exit Focus" : "Focus"}
+          </button>
           <button className="button button--secondary" type="button" onClick={() => runAction(handleReplay)}>
             Sync queued changes ({queueCount})
           </button>
@@ -1251,7 +1315,7 @@ export function PortalApp(): React.JSX.Element {
         </div>
       </header>
 
-      <div className={`portal-layout ${showOperationalEngagements ? "portal-layout--with-joblist" : "portal-layout--no-joblist"}`}>
+      <div className={`portal-layout ${showOperationalEngagements ? "portal-layout--with-joblist" : "portal-layout--no-joblist"} ${focusMode ? "portal-layout--focus" : ""}`}>
         <aside className="portal-nav">
           <div className="portal-nav__header">
             <p className="portal-nav__label">Workspace</p>
@@ -1266,7 +1330,9 @@ export function PortalApp(): React.JSX.Element {
             >
               {allowedWorkspaceTools.map((tool) => (
                 <option key={tool} value={tool}>
-                  {(WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}
+                  {tool === "jobs" && effectiveRole === "client"
+                    ? "Approvals"
+                    : (WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}
                 </option>
               ))}
             </select>
@@ -1281,6 +1347,7 @@ export function PortalApp(): React.JSX.Element {
             </button>
             {orderedPrimaryNavTools.map((tool) => {
               const item = WORKSPACE_TOOL_META[tool] ?? { label: tool, helper: "" };
+              const displayLabel = tool === "jobs" && effectiveRole === "client" ? "Approvals" : item.label;
               const active = tool === activeWorkspaceTool;
               return (
                 <button
@@ -1289,7 +1356,7 @@ export function PortalApp(): React.JSX.Element {
                   className={`portal-nav__item ${active ? "portal-nav__item--active" : ""}`}
                   onClick={() => setActiveWorkspaceTool(tool)}
                 >
-                  <span>{item.label}</span>
+                  <span>{displayLabel}</span>
                   <small>{item.helper}</small>
                 </button>
               );
@@ -1303,6 +1370,7 @@ export function PortalApp(): React.JSX.Element {
                 {showMoreNav
                   ? moreNavTools.map((tool) => {
                     const item = WORKSPACE_TOOL_META[tool] ?? { label: tool, helper: "" };
+                    const displayLabel = tool === "jobs" && effectiveRole === "client" ? "Approvals" : item.label;
                     const active = tool === activeWorkspaceTool;
                     return (
                       <button
@@ -1311,7 +1379,7 @@ export function PortalApp(): React.JSX.Element {
                         className={`portal-nav__item ${active ? "portal-nav__item--active" : ""}`}
                         onClick={() => setActiveWorkspaceTool(tool)}
                       >
-                        <span>{item.label}</span>
+                        <span>{displayLabel}</span>
                         <small>{item.helper}</small>
                       </button>
                     );
@@ -1334,7 +1402,9 @@ export function PortalApp(): React.JSX.Element {
                       setPinnedTools((prev) => (prev.includes(tool) ? prev.filter((id) => id !== tool) : [...prev, tool]))
                     }
                   >
-                    {(WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}
+                    {tool === "jobs" && effectiveRole === "client"
+                      ? "Approvals"
+                      : (WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}
                   </button>
                 );
               })}
@@ -1349,8 +1419,8 @@ export function PortalApp(): React.JSX.Element {
               selectedJobid={selectedJobid}
               onSelectJob={setSelectedJobid}
               viewKey={effectiveRole ?? "client"}
-              globalQuery={globalSearch}
-              onGlobalQueryChange={setGlobalSearch}
+              globalQuery={searchTerm}
+              onGlobalQueryChange={setSearchTerm}
               onBulkStatusUpdate={(ids, status) => runAction(() => handleBulkStatusUpdate(ids, status))}
               title="Jobs List"
             />
@@ -1364,8 +1434,9 @@ export function PortalApp(): React.JSX.Element {
             <div className="workspace-header-card__actions">
               <input
                 type="search"
-                value={globalSearch}
-                onChange={(event) => setGlobalSearch(event.target.value)}
+                id="workspace-global-search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search jobs, clients, sites, IDs..."
                 aria-label="Search across workspace data"
               />
@@ -1607,7 +1678,7 @@ export function PortalApp(): React.JSX.Element {
                     setCommandPaletteOpen(false);
                   }}
                 >
-                  <span>{(WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}</span>
+                  <span>{tool === "jobs" && effectiveRole === "client" ? "Approvals" : (WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}</span>
                   <small>{(WORKSPACE_TOOL_META[tool] ?? { helper: "" }).helper}</small>
                 </button>
               ))}
