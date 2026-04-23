@@ -1,7 +1,7 @@
 import React from "react";
 import type { Role } from "@kharon/domain";
 import type { PortalSession } from "../apiClient";
-import { formatWorkspaceToolLabel } from "../appShell/navigation";
+import { getRoleMenuLabel } from "../appShell/navigation";
 import { WORKSPACE_TOOL_META } from "../appShell/helpers";
 
 interface PortalChromeProps {
@@ -26,7 +26,6 @@ interface PortalChromeProps {
   activeWorkspaceTool: string;
   onActiveWorkspaceToolChange: (tool: string) => void;
   primaryTools: string[];
-  moreTools: string[];
   children: React.ReactNode;
 }
 
@@ -52,7 +51,6 @@ export function PortalChrome({
   activeWorkspaceTool,
   onActiveWorkspaceToolChange,
   primaryTools,
-  moreTools,
   children
 }: PortalChromeProps): React.JSX.Element {
   const activeToolMeta = WORKSPACE_TOOL_META[activeWorkspaceTool] ?? {
@@ -143,8 +141,8 @@ export function PortalChrome({
               onChange={(event) => onDefaultWorkspaceToolChange(event.target.value)}
             >
               {allowedWorkspaceTools.map((tool) => (
-                <option key={tool} value={tool}>
-                  {formatWorkspaceToolLabel(tool, effectiveRole)}
+              <option key={tool} value={tool}>
+                  {getRoleMenuLabel(tool, effectiveRole)}
                 </option>
               ))}
             </select>
@@ -156,7 +154,7 @@ export function PortalChrome({
               className={`portal-nav__item ${activeWorkspaceTool === "jobs" ? "portal-nav__item--active" : ""}`}
               onClick={() => onActiveWorkspaceToolChange("jobs")}
             >
-              <span>{formatWorkspaceToolLabel("jobs", effectiveRole)}</span>
+              <span>{getRoleMenuLabel("jobs", effectiveRole)}</span>
               <small>Primary workspace</small>
             </button>
 
@@ -172,35 +170,13 @@ export function PortalChrome({
                     className={`portal-nav__item ${active ? "portal-nav__item--active" : ""}`}
                     onClick={() => onActiveWorkspaceToolChange(tool)}
                   >
-                    <span>{formatWorkspaceToolLabel(tool, effectiveRole)}</span>
+                    <span>{getRoleMenuLabel(tool, effectiveRole)}</span>
                     <small>{item.helper}</small>
                   </button>
                 );
               })}
           </nav>
 
-          {moreTools.length > 0 ? (
-            <div className="portal-nav__secondary">
-              <p className="portal-nav__label">Other sections</p>
-              <nav className="portal-nav__list" aria-label="Additional portal sections">
-                {moreTools.map((tool) => {
-                  const item = WORKSPACE_TOOL_META[tool] ?? { label: tool, helper: "" };
-                  const active = tool === activeWorkspaceTool;
-                  return (
-                    <button
-                      key={tool}
-                      type="button"
-                      className={`portal-nav__item ${active ? "portal-nav__item--active" : ""}`}
-                      onClick={() => onActiveWorkspaceToolChange(tool)}
-                    >
-                      <span>{formatWorkspaceToolLabel(tool, effectiveRole)}</span>
-                      <small>{item.helper}</small>
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-          ) : null}
         </aside>
 
         {children}

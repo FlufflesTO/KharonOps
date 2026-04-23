@@ -77,6 +77,7 @@ import {
   WORKSPACE_TOOL_META
 } from "./appShell/helpers";
 import { getWorkspaceToolGroups } from "./appShell/navigation";
+import { getRoleLandingTool } from "./config/roleLanding";
 import { useActionRunner } from "./appShell/useActionRunner";
 import { useLiveSyncController } from "./appShell/useLiveSyncController";
 import { useWorkspacePersistence } from "./appShell/useWorkspacePersistence";
@@ -187,10 +188,11 @@ export function PortalApp(): React.JSX.Element {
     return tools;
   }, [canAccessPeopleDirectory, isAdmin, isDispatchRole, isFinanceRole, isSuperAdmin]);
   const showOperationalEngagements = activeWorkspaceTool === "jobs";
-  const { primaryTools, moreTools } = useMemo(
+  const { primaryTools } = useMemo(
     () => getWorkspaceToolGroups(effectiveRole ?? "client", allowedWorkspaceTools),
     [effectiveRole, allowedWorkspaceTools]
   );
+  const landingWorkspaceTool = useMemo(() => getRoleLandingTool(effectiveRole ?? "client"), [effectiveRole]);
   const activeToolMeta = WORKSPACE_TOOL_META[activeWorkspaceTool] ?? {
     label: "Workspace",
     helper: "Use the sidebar to move between sections"
@@ -1143,7 +1145,7 @@ export function PortalApp(): React.JSX.Element {
           onboardingDismissed={onboardingDismissed}
           onDismissOnboarding={() => setOnboardingDismissed(true)}
           onEnterWorkspace={(tool) => {
-            const targetTool = tool === "jobs" ? defaultWorkspaceTool : tool;
+            const targetTool = tool === "jobs" ? landingWorkspaceTool : tool;
             setActiveWorkspaceTool(allowedWorkspaceTools.includes(targetTool) ? targetTool : tool);
             setPortalView("workspace");
           }}
@@ -1183,7 +1185,6 @@ export function PortalApp(): React.JSX.Element {
         activeWorkspaceTool={activeWorkspaceTool}
         onActiveWorkspaceToolChange={setActiveWorkspaceTool}
         primaryTools={primaryTools}
-        moreTools={moreTools}
       >
         <PortalWorkspace
           state={{
