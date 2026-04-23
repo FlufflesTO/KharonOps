@@ -17,7 +17,7 @@
     "workbook:audit": "node ./scripts/workbook-governance.mjs",
     "workbook:fix": "node ./scripts/workbook-governance.mjs --apply",
     "typecheck": "tsc -p tsconfig.check.json --noEmit",
-    "check": "npm run typecheck",
+    "check": "npm run build && npm run test",
     "build:packages": "npm run build -w @kharon/domain && npm run build -w @kharon/google && npm run build -w @kharon/ui",
     "build:apps": "npm run build -w @kharon/api && npm run build -w @kharon/site && npm run build -w @kharon/portal && node ./scripts/build-static.mjs",
     "build:web": "npm run build -w @kharon/site && npm run build -w @kharon/portal && node ./scripts/build-static.mjs",
@@ -29,7 +29,7 @@
     "deploy:staging": "npx wrangler deploy --env staging",
     "deploy:staging-public": "npx wrangler deploy --env staging-public",
     "ui:tokens:check": "node ./scripts/check-design-tokens.mjs",
-    "pretest": "npm run build:packages",
+    "pretest": "npm run build",
     "test": "vitest run",
     "lint": "eslint ."
   },

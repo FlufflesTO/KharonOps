@@ -5,6 +5,7 @@ export default defineConfig({
     base: "/portal/",
     plugins: [react(), tsconfigPaths()],
     build: {
-        outDir: "dist"
+        outDir: "dist",
+        chunkSizeWarningLimit: 1600
     }
 });

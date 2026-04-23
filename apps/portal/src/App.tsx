@@ -13,15 +13,14 @@ import {
   type SkillMatrixRecord,
   type UpgradeWorkspaceState
 } from "./apiClient";
-import { enqueueMutation, listQueuedMutations } from "./offline/queue";
+import type { DocumentPayload } from "./pdfs/types";
+import { enqueueMutation } from "./offline/queue";
 import { replayQueuedMutations } from "./offline/replay";
 
 import { SummaryBoard } from "./components/SummaryBoard";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { JobListView, type JobRecord } from "./components/JobListView";
 import { JobDetailView } from "./components/JobDetailView";
-import { pdf } from "@react-pdf/renderer";
-import * as Documents from "./pdfs";
 import { PortalAuth } from "./components/PortalAuth";
 import { ScheduleControlCard } from "./components/ScheduleControlCard";
 import { CommunicationRailsCard } from "./components/CommunicationRailsCard";
@@ -31,264 +30,56 @@ import { DashboardView } from "./components/DashboardView";
 import { RegistryCard } from "./components/RegistryCard";
 import { PeopleDirectoryCard } from "./components/PeopleDirectoryCard";
 import { FinanceOpsCard } from "./components/FinanceOpsCard";
-
-
-function pickString(record: Record<string, unknown>, ...keys: string[]): string {
-  for (const key of keys) {
-    const value = record[key];
-    const text = String(value ?? "").trim();
-    if (text !== "") {
-      return text;
-    }
-  }
-  return "";
-}
-
-function pickNumber(record: Record<string, unknown>, ...keys: string[]): number {
-  for (const key of keys) {
-    const value = Number(record[key] ?? NaN);
-    if (Number.isFinite(value)) {
-      return value;
-    }
-  }
-  return 0;
-}
-
-function asJob(record: Record<string, unknown>): JobRecord {
-  const status = String(record.status ?? "draft") as JobStatus;
-
-  return {
-    job_id: pickString(record, "job_id"),
-    title: String(record.title ?? ""),
-    status,
-    row_version: pickNumber(record, "row_version"),
-    client_id: pickString(record, "client_id"),
-    technician_id: pickString(record, "technician_id", "primary_technician_id"),
-    client_name: String(record.client_name ?? ""),
-    technician_name: String(record.technician_name ?? ""),
-    updated_at: String(record.updated_at ?? ""),
-    site_id: pickString(record, "site_id"),
-    site_lat: Number.isFinite(Number(record.site_lat ?? record.latitude ?? NaN)) ? Number(record.site_lat ?? record.latitude) : null,
-    site_lng: Number.isFinite(Number(record.site_lng ?? record.longitude ?? NaN)) ? Number(record.site_lng ?? record.longitude) : null,
-    last_note: String(record.last_note ?? ""),
-    // Metadata preservation for contextual dispatch
-    active_request_id: pickString(record, "active_request_id"),
-    active_document_id: pickString(record, "active_document_id"),
-    suggested_technician_id: pickString(record, "suggested_technician_id")
-  };
-}
-
-function normalizeScheduleRequest(record: Record<string, unknown>): ScheduleRequestRow {
-  return {
-    request_id: pickString(record, "request_id"),
-    job_id: pickString(record, "job_id"),
-    client_id: pickString(record, "client_id"),
-    preferred_slots_json: String(record.preferred_slots_json ?? "[]"),
-    timezone: String(record.timezone ?? ""),
-    notes: String(record.notes ?? ""),
-    status: (String(record.status ?? "requested") as ScheduleRequestRow["status"]),
-    row_version: pickNumber(record, "row_version"),
-    updated_at: String(record.updated_at ?? ""),
-    updated_by: String(record.updated_by ?? ""),
-    correlation_id: String(record.correlation_id ?? "")
-  };
-}
-
-function normalizeSchedule(record: Record<string, unknown>): ScheduleRow {
-  return {
-    schedule_id: pickString(record, "schedule_id"),
-    request_id: pickString(record, "request_id"),
-    job_id: pickString(record, "job_id"),
-    calendar_event_id: String(record.calendar_event_id ?? ""),
-    start_at: String(record.start_at ?? ""),
-    end_at: String(record.end_at ?? ""),
-    technician_id: pickString(record, "technician_id"),
-    status: (String(record.status ?? "confirmed") as ScheduleRow["status"]),
-    row_version: pickNumber(record, "row_version"),
-    updated_at: String(record.updated_at ?? ""),
-    updated_by: String(record.updated_by ?? ""),
-    correlation_id: String(record.correlation_id ?? "")
-  };
-}
-
-function normalizeDocument(record: Record<string, unknown>): JobDocumentRow {
-  return {
-    document_id: pickString(record, "document_id"),
-    job_id: pickString(record, "job_id"),
-    document_type: (String(record.document_type ?? "service_report") as JobDocumentRow["document_type"]),
-    status: (String(record.status ?? "generated") as JobDocumentRow["status"]),
-    drive_file_id: String(record.drive_file_id ?? ""),
-    pdf_file_id: String(record.pdf_file_id ?? ""),
-    published_url: String(record.published_url ?? ""),
-    client_visible: Boolean(record.client_visible ?? false),
-    row_version: pickNumber(record, "row_version"),
-    updated_at: String(record.updated_at ?? ""),
-    updated_by: String(record.updated_by ?? ""),
-    correlation_id: String(record.correlation_id ?? "")
-  };
-}
-
-function normalizeJobEvent(record: Record<string, unknown>): JobEventRow {
-    return {
-      event_id: String(record.event_id ?? ""),
-      job_id: String(record.job_id ?? ""),
-      event_type: String(record.event_type ?? ""),
-      payload_json: String(record.payload_json ?? "{}"),
-      row_version: Number(record.row_version ?? 1),
-      updated_at: String(record.updated_at ?? ""),
-      updated_by: String(record.updated_by ?? ""),
-      correlation_id: String(record.correlation_id ?? ""),
-      created_at: String(record.created_at ?? record.updated_at ?? ""),
-      created_by: String(record.created_by ?? record.updated_by ?? "")
-    };
-}
-
-function normalizeUser(record: Record<string, unknown>): UserRow {
-  return {
-    user_id: pickString(record, "user_id"),
-    email: String(record.email ?? ""),
-    display_name: String(record.display_name ?? ""),
-    role: String(record.role ?? "client") as UserRow["role"],
-    client_id: pickString(record, "client_id"),
-    technician_id: pickString(record, "technician_id"),
-    active: String(record.active ?? "true") === "false" ? "false" : "true",
-    row_version: pickNumber(record, "row_version"),
-    updated_at: String(record.updated_at ?? ""),
-    updated_by: String(record.updated_by ?? ""),
-    correlation_id: String(record.correlation_id ?? "")
-  };
-}
-
-function nowPlusHours(hours: number): string {
-  const value = new Date(Date.now() + hours * 60 * 60 * 1000);
-  return value.toISOString().slice(0, 16);
-}
-
-function toIsoOrNull(value: string): string | null {
-  const parsed = Date.parse(value);
-  if (Number.isNaN(parsed)) {
-    return null;
-  }
-  return new Date(parsed).toISOString();
-}
-
-function toLocalInputValue(value: string): string {
-  const parsed = Date.parse(value);
-  if (Number.isNaN(parsed)) {
-    return nowPlusHours(1);
-  }
-  return new Date(parsed).toISOString().slice(0, 16);
-}
-
-function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const r = 6371000;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return r * c;
-}
-
-function errorMessage(error: unknown): string {
-  const typed = error as { error?: { message?: string } };
-  return typed.error?.message ?? String(error);
-}
-
-function errorCode(error: unknown): string {
-  const typed = error as { error?: { code?: string } };
-  return typed.error?.code ?? "";
-}
-
-function formatApiFailure(error: unknown): string {
-  const typed = error as {
-    error?: { code?: string; message?: string; details?: unknown };
-    correlation_id?: string;
-  };
-  const message = typed.error?.message ?? "Request failed";
-  const code = typed.error?.code ? ` [${typed.error.code}]` : "";
-  const correlation = typed.correlation_id ? ` (corr: ${typed.correlation_id})` : "";
-  const details = typed.error?.details ? ` details=${JSON.stringify(typed.error.details)}` : "";
-  return `${message}${code}${correlation}${details}`;
-}
-
-function isUnauthorizedError(error: unknown): boolean {
-  const code = errorCode(error);
-  if (code === "unauthorized" || code === "forbidden") {
-    return true;
-  }
-  return /401|unauthori[sz]ed|forbidden/i.test(errorMessage(error));
-}
-
-function looksLikeJwt(token: string): boolean {
-  const trimmed = token.trim();
-  return trimmed.split(".").length === 3 && trimmed.length > 40;
-}
-
-function firstRequestedSlot(request: ScheduleRequestRow | null): { start_at: string; end_at: string } | null {
-  if (!request) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(request.preferred_slots_json) as Array<{ start_at?: string; end_at?: string }>;
-    const first = parsed[0];
-    if (!first?.start_at || !first?.end_at) {
-      return null;
-    }
-    return {
-      start_at: first.start_at,
-      end_at: first.end_at
-    };
-  } catch {
-    return null;
-  }
-}
-
-const EMPTY_UPGRADE_STATE: UpgradeWorkspaceState = {
-  quotes: [],
-  invoices: [],
-  statements: [],
-  debtors: [],
-  escrow: [],
-  skills: []
-};
-
-const ROLE_LABELS: Record<string, string> = {
-  client: "Client",
-  technician: "Technician",
-  dispatcher: "Dispatch",
-  finance: "Finance",
-  admin: "Admin",
-  super_admin: "Super Admin"
-};
-
-const WORKSPACE_TOOL_META: Record<string, { label: string; helper: string }> = {
-  jobs: { label: "Jobs", helper: "View and update active jobs" },
-  schedule: { label: "Schedule", helper: "Plan, assign, and confirm visits" },
-  documents: { label: "Files", helper: "Review and publish job files" },
-  comms: { label: "Messages", helper: "Share updates with clients and teams" },
-  finance: { label: "Finance", helper: "Quotes, invoices, and escrow controls" },
-  people: { label: "Team", helper: "People directory and skills matrix" },
-  admin: { label: "Settings", helper: "Platform controls and audit tools" }
-};
-
-const ROLE_PRIMARY_TOOLS: Record<string, string[]> = {
-  client: ["jobs", "documents"],
-  technician: ["jobs", "documents"],
-  dispatcher: ["jobs", "schedule", "comms"],
-  finance: ["finance", "jobs", "documents"],
-  admin: ["jobs", "people", "admin"],
-  super_admin: ["jobs", "schedule", "finance", "admin"]
-};
-
-const COPY_GLOSSARY = {
-  documents: "Files",
-  engagements: "Jobs",
-  mutations: "Queued changes",
-  governance: "Settings"
-} as const;
+import { FinanceOverviewCard } from "./components/FinanceOverviewCard";
+import { FinanceQuotesCard } from "./components/FinanceQuotesCard";
+import { FinanceInvoicesCard } from "./components/FinanceInvoicesCard";
+import { FinancePaymentsCard } from "./components/FinancePaymentsCard";
+import { FinanceDebtorsCard } from "./components/FinanceDebtorsCard";
+import { FinanceStatementsCard } from "./components/FinanceStatementsCard";
+import {
+ SuperAdminOverview } from "./components/SuperAdminOverview";
+import { SuperAdminDataChecks } from "./components/SuperAdminDataChecks";
+import { SuperAdminAutomations } from "./components/SuperAdminAutomations";
+import { SuperAdminSystemHealth } from "./components/SuperAdminSystemHealth";
+import { SuperAdminActivityLog } from "./components/SuperAdminActivityLog";
+import { SuperAdminBusinessUnits } from "./components/SuperAdminBusinessUnits";
+import { AdminDashboard } from "./components/AdminDashboard";
+import { AdminSettingsCard } from "./components/AdminSettingsCard";
+import { DispatchDashboardCard } from "./components/DispatchDashboardCard";
+import { DispatchUnassignedCard } from "./components/DispatchUnassignedCard";
+import { DispatchDailyPlanCard } from "./components/DispatchDailyPlanCard";
+import { TechMyDayCard } from "./components/TechMyDayCard";
+import { TechCheckInOutCard } from "./components/TechCheckInOutCard";
+import { TechHelpCard } from "./components/TechHelpCard";
+import { ClientOverviewCard } from "./components/ClientOverviewCard";
+import { ClientInvoicesCard } from "./components/ClientInvoicesCard";
+import { ClientSupportCard } from "./components/ClientSupportCard";
+import {
+ renderComplianceDocument } from "./appShell/renderComplianceDocument";
+import {
+  COPY_GLOSSARY,
+  distanceMeters,
+  EMPTY_UPGRADE_STATE,
+  errorMessage,
+  firstRequestedSlot,
+  formatApiFailure,
+  isUnauthorizedError,
+  looksLikeJwt,
+  normalizeDocument,
+  normalizeSchedule,
+  normalizeScheduleRequest,
+  normalizeUser,
+  nowPlusHours,
+  ROLE_LABELS,
+  ROLE_PRIMARY_TOOLS,
+  toIsoOrNull,
+  toLocalInputValue,
+  WORKSPACE_TOOL_META
+} from "./appShell/helpers";
+import { useActionRunner } from "./appShell/useActionRunner";
+import { useLiveSyncController } from "./appShell/useLiveSyncController";
+import { useWorkspacePersistence } from "./appShell/useWorkspacePersistence";
+import { usePortalDataControllers } from "./appShell/usePortalDataControllers";
 
 export function PortalApp(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
@@ -326,7 +117,6 @@ export function PortalApp(): React.JSX.Element {
   const [adminAuditCount, setAdminAuditCount] = useState(0);
   const [automationJobs, setAutomationJobs] = useState<AutomationJobEntry[]>([]);
   const [selectedAutomationJobid, setSelectedAutomationJobid] = useState("");
-  const [actionPending, setActionPending] = useState(false);
   const [emulatedRole, setEmulatedRole] = useState<Role | "">("");
   const [checklistData, setChecklistData] = useState<Record<string, string>>({});
   const [confirmRequestid, setConfirmRequestid] = useState("");
@@ -383,14 +173,20 @@ export function PortalApp(): React.JSX.Element {
   const canGenerateDocuments = effectiveRole === "technician" || effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin";
   const isAdmin = effectiveRole === "admin" || effectiveRole === "super_admin";
   const isSuperAdmin = effectiveRole === "super_admin";
+
   const allowedWorkspaceTools = useMemo(() => {
     const tools = ["jobs", "documents"] as string[];
     if (isDispatchRole) tools.push("schedule", "comms");
     if (isFinanceRole) tools.push("finance");
     if (canAccessPeopleDirectory) tools.push("people");
     if (isAdmin) tools.push("admin");
+    
+    if (isSuperAdmin) {
+      tools.push("sa_overview", "sa_users", "sa_units", "sa_checks", "sa_automations", "sa_health", "sa_activity");
+    }
+    
     return tools;
-  }, [canAccessPeopleDirectory, isAdmin, isDispatchRole, isFinanceRole]);
+  }, [canAccessPeopleDirectory, isAdmin, isDispatchRole, isFinanceRole, isSuperAdmin]);
   const showOperationalEngagements = activeWorkspaceTool === "jobs";
   const primaryRoleTools = ROLE_PRIMARY_TOOLS[effectiveRole ?? "client"] ?? ["jobs", "documents"];
   const primaryNavTools = allowedWorkspaceTools.filter((tool) => primaryRoleTools.includes(tool));
@@ -487,55 +283,16 @@ export function PortalApp(): React.JSX.Element {
     return items.filter((item) => !dismissedNotifications.includes(item.id));
   }, [dismissedNotifications, filteredJobs, networkOnline, queueCount, upgradeState.escrow]);
 
-  const runAction = (action: () => Promise<void>): void => {
-    if (actionPending) {
-      setFeedback("Another action is still running. Wait a moment and retry.");
-      return;
-    }
-    setActionPending(true);
-    void action()
-      .catch((error) => {
-        const code = errorCode(error);
-        if (code === "google_transient_error") {
-          setFeedback("Google API rate limit reached (429). Wait 30-60 seconds and retry one action at a time.");
-          return;
-        }
-        setFeedback(errorMessage(error));
-      })
-      .finally(() => {
-        setActionPending(false);
-      });
-  };
+  const { actionPending, runAction } = useActionRunner(setFeedback);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("kharon_workspace_state");
-    if (!saved) {
-      return;
-    }
-    try {
-      const state = JSON.parse(saved) as {
-        selectedJobid?: string;
-        statusTarget?: JobStatus;
-        activeWorkspaceTool?: string;
-      };
-      if (state.selectedJobid) setSelectedJobid(state.selectedJobid);
-      if (state.statusTarget) setStatusTarget(state.statusTarget);
-      if (state.activeWorkspaceTool) setActiveWorkspaceTool(state.activeWorkspaceTool);
-    } catch (error) {
-      console.warn("Restore failed", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "kharon_workspace_state",
-      JSON.stringify({
-        selectedJobid,
-        statusTarget,
-        activeWorkspaceTool
-      })
-    );
-  }, [selectedJobid, statusTarget, activeWorkspaceTool]);
+  useWorkspacePersistence({
+    selectedJobid,
+    statusTarget,
+    activeWorkspaceTool,
+    setSelectedJobid,
+    setStatusTarget,
+    setActiveWorkspaceTool
+  });
 
   useEffect(() => {
     const saved = localStorage.getItem("kharon_geo_verification");
@@ -651,69 +408,15 @@ export function PortalApp(): React.JSX.Element {
     return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
   }, []);
 
-  useEffect(() => {
-    if (!session || !networkOnline) {
-      return;
-    }
-    const poll = async () => {
-      try {
-        const since = lastSyncPullAt || new Date(0).toISOString();
-        const response = await apiClient.syncPull(since);
-        const jobsChanged = response.jobs?.length ?? 0;
-        const queueChanged = response.queue?.length ?? 0;
-        const eventsChanged = response.events?.length ?? 0;
-
-        if (jobsChanged > 0 || eventsChanged > 0) {
-          startTransition(() => {
-            if (jobsChanged > 0) {
-              const incoming = (response.jobs ?? []).map(asJob);
-              setJobs((prev) => {
-                const next = [...prev];
-                for (const job of incoming) {
-                  const idx = next.findIndex((j) => j.job_id === job.job_id);
-                  if (idx >= 0) {
-                    if (Date.parse(job.updated_at || "") >= Date.parse(next[idx]?.updated_at || "")) {
-                      next[idx] = job;
-                    }
-                  } else {
-                    next.push(job);
-                  }
-                }
-                return next;
-              });
-            }
-
-            if (eventsChanged > 0) {
-              const incomingEvents = (response.events ?? []).map(e => normalizeJobEvent(e as unknown as Record<string, unknown>));
-              setJobEvents((prev) => {
-                const next = [...prev];
-                for (const ev of incomingEvents) {
-                  if (!next.some((existing) => existing.event_id === ev.event_id)) {
-                    next.push(ev);
-                  }
-                }
-                return next;
-              });
-            }
-          });
-        }
-        
-        const at = new Date().toISOString();
-        setLastSyncPullAt(at);
-        setSyncPulse({ at, jobsChanged: jobsChanged, queueChanged: 0 });
-      } catch (error) {
-        if (errorCode(error) === "google_transient_error") {
-          console.warn("Sync pull deferred due to 429 quota limit.");
-          return;
-        }
-        console.error("Sync pull failed", error);
-      }
-    };
-
-    void poll();
-    const intervalId = window.setInterval(poll, 60000);
-    return () => window.clearInterval(intervalId);
-  }, [networkOnline, session, selectedJobid, isDispatchRole, lastSyncPullAt]);
+  useLiveSyncController({
+    sessionActive: Boolean(session),
+    networkOnline,
+    lastSyncPullAt,
+    setLastSyncPullAt,
+    setSyncPulse,
+    setJobs,
+    setJobEvents
+  });
 
   useEffect(() => {
     if (!selectedJob) {
@@ -733,44 +436,43 @@ export function PortalApp(): React.JSX.Element {
     setChecklistData((prev) => ({ ...payload, ...prev }));
   }, [documentType, geoVerification.capturedAt, selectedJob, syncPulse.at]);
 
-  async function refreshQueueCount(): Promise<void> {
-    try {
-      const queue = await listQueuedMutations();
-      setQueueCount(queue.length);
-    } catch (error) {
-      setQueueCount(0);
-      setFeedback(`Offline queue unavailable: ${errorMessage(error)}`);
-    }
-  }
-
-  async function refreshJobs(): Promise<void> {
-    if (!session) {
-      return;
-    }
-    try {
-      const data = await apiClient.listJobs();
-      const mapped = data.map(asJob).filter((job) => job.job_id !== "");
-      startTransition(() => {
-        setJobs(mapped);
-        if (!mapped.some((job) => job.job_id === selectedJobid)) {
-          setSelectedJobid(mapped[0]?.job_id ?? "");
-        }
-      });
-    } catch (error) {
-      setFeedback(`Jobs load failed: ${errorMessage(error)}`);
-    }
-  }
+  const {
+    refreshQueueCount,
+    refreshJobs,
+    refreshDocuments,
+    refreshPeopleDirectory,
+    refreshUpgradeWorkspaceState,
+    refreshAutomationJobs,
+    loadSchemaDrift,
+    loadOpsIntelligence,
+    refreshSession,
+    refreshAuthConfig
+  } = usePortalDataControllers({
+    session,
+    selectedJobid,
+    canAccessPeopleDirectory,
+    documentAccessDenied,
+    setJobs,
+    setSession,
+    setSelectedJobid,
+    setDocuments,
+    setPeopleDirectory,
+    setAutomationJobs,
+    setUpgradeState,
+    setDocumentAccessDenied,
+    setSchemaDrift,
+    setOpsIntelligence,
+    setFeedback,
+    setQueueCount
+  });
 
   // Contextual dispatch: auto-populate ids from selected job metadata
   useEffect(() => {
     let isActive = true;
     if (selectedJob && isActive) {
-      // Prioritize preserving the row_version logic for the target job
       if (selectedJob.active_request_id) setConfirmRequestid(selectedJob.active_request_id);
       if (selectedJob.active_document_id) setPublishDocumentid(selectedJob.active_document_id);
       if (selectedJob.suggested_technician_id) setConfirmTechid(selectedJob.suggested_technician_id);
-
-      // Safety: always ensure row versions are synced to the selection
 
       setConfirmRowVersion(selectedJob.row_version);
       setPublishRowVersion(selectedJob.row_version);
@@ -778,27 +480,6 @@ export function PortalApp(): React.JSX.Element {
     }
     return () => { isActive = false; };
   }, [selectedJobid, selectedJob?.row_version]);
-
-  async function refreshDocuments(jobid?: string): Promise<void> {
-    if (documentAccessDenied) {
-      return;
-    }
-    try {
-      const response = await apiClient.history(jobid);
-      startTransition(() => {
-        const normalized = (response.data ?? []).map((row) => normalizeDocument(row));
-        setDocuments(normalized as unknown as Array<Record<string, unknown>>);
-      });
-    } catch (error) {
-      if (isUnauthorizedError(error)) {
-        setDocumentAccessDenied(true);
-        setDocuments([]);
-        setFeedback("Document access is unavailable for this account.");
-        return;
-      }
-      setFeedback(`Document history load failed: ${errorMessage(error)}`);
-    }
-  }
 
   async function refreshDispatchContext(jobid: string): Promise<void> {
     if (!isDispatchRole || dispatchAccessDenied) {
@@ -822,59 +503,6 @@ export function PortalApp(): React.JSX.Element {
         return;
       }
       setFeedback(`Dispatch context load failed: ${errorMessage(error)}`);
-    }
-  }
-
-  async function refreshPeopleDirectory(): Promise<void> {
-    try {
-      const people = await apiClient.listPeople();
-      startTransition(() => {
-        setPeopleDirectory(people.map((row) => normalizeUser(row as unknown as Record<string, unknown>)));
-      });
-    } catch (error) {
-      setFeedback(`People directory load failed: ${errorMessage(error)}`);
-    }
-  }
-
-  async function refreshUpgradeWorkspaceState(): Promise<void> {
-    try {
-      const data = await apiClient.getUpgradeWorkspaceState();
-      startTransition(() => {
-        setUpgradeState(data);
-      });
-    } catch (error) {
-      setFeedback(`Upgrade workspace load failed: ${errorMessage(error)}`);
-    }
-  }
-
-  async function refreshAutomationJobs(): Promise<void> {
-    try {
-      const jobs = await apiClient.listAutomationJobs();
-      startTransition(() => {
-        setAutomationJobs(jobs);
-      });
-    } catch (error) {
-      setFeedback(`Automation queue load failed: ${errorMessage(error)}`);
-    }
-  }
-
-  async function loadSchemaDrift(): Promise<void> {
-    try {
-      const payload = await apiClient.schemaDrift();
-      setSchemaDrift(payload);
-      setFeedback(payload.healthy ? "Schema drift scan passed." : `Schema drift detected: ${payload.issue_count} issue(s).`);
-    } catch (error) {
-      setFeedback(`Schema drift scan failed: ${errorMessage(error)}`);
-    }
-  }
-
-  async function loadOpsIntelligence(): Promise<void> {
-    try {
-      const payload = await apiClient.opsIntelligence();
-      setOpsIntelligence(payload);
-      setFeedback("Operational intelligence refreshed.");
-    } catch (error) {
-      setFeedback(`Operational intelligence failed: ${errorMessage(error)}`);
     }
   }
 
@@ -939,28 +567,6 @@ export function PortalApp(): React.JSX.Element {
     );
   }
 
-  async function refreshSession(): Promise<void> {
-    try {
-      const activeSession = await apiClient.session();
-      startTransition(() => {
-        setSession(activeSession);
-      });
-    } catch {
-      startTransition(() => {
-        setSession(null);
-      });
-    }
-  }
-
-  async function refreshAuthConfig(): Promise<void> {
-    try {
-      const config = await apiClient.authConfig();
-      setAuthConfig(config);
-    } catch (error) {
-      setFeedback(`Auth config failed: ${errorMessage(error)}`);
-    }
-  }
-
   useEffect(() => {
     const online = () => setNetworkOnline(true);
     const offline = () => setNetworkOnline(false);
@@ -969,7 +575,10 @@ export function PortalApp(): React.JSX.Element {
 
     void (async () => {
       try {
-        await refreshAuthConfig();
+        const config = await refreshAuthConfig();
+        if (config) {
+          setAuthConfig(config);
+        }
         await refreshSession();
         await refreshQueueCount();
       } finally {
@@ -1376,13 +985,11 @@ export function PortalApp(): React.JSX.Element {
 
     try {
       const isGas = selectedJob.title?.toLowerCase().includes("gas");
-      
-      // Construct Forensic Document Payload
-      const payload: Documents.DocumentPayload = {
+      const payload: DocumentPayload = {
         jobMeta: {
           jobId: selectedJob.job_id,
           correlationId: selectedJob.client_id || "KHARON-REF",
-          date: new Date().toISOString().split('T')[0] || "",
+          date: new Date().toISOString().split("T")[0] || "",
           timeIn: "08:00",
           timeOut: "16:00",
           workType: selectedJob.status === "draft" ? "Installation" : "Maintenance"
@@ -1425,20 +1032,10 @@ export function PortalApp(): React.JSX.Element {
           fireReinstated: true,
           gasActuatorsReconnected: true,
           logbooksUpdated: true,
-          nextDueDate: new Date(Date.now() + 31536000000).toISOString().split('T')[0] || ""
+          nextDueDate: new Date(Date.now() + 31536000000).toISOString().split("T")[0] || ""
         }
       };
-
-      let docElement;
-      if (documentType === "jobcard") {
-        docElement = <Documents.JobcardPDF data={payload} />;
-      } else if (documentType === "service_report") {
-        docElement = isGas ? <Documents.GasServiceReportPDF data={payload} /> : <Documents.FireServiceReportPDF data={payload} />;
-      } else {
-        docElement = isGas ? <Documents.GasCertificatePDF data={payload} /> : <Documents.FireCertificatePDF data={payload} />;
-      }
-
-      const blob = await pdf(docElement).toBlob();
+      const blob = await renderComplianceDocument({ documentType, isGas, payload });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -1447,8 +1044,6 @@ export function PortalApp(): React.JSX.Element {
       URL.revokeObjectURL(url);
 
       setFeedback("Document generated successfully.");
-      
-      // Still notify server to record the event in the ledger
       await apiClient.generateDocument(jobid, documentType, checklistData);
       await refreshDocuments(jobid);
     } catch (error) {
@@ -1805,6 +1400,71 @@ export function PortalApp(): React.JSX.Element {
 
 
           <section className={`workspace-container ${activeWorkspaceTool === "jobs" && selectedJobid ? "workspace-container--split" : ""}`}>
+            {activeWorkspaceTool === "tech_day" && effectiveRole === "technician" ? (
+              <TechMyDayCard 
+                jobs={jobs} 
+                onSelectJob={setSelectedJobid}
+                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "tech_checkin" && effectiveRole === "technician" ? (
+              <TechCheckInOutCard 
+                selectedJob={selectedJob} 
+                onUpdateStatus={(status) => runAction(() => apiClient.updateStatus(selectedJob?.job_id ?? "", status, selectedJob?.row_version ?? 0))}
+                onVerifyLocation={() => runAction(handleVerifyLocation)}
+                geoStatus={geoVerification.status}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "tech_help" && effectiveRole === "technician" ? (
+              <TechHelpCard />
+            ) : null}
+
+            {activeWorkspaceTool === "admin_dashboard" && (isAdmin || isSuperAdmin) ? (
+              <AdminDashboard 
+                opsIntelligence={opsIntelligence} 
+                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
+                isLoading={actionPending}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "dispatch_dashboard" && isDispatchRole ? (
+              <DispatchDashboardCard 
+                opsIntelligence={opsIntelligence} 
+                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
+                isLoading={actionPending}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "dispatch_unassigned" && isDispatchRole ? (
+              <DispatchUnassignedCard 
+                jobs={jobs} 
+                onSelectJob={setSelectedJobid}
+                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "dispatch_daily" && isDispatchRole ? (
+              <DispatchDailyPlanCard jobs={jobs} opsIntelligence={opsIntelligence} />
+            ) : null}
+
+            {activeWorkspaceTool === "client_overview" && effectiveRole === "client" ? (
+              <ClientOverviewCard 
+                jobs={jobs} 
+                store={upgradeState}
+                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "client_invoices" && effectiveRole === "client" ? (
+              <ClientInvoicesCard store={upgradeState} />
+            ) : null}
+
+            {activeWorkspaceTool === "client_support" && effectiveRole === "client" ? (
+              <ClientSupportCard />
+            ) : null}
+
             {activeWorkspaceTool === "jobs" ? (
               <JobDetailView
                 selectedJob={selectedJob}
@@ -1886,33 +1546,99 @@ export function PortalApp(): React.JSX.Element {
               />
             ) : null}
 
-            {activeWorkspaceTool === "admin" && isAdmin ? (
-              <AdminPanelCard
-                adminHealth={adminHealth}
-                adminAudits={adminAudits}
-                adminAutomationJobs={adminAutomationJobs}
-                adminAuditCount={adminAuditCount}
-                automationJobs={automationJobs}
-                selectedAutomationJobid={selectedAutomationJobid}
-                setSelectedAutomationJobid={setSelectedAutomationJobid}
-                onLoadHealth={() => runAction(loadAdminHealth)}
-                onLoadAudits={() => runAction(loadAdminAudits)}
-                onLoadAutomationJobs={() => runAction(loadAdminAutomationJobs)}
-                onRetryAutomation={(id) => runAction(() => handleRetryAutomation(id))}
-                onFeedback={setFeedback}
-                emulatedRole={emulatedRole}
-                onEmulateRole={(role) => {
-                  setEmulatedRole(role);
-                  setActiveWorkspaceTool("jobs");
-                  setPortalView("dashboard");
-                }}
-                schemaDrift={schemaDrift}
-                opsIntelligence={opsIntelligence}
-                onLoadSchemaDrift={() => runAction(loadSchemaDrift)}
-                onLoadOpsIntelligence={() => runAction(loadOpsIntelligence)}
+            {activeWorkspaceTool === "admin" ? (
+              isAdmin && !isSuperAdmin ? (
+                <AdminSettingsCard session={session} />
+              ) : isSuperAdmin ? (
+                <AdminPanelCard
+                  adminHealth={adminHealth}
+                  adminAudits={adminAudits}
+                  adminAutomationJobs={adminAutomationJobs}
+                  adminAuditCount={adminAuditCount}
+                  automationJobs={automationJobs}
+                  selectedAutomationJobid={selectedAutomationJobid}
+                  setSelectedAutomationJobid={setSelectedAutomationJobid}
+                  onLoadHealth={() => runAction(loadAdminHealth)}
+                  onLoadAudits={() => runAction(loadAdminAudits)}
+                  onLoadAutomationJobs={() => runAction(loadAdminAutomationJobs)}
+                  onRetryAutomation={(id) => runAction(() => handleRetryAutomation(id))}
+                  onFeedback={setFeedback}
+                  emulatedRole={emulatedRole}
+                  onEmulateRole={(role) => {
+                    setEmulatedRole(role);
+                    setActiveWorkspaceTool("jobs");
+                    setPortalView("dashboard");
+                  }}
+                  schemaDrift={schemaDrift}
+                  opsIntelligence={opsIntelligence}
+                  onLoadSchemaDrift={() => runAction(loadSchemaDrift)}
+                  onLoadOpsIntelligence={() => runAction(loadOpsIntelligence)}
+                />
+              ) : null
+            ) : null}
 
+
+            {activeWorkspaceTool === "sa_overview" && isSuperAdmin ? (
+              <SuperAdminOverview 
+                opsIntelligence={opsIntelligence} 
+                onRefresh={() => runAction(loadOpsIntelligence)}
+                isLoading={actionPending}
               />
             ) : null}
+
+            {activeWorkspaceTool === "sa_users" && isSuperAdmin ? (
+              <PeopleDirectoryCard
+                people={peopleDirectory}
+                skillsState={upgradeState.skills}
+                onUpsertSkill={(payload: SkillMatrixRecord) =>
+                  runAction(async () => {
+                    await apiClient.upsertSkillMatrix(payload);
+                    await refreshUpgradeWorkspaceState();
+                  })
+                }
+                onSync={(payload) => handlePeopleSync(payload)}
+                onFeedback={setFeedback}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "sa_units" && isSuperAdmin ? (
+              <SuperAdminBusinessUnits />
+            ) : null}
+
+            {activeWorkspaceTool === "sa_checks" && isSuperAdmin ? (
+              <SuperAdminDataChecks 
+                schemaDrift={schemaDrift} 
+                onRefresh={() => runAction(loadSchemaDrift)}
+                isLoading={actionPending}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "sa_automations" && isSuperAdmin ? (
+              <SuperAdminAutomations 
+                automationJobs={adminAutomationJobs} 
+                onRefresh={() => runAction(loadAdminAutomationJobs)}
+                onRetry={(id) => runAction(() => handleRetryAutomation(id))}
+                isLoading={actionPending}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "sa_health" && isSuperAdmin ? (
+              <SuperAdminSystemHealth 
+                adminHealth={adminHealth} 
+                onRefresh={() => runAction(loadAdminHealth)}
+                isLoading={actionPending}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "sa_activity" && isSuperAdmin ? (
+              <SuperAdminActivityLog 
+                adminAudits={adminAudits} 
+                adminAuditCount={adminAuditCount}
+                onRefresh={() => runAction(loadAdminAudits)}
+                isLoading={actionPending}
+              />
+            ) : null}
+
 
             {activeWorkspaceTool === "documents" ? (
               <DocumentHistoryCard
@@ -1924,6 +1650,62 @@ export function PortalApp(): React.JSX.Element {
                 onRefresh={() => runAction(() => refreshDocuments(selectedJob?.job_id))}
                 onPublish={(id, ver, vis) => runAction(() => handleDocumentPublishInline(id, ver, vis))}
               />
+            ) : null}
+
+            {activeWorkspaceTool === "finance_overview" && isFinanceRole ? (
+              <FinanceOverviewCard 
+                store={upgradeState} 
+                onEnterTool={(tool) => setActiveWorkspaceTool(tool)}
+                isLoading={actionPending}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "finance_quotes" && isFinanceRole ? (
+              <FinanceQuotesCard 
+                store={upgradeState}
+                onCreateQuote={(payload) => runAction(async () => {
+                  await apiClient.createFinanceQuote(payload);
+                  await refreshUpgradeWorkspaceState();
+                })}
+                onUpdateQuoteStatus={(id, status) => runAction(async () => {
+                  await apiClient.updateFinanceQuoteStatus(id, status);
+                  await refreshUpgradeWorkspaceState();
+                })}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "finance_invoices" && isFinanceRole ? (
+              <FinanceInvoicesCard 
+                store={upgradeState}
+                onCreateInvoiceFromQuote={(id, date) => runAction(async () => {
+                  await apiClient.createInvoiceFromQuote(id, date);
+                  await refreshUpgradeWorkspaceState();
+                })}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "finance_payments" && isFinanceRole ? (
+              <FinancePaymentsCard 
+                store={upgradeState}
+                onReconcileInvoice={(id) => runAction(async () => {
+                  await apiClient.reconcileInvoice(id);
+                  await refreshUpgradeWorkspaceState();
+                })}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "finance_debtors" && isFinanceRole ? (
+              <FinanceDebtorsCard 
+                store={upgradeState}
+                onRebuildAnalytics={() => runAction(async () => {
+                  await apiClient.rebuildUpgradeAnalytics();
+                  await refreshUpgradeWorkspaceState();
+                })}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "finance_statements" && isFinanceRole ? (
+              <FinanceStatementsCard store={upgradeState} />
             ) : null}
 
             {activeWorkspaceTool === "finance" && isFinanceRole ? (

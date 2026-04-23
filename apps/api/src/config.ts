@@ -18,6 +18,7 @@ export interface RuntimeConfig {
   sessionCookieName: string;
   sessionTtlSeconds: number;
   googleClientId: string;
+  superAdminEmails: string[];
   gmailSenderAddress: string;
   cloudflareAccess: {
     enabled: boolean;
@@ -36,6 +37,13 @@ function splitKeys(raw: string): string[] {
     .split(",")
     .map((part) => part.trim())
     .filter((part) => part.length >= 16);
+}
+
+function splitEmails(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((part) => part.trim().toLowerCase())
+    .filter((part) => part !== "");
 }
 
 function envFirst(env: Record<string, string | undefined>, keys: string[]): string {
@@ -131,6 +139,7 @@ export function createRuntimeConfig(env: Record<string, string | undefined>): Ru
   const accessEnabledRaw = envFirst(env, ["CF_ACCESS_ENABLED", "CLOUDFLARE_ACCESS_ENABLED"]);
   const accessEnabled = accessEnabledRaw === "true";
   const googleClientId = envFirst(env, ["GOOGLE_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "KHARON_GOOGLE_CLIENT_ID"]);
+  const superAdminEmails = splitEmails(envFirst(env, ["SUPER_ADMIN_EMAILS", "KHARON_SUPER_ADMIN_EMAILS"]));
   const rails = createWorkspaceRails(env);
   const railsModeOverride = envFirst(env, ["GOOGLE_RAILS_MODE", "KHARON_RAILS_MODE"]).toLowerCase();
   const allowLocalRailsInProduction = railsModeOverride === "local";
@@ -149,6 +158,7 @@ export function createRuntimeConfig(env: Record<string, string | undefined>): Ru
     sessionCookieName: envFirst(env, ["SESSION_COOKIE_NAME"]) || "kharon_session",
     sessionTtlSeconds: Number(envFirst(env, ["SESSION_TTL_SECONDS"]) || 28_800),
     googleClientId,
+    superAdminEmails,
     gmailSenderAddress: envFirst(env, ["GMAIL_SENDER_ADDRESS", "KHARON_GMAIL_FROM", "SUPPORT_EMAIL"]),
     cloudflareAccess: {
       enabled: accessEnabled,

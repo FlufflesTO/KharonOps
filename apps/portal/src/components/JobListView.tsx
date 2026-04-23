@@ -146,6 +146,7 @@ export interface JobListViewProps {
   globalQuery: string;
   onGlobalQueryChange: (q: string) => void;
   onBulkStatusUpdate?: (ids: string[], status: JobStatus) => void;
+  limit?: number;
 }
 
 type VirtualRowProps = {
@@ -211,14 +212,14 @@ export function JobListView({
         (j.client_name ?? "").toLowerCase().includes(q)
       );
     }
-    return result;
-  }, [jobs, globalQuery, statusFilter]);
+    return limit ? result.slice(0, limit) : result;
+  }, [jobs, globalQuery, statusFilter, limit]);
 
   const handleToggle = useCallback((id: string) => {
     setSelectedJobIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }, []);
 
-  const useVirtualization = filtered.length > 1000;
+  const useVirtualization = filtered.length > 1000 && !limit;
 
   return (
     <section className="job-panel glass-panel">

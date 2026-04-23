@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { CtaSection } from "../components/CtaSection";
@@ -8,38 +8,41 @@ export function OperationalTrailPage(): React.JSX.Element {
   return (
     <>
       <Helmet>
-        <title>Projects and Delivery Patterns | Kharon</title>
+        <title>Case Studies | Kharon</title>
         <meta
           name="description"
-          content="Representative delivery patterns showing environment constraints, execution scope, and compliance documentation outcomes."
+          content="Plain-language examples of recent work across commercial, industrial, hospitality, healthcare, and technical sites."
         />
       </Helmet>
 
       <section className="site-section">
         <div className="section-heading">
-          <p className="section-kicker">Projects</p>
-          <h2>Representative delivery patterns across high-accountability environments.</h2>
+          <p className="section-kicker">Case Studies</p>
+          <h2>Examples of recent work.</h2>
           <p className="section-subtitle">
-            The profiles below are anonymised, representative patterns drawn from real delivery conditions. They are shown to
-            illustrate scope, constraints, and documentation posture without disclosing client-sensitive detail.
+            Three featured examples are easier to read than a long project list. Each one shows the site, the challenge,
+            the work, and the result.
           </p>
         </div>
         <div className="case-grid">
           {caseStudies.map((study) => (
             <article key={study.slug} className="case-card">
               <div className="case-card__visual">
-                <span>{study.environment}</span>
+                <span>{study.siteType}</span>
               </div>
               <div className="case-card__body">
                 <h3>{study.title}</h3>
-                <p>{study.problem}</p>
+                <p>{study.challenge}</p>
                 <ul className="service-list service-list--compact">
                   {study.scope.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
                 <p>
-                  <strong>Outcome:</strong> {study.outcome}
+                  <strong>Result:</strong> {study.result}
+                </p>
+                <p>
+                  <strong>Documents:</strong> {study.documents.join(", ")}
                 </p>
               </div>
             </article>
@@ -51,6 +54,7 @@ export function OperationalTrailPage(): React.JSX.Element {
           </Link>
         </div>
       </section>
+
       <CtaSection />
     </>
   );

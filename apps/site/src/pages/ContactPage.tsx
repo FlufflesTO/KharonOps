@@ -1,8 +1,8 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams } from "react-router-dom";
 import { CtaSection } from "../components/CtaSection";
-import { companyProfile } from "../constants/siteData";
+import { companyProfile, contactPaths } from "../constants/siteData";
 
 type EnquiryType = "project" | "maintenance" | "urgent_callout" | "compliance" | "resource" | "general";
 
@@ -14,7 +14,6 @@ type FormState = {
   site_location: string;
   enquiry_type: EnquiryType;
   message: string;
-  company_size: string;
   honey: string;
 };
 
@@ -40,7 +39,6 @@ function makeInitialForm(intent: EnquiryType, resourceName: string): FormState {
     site_location: "",
     enquiry_type: intent,
     message: resourceName ? `Please send: ${resourceName}.` : "",
-    company_size: "",
     honey: ""
   };
 }
@@ -64,15 +62,6 @@ export function ContactPage(): React.JSX.Element {
     setStatusMessage("");
   }, [initialState]);
 
-  const enquiryLabels: Array<{ value: EnquiryType; label: string }> = [
-    { value: "project", label: "New project enquiry" },
-    { value: "maintenance", label: "Maintenance contract enquiry" },
-    { value: "urgent_callout", label: "Urgent callout or break-fix" },
-    { value: "compliance", label: "Compliance or documentation request" },
-    { value: "resource", label: "Resource or reference request" },
-    { value: "general", label: "General operations enquiry" }
-  ];
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
 
@@ -82,8 +71,12 @@ export function ContactPage(): React.JSX.Element {
       return;
     }
     if (form.email.trim() === "") {
-      setStatusMessage("Enter the contact email before submitting the request.");
+      setStatusMessage("Enter the email address before submitting the request.");
       emailRef.current?.focus();
+      return;
+    }
+    if (form.phone.trim() === "") {
+      setStatusMessage("Enter the phone number before submitting the request.");
       return;
     }
     if (form.message.trim() === "") {
@@ -110,7 +103,7 @@ export function ContactPage(): React.JSX.Element {
       }
 
       setForm(makeInitialForm(intent, resourceName));
-      setStatusMessage("Request submitted. Kharon will route it to the correct operational queue.");
+      setStatusMessage("Request submitted. Kharon will direct it to the right team.");
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -124,23 +117,37 @@ export function ContactPage(): React.JSX.Element {
         <title>Contact | Kharon Fire and Security</title>
         <meta
           name="description"
-          content="Contact Kharon for project engineering, maintenance contracts, urgent callouts, compliance documentation support, and resource requests."
+          content="Request a quote, book maintenance, or ask for urgent help from Kharon Fire and Security Solutions."
         />
       </Helmet>
 
       <section className="site-section">
         <div className="section-heading">
-          <p className="section-kicker">Contact and callout</p>
-          <h2>Route the request into the right commercial and operational workflow.</h2>
+          <p className="section-kicker">Contact</p>
+          <h2>Tell us what you need and we’ll direct it to the right team.</h2>
           <p className="section-subtitle">
-            Structured capture reduces email back-and-forth, improves dispatcher triage, and creates a cleaner service trail
-            from first enquiry onward.
+            Choose the path that best matches your request, then send the simplest form that gets the job moving.
           </p>
         </div>
+
+        <div className="contact-paths" aria-label="Request paths">
+          {contactPaths.map((path) => (
+            <button
+              key={path.value}
+              type="button"
+              className={`contact-path${form.enquiry_type === path.value ? " contact-path--active" : ""}`}
+              onClick={() => setForm((current) => ({ ...current, enquiry_type: path.value }))}
+            >
+              <strong>{path.label}</strong>
+              <span>{path.summary}</span>
+            </button>
+          ))}
+        </div>
+
         <div className="operations-board detail-grid">
           <article className="operations-flow">
             <div className="operations-flow__header">
-              <h3>Request intake</h3>
+              <h3>Contact form</h3>
             </div>
             <form className="site-form" onSubmit={handleSubmit} noValidate>
               <div className="site-form__grid">
@@ -152,7 +159,7 @@ export function ContactPage(): React.JSX.Element {
                     autoComplete="name"
                     value={form.name}
                     onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                    placeholder="Primary contact name…"
+                    placeholder="Primary contact name"
                   />
                 </label>
                 <label className="site-form__field">
@@ -165,7 +172,7 @@ export function ContactPage(): React.JSX.Element {
                     spellCheck={false}
                     value={form.email}
                     onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-                    placeholder="operator@example.com"
+                    placeholder="name@example.com"
                   />
                 </label>
                 <label className="site-form__field">
@@ -180,77 +187,76 @@ export function ContactPage(): React.JSX.Element {
                   />
                 </label>
                 <label className="site-form__field">
-                  <span>Company</span>
-                  <input
-                    name="company"
-                    autoComplete="organization"
-                    value={form.company}
-                    onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
-                    placeholder="Company or site owner…"
-                  />
-                </label>
-                <label className="site-form__field">
-                  <span>Site location</span>
-                  <input
-                    name="site_location"
-                    autoComplete="street-address"
-                    value={form.site_location}
-                    onChange={(event) => setForm((current) => ({ ...current, site_location: event.target.value }))}
-                    placeholder="Site address, suburb, or city…"
-                  />
-                </label>
-                <label className="site-form__field">
-                  <span>Enquiry type</span>
-                  <select
-                    name="enquiry_type"
-                    value={form.enquiry_type}
-                    onChange={(event) => setForm((current) => ({ ...current, enquiry_type: event.target.value as EnquiryType }))}
-                  >
-                    {enquiryLabels.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="site-form__field">
-                  <span>Portfolio size</span>
-                  <input
-                    name="company_size"
-                    autoComplete="off"
-                    value={form.company_size}
-                    onChange={(event) => setForm((current) => ({ ...current, company_size: event.target.value }))}
-                    placeholder="Single site, multi-site, or estate size…"
-                  />
-                </label>
-                <label className="site-form__field site-form__field--hidden" aria-hidden="true">
-                  <span>Leave this field empty</span>
-                  <input
-                    name="honey"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    value={form.honey}
-                    onChange={(event) => setForm((current) => ({ ...current, honey: event.target.value }))}
-                  />
-                </label>
-                <label className="site-form__field site-form__field--full">
-                  <span>Request detail</span>
+                  <span>Message</span>
                   <textarea
                     ref={messageRef}
                     name="message"
                     rows={6}
                     value={form.message}
                     onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
-                    placeholder="Describe the site, issue, target outcome, and timing…"
+                    placeholder="Tell us about the site, the system, and timing"
                   />
                 </label>
               </div>
 
+              <details className="contact-details" open={form.enquiry_type !== "general"}>
+                <summary>More details</summary>
+                <div className="site-form__grid contact-details__grid">
+                  <label className="site-form__field">
+                    <span>Company</span>
+                    <input
+                      name="company"
+                      autoComplete="organization"
+                      value={form.company}
+                      onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
+                      placeholder="Company or site owner"
+                    />
+                  </label>
+                  <label className="site-form__field">
+                    <span>Site location</span>
+                    <input
+                      name="site_location"
+                      autoComplete="street-address"
+                      value={form.site_location}
+                      onChange={(event) => setForm((current) => ({ ...current, site_location: event.target.value }))}
+                      placeholder="Address, suburb, or city"
+                    />
+                  </label>
+                  <label className="site-form__field">
+                    <span>Service type</span>
+                    <select
+                      name="enquiry_type"
+                      value={form.enquiry_type}
+                      onChange={(event) => setForm((current) => ({ ...current, enquiry_type: event.target.value as EnquiryType }))}
+                    >
+                      <option value="general">General enquiry</option>
+                      {contactPaths
+                        .filter((path) => path.value !== "general")
+                        .map((path) => (
+                          <option key={path.value} value={path.value}>
+                            {path.label}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <label className="site-form__field site-form__field--hidden" aria-hidden="true">
+                    <span>Leave this field empty</span>
+                    <input
+                      name="honey"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={form.honey}
+                      onChange={(event) => setForm((current) => ({ ...current, honey: event.target.value }))}
+                    />
+                  </label>
+                </div>
+              </details>
+
               <div className="site-form__meta" aria-live="polite">
                 {resourceName ? <p>Requested resource: {resourceName}</p> : null}
                 <p>
-                  Personal information submitted here is processed for service delivery, follow-up, and recordkeeping. See the
-                  <Link to="/privacy"> privacy notice</Link> for more detail.
+                  Personal information submitted here is processed for service delivery, follow-up, and recordkeeping. See
+                  the <Link to="/privacy">privacy notice</Link> for more detail.
                 </p>
                 <p className="site-form__status">{statusMessage}</p>
               </div>
@@ -270,11 +276,11 @@ export function ContactPage(): React.JSX.Element {
           </article>
 
           <aside className="assurance-panel">
-            <h3>Operational details</h3>
+            <h3>How we can help</h3>
             <div className="assurance-list">
               <article className="assurance-list__item">
-                <span>Address</span>
-                <p>{companyProfile.address}</p>
+                <span>Request paths</span>
+                <p>Quote, maintenance, emergency callout, general enquiry, and resource requests are handled separately.</p>
               </article>
               <article className="assurance-list__item">
                 <span>Contact</span>
@@ -290,13 +296,6 @@ export function ContactPage(): React.JSX.Element {
                   {companyProfile.serviceFootprint.join(", ")}
                   <br />
                   {companyProfile.officeHours}
-                </p>
-              </article>
-              <article className="assurance-list__item">
-                <span>Request pathways</span>
-                <p>
-                  Project engineering, maintenance, urgent callout, compliance documentation, and resource requests are
-                  triaged separately so dispatch and commercial follow-up stay aligned.
                 </p>
               </article>
             </div>

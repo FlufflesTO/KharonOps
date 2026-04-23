@@ -18,6 +18,7 @@ import { getCacheVersion, getCachedJson, putCachedJson } from "../services/cache
 import { detectSchemaDrift } from "../services/governance.js";
 import { nowIso } from "../services/utils.js";
 import { readUpgradeWorkspaceState } from "../services/workspaceState.js";
+import { loadSchemaDriftInputs } from "../store/repositories/workspaceRepository.js";
 import { chatAlertSchema, gmailNotifySchema, peopleSyncSchema, skillMatrixUpsertSchema } from "../schemas/requests.js";
 import type { AppBindings } from "../context.js";
 import type { UserRow, ScheduleRequestRow, ScheduleRow, JobDocumentRow, UpgradeWorkspaceState, OpsIntelligencePayload } from "@kharon/domain";
@@ -213,6 +214,33 @@ workspace.get("/ops-intelligence", requireRoles("dispatcher", "admin", "finance"
     finance: { outstanding_amount: invoices.filter(i => i.status !== "paid").reduce((s, i) => s + i.amount, 0) },
     schema_drift: { healthy: drift.healthy, issue_count: drift.issues.length }
   };
+  await putCachedJson(c.env, cacheKey, payload, 60);
+  return c.json(envelopeSuccess({ correlationId, data: payload }));
+});
+
+workspace.get("/schema-drift", requireRoles("dispatcher", "admin", "finance"), async (c) => {
+  const correlationId = c.get("correlationId");
+  const user = getSessionUser(c);
+  const store = c.get("store");
+  const version = await getCacheVersion(c.env);
+  const cacheKey = `schema_drift:${version}:${user.role}`;
+  const cached = await getCachedJson<{ generated_at: string; healthy: boolean; issue_count: number; issues: ReturnType<typeof detectSchemaDrift>["issues"] }>(
+    c.env,
+    cacheKey
+  );
+  if (cached) {
+    return c.json(envelopeSuccess({ correlationId, data: cached }));
+  }
+
+  const { jobs, users, clients, technicians } = await loadSchemaDriftInputs(store, user);
+  const drift = detectSchemaDrift({ jobs, users, clients, technicians });
+  const payload = {
+    generated_at: nowIso(),
+    healthy: drift.healthy,
+    issue_count: drift.issues.length,
+    issues: drift.issues
+  };
+
   await putCachedJson(c.env, cacheKey, payload, 60);
   return c.json(envelopeSuccess({ correlationId, data: payload }));
 });

@@ -24,6 +24,26 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   const config = createRuntimeConfig(env);
   const store = createWorkbookStore(config);
   let schemaInitPromise: Promise<void> | null = null;
+  let schemaReady = false;
+
+  const ensureSchemaReady = async (): Promise<void> => {
+    if (schemaReady) {
+      return;
+    }
+
+    if (!schemaInitPromise) {
+      schemaInitPromise = store.ensureSchema()
+        .then(() => {
+          schemaReady = true;
+        })
+        .catch((error) => {
+          schemaInitPromise = null;
+          throw error;
+        });
+    }
+
+    await schemaInitPromise;
+  };
 
   const app = new Hono<AppBindings>();
   app.use("*", correlationMiddleware);
@@ -48,10 +68,7 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       return;
     }
 
-    if (!schemaInitPromise) {
-      schemaInitPromise = store.ensureSchema();
-    }
-    await schemaInitPromise;
+    await ensureSchemaReady();
     await next();
   });
 

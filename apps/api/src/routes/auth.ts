@@ -17,6 +17,15 @@ import { GoogleAdapterError } from "@kharon/google";
 
 const auth = new Hono<AppBindings>();
 
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function syntheticSuperAdminUserid(email: string): string {
+  const compact = normalizeEmail(email).replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return `SUPER-${compact}`.slice(0, 64);
+}
+
 auth.post("/google-login", async (c) => {
   const correlationId = c.get("correlationId");
   const config = c.get("config");
@@ -74,12 +83,15 @@ auth.post("/google-login", async (c) => {
     userRow = await store.getUserByEmail(identity.email);
   }
 
-  if (!userRow) {
+  const normalizedEmail = normalizeEmail(identity.email);
+  const isConfiguredSuperAdmin = config.superAdminEmails.includes(normalizedEmail);
+
+  if (!userRow && !isConfiguredSuperAdmin) {
     await store.appendAudit({
       action: "auth.login.denied",
       entry_type: "auth_audit",
       payload: {
-        email: identity.email,
+        email: normalizedEmail,
         reason: "not_provisioned"
       },
       ctx: createStoreContext("system:unauthenticated", correlationId)
@@ -97,13 +109,35 @@ auth.post("/google-login", async (c) => {
     );
   }
 
+  if (userRow?.role === "super_admin" && !isConfiguredSuperAdmin) {
+    await store.appendAudit({
+      action: "auth.login.denied",
+      entry_type: "auth_audit",
+      payload: {
+        email: normalizedEmail,
+        reason: "super_admin_requires_configured_email"
+      },
+      ctx: createStoreContext("system:unauthenticated", correlationId)
+    });
+    return c.json(
+      envelopeError({
+        correlationId,
+        error: {
+          code: "forbidden",
+          message: "super_admin requires configured SUPER_ADMIN_EMAILS allow-list"
+        }
+      }),
+      403
+    );
+  }
+
   const sessionUser = {
-    user_id: userRow.user_id,
-    email: userRow.email,
-    role: userRow.role,
-    display_name: userRow.display_name,
-    client_id: userRow.client_id,
-    technician_id: userRow.technician_id
+    user_id: userRow?.user_id ?? syntheticSuperAdminUserid(normalizedEmail),
+    email: userRow?.email ?? normalizedEmail,
+    role: isConfiguredSuperAdmin ? "super_admin" : userRow!.role,
+    display_name: userRow?.display_name ?? identity.displayName ?? normalizedEmail,
+    client_id: userRow?.client_id ?? "",
+    technician_id: userRow?.technician_id ?? ""
   };
 
   const token = await createSessionToken({

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React, { useState } from "react";
 import type { PortalAuthConfig } from "../apiClient";
 import { GoogleSignIn } from "./GoogleSignIn";
 
@@ -29,85 +29,92 @@ export function PortalAuth({
   onSupportTokenSubmit,
   feedback
 }: PortalAuthProps): React.JSX.Element {
+  const [showHelp, setShowHelp] = useState(false);
+
   return (
     <div className="portal-auth-shell">
-      <a href="/" className="portal-auth-back" aria-label="Back to the website">
-        Back to website
-      </a>
-      <div className="portal-auth-stage">
-        <section className="portal-auth-copy">
-          <p className="portal-auth-kicker">KHARON OPERATIONAL COMMAND</p>
-          <h1>Unified engineering control and compliance workspace.</h1>
-          <p>
-            This secure environment holds the operational trail for fire detection, suppression, and security work.
-            Identity and role-based access protect every schedule, jobcard, report, and published certificate.
-          </p>
-          <div className="portal-auth-points">
-            <div>
-              <strong>Verified identity</strong>
-              <span>Every session is tied to a provisioned operator profile before any record can be changed.</span>
-            </div>
-            <div>
-              <strong>Controlled workflow</strong>
-              <span>Scheduling, closeout, evidence capture, and release stay in one governed operational trail.</span>
-            </div>
-            <div>
-              <strong>Role-specific access</strong>
-              <span>Clients, technicians, dispatch, and admin each see the controls that match their responsibility.</span>
-            </div>
-          </div>
-        </section>
+      <div className="portal-auth-container">
+        <header className="portal-auth-header">
+          <div className="portal-logo">KHARON</div>
+        </header>
 
-        <section className="portal-auth-card">
-          <div className="panel-heading">
-            <p className="panel-eyebrow">Sign in</p>
-            <h2>Portal access</h2>
-          </div>
+        <main className="portal-auth-card">
+          <div className="auth-card-content">
+            <h1>Sign in to KharonOps</h1>
+            <p className="auth-subtitle">
+              Secure access to your work, tools, and team.
+            </p>
 
-          {productionAuth ? (
-            <div className="field-stack">
-              <span>Sign in with a provisioned Google account</span>
-              <GoogleSignIn clientId={authConfig?.google_client_id ?? ""} onLogin={onLogin} />
-              <p className="muted-copy">If Google sign-in fails, capture the error and contact the platform administrator.</p>
-            </div>
-          ) : (
-            <>
-              <label className="field-stack">
-                <span>Google ID token or local development token</span>
-                <input
-                  id="portal-login-token"
-                  name="portal_login_token"
-                  value={loginToken}
-                  onChange={(event) => setLoginToken(event.target.value)}
-                  placeholder="Paste token or use a quick token below"
-                />
-              </label>
-
-              <div className="button-row">
-                <button className="button button--primary" type="button" onClick={() => onLogin(loginToken)}>
-                  Sign in
-                </button>
-                <button className="button button--secondary" type="button" onClick={onSupportTokenSubmit}>
-                  Validate token
-                </button>
+            {productionAuth ? (
+              <div className="auth-action-stack">
+                <GoogleSignIn clientId={authConfig?.google_client_id ?? ""} onLogin={onLogin} />
+                <p className="auth-help-hint">
+                  Use your company Google account to continue.
+                </p>
               </div>
+            ) : (
+              <div className="auth-dev-stack">
+                <label className="field-stack">
+                  <span className="field-label">Development Token</span>
+                  <input
+                    id="portal-login-token"
+                    name="portal_login_token"
+                    className="input-field"
+                    value={loginToken}
+                    onChange={(event) => setLoginToken(event.target.value)}
+                    placeholder="Paste token or use a quick token below"
+                  />
+                </label>
 
-              <div className="quick-login-grid">
-                <QuickLoginButton label="dev-client" token="dev-client" onClick={onLogin} />
-                <QuickLoginButton label="dev-technician" token="dev-technician" onClick={onLogin} />
-                <QuickLoginButton label="dev-dispatcher" token="dev-dispatcher" onClick={onLogin} />
-                <QuickLoginButton label="dev-finance" token="dev-finance" onClick={onLogin} />
-                <QuickLoginButton label="dev-admin" token="dev-admin" onClick={onLogin} />
+                <div className="button-row">
+                  <button className="button button--primary" type="button" onClick={() => onLogin(loginToken)}>
+                    Sign in
+                  </button>
+                  <button className="button button--secondary" type="button" onClick={onSupportTokenSubmit}>
+                    Validate
+                  </button>
+                </div>
+
+                <div className="quick-login-grid">
+                  <QuickLoginButton label="client" token="dev-client" onClick={onLogin} />
+                  <QuickLoginButton label="tech" token="dev-technician" onClick={onLogin} />
+                  <QuickLoginButton label="dispatch" token="dev-dispatcher" onClick={onLogin} />
+                  <QuickLoginButton label="finance" token="dev-finance" onClick={onLogin} />
+                  <QuickLoginButton label="admin" token="dev-admin" onClick={onLogin} />
+                </div>
               </div>
-            </>
-          )}
+            )}
 
-          <div className="feedback-panel" aria-live="polite">
-            <pre>{feedback}</pre>
+            {feedback && (
+              <div className="auth-feedback" aria-live="polite">
+                {feedback}
+              </div>
+            )}
           </div>
-        </section>
+
+          <footer className="auth-card-footer">
+            <button 
+              type="button" 
+              className="link-button" 
+              onClick={() => setShowHelp(!showHelp)}
+            >
+              Need help signing in?
+            </button>
+            
+            {showHelp && (
+              <div className="auth-help-expanded">
+                <p>Contact the office for account support or to reset your permissions.</p>
+              </div>
+            )}
+          </footer>
+        </main>
+        
+        <div className="auth-external-links">
+          <a href="/" className="auth-back-link">
+            Back to website
+          </a>
+        </div>
       </div>
     </div>
   );
 }
-

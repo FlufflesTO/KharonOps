@@ -1,10 +1,10 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
-import { CtaSection } from "../components/CtaSection";
-import { services } from "../constants/siteData";
-import { NotFound } from "../components/NotFound";
 import { Breadcrumbs } from "../components/Breadcrumbs";
+import { CtaSection } from "../components/CtaSection";
+import { NotFound } from "../components/NotFound";
+import { services } from "../constants/siteData";
 
 export function ServiceDetailPage(): React.JSX.Element {
   const { serviceSlug } = useParams<{ serviceSlug: string }>();
@@ -24,15 +24,16 @@ export function ServiceDetailPage(): React.JSX.Element {
       <section className="site-section">
         <Breadcrumbs />
         <div className="section-heading">
-          <p className="section-kicker">Service Scope</p>
+          <p className="section-kicker">Service</p>
           <h2>{service.title}</h2>
           <p className="section-subtitle">{service.summary}</p>
+          <p className="section-subtitle section-subtitle--small">Best fit: {service.audience}</p>
         </div>
 
         <div className="operations-board detail-grid">
           <article className="operations-flow">
             <div className="operations-flow__header">
-              <h3>Scope of work</h3>
+              <h3>What this service covers</h3>
             </div>
             <ul className="service-list">
               {service.scope.map((point) => (
@@ -40,42 +41,55 @@ export function ServiceDetailPage(): React.JSX.Element {
               ))}
             </ul>
           </article>
+
           <aside className="assurance-panel">
-            <h3>Compliance and environments</h3>
-            <div className="assurance-list">
-              <article className="assurance-list__item">
-                <span>Standards relevance</span>
-                <p>{service.standards.join(" | ")}</p>
-              </article>
-              <article className="assurance-list__item">
-                <span>Typical environments</span>
-                <p>{service.environments.join(", ")}</p>
-              </article>
-            </div>
+            <h3>Standards and compliance</h3>
+            <details className="details-panel" open={false}>
+              <summary>{service.standards.join(" | ")}</summary>
+              <div className="assurance-list">
+                <article className="assurance-list__item">
+                  <span>Where it is used</span>
+                  <p>{service.environments.join(", ")}</p>
+                </article>
+              </div>
+            </details>
           </aside>
         </div>
 
-        <div className="operations-board detail-grid detail-grid--single">
+        <div className="operations-board detail-grid">
           <article className="operations-flow">
             <div className="operations-flow__header">
-              <h3>Delivered outputs</h3>
+              <h3>What you receive</h3>
             </div>
             <ul className="service-list">
               {service.deliverables.map((point) => (
                 <li key={point}>{point}</li>
               ))}
             </ul>
-            <div className="detail-actions">
-              <Link className="site-button site-button--primary" to="/contact">
-                {service.ctaLabel}
-              </Link>
-              <Link className="site-button site-button--secondary" to="/services">
-                Back to services
-              </Link>
+          </article>
+
+          <article className="operations-flow">
+            <div className="operations-flow__header">
+              <h3>Common questions</h3>
             </div>
+            <ul className="service-list">
+              {service.questions.map((question) => (
+                <li key={question}>{question}</li>
+              ))}
+            </ul>
           </article>
         </div>
+
+        <div className="detail-actions">
+          <Link className="site-button site-button--primary" to="/contact?intent=project">
+            {service.ctaLabel}
+          </Link>
+          <Link className="site-button site-button--secondary" to="/services">
+            Back to services
+          </Link>
+        </div>
       </section>
+
       <CtaSection />
     </>
   );

@@ -1,31 +1,29 @@
-﻿import React from "react";
+import React from "react";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import { CtaSection } from "../components/CtaSection";
 import { compliancePillars, standards } from "../constants/siteData";
 
 const documentationStreams = [
-  "Inspection and maintenance logs",
-  "Service certificates and test records",
-  "As-built and O and M handover sets",
-  "Defect and remediation trackers",
-  "Audit-readiness summaries for stakeholders"
+  "Service reports and attendance records",
+  "Certificates and test results",
+  "As-built notes and handover packs",
+  "Defect and remedial action trackers",
+  "Simple summaries for management review"
 ];
 
-const controlNotes = [
+const supportNotes = [
   {
-    title: "Standards baseline",
-    detail:
-      "Relevant SANS provide the engineering baseline. The required evidence set can expand where permits, leases, insurers, tenders, or client policies impose additional obligations."
+    title: "What we provide",
+    detail: "We help clients keep the records that matter in one place so the next audit or handover is easier."
   },
   {
-    title: "Security service regulation",
-    detail:
-      "Where regulated private-security services are in scope, clients should verify current PSiRA registration and good standing for the provider and deployed personnel before appointment."
+    title: "Why it matters",
+    detail: "Good records reduce delays, support insurer and auditor questions, and make follow-up work clearer."
   },
   {
-    title: "Personal information handling",
-    detail:
-      "Operational records that contain personal information should be governed with role-based access, retention rules, and breach-escalation procedures aligned to POPIA responsibilities."
+    title: "Standards support",
+    detail: "Relevant SANS remain visible, but the page stays focused on what the client needs to do next."
   }
 ];
 
@@ -33,20 +31,20 @@ export function CompliancePage(): React.JSX.Element {
   return (
     <>
       <Helmet>
-        <title>Compliance and Documentation | Kharon</title>
+        <title>Documentation and Compliance Support | Kharon</title>
         <meta
           name="description"
-          content="Standards alignment, audit-ready documentation, and evidence-led closeout designed for insurers, auditors, and operational teams."
+          content="Service records, certificates, maintenance logs, handover packs, and compliance support for fire and security systems."
         />
       </Helmet>
 
       <section className="site-section site-section--split">
         <div className="section-heading">
-          <p className="section-kicker">Compliance and documentation</p>
-          <h2>Execution that remains auditable long after the site visit.</h2>
+          <p className="section-kicker">Documentation</p>
+          <h2>Documentation and compliance support.</h2>
           <p className="section-subtitle">
-            Kharon combines engineering delivery with documentation discipline so inspection cycles, insurer reviews, and
-            client governance checks can be supported by a clear evidence trail.
+            We help clients keep service records, certificates, and maintenance documentation organised and ready when
+            needed.
           </p>
         </div>
         <div className="operations-board detail-grid">
@@ -63,7 +61,7 @@ export function CompliancePage(): React.JSX.Element {
         <div className="operations-board detail-grid">
           <article className="operations-flow">
             <div className="operations-flow__header">
-              <h3>Documentation streams</h3>
+              <h3>What documentation we provide</h3>
             </div>
             <ul className="service-list">
               {documentationStreams.map((item) => (
@@ -73,9 +71,9 @@ export function CompliancePage(): React.JSX.Element {
           </article>
 
           <aside className="assurance-panel">
-            <h3>Control position</h3>
+            <h3>Why it matters</h3>
             <div className="assurance-list">
-              {controlNotes.map((note) => (
+              {supportNotes.map((note) => (
                 <article key={note.title} className="assurance-list__item">
                   <span>{note.title}</span>
                   <p>{note.detail}</p>
@@ -88,14 +86,32 @@ export function CompliancePage(): React.JSX.Element {
 
       <section className="site-section">
         <div className="section-heading">
-          <p className="section-kicker">Reference baseline</p>
-          <h2>Common standards referenced across delivery planning and closeout.</h2>
+          <p className="section-kicker">Standards</p>
+          <h2>Standards we commonly work against.</h2>
         </div>
         <div className="assurance-list">
           <article className="assurance-list__item">
             <span>Relevant SANS</span>
             <p>{standards.join(", ")}</p>
           </article>
+        </div>
+      </section>
+
+      <section className="site-section">
+        <div className="cta-panel">
+          <div className="cta-panel__copy">
+            <p className="section-kicker">How to request support</p>
+            <h2>Send us the site, the system, and the document set you need.</h2>
+            <p>We will route the request to the right team and keep the follow-up clear.</p>
+          </div>
+          <div className="cta-panel__actions">
+            <Link className="site-button site-button--primary" to="/contact?intent=project">
+              Request support
+            </Link>
+            <Link className="site-button site-button--secondary" to="/resources">
+              View guides
+            </Link>
+          </div>
         </div>
       </section>
 

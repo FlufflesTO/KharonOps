@@ -24,10 +24,13 @@ export function SiteApp(): React.JSX.Element {
         <Route path="services" element={<ServicesHub />} />
         <Route path="services/:serviceSlug" element={<ServiceDetailPage />} />
 
+        <Route path="industries" element={<SectorsHub />} />
+        <Route path="industries/:sectorSlug" element={<SectorDetailPage />} />
         <Route path="sectors" element={<SectorsHub />} />
         <Route path="sectors/:sectorSlug" element={<SectorDetailPage />} />
 
         <Route path="compliance" element={<CompliancePage />} />
+        <Route path="case-studies" element={<OperationalTrailPage />} />
         <Route path="projects" element={<OperationalTrailPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="resources" element={<ResourcesPage />} />

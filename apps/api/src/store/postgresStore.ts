@@ -1,17 +1,16 @@
 import {
-  buildConflict,
   bumpMutableMeta,
   canReadJob,
   canTransitionStatus,
+  newMutableMeta,
+  type ApiError,
+  type ConflictPayload,
   type EscrowRow,
   type FinanceDebtorRow,
   type FinanceInvoiceRow,
   type FinanceQuoteRow,
   type FinanceStatementRow,
-  newMutableMeta,
-  type ApiError,
   type AutomationJobRow,
-  type ConflictPayload,
   type JobDocumentRow,
   type JobEventRow,
   type JobRow,
@@ -47,97 +46,8 @@ import {
   technicianRowFromPg,
   userRowFromPg
 } from "./mappers/postgresRows.js";
-
-// ---------------------------------------------------------------------------
-// Postgres client abstraction
-// ---------------------------------------------------------------------------
-
-interface PgClient {
-  query(text: string, values?: unknown[]): Promise<{ rows: PgRow[]; rowCount: number }>;
-  release(): void;
-}
-
-interface PgPool {
-  connect(): Promise<PgClient>;
-  query(text: string, values?: unknown[]): Promise<{ rows: PgRow[]; rowCount: number }>;
-  end(): Promise<void>;
-}
-
-interface PgPoolConstructor {
-  new(config: Record<string, unknown>): PgPool;
-}
-
-let _pgModule: { Pool: PgPoolConstructor } | null = null;
-
-async function loadPgModule(): Promise<{ Pool: PgPoolConstructor }> {
-  if (_pgModule) return _pgModule;
-  const mod = await import("pg");
-  const { Pool } = mod;
-  _pgModule = { Pool: Pool as unknown as PgPoolConstructor };
-  return _pgModule;
-}
-
-function buildPoolConfig(config: PostgresStoreConfig): Record<string, unknown> {
-  const poolCfg: Record<string, unknown> = {
-    connectionString: config.connectionString || config.directUrl,
-    max: 20,
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
-    application_name: config.applicationName
-  };
-
-  if (config.sslMode === "disable") {
-    poolCfg.ssl = false;
-  } else {
-    poolCfg.ssl = { rejectUnauthorized: config.sslMode === "require" };
-  }
-
-  return poolCfg;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-function immutableClone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function toConflict(job: JobRow, expectedRowVersion: number): ConflictPayload {
-  return buildConflict({
-    entity: "Jobs_Master",
-    entityId: job.job_id,
-    serverState: job as unknown as Record<string, unknown>,
-    clientRowVersion: expectedRowVersion,
-    serverRowVersion: job.row_version
-  });
-}
-
-function normalizeError(message: string, code = "validation_error"): ApiError {
-  return { code, message };
-}
-
-function stampEvent(args: {
-  jobid: string;
-  eventType: string;
-  payload: Record<string, unknown>;
-  ctx: StoreContext;
-}): JobEventRow {
-  const meta = newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId);
-  return {
-    event_id: `EVT-${crypto.randomUUID()}`,
-    job_id: args.jobid,
-    event_type: args.eventType,
-    payload_json: JSON.stringify(args.payload),
-    ...meta,
-    created_at: meta.updated_at,
-    created_by: meta.updated_by
-  };
-}
+import { immutableClone, normalizeError, nowIso, stampEvent, toConflict } from "./postgres/helpers.js";
+import { buildPoolConfig, loadPgModule, type PgClient, type PgPool } from "./postgres/runtime.js";
 
 // ---------------------------------------------------------------------------
 // Schema DDL

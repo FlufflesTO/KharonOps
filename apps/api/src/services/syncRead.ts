@@ -1,5 +1,6 @@
 import type { JobEventRow, JobRow, SessionUser, SyncQueueRow } from "@kharon/domain";
 import type { WorkbookStore } from "../store/types.js";
+import { listSyncArtifactsForJobs } from "../store/repositories/syncRepository.js";
 
 export async function readSyncSnapshot(args: {
   store: WorkbookStore;
@@ -12,20 +13,20 @@ export async function readSyncSnapshot(args: {
   );
   const uniqueJobids = [...new Set(jobs.map((job) => job.job_id))];
 
-  const [queueLists, eventLists] = await Promise.all([
-    Promise.all(uniqueJobids.map((jobid) => args.store.listSyncQueueByJob(jobid))),
-    Promise.all(uniqueJobids.map((jobid) => args.store.listJobEventsByJob(jobid)))
-  ]);
+  let queue: SyncQueueRow[] = [];
+  let events: JobEventRow[] = [];
 
-  const queue = queueLists
-    .flat()
-    .filter((item, index, arr) => arr.findIndex((candidate) => candidate.mutation_id === item.mutation_id) === index)
-    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-
-  const events = eventLists
-    .flat()
-    .filter((item, index, arr) => arr.findIndex((candidate) => candidate.event_id === item.event_id) === index)
-    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  try {
+    const artifacts = await listSyncArtifactsForJobs(args.store, uniqueJobids);
+    queue = artifacts.queue;
+    events = artifacts.events;
+  } catch (error) {
+    console.warn("sync snapshot event/queue lookup failed, returning jobs-only snapshot", {
+      actor: args.actor.user_id,
+      error: String(error)
+    });
+    return { jobs, queue: [], events: [] };
+  }
 
   return { jobs, queue, events };
 }

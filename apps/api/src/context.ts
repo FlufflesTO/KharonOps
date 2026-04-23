@@ -10,7 +10,7 @@ import type { WorkbookStore } from "./store/types.js";
 
 export interface AppBindings {
   Bindings: {
-    ASSETS: {
+    ASSETS?: {
       fetch: (request: Request) => Promise<Response>;
     };
     KHARON_CACHE?: {
