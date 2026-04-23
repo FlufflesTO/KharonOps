@@ -11,9 +11,12 @@
     "@react-pdf/renderer": "^4.5.1",
     "idb": "^8.0.2",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-window": "^2.2.7",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "@types/react-window": "^1.8.8",
     "@vitejs/plugin-react": "^4.4.1",
     "vite": "^6.3.2",
     "vite-tsconfig-paths": "^5.1.4"

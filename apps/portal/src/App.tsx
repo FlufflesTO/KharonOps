@@ -684,7 +684,7 @@ export function PortalApp(): React.JSX.Element {
             }
 
             if (eventsChanged > 0) {
-              const incomingEvents = (response.events ?? []).map(normalizeJobEvent);
+              const incomingEvents = (response.events ?? []).map(e => normalizeJobEvent(e as unknown as Record<string, unknown>));
               setJobEvents((prev) => {
                 const next = [...prev];
                 for (const ev of incomingEvents) {

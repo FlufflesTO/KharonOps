@@ -250,3 +250,13 @@ export interface ReplayDecision {
   removeMutationIds: string[];
   keepMutationIds: string[];
 }
+
+
+export interface OpsIntelligencePayload {
+  generated_at: string;
+  jobs: { open: number; critical: number; stale_over_24h: number };
+  operations: { schedules_total: number; documents_pending_publish: number; escrow_locked: number };
+  finance: { outstanding_amount: number };
+  sync: { queue_conflicts: number };
+  schema_drift: { healthy: boolean; issue_count: number };
+}

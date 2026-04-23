@@ -20,7 +20,7 @@ import { nowIso } from "../services/utils.js";
 import { readUpgradeWorkspaceState } from "../services/workspaceState.js";
 import { chatAlertSchema, gmailNotifySchema, peopleSyncSchema, skillMatrixUpsertSchema } from "../schemas/requests.js";
 import type { AppBindings } from "../context.js";
-import type { UserRow, ScheduleRequestRow, ScheduleRow, JobDocumentRow } from "@kharon/domain";
+import type { UserRow, ScheduleRequestRow, ScheduleRow, JobDocumentRow, UpgradeWorkspaceState, OpsIntelligencePayload } from "@kharon/domain";
 
 
 const workspace = new Hono<AppBindings>();
@@ -54,7 +54,7 @@ workspace.get("/upgrade/state", requireRoles("dispatcher", "admin", "finance"), 
   const store = c.get("store");
   const version = await getCacheVersion(c.env);
   const cacheKey = `upgrade:${version}:${user.role}`;
-  const cached = await getCachedJson<any>(c.env, cacheKey);
+  const cached = await getCachedJson<UpgradeWorkspaceState>(c.env, cacheKey);
 
   if (cached) return c.json(envelopeSuccess({ correlationId, data: cached }));
 
@@ -159,7 +159,7 @@ workspace.get("/dispatch-context", requireRoles("dispatcher", "admin"), async (c
 
   const version = await getCacheVersion(c.env);
   const cacheKey = `dispatch:${version}:${jobid}:${user.user_id}`;
-  const cached = await getCachedJson<any>(c.env, cacheKey);
+  const cached = await getCachedJson<OpsIntelligencePayload>(c.env, cacheKey);
   if (cached) return c.json(envelopeSuccess({ correlationId, data: cached }));
 
   const [requests, schedules, documents, users] = await Promise.all([

@@ -1,11 +1,13 @@
 /**
- * Project KharonOps - Forensic Timeline (Refactored)
+ * Project KharonOps - Forensic Timeline (Enhanced with Live Sync)
  * Purpose: High-fidelity visual state log for operational traceability.
  * Design: Chrono-Audit System (Glassmorphism + Digital Typography)
  */
 
 import React from 'react';
 import type { JobEventRow } from "@kharon/domain";
+import { useLiveSync } from '../hooks/useLiveSync';
+import { PresenceIndicator } from './PresenceIndicator';
 
 interface ForensicTimelineProps {
   events: JobEventRow[];
@@ -13,12 +15,22 @@ interface ForensicTimelineProps {
 }
 
 export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({ events, jobId }) => {
-  const jobEvents = React.useMemo(() => 
-    events
+  const liveEvents = useLiveSync(jobId);
+  
+  const jobEvents = React.useMemo(() => {
+    const combined = [...liveEvents, ...events];
+    // De-duplicate by event_id
+    const seen = new Set();
+    const unique = combined.filter(e => {
+      if (seen.has(e.event_id)) return false;
+      seen.add(e.event_id);
+      return true;
+    });
+
+    return unique
       .filter((e) => e.job_id === jobId)
-      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)),
-    [events, jobId]
-  );
+      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+  }, [events, liveEvents, jobId]);
 
   if (jobEvents.length === 0) {
     return (
@@ -34,17 +46,20 @@ export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({ events, jobI
       <div className="forensic-header">
         <div className="header-badge">
           <span className="pulse-dot"></span>
-          AUDIT TRAIL
+          LIVE AUDIT LOG
         </div>
-        <span className="event-count">{jobEvents.length} Ledger Entries</span>
+        <div className="flex items-center gap-4">
+           <PresenceIndicator userId="system-monitor" className="opacity-80" />
+           <span className="event-count">{jobEvents.length} Ledger Entries</span>
+        </div>
       </div>
-      
+
       <div className="forensic-feed">
         {jobEvents.map((event, idx) => (
-          <TimelineItem 
-            key={event.event_id} 
-            event={event} 
-            isLatest={idx === 0} 
+          <TimelineItem
+            key={event.event_id}
+            event={event}
+            isLatest={idx === 0}
           />
         ))}
       </div>
@@ -122,6 +137,11 @@ export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({ events, jobI
         .forensic-item--latest {
           background: rgba(var(--color-primary-rgb), 0.05);
           border-color: rgba(var(--color-primary-rgb), 0.2);
+          animation: slide-in 0.3s ease-out;
+        }
+        @keyframes slide-in {
+          from { opacity: 0; transform: translateX(-10px); }
+          to { opacity: 1; transform: translateX(0); }
         }
         .node-marker {
           width: 10px;
@@ -157,6 +177,12 @@ export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({ events, jobI
         .item-time {
           font-size: 0.65rem;
           opacity: 0.4;
+        }
+        .item-count {
+           font-size: 0.7rem;
+           font-weight: 600;
+           opacity: 0.5;
+           letter-spacing: 0.05em;
         }
         .item-body {
           font-size: 0.85rem;
@@ -205,12 +231,14 @@ const TimelineItem: React.FC<{ event: JobEventRow; isLatest: boolean }> = ({ eve
   const renderMessage = () => {
     switch (event.event_type) {
       case 'STATUS_CHANGE':
+      case 'status_changed':
         return (
           <span>
             Operational state transitioned from <span className="payload-highlight">{payload.from}</span> to <span className="payload-highlight">{payload.to}</span>
           </span>
         );
       case 'NOTE_ADDED':
+      case 'note_added':
         return (
           <div>
             Analyst commentary appended:
@@ -218,9 +246,10 @@ const TimelineItem: React.FC<{ event: JobEventRow; isLatest: boolean }> = ({ eve
           </div>
         );
       case 'DOCUMENT_PUBLISHED':
+      case 'documents.publish':
         return (
           <span>
-            Compliance artifact <span className="payload-highlight">{payload.document_type}</span> committed to client vault.
+            Compliance artifact <span className="payload-highlight">{payload.document_type || 'PDF'}</span> committed to client vault.
           </span>
         );
       case 'SCHEDULE_CONFIRMED':
@@ -239,14 +268,14 @@ const TimelineItem: React.FC<{ event: JobEventRow; isLatest: boolean }> = ({ eve
       <div className="node-marker" />
       <div className="item-content">
         <div className="item-meta">
-          <span className="item-type">{event.event_type}</span>
+          <span className="item-type">{event.event_type.toUpperCase()}</span>
           <span className="item-time">{new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
         </div>
         <div className="item-body">
           {renderMessage()}
         </div>
         <div className="item-footer">
-          <span>ACTOR: {event.created_by}</span>
+          <span>ACTOR: {event.created_by || 'SYSTEM'}</span>
           <span>EID: {event.event_id.slice(0, 8)}</span>
         </div>
       </div>

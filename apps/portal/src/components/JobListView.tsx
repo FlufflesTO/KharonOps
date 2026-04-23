@@ -1,9 +1,11 @@
 /**
- * Project KharonOps - Job List View (Refactored)
+ * Project KharonOps - Job List View (Refactored with Virtualization)
  * Purpose: High-density operational dashboard with grid-safety and robust truncation.
+ * Performance: Virtualization enabled for scale (>1000 rows).
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { List } from "react-window";
 import type { JobStatus } from "@kharon/domain";
 
 const JOB_STATUS_LABELS: Record<JobStatus, string> = {
@@ -50,15 +52,6 @@ export function statusTone(status: string): "active" | "warning" | "critical" | 
   }
 }
 
-interface JobItemProps {
-  job: JobRecord;
-  isActive: boolean;
-  checked: boolean;
-  onToggle: (id: string) => void;
-  onClick: (id: string) => void;
-  query: string;
-}
-
 function Highlight({ text, query }: { text: string; query: string }): React.JSX.Element {
   const trimmed = query.trim();
   if (!trimmed) return <>{text}</>;
@@ -66,16 +59,24 @@ function Highlight({ text, query }: { text: string; query: string }): React.JSX.
   const parts = text.split(new RegExp(`(${escaped})`, "ig"));
   return (
     <>
-      {parts.map((part, idx) => 
-        part.toLowerCase() === trimmed.toLowerCase() 
-          ? <mark key={idx} className="highlight">{part}</mark> 
+      {parts.map((part, idx) =>
+        part.toLowerCase() === trimmed.toLowerCase()
+          ? <mark key={idx} className="highlight">{part}</mark>
           : <span key={idx}>{part}</span>
       )}
     </>
   );
 }
 
-const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, onClick, query }: JobItemProps): React.JSX.Element {
+const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, onClick, query, style }: {
+  job: JobRecord;
+  isActive: boolean;
+  checked: boolean;
+  onToggle: (id: string) => void;
+  onClick: (id: string) => void;
+  query: string;
+  style?: React.CSSProperties;
+}): React.JSX.Element {
   const riskScore = useMemo(() => {
     const baseByStatus: Record<JobStatus, number> = {
       draft: 55, performed: 35, rejected: 78, approved: 22, certified: 10, cancelled: 5
@@ -85,52 +86,235 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
   }, [job.status, job.last_note]);
 
   return (
-    <div className={`job-card-wrapper ${isActive ? 'job-card-wrapper--active' : ''}`}>
-      <div className="job-card-checkbox">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={() => onToggle(job.job_id)}
-          aria-label={`Select ${job.job_id}`}
-        />
-      </div>
-      <button 
-        type="button" 
-        className="job-card" 
-        onClick={() => onClick(job.job_id)}
-      >
-        <div className="job-card__header">
-          <span className="job-card__id truncate">
-            <Highlight text={job.job_id} query={query} />
-          </span>
-          <span className={`status-chip status-chip--${statusTone(job.status)}`}>
-            {JOB_STATUS_LABELS[job.status]}
-          </span>
+    <div style={style}>
+      <div className={`job-card-wrapper ${isActive ? 'job-card-wrapper--active' : ''}`} style={{ margin: '0 8px 12px 0' }}>
+        <div className="job-card-checkbox">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={() => onToggle(job.job_id)}
+            aria-label={`Select ${job.job_id}`}
+          />
         </div>
-        
-        <div className="job-card__title truncate">
-          <Highlight text={job.title} query={query} />
-        </div>
-
-        <div className="job-card__client truncate">
-          <Highlight text={job.client_name || "Unassigned Client"} query={query} />
-        </div>
-
-        <div className="job-card__meta">
-          <div className="job-card__meta-item truncate">
-            <span className="meta-icon">👤</span>
-            <span><Highlight text={job.technician_name || "Pending Tech"} query={query} /></span>
+        <button
+          type="button"
+          className="job-card"
+          onClick={() => onClick(job.job_id)}
+        >
+          <div className="job-card__header">
+            <span className="job-card__id truncate">
+              <Highlight text={job.job_id} query={query} />
+            </span>
+            <span className={`status-chip status-chip--${statusTone(job.status)}`}>
+              {JOB_STATUS_LABELS[job.status]}
+            </span>
           </div>
-          <div className="job-card__meta-item">
-            <div className={`risk-indicator risk-indicator--${riskScore > 70 ? 'high' : riskScore > 30 ? 'med' : 'low'}`}>
-              <div className="risk-bar" style={{ width: `${riskScore}%` }}></div>
-              <span>Risk {riskScore}%</span>
+
+          <div className="job-card__title truncate">
+            <Highlight text={job.title} query={query} />
+          </div>
+
+          <div className="job-card__client truncate">
+            <Highlight text={job.client_name || "Unassigned Client"} query={query} />
+          </div>
+
+          <div className="job-card__meta">
+            <div className="job-card__meta-item truncate">
+              <span className="meta-icon">👤</span>
+              <span><Highlight text={job.technician_name || "Pending Tech"} query={query} /></span>
+            </div>
+            <div className="job-card__meta-item">
+              <div className={`risk-indicator risk-indicator--${riskScore > 70 ? 'high' : riskScore > 30 ? 'med' : 'low'}`}>
+                <div className="risk-bar" style={{ width: `${riskScore}%` }}></div>
+                <span>Risk {riskScore}%</span>
+              </div>
             </div>
           </div>
+        </button>
+      </div>
+    </div>
+  );
+});
+
+type StatusFilter = JobStatus | "all" | "open";
+
+export interface JobListViewProps {
+  jobs: JobRecord[];
+  selectedJobid: string | null;
+  onSelectJob: (id: string) => void;
+  title: string;
+  globalQuery: string;
+  onGlobalQueryChange: (q: string) => void;
+  onBulkStatusUpdate?: (ids: string[], status: JobStatus) => void;
+}
+
+export function JobListView({
+    jobs,
+    selectedJobid,
+    onSelectJob,
+    title,
+    globalQuery,
+    onGlobalQueryChange,
+    onBulkStatusUpdate
+  }: JobListViewProps): React.JSX.Element {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
+
+  const filtered = useMemo(() => {
+    let result = jobs;
+    if (statusFilter === "open") {
+      result = result.filter((j: JobRecord) => j.status !== "cancelled" && j.status !== "certified");
+    } else if (statusFilter !== "all") {
+      result = result.filter((j: JobRecord) => j.status === statusFilter);
+    }
+    const q = globalQuery.toLowerCase();
+    if (q) {
+      result = result.filter((j: JobRecord) => j.job_id.toLowerCase().includes(q) ||
+        j.title.toLowerCase().includes(q) ||
+        (j.client_name ?? "").toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [jobs, globalQuery, statusFilter]);
+
+  const handleToggle = useCallback((id: string) => {
+    setSelectedJobIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }, []);
+
+  const VirtualRow = ({ index, style }: { index: number, style: React.CSSProperties }) => {
+    const job = filtered[index]; if (!job) return null;
+    return (
+      <JobItem
+        job={job}
+        isActive={job.job_id === selectedJobid}
+        checked={selectedJobIds.includes(job.job_id)}
+        onToggle={handleToggle}
+        onClick={onSelectJob}
+        query={globalQuery}
+        style={style}
+      />
+    );
+  };
+
+  const useVirtualization = filtered.length > 1000;
+
+  return (
+    <section className="job-panel glass-panel">
+      <div className="panel-header">
+        <div className="panel-title-block">
+          <span className="eyebrow">OPERATIONAL LEDGER</span>
+          <h2>{title}</h2>
         </div>
-      </button>
+        <div className="badge-group">
+          <span className="badge badge--primary">{filtered.length} Active</span>
+        </div>
+      </div>
+
+      <div className="filter-system">
+        <div className="search-wrapper">
+          <input
+            type="search"
+            placeholder="Filter jobs..."
+            value={globalQuery}
+            onChange={(e) => onGlobalQueryChange(e.target.value)}
+          />
+        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
+          <option value="open">Open State</option>
+          <option value="all">All States</option>
+          <option value="performed">Performed</option>
+          <option value="certified">Certified</option>
+        </select>
+      </div>
+
+      {selectedJobIds.length > 0 && (
+        <div className="bulk-actions animate-in">
+          <span>{selectedJobIds.length} Selected</span>
+          <button onClick={() => onBulkStatusUpdate?.(selectedJobIds, "performed")}>Batch: Performed</button>
+          <button onClick={() => setSelectedJobIds([])} className="btn-ghost">Clear</button>
+        </div>
+      )}
+
+      <div className="job-scroller" style={{ height: '100%', minHeight: 0 }}>
+        {useVirtualization ? (
+          <List
+            height={600}
+            itemCount={filtered.length}
+            itemSize={140}
+            width="100%"
+          >
+            {VirtualRow as any}
+          </List>
+        ) : (
+          filtered.map((job: JobRecord) => (
+            <JobItem
+              key={job.job_id}
+              job={job}
+              isActive={job.job_id === selectedJobid}
+              checked={selectedJobIds.includes(job.job_id)}
+              onToggle={handleToggle}
+              onClick={onSelectJob}
+              query={globalQuery}
+            />
+          ))
+        )}
+      </div>
 
       <style>{`
+        .job-panel {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          padding: 1.5rem;
+          overflow: hidden;
+        }
+        .panel-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 1.5rem;
+        }
+        .eyebrow {
+          font-size: 0.6rem;
+          font-weight: 900;
+          letter-spacing: 0.2em;
+          color: var(--color-primary);
+          margin-bottom: 0.25rem;
+          display: block;
+        }
+        .filter-system {
+          display: grid;
+          grid-template-columns: 1fr 180px;
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+        }
+        @media (max-width: 640px) {
+          .filter-system { grid-template-columns: 1fr; }
+        }
+        .search-wrapper input {
+          width: 100%;
+          background: rgba(0,0,0,0.2);
+          border: 1px solid rgba(255,255,255,0.1);
+          padding: 0.6rem 1rem;
+          border-radius: 8px;
+          color: #fff;
+        }
+        .job-scroller {
+          flex: 1;
+          overflow-y: auto;
+          padding-right: 0.5rem;
+        }
+        .bulk-actions {
+          background: var(--color-primary);
+          padding: 0.75rem 1rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          font-size: 0.8rem;
+          font-weight: 700;
+        }
         .job-card-wrapper {
           display: flex;
           align-items: stretch;
@@ -258,173 +442,6 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
         .risk-indicator--high .risk-bar { background: var(--color-critical); }
         .risk-indicator--med .risk-bar { background: var(--color-warning); }
         .risk-indicator--low .risk-bar { background: var(--color-active); }
-      `}</style>
-    </div>
-  );
-});
-
-type StatusFilter = JobStatus | "all" | "open";
-
-export interface JobListViewProps {
-  jobs: JobRecord[];
-  selectedJobid: string | null;
-  onSelectJob: (id: string) => void;
-  title: string;
-  globalQuery: string;
-  onGlobalQueryChange: (q: string) => void;
-  onBulkStatusUpdate?: (ids: string[], status: JobStatus) => void;
-}
-
-export function JobListView({
-    jobs,
-    selectedJobid,
-    onSelectJob,
-    title,
-    globalQuery,
-    onGlobalQueryChange,
-    onBulkStatusUpdate
-  }: JobListViewProps): React.JSX.Element {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
-  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
-  const [visibleCount, setVisibleCount] = useState(50);
-
-  const filtered = useMemo(() => {
-    let result = jobs;
-    if (statusFilter === "open") {
-      result = result.filter((j: JobRecord) => j.status !== "cancelled" && j.status !== "certified");
-    } else if (statusFilter !== "all") {
-      result = result.filter((j: JobRecord) => j.status === statusFilter);
-    }
-    const q = globalQuery.toLowerCase();
-    if (q) {
-      result = result.filter((j: JobRecord) => j.job_id.toLowerCase().includes(q) || 
-        j.title.toLowerCase().includes(q) ||
-        (j.client_name ?? "").toLowerCase().includes(q)
-      );
-    }
-    return result;
-  }, [jobs, globalQuery, statusFilter]);
-
-  return (
-    <section className="job-panel glass-panel">
-      <div className="panel-header">
-        <div className="panel-title-block">
-          <span className="eyebrow">OPERATIONAL LEDGER</span>
-          <h2>{title}</h2>
-        </div>
-        <div className="badge-group">
-          <span className="badge badge--primary">{filtered.length} Active</span>
-        </div>
-      </div>
-
-      <div className="filter-system">
-        <div className="search-wrapper">
-          <input
-            type="search"
-            placeholder="Filter jobs..."
-            value={globalQuery}
-            onChange={(e) => onGlobalQueryChange(e.target.value)}
-          />
-        </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
-          <option value="open">Open State</option>
-          <option value="all">All States</option>
-          <option value="performed">Performed</option>
-          <option value="certified">Certified</option>
-        </select>
-      </div>
-
-      {selectedJobIds.length > 0 && (
-        <div className="bulk-actions animate-in">
-          <span>{selectedJobIds.length} Selected</span>
-          <button onClick={() => onBulkStatusUpdate?.(selectedJobIds, "performed")}>Batch: Performed</button>
-          <button onClick={() => setSelectedJobIds([])} className="btn-ghost">Clear</button>
-        </div>
-      )}
-
-      <div className="job-scroller">
-        {filtered.slice(0, visibleCount).map((job: JobRecord) => (
-          <JobItem
-            key={job.job_id}
-            job={job}
-            isActive={job.job_id === selectedJobid}
-            checked={selectedJobIds.includes(job.job_id)}
-            onToggle={(id) => setSelectedJobIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
-            onClick={onSelectJob}
-            query={globalQuery}
-          />
-        ))}
-        {filtered.length > visibleCount && (
-          <button className="load-more" onClick={() => setVisibleCount(v => v + 50)}>Load More Entries</button>
-        )}
-      </div>
-
-      <style>{`
-        .job-panel {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          padding: 1.5rem;
-          overflow: hidden;
-        }
-        .panel-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-end;
-          margin-bottom: 1.5rem;
-        }
-        .eyebrow {
-          font-size: 0.6rem;
-          font-weight: 900;
-          letter-spacing: 0.2em;
-          color: var(--color-primary);
-          margin-bottom: 0.25rem;
-          display: block;
-        }
-        .filter-system {
-          display: grid;
-          grid-template-columns: 1fr 180px;
-          gap: 0.75rem;
-          margin-bottom: 1.5rem;
-        }
-        @media (max-width: 640px) {
-          .filter-system { grid-template-columns: 1fr; }
-        }
-        .search-wrapper input {
-          width: 100%;
-          background: rgba(0,0,0,0.2);
-          border: 1px solid rgba(255,255,255,0.1);
-          padding: 0.6rem 1rem;
-          border-radius: 8px;
-          color: #fff;
-        }
-        .job-scroller {
-          flex: 1;
-          overflow-y: auto;
-          padding-right: 0.5rem;
-        }
-        .bulk-actions {
-          background: var(--color-primary);
-          padding: 0.75rem 1rem;
-          border-radius: 8px;
-          margin-bottom: 1rem;
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          font-size: 0.8rem;
-          font-weight: 700;
-        }
-        .load-more {
-          width: 100%;
-          padding: 1rem;
-          background: transparent;
-          border: 1px dashed rgba(255,255,255,0.1);
-          color: rgba(255,255,255,0.4);
-          border-radius: 8px;
-          margin-top: 1rem;
-          cursor: pointer;
-        }
-        .load-more:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
       `}</style>
     </section>
   );

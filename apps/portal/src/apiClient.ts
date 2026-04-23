@@ -7,6 +7,7 @@ import type {
   ScheduleRow,
   SyncMutation,
   SyncPushResult,
+  JobEventRow,
   UserRow
 } from "@kharon/domain";
 
@@ -174,7 +175,7 @@ export interface UpgradeWorkspaceState {
 export interface SyncPullPayload {
   jobs: Array<Record<string, unknown>>;
   queue: Array<Record<string, unknown>>;
-  events: Array<Record<string, unknown>>;
+  events: JobEventRow[];
 }
 
 export interface SchemaDriftIssue {
@@ -484,7 +485,10 @@ export const apiClient = {
       body: JSON.stringify({ mutations })
     });
   },
-  async syncPull(since: string): Promise<SyncPullPayload> {
+    async pullSyncData(since: string): Promise<SyncPullPayload> {
+    return this.syncPull(since);
+  },
+async syncPull(since: string): Promise<SyncPullPayload> {
     const result = await request<SyncPullPayload>(`/api/v1/sync/pull?since=${encodeURIComponent(since)}`, {
       method: "GET"
     });

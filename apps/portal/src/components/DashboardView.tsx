@@ -1,6 +1,7 @@
 import React from "react";
 import type { Role } from "@kharon/domain";
 import type { PortalSession } from "../apiClient";
+import { PresenceIndicator } from "./PresenceIndicator";
 
 function Icon({ d, size = 20, className }: { d: string; size?: number; className?: string }): React.JSX.Element {
   return (
@@ -138,7 +139,7 @@ export function DashboardView({
 }: DashboardViewProps): React.JSX.Element {
   const role = overrideRole || session.session.role;
   const meta = ROLE_DISPLAY[role] ?? { 
-    label: "Operations", 
+    label: "Operations",
     sub: role.toUpperCase(),
     primaryTool: "jobs",
     quickStart: [{ icon: ICONS.jobs, label: "Get Started", tool: "jobs" }]
@@ -147,9 +148,12 @@ export function DashboardView({
   return (
     <main className="dashboard-view">
       <header className="dashboard-header glass-panel mb-8 p-6 lg:p-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-1">{meta.label}</h1>
-          <p className="status-chip status-chip--active">{meta.sub}</p>
+        <div className="flex items-center gap-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1">{meta.label}</h1>
+            <p className="status-chip status-chip--active">{meta.sub}</p>
+          </div>
+          <PresenceIndicator userId={session.session.user_id} className="mt-6" />
         </div>
         <div className="flex items-center gap-4">
           <div className="hidden sm:block text-right">
@@ -166,11 +170,11 @@ export function DashboardView({
         <div className="relative z-10">
           <h2 className="text-xl font-semibold text-white mb-2">Welcome back, {session.session.display_name.split(' ')[0]}</h2>
           <p className="dashboard-intro__text mb-6 opacity-75 max-w-2xl">
-            You currently have <strong className="text-white">{openJobCount} active job{openJobCount !== 1 ? "s" : ""}</strong> requiring attention in the system workflow. 
+            You currently have <strong className="text-white">{openJobCount} active job{openJobCount !== 1 ? "s" : ""}</strong> requiring attention in the system workflow.
             Proceed to your primary workspace to continue operations.
           </p>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="button button--primary"
             onClick={() => onEnterWorkspace(meta.primaryTool)}
           >
@@ -178,7 +182,7 @@ export function DashboardView({
             Go to {meta.primaryTool === "schedule" ? "Dispatch" : meta.primaryTool.charAt(0).toUpperCase() + meta.primaryTool.slice(1)}
           </button>
         </div>
-        
+
         {/* Decorative background element */}
         <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-primary opacity-10 blur-3xl pointer-events-none"></div>
       </section>
@@ -239,7 +243,7 @@ export function DashboardView({
           margin: 0 auto;
           width: 100%;
         }
-        
+
         .glass-panel {
           background: rgba(20, 20, 25, 0.4);
           backdrop-filter: blur(12px);
@@ -281,7 +285,7 @@ export function DashboardView({
           grid-template-columns: 1fr;
           gap: 1rem;
         }
-        
+
         @media (min-width: 640px) {
           .quick-start-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -312,6 +316,7 @@ export function DashboardView({
         .items-start { align-items: flex-start; }
         .justify-between { justify-content: space-between; }
         .gap-4 { gap: 1rem; }
+        .gap-6 { gap: 1.5rem; }
         .p-6 { padding: 1.5rem; }
         .mb-1 { margin-bottom: 0.25rem; }
         .mb-2 { margin-bottom: 0.5rem; }
@@ -319,6 +324,7 @@ export function DashboardView({
         .mb-6 { margin-bottom: 1.5rem; }
         .mb-8 { margin-bottom: 2rem; }
         .mt-1 { margin-top: 0.25rem; }
+        .mt-6 { margin-top: 1.5rem; }
         .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
         .mr-2 { margin-right: 0.5rem; }
         .text-2xl { font-size: 1.5rem; line-height: 2rem; }
