@@ -1,47 +1,54 @@
-# Implementation Plan: Site Polish & Conversion Simplification
+# Implementation Plan: Site Polish & Conversion Simplification (P1/P2)
 
 ## Objective
 Refine the Kharon marketing site to align with the new commercial brand voice, simplify user conversion paths, and ensure high-quality visual standards across all devices.
 
 ## Key Files & Context
+- `apps/site/src/components/Layout.tsx`: Main navigation and shell.
+- `apps/site/src/pages/Home.tsx`: Homepage with quick-path jump points.
 - `apps/site/src/pages/ContactPage.tsx`: Primary lead capture page.
+- `apps/site/src/pages/Compliance.tsx`, `OperationalTrail.tsx`, `ServicesHub.tsx`, `Resources.tsx`: Secondary service and support content.
 - `apps/site/src/components/CtaSection.tsx`: Global call-to-action component.
 - `apps/site/src/styles.css`: Central styles for typography, layout, and components.
-- `apps/site/src/constants/siteData.ts`: Site-wide constants including contact paths.
 
 ## Implementation Steps
 
-### 1. Conversion Simplification
-- **Streamlined Contact Form:**
-  - Redesign `ContactPage.tsx` to use a single, high-conversion form layout.
-  - Simplify the "Contact Path" selection into a clear dropdown or a set of visually weighted cards.
-  - Ensure the form defaults to "Request a Quote" as the primary intent.
-- **CTA Refinement:**
-  - Update `CtaSection.tsx` to emphasize "Request a Quote" as the primary button.
-  - Move "Book Maintenance" and "Emergency Callout" to secondary button styles to reduce decision fatigue.
+### 1. Website P1 — Simplify Conversion & Reduce "Portal Gravity"
+- **Demote Portal Visibility:**
+  - Move the "Portal" link in `Layout.tsx` from the main header nav to the utility top-bar or footer only.
+  - Ensure the primary navigation focuses purely on prospect-facing paths: Services / Industries / Case Studies / About / Contact.
+- **Trim Homepage Quick Paths:**
+  - In `Home.tsx`, remove or visually demote "Compliance" and "Resources" from the hero/quick-path section.
+  - Refocus the homepage on service/contact-led conversion.
+- **Two-Stage Contact Form:**
+  - Redesign `ContactPage.tsx` into a multi-step experience:
+    - **Step 1:** Capture Name, Work Email, Phone, Service Type, and Message.
+    - **Step 2:** Show Company, Site Location, and extra details only after Step 1 is valid (or only for non-general intents).
+  - Goal: Reduce initial cognitive load and friction for new inquiries.
 
-### 2. Visual Polish
+### 2. Website P2 — Secondary Page Copy Cleanup
+- **Support-Focused Compliance:**
+  - Refine `Compliance.tsx` to ensure it reads as helpful support content rather than a primary acquisition tool.
+- **Outcome-Led Case Studies:**
+  - Update `OperationalTrail.tsx` (Case Studies) to ensure cards and headers are client-readable and result-first.
+- **Plain-Language Preservation:**
+  - Audit `ServicesHub.tsx` and `Resources.tsx` to remove any lingering technical jargon or internal "operational" language.
+
+### 3. Visual QA & Polish (Ongoing)
 - **Typography & Spacing:**
-  - Refine `line-height` and `letter-spacing` in `styles.css` for optimal readability.
-  - Standardize vertical rhythm and card spacing across all site sections.
+  - Refine `line-height` and `letter-spacing` in `styles.css`.
+  - Standardize vertical rhythm and card spacing.
 - **Interactive Elements:**
-  - Enhance button hover states with subtle transitions.
-  - Improve card elevation and shadow depth to create a more premium feel.
-- **Brand Consistency:**
-  - Verify consistent use of the Kharon palette (blue, purple, black, gray).
-
-### 3. Visual QA & Responsiveness
-- **Responsive Pass:**
-  - Audit all pages on mobile (375px), tablet (768px), and desktop (1440px) breakpoints.
-  - Fix any layout "broken" states at intermediate viewport widths.
-- **Alignment & Integrity:**
+  - Premium button hover states and card elevation depth.
+- **Responsive Integrity:**
+  - Audit mobile (375px), tablet (768px), and desktop (1440px).
   - Ensure centered alignment for hero sections on mobile.
-  - Verify that no horizontal scrolling occurs on mobile devices.
 
 ## Verification & Testing
 - **Manual Verification:**
-  - Submit the simplified contact form and verify the API payload.
-  - Perform a visual review on at least three different screen sizes.
+  - Test the two-stage form flow for logical progression and submission.
+  - Verify that the Portal link no longer competes with primary CTA's.
+  - Perform a visual review on mobile/tablet/desktop.
 - **Automated Verification:**
   - Run `npm run build -w @kharon/site` to ensure no build regressions.
   - Run `npm run lint` to maintain code standards.

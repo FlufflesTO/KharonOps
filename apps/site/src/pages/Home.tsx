@@ -15,24 +15,19 @@ const quickPaths = [
     to: "/industries"
   },
   {
-    title: "Compliance",
-    description: "Open documentation, certificates, and governance support.",
-    to: "/compliance"
-  },
-  {
-    title: "Resources",
-    description: "Use the guides and checklists when you need a simple next step.",
-    to: "/resources"
-  },
-  {
-    title: "Contact",
-    description: "Request a quote, maintenance visit, or urgent callout.",
-    to: "/contact"
+    title: "Case Studies",
+    description: "Review our operational history and client outcomes.",
+    to: "/case-studies"
   },
   {
     title: "About",
     description: "Read who we are and where we work.",
     to: "/about"
+  },
+  {
+    title: "Contact",
+    description: "Request a quote, maintenance visit, or urgent callout.",
+    to: "/contact"
   }
 ] as const;
 

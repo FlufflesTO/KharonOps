@@ -71,8 +71,7 @@ export function Layout(): React.JSX.Element {
 
       <header className={`site-nav${menuOpen ? " site-nav--open" : ""}`}>
         <div className="site-nav__utility">
-          <Link to="/contact?intent=urgent_callout">Emergency callout</Link>
-          <a href="/portal/">Portal</a>
+          <Link to="/contact?intent=urgent_callout">Emergency callout: {companyProfile.phone}</Link>
         </div>
 
         <div className="site-nav__main">
@@ -107,9 +106,6 @@ export function Layout(): React.JSX.Element {
                 {item.label}
               </NavLink>
             ))}
-            <a href="/portal/" className="nav-portal-button">
-              Portal
-            </a>
           </nav>
         </div>
       </header>
