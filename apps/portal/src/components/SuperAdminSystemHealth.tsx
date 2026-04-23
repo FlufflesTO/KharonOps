@@ -2,11 +2,19 @@ import React, { useState } from "react";
 
 interface SuperAdminSystemHealthProps {
   adminHealth: Record<string, unknown> | null;
-  onRefresh: () => void;
+  adminHealthState?: "idle" | "loading" | "ready" | "error" | "unauthorized";
+  adminHealthMessage?: string;
+  onRefresh?: () => void;
   isLoading: boolean;
 }
 
-export function SuperAdminSystemHealth({ adminHealth, onRefresh, isLoading }: SuperAdminSystemHealthProps): React.JSX.Element {
+export function SuperAdminSystemHealth({
+  adminHealth,
+  adminHealthState = "idle",
+  adminHealthMessage = "",
+  onRefresh,
+  isLoading
+}: SuperAdminSystemHealthProps): React.JSX.Element {
   const [showRaw, setShowRaw] = useState(false);
 
   return (
@@ -19,13 +27,22 @@ export function SuperAdminSystemHealth({ adminHealth, onRefresh, isLoading }: Su
         <button 
           className="button button--secondary" 
           onClick={onRefresh}
-          disabled={isLoading}
+          disabled={isLoading || !onRefresh}
         >
           {isLoading ? "Checking..." : "Refresh checks"}
         </button>
       </div>
 
-      {!adminHealth ? (
+      {adminHealthState === "unauthorized" ? (
+        <div className="highlight-box">
+          <p>Platform health is not available to this account.</p>
+        </div>
+      ) : adminHealthState === "error" ? (
+        <div className="highlight-box">
+          <p>Platform health could not be loaded.</p>
+          <p className="muted-copy">{adminHealthMessage || "Check connection and try again."}</p>
+        </div>
+      ) : !adminHealth ? (
         <div className="highlight-box">
           <p>Request a check to verify connectivity to core services and infrastructure.</p>
         </div>

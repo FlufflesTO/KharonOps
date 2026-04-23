@@ -56,7 +56,16 @@ export function GovernanceWorkspacePanel({ state }: GovernanceWorkspacePanelProp
 
   return (
     <>
-      {state.activeWorkspaceTool === "admin_dashboard" && (effectiveRole === "admin" || effectiveRole === "super_admin") ? <AdminDashboard opsIntelligence={opsIntelligence} onEnterTool={(tool: string) => onActiveWorkspaceToolChange(tool)} isLoading={actionPending} /> : null}
+      {state.activeWorkspaceTool === "admin_dashboard" && (effectiveRole === "admin" || effectiveRole === "super_admin") ? (
+        <AdminDashboard
+          opsIntelligence={opsIntelligence}
+          onEnterTool={(tool: string) => onActiveWorkspaceToolChange(tool)}
+          canSwitchRoles={Boolean(state.isRealSuperAdmin)}
+          emulatedRole={emulatedRole}
+          onEmulateRole={onEmulateRole}
+          isLoading={actionPending}
+        />
+      ) : null}
       {state.activeWorkspaceTool === "admin" ? (
         effectiveRole === "admin" ? (
           <AdminSettingsCard

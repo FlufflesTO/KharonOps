@@ -1,5 +1,5 @@
 import React from "react";
-import type { OpsIntelligencePayload, SchemaDriftPayload, AutomationJobEntry } from "../../apiClient";
+import type { OpsIntelligencePayload, SchemaDriftPayload, AutomationJobEntry, PeopleDirectoryEntry } from "../../apiClient";
 import { SuperAdminOverview } from "../../components/SuperAdminOverview";
 import { SuperAdminDataChecks } from "../../components/SuperAdminDataChecks";
 import { SuperAdminAutomations } from "../../components/SuperAdminAutomations";
@@ -14,6 +14,8 @@ interface SuperAdminWorkspacePanelProps {
   opsIntelligence: OpsIntelligencePayload | null;
   schemaDrift: SchemaDriftPayload | null;
   adminHealth: Record<string, unknown> | null;
+  adminHealthState: "idle" | "loading" | "ready" | "error" | "unauthorized";
+  adminHealthMessage: string;
   adminAudits: Array<Record<string, unknown>>;
   adminAuditCount: number;
   adminAutomationJobs: Array<Record<string, unknown>>;
@@ -26,7 +28,7 @@ interface SuperAdminWorkspacePanelProps {
   onRetryAutomation: (id: string) => void;
   onLoadSchemaDrift: () => void;
   onLoadOpsIntelligence: () => void;
-  peopleDirectory: Array<Record<string, unknown>>;
+  peopleDirectory: PeopleDirectoryEntry[];
   upgradeState: { skills: any };
   onUpsertSkill: (payload: any) => void;
   onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => Promise<void>;
@@ -40,6 +42,8 @@ export function SuperAdminWorkspacePanel({
   opsIntelligence,
   schemaDrift,
   adminHealth,
+  adminHealthState,
+  adminHealthMessage,
   adminAudits,
   adminAuditCount,
   adminAutomationJobs,
@@ -70,7 +74,15 @@ export function SuperAdminWorkspacePanel({
       {activeWorkspaceTool === "sa_units" ? <SuperAdminBusinessUnits /> : null}
       {activeWorkspaceTool === "sa_checks" ? <SuperAdminDataChecks schemaDrift={schemaDrift} onRefresh={onLoadSchemaDrift} isLoading={actionPending} /> : null}
       {activeWorkspaceTool === "sa_automations" ? <SuperAdminAutomations automationJobs={adminAutomationJobs} onRefresh={onLoadAutomationJobs} onRetry={onRetryAutomation} isLoading={actionPending} /> : null}
-      {activeWorkspaceTool === "sa_health" ? <SuperAdminSystemHealth adminHealth={adminHealth} onRefresh={onLoadHealth} isLoading={actionPending} /> : null}
+      {activeWorkspaceTool === "sa_health" ? (
+        <SuperAdminSystemHealth
+          adminHealth={adminHealth}
+          adminHealthState={adminHealthState}
+          adminHealthMessage={adminHealthMessage}
+          onRefresh={onLoadHealth}
+          isLoading={actionPending}
+        />
+      ) : null}
       {activeWorkspaceTool === "sa_activity" ? <SuperAdminActivityLog adminAudits={adminAudits} adminAuditCount={adminAuditCount} onRefresh={onLoadAudits} isLoading={actionPending} /> : null}
     </>
   );

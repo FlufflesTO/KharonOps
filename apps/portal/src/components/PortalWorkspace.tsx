@@ -114,6 +114,8 @@ interface PortalWorkspaceProps {
     opsIntelligence: OpsIntelligencePayload | null;
     schemaDrift: SchemaDriftPayload | null;
     adminHealth: Record<string, unknown> | null;
+    adminHealthState: "idle" | "loading" | "ready" | "error" | "unauthorized";
+    adminHealthMessage: string;
     adminAudits: Array<Record<string, unknown>>;
     adminAutomationJobs: Array<Record<string, unknown>>;
     automationJobs: AutomationJobEntry[];
@@ -216,6 +218,8 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
     opsIntelligence,
     schemaDrift,
     adminHealth,
+    adminHealthState,
+    adminHealthMessage,
     adminAudits,
     adminAutomationJobs,
     automationJobs,
@@ -332,6 +336,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
             geoVerification={geoVerification}
             onVerifyLocation={onVerifyLocation}
+            selectedJobStatus={selectedJobStatus}
             selectableStatuses={selectableStatuses}
             statusTarget={statusTarget}
             setStatusTarget={setStatusTarget}
@@ -442,9 +447,10 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
 
           <AdminWorkspacePanel
             activeWorkspaceTool={activeWorkspaceTool}
-          effectiveRole={effectiveRole}
-          isRealSuperAdmin={isRealSuperAdmin}
-          session={session}
+            effectiveRole={effectiveRole}
+            isRealSuperAdmin={isRealSuperAdmin}
+            emulatedRole={emulatedRole}
+            session={session}
             defaultWorkspaceTool={defaultWorkspaceTool}
             onboardingDismissed={onboardingDismissed}
             allowedWorkspaceTools={allowedWorkspaceTools}
@@ -452,6 +458,8 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
             opsIntelligence={opsIntelligence}
             adminHealth={adminHealth}
+            adminHealthState={adminHealthState}
+            adminHealthMessage={adminHealthMessage}
             adminAudits={adminAudits}
             adminAutomationJobs={adminAutomationJobs}
             adminAuditCount={adminAuditCount}
@@ -476,6 +484,8 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             opsIntelligence={opsIntelligence}
             schemaDrift={schemaDrift}
             adminHealth={adminHealth}
+            adminHealthState={adminHealthState}
+            adminHealthMessage={adminHealthMessage}
             adminAudits={adminAudits}
             adminAuditCount={adminAuditCount}
             adminAutomationJobs={adminAutomationJobs}

@@ -4,16 +4,18 @@ import type { AutomationJobEntry, OpsIntelligencePayload, SchemaDriftPayload } f
 
 interface AdminPanelCardProps {
   adminHealth: Record<string, unknown> | null;
+  adminHealthState: "idle" | "loading" | "ready" | "error" | "unauthorized";
+  adminHealthMessage: string;
   adminAudits: Array<Record<string, unknown>>;
   adminAutomationJobs: Array<Record<string, unknown>>;
   adminAuditCount: number;
   automationJobs: AutomationJobEntry[];
   selectedAutomationJobid: string;
   setSelectedAutomationJobid: (id: string) => void;
-  onLoadHealth: () => void;
-  onLoadAudits: () => void;
-  onLoadAutomationJobs: () => void;
-  onRetryAutomation: (id: string) => void;
+  onLoadHealth?: () => void;
+  onLoadAudits?: () => void;
+  onLoadAutomationJobs?: () => void;
+  onRetryAutomation?: (id: string) => void;
   onFeedback: (msg: string) => void;
   emulatedRole: Role | "";
   onEmulateRole: (role: Role | "") => void;
@@ -25,6 +27,8 @@ interface AdminPanelCardProps {
 
 export function AdminPanelCard({
   adminHealth,
+  adminHealthState,
+  adminHealthMessage,
   adminAudits,
   adminAutomationJobs,
   adminAuditCount,
@@ -75,19 +79,19 @@ export function AdminPanelCard({
       </section>
 
       <div className="flex flex-wrap gap-3 mb-8">
-        <button className="button button--secondary" onClick={onLoadHealth}>
+        <button className="button button--secondary" onClick={onLoadHealth} disabled={!onLoadHealth}>
           Refresh summary
         </button>
-        <button className="button button--secondary" onClick={onLoadAudits}>
+        <button className="button button--secondary" onClick={onLoadAudits} disabled={!onLoadAudits}>
           Refresh checks ({adminAuditCount})
         </button>
-        <button className="button button--secondary" onClick={onLoadSchemaDrift}>
+        <button className="button button--secondary" onClick={onLoadSchemaDrift} disabled={!onLoadSchemaDrift}>
           Data checks
         </button>
-        <button className="button button--secondary" onClick={onLoadOpsIntelligence}>
+        <button className="button button--secondary" onClick={onLoadOpsIntelligence} disabled={!onLoadOpsIntelligence}>
           System summary
         </button>
-        <button className="button button--primary" onClick={onLoadAutomationJobs}>
+        <button className="button button--primary" onClick={onLoadAutomationJobs} disabled={!onLoadAutomationJobs}>
           Background tasks
         </button>
       </div>
@@ -151,9 +155,23 @@ export function AdminPanelCard({
 
         <section className="admin-section mb-8 col-span-full">
           <h3>Latest checks</h3>
-          <div className="feedback-panel overflow-x-auto">
-            <pre className="text-xs font-mono opacity-75">{JSON.stringify(adminHealth, null, 2)}</pre>
-          </div>
+          {adminHealthState === "loading" ? (
+            <p className="muted-copy p-4 bg-white/5 rounded-md border border-white/10">Refreshing platform health.</p>
+          ) : null}
+          {adminHealthState === "unauthorized" ? (
+            <p className="muted-copy p-4 bg-white/5 rounded-md border border-white/10">Platform health is not available to this account.</p>
+          ) : null}
+          {adminHealthState === "error" ? (
+            <p className="muted-copy p-4 bg-white/5 rounded-md border border-white/10">{adminHealthMessage || "Platform health could not be loaded."}</p>
+          ) : null}
+          {adminHealthState === "idle" && !adminHealth ? (
+            <p className="muted-copy p-4 bg-white/5 rounded-md border border-white/10">Run Refresh summary to check current platform health.</p>
+          ) : null}
+          {adminHealth ? (
+            <div className="feedback-panel overflow-x-auto">
+              <pre className="text-xs font-mono opacity-75">{JSON.stringify(adminHealth, null, 2)}</pre>
+            </div>
+          ) : null}
         </section>
 
         <section className="admin-section mb-8 col-span-full">
@@ -176,11 +194,11 @@ export function AdminPanelCard({
                         <span className={`status-chip status-chip--${status === "done" ? "active" : status === "failed" ? "critical" : "warning"}`}>
                           {status}
                         </span>
-                        {status === "failed" && (
+                        {status === "failed" && onRetryAutomation ? (
                           <button className="button button--ghost button--compact" onClick={() => onRetryAutomation(id)}>
                             Retry
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   );

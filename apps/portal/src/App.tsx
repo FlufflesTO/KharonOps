@@ -55,6 +55,7 @@ import { ClientOverviewCard } from "./components/ClientOverviewCard";
 import { ClientInvoicesCard } from "./components/ClientInvoicesCard";
 import { ClientSupportCard } from "./components/ClientSupportCard";
 import { PortalChrome } from "./components/PortalChrome";
+import { PortalErrorBoundary } from "./components/PortalErrorBoundary";
 import { PortalWorkspace } from "./components/PortalWorkspace";
 import {
  renderComplianceDocument } from "./appShell/renderComplianceDocument";
@@ -115,6 +116,8 @@ export function PortalApp(): React.JSX.Element {
   const [dispatchContext, setDispatchContext] = useState<PortalDispatchContext | null>(null);
   const [peopleDirectory, setPeopleDirectory] = useState<PeopleDirectoryEntry[]>([]);
   const [adminHealth, setAdminHealth] = useState<Record<string, unknown> | null>(null);
+  const [adminHealthState, setAdminHealthState] = useState<"idle" | "loading" | "ready" | "error" | "unauthorized">("idle");
+  const [adminHealthMessage, setAdminHealthMessage] = useState("");
   const [adminAudits, setAdminAudits] = useState<Array<Record<string, unknown>>>([]);
   const [adminAutomationJobs, setAdminAutomationJobs] = useState<Array<Record<string, unknown>>>([]);
   const [adminAuditCount, setAdminAuditCount] = useState(0);
@@ -545,6 +548,8 @@ export function PortalApp(): React.JSX.Element {
     setGeoVerification,
     setQueueCount,
     setAdminHealth,
+    setAdminHealthState,
+    setAdminHealthMessage,
     setAdminAudits,
     setAdminAuditCount,
     setAdminAutomationJobs,
@@ -554,6 +559,37 @@ export function PortalApp(): React.JSX.Element {
     setSchemaDrift,
     setOpsIntelligence
   });
+
+  const runAdminLoader = useCallback(
+    (action: (() => Promise<void>) | undefined, missingMessage: string) => {
+      if (!action) {
+        setFeedback(missingMessage);
+        return;
+      }
+      void runAction(action);
+    },
+    [runAction]
+  );
+
+  const handleLoadAdminHealth = useCallback(() => {
+    runAdminLoader(portalActions.loadAdminHealth, "Platform health action is unavailable right now.");
+  }, [portalActions.loadAdminHealth, runAdminLoader]);
+
+  const handleLoadAdminAudits = useCallback(() => {
+    runAdminLoader(portalActions.loadAdminAudits, "Audit activity action is unavailable right now.");
+  }, [portalActions.loadAdminAudits, runAdminLoader]);
+
+  const handleLoadAdminAutomationJobs = useCallback(() => {
+    runAdminLoader(portalActions.loadAdminAutomationJobs, "Background task action is unavailable right now.");
+  }, [portalActions.loadAdminAutomationJobs, runAdminLoader]);
+
+  const handleRetryAdminAutomation = useCallback((id: string) => {
+    if (!portalActions.handleRetryAutomation) {
+      setFeedback("Automation retry is unavailable right now.");
+      return;
+    }
+    void runAction(() => portalActions.handleRetryAutomation(id));
+  }, [portalActions.handleRetryAutomation, runAction]);
 
   // Contextual dispatch: auto-populate ids from selected job metadata
   useEffect(() => {
@@ -643,8 +679,9 @@ export function PortalApp(): React.JSX.Element {
         onActiveWorkspaceToolChange={setActiveWorkspaceTool}
         primaryTools={primaryTools}
       >
-        <PortalWorkspace
-          state={{
+        <PortalErrorBoundary onError={setFeedback}>
+          <PortalWorkspace
+            state={{
             portalView,
             session,
             effectiveRole: effectiveRole ?? "",
@@ -724,24 +761,24 @@ export function PortalApp(): React.JSX.Element {
             opsIntelligence,
             schemaDrift,
             adminHealth,
+            adminHealthState,
+            adminHealthMessage,
             adminAudits,
             adminAutomationJobs,
-            adminAutomationJobEntries: adminAutomationJobs,
             automationJobs,
             selectedAutomationJobid,
             onSelectAutomationJobid: setSelectedAutomationJobid,
-            onLoadHealth: () => runAction(portalActions.loadAdminHealth),
-            onLoadAudits: () => runAction(portalActions.loadAdminAudits),
-            onLoadAutomationJobs: () => runAction(portalActions.loadAdminAutomationJobs),
-            onRetryAutomation: (id: string) => runAction(() => portalActions.handleRetryAutomation(id)),
+            onLoadHealth: handleLoadAdminHealth,
+            onLoadAudits: handleLoadAdminAudits,
+            onLoadAutomationJobs: handleLoadAdminAutomationJobs,
+            onRetryAutomation: handleRetryAdminAutomation,
             isRealSuperAdmin,
             onEmulateRole: handleEmulateRole,
-            onLoadSchemaDrift: () => runAction(portalActions.loadSchemaDrift),
-            onLoadOpsIntelligence: () => runAction(portalActions.loadOpsIntelligence),
+            onLoadSchemaDrift: () => runAction(loadSchemaDrift),
+            onLoadOpsIntelligence: () => runAction(loadOpsIntelligence),
             peopleDirectory,
             upgradeState,
             setFeedback,
-            refreshUpgradeWorkspaceState,
             onUpsertSkill: (payload: SkillMatrixRecord) =>
               runAction(async () => {
                 await apiClient.upsertSkillMatrix(payload);
@@ -750,8 +787,9 @@ export function PortalApp(): React.JSX.Element {
             onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => portalActions.handlePeopleSync(payload),
             selectedJobTitle: selectedJob?.title ?? "",
             onLogout: () => runAction(portalActions.handleLogout)
-          }}
-        />
+            }}
+          />
+        </PortalErrorBoundary>
       </PortalChrome>
 
       <footer className="portal-statusbar">

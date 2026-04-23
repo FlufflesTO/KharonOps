@@ -78,11 +78,11 @@ export function AboutPage(): React.JSX.Element {
             <p>Clients come back when service is reliable, communication is simple, and records are easy to find.</p>
           </div>
           <div className="cta-panel__actions">
-            <a className="site-button site-button--primary" href="/contact?intent=project">
-              Talk to us
+            <a className="site-button site-button--primary site-button--large" href="/contact?intent=project">
+              Discuss your project
             </a>
-            <a className="site-button site-button--secondary" href="/portal/">
-              Portal
+            <a className="site-button site-button--secondary" href={`mailto:${companyProfile.email}`}>
+              Email operations
             </a>
           </div>
         </div>

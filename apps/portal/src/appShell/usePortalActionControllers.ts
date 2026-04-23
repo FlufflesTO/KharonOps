@@ -148,6 +148,8 @@ export function usePortalActionControllers(args: {
   setGeoVerification: React.Dispatch<React.SetStateAction<GeoVerificationState>>;
   setQueueCount: React.Dispatch<React.SetStateAction<number>>;
   setAdminHealth: React.Dispatch<React.SetStateAction<Record<string, unknown> | null>>;
+  setAdminHealthState: React.Dispatch<React.SetStateAction<"idle" | "loading" | "ready" | "error" | "unauthorized">>;
+  setAdminHealthMessage: React.Dispatch<React.SetStateAction<string>>;
   setAdminAudits: React.Dispatch<React.SetStateAction<Array<Record<string, unknown>>>>;
   setAdminAuditCount: React.Dispatch<React.SetStateAction<number>>;
   setAdminAutomationJobs: React.Dispatch<React.SetStateAction<Array<Record<string, unknown>>>>;
@@ -251,6 +253,8 @@ export function usePortalActionControllers(args: {
     setGeoVerification,
     setQueueCount,
     setAdminHealth,
+    setAdminHealthState,
+    setAdminHealthMessage,
     setAdminAudits,
     setAdminAuditCount,
     setAdminAutomationJobs,
@@ -687,6 +691,31 @@ export function usePortalActionControllers(args: {
     }
     setFeedback("Document published.");
   }, [isDispatchRole, refreshDispatchContext, refreshDocuments, selectedDispatchDocument, selectedJob, setFeedback]);
+
+  const loadAdminHealth = useCallback(async (): Promise<void> => {
+    setAdminHealthState("loading");
+    setAdminHealthMessage("");
+    try {
+      const response = await apiClient.adminHealth();
+      const payload = (response.data ?? null) as Record<string, unknown> | null;
+      setAdminHealth(payload);
+      setAdminHealthState(payload ? "ready" : "idle");
+      setAdminHealthMessage(payload ? "" : "No health payload was returned.");
+      setFeedback(payload ? "System summary refreshed." : "Health check completed without a payload.");
+    } catch (error) {
+      setAdminHealth(null);
+      if (isUnauthorizedError(error)) {
+        setAdminHealthState("unauthorized");
+        setAdminHealthMessage("This account cannot view platform health.");
+        setFeedback("Platform health is unavailable for this account.");
+        return;
+      }
+      const message = errorMessage(error);
+      setAdminHealthState("error");
+      setAdminHealthMessage(message);
+      setFeedback(`Platform health failed: ${message}`);
+    }
+  }, [setAdminHealth, setAdminHealthMessage, setAdminHealthState, setFeedback]);
 
   const loadAdminAudits = useCallback(async (): Promise<void> => {
     const response = await apiClient.adminAudits();

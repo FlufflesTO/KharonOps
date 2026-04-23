@@ -18,6 +18,8 @@ interface AdminWorkspacePanelProps {
   onActiveWorkspaceToolChange: (tool: string) => void;
   opsIntelligence: OpsIntelligencePayload | null;
   adminHealth: Record<string, unknown> | null;
+  adminHealthState: "idle" | "loading" | "ready" | "error" | "unauthorized";
+  adminHealthMessage: string;
   adminAudits: Array<Record<string, unknown>>;
   adminAutomationJobs: Array<Record<string, unknown>>;
   adminAuditCount: number;
@@ -49,6 +51,8 @@ export function AdminWorkspacePanel({
   onActiveWorkspaceToolChange,
   opsIntelligence,
   adminHealth,
+  adminHealthState,
+  adminHealthMessage,
   adminAudits,
   adminAutomationJobs,
   adminAuditCount,
@@ -93,6 +97,8 @@ export function AdminWorkspacePanel({
       {activeWorkspaceTool === "admin" && effectiveRole === "super_admin" ? (
         <AdminPanelCard
           adminHealth={adminHealth}
+          adminHealthState={adminHealthState}
+          adminHealthMessage={adminHealthMessage}
           adminAudits={adminAudits}
           adminAutomationJobs={adminAutomationJobs}
           adminAuditCount={adminAuditCount}
