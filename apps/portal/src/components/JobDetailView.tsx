@@ -77,52 +77,57 @@ export function JobDetailView({
   }
 
   return (
-    <article className="workspace-card workspace-card--primary">
-      <div className="panel-heading panel-heading--inline">
-        <div>
-          <p className="panel-eyebrow">Selected job</p>
-          <h2>{selectedJob.title}</h2>
+    <div className="side-sheet">
+      <div className="side-sheet__scroll">
+        <div className="panel-heading panel-heading--inline">
+          <div>
+            <p className="panel-eyebrow">Active Engagement</p>
+            <h2 style={{ fontSize: '1.6rem' }}>{selectedJob.title}</h2>
+          </div>
+          <span className={`status-chip status-chip--${statusTone(selectedJob.status)}`}>
+            {selectedJob.status}
+          </span>
         </div>
-        <span className={`status-chip status-chip--${statusTone(selectedJob.status)}`}>{selectedJob.status}</span>
-      </div>
 
-      <div className="posture-grid">
-        {postureItems.map((item) => (
-          <div key={item.label}>
-            <span>{item.label}</span>
-            <strong>{item.detail}</strong>
-          </div>
-        ))}
-      </div>
-
-      {selectedJob.last_note ? (
-        <div className="highlight-box">
-          <span className="highlight-box__label">Latest note</span>
-          <p>{selectedJob.last_note}</p>
+        <div className="posture-grid">
+          {postureItems.map((item) => (
+            <div key={item.label} className="brief-pill">
+              <span>{item.label}</span>
+              <strong>{item.detail}</strong>
+            </div>
+          ))}
         </div>
-      ) : null}
 
-      <details className="support-details">
-        <summary>Technical metadata</summary>
-        <dl className="detail-grid" style={{ marginTop: 'var(--space-3)' }}>
-          <div>
-            <dt>Job id</dt>
-            <dd>{selectedJob.job_id}</dd>
+        {selectedJob.last_note ? (
+          <div className="highlight-box">
+            <span className="highlight-box__label">Latest Dispatch Note</span>
+            <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+              {selectedJob.last_note}
+            </p>
           </div>
-          <div>
-            <dt>Row version</dt>
-            <dd>{selectedJob.row_version}</dd>
+        ) : null}
+
+        <details className="telemetry-card">
+          <summary>System Telemetry</summary>
+          <div className="telemetry-grid">
+            <div className="telemetry-item">
+              <label>Correlation ID</label>
+              <value>{selectedJob.job_id}</value>
+            </div>
+            <div className="telemetry-item">
+              <label>SVR version</label>
+              <value>v{selectedJob.row_version}</value>
+            </div>
+            <div className="telemetry-item">
+              <label>Client Ref</label>
+              <value>{selectedJob.client_id || "NOT_BOUND"}</value>
+            </div>
+            <div className="telemetry-item">
+              <label>Auth Actor</label>
+              <value>{selectedJob.technician_id || "UNASSIGNED"}</value>
+            </div>
           </div>
-          <div>
-            <dt>Client id</dt>
-            <dd>{selectedJob.client_id || "n/a"}</dd>
-          </div>
-          <div>
-            <dt>Technician id</dt>
-            <dd>{selectedJob.technician_id || "n/a"}</dd>
-          </div>
-        </dl>
-      </details>
+        </details>
 
       {isFieldRole && (
         <div className="control-block">
@@ -231,6 +236,7 @@ export function JobDetailView({
         </div>
       )}
 
-    </article>
+      </div>
+    </div>
   );
 }

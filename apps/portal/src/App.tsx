@@ -54,27 +54,27 @@ function asJob(record: Record<string, unknown>): JobRecord {
   const status = String(record.status ?? "draft") as JobStatus;
 
   return {
-    job_id: pickString(record, "job_id", "job_uid"),
+    job_id: pickString(record, "job_id"),
     title: String(record.title ?? ""),
     status,
     row_version: pickNumber(record, "row_version"),
-    client_id: pickString(record, "client_id", "client_uid"),
-    technician_id: pickString(record, "technician_id", "technician_uid", "primary_technician_id"),
+    client_id: pickString(record, "client_id"),
+    technician_id: pickString(record, "technician_id", "primary_technician_id"),
     client_name: String(record.client_name ?? ""),
     technician_name: String(record.technician_name ?? ""),
     last_note: String(record.last_note ?? ""),
     // Metadata preservation for contextual dispatch
-    active_request_id: pickString(record, "active_request_id", "active_request_uid"),
-    active_document_id: pickString(record, "active_document_id", "active_document_uid"),
-    suggested_technician_id: pickString(record, "suggested_technician_id", "suggested_technician_uid")
+    active_request_id: pickString(record, "active_request_id"),
+    active_document_id: pickString(record, "active_document_id"),
+    suggested_technician_id: pickString(record, "suggested_technician_id")
   };
 }
 
 function normalizeScheduleRequest(record: Record<string, unknown>): ScheduleRequestRow {
   return {
-    request_id: pickString(record, "request_id", "request_uid"),
-    job_id: pickString(record, "job_id", "job_uid"),
-    client_id: pickString(record, "client_id", "client_uid"),
+    request_id: pickString(record, "request_id"),
+    job_id: pickString(record, "job_id"),
+    client_id: pickString(record, "client_id"),
     preferred_slots_json: String(record.preferred_slots_json ?? "[]"),
     timezone: String(record.timezone ?? ""),
     notes: String(record.notes ?? ""),
@@ -88,13 +88,13 @@ function normalizeScheduleRequest(record: Record<string, unknown>): ScheduleRequ
 
 function normalizeSchedule(record: Record<string, unknown>): ScheduleRow {
   return {
-    schedule_id: pickString(record, "schedule_id", "schedule_uid"),
-    request_id: pickString(record, "request_id", "request_uid"),
-    job_id: pickString(record, "job_id", "job_uid"),
+    schedule_id: pickString(record, "schedule_id"),
+    request_id: pickString(record, "request_id"),
+    job_id: pickString(record, "job_id"),
     calendar_event_id: String(record.calendar_event_id ?? ""),
     start_at: String(record.start_at ?? ""),
     end_at: String(record.end_at ?? ""),
-    technician_id: pickString(record, "technician_id", "technician_uid"),
+    technician_id: pickString(record, "technician_id"),
     status: (String(record.status ?? "confirmed") as ScheduleRow["status"]),
     row_version: pickNumber(record, "row_version"),
     updated_at: String(record.updated_at ?? ""),
@@ -105,8 +105,8 @@ function normalizeSchedule(record: Record<string, unknown>): ScheduleRow {
 
 function normalizeDocument(record: Record<string, unknown>): JobDocumentRow {
   return {
-    document_id: pickString(record, "document_id", "document_uid"),
-    job_id: pickString(record, "job_id", "job_uid"),
+    document_id: pickString(record, "document_id"),
+    job_id: pickString(record, "job_id"),
     document_type: (String(record.document_type ?? "service_report") as JobDocumentRow["document_type"]),
     status: (String(record.status ?? "generated") as JobDocumentRow["status"]),
     drive_file_id: String(record.drive_file_id ?? ""),
@@ -122,12 +122,12 @@ function normalizeDocument(record: Record<string, unknown>): JobDocumentRow {
 
 function normalizeUser(record: Record<string, unknown>): UserRow {
   return {
-    user_id: pickString(record, "user_id", "user_uid"),
+    user_id: pickString(record, "user_id"),
     email: String(record.email ?? ""),
     display_name: String(record.display_name ?? ""),
     role: String(record.role ?? "client") as UserRow["role"],
-    client_id: pickString(record, "client_id", "client_uid"),
-    technician_id: pickString(record, "technician_id", "technician_uid"),
+    client_id: pickString(record, "client_id"),
+    technician_id: pickString(record, "technician_id"),
     active: String(record.active ?? "true") === "false" ? "false" : "true",
     row_version: pickNumber(record, "row_version"),
     updated_at: String(record.updated_at ?? ""),
@@ -1038,10 +1038,13 @@ export function PortalApp(): React.JSX.Element {
               <circle cx="50" cy="50" r="12" fill="currentColor" />
             </svg>
           </div>
+          <div className="user-avatar" title={session.session.display_name}>
+            {session.session.display_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+          </div>
           <div>
-            <div className="portal-title">KHARON COMMAND CENTRE</div>
+            <div className="portal-title">KHARON OPS</div>
             <div className="portal-subtitle">
-              {session.session.display_name} | {effectiveRole?.toUpperCase()}
+              {effectiveRole?.toUpperCase()}
               {emulatedRole && <span className="emulation-tag"> [EMULATING: {emulatedRole.toUpperCase()}]</span>}
             </div>
           </div>
@@ -1095,7 +1098,7 @@ export function PortalApp(): React.JSX.Element {
           />
 
 
-          <section className="workspace-grid">
+          <section className={`workspace-container ${activeWorkspaceTool === "jobs" && selectedJobid ? "workspace-container--split" : ""}`}>
             {activeWorkspaceTool === "jobs" ? (
               <JobDetailView
                 selectedJob={selectedJob}

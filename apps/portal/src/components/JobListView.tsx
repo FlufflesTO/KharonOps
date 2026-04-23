@@ -47,6 +47,20 @@ interface JobItemProps {
   onClick: (id: string) => void;
 }
 
+function Icon({ d, size = 16 }: { d: string; size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
+}
+
+const ICONS = {
+  mapPin: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  clock: "M12 8v4l3 3 M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z",
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+};
+
 function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
   const riskScore = (() => {
     const baseByStatus: Record<JobStatus, number> = {
@@ -65,21 +79,33 @@ function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
   const technicianDisplay = job.technician_name?.trim() || "Pending Assignment";
 
   return (
-    <button type="button" className={isActive ? "job-item job-item--active" : "job-item"} onClick={() => onClick(job.job_id)}>
-      <div className="job-item__top">
-        <strong>{job.job_id}</strong>
-        <span className={`status-chip status-chip--${statusTone(job.status)}`}>{JOB_STATUS_LABELS[job.status]}</span>
+    <button 
+      type="button" 
+      className={isActive ? "job-card job-card--active" : "job-card"} 
+      onClick={() => onClick(job.job_id)}
+    >
+      <div className="job-card__header">
+        <div className="job-card__id">{job.job_id}</div>
+        <span className={`status-chip status-chip--${statusTone(job.status)}`}>
+          {JOB_STATUS_LABELS[job.status]}
+        </span>
       </div>
-      <span className="job-item__title">{job.title}</span>
-      <span className="job-item__meta">
-        Client: {clientDisplay}
-      </span>
-      <span className="job-item__meta">
-        Tech: {technicianDisplay}
-      </span>
-      <span className="job-item__meta">
-        Risk Score {riskScore}
-      </span>
+      
+      <div className="job-card__client">{clientDisplay}</div>
+      <div className="job-item__title" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '-0.25rem' }}>
+        {job.title}
+      </div>
+
+      <div className="job-card__meta">
+        <div className="job-card__meta-item">
+          <Icon d={ICONS.mapPin} size={14} />
+          <span>{technicianDisplay}</span>
+        </div>
+        <div className="job-card__meta-item">
+          <Icon d={ICONS.shield} size={14} />
+          <span>Risk {riskScore}%</span>
+        </div>
+      </div>
     </button>
   );
 }

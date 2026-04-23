@@ -5,8 +5,14 @@ All notable changes to the KharonOps project are documented in this file.
 ## [Unreleased] - 2026-04-23
 
 ### [Changed]
+- **Nomenclature Cleanup:** Eradicated residual "UID" technical terminology from the user-facing interface and internal data models. Replaced all fallback instances of `_uid` properties (e.g. `job_uid`, `client_uid`) with strict `_id` equivalents across `App.tsx` and the Domain package (`types.ts`, `schema.ts`, `rbac.ts`) to align with the canonical governance taxonomy.
 - Updated `docs` and `drive` operations in `createProductionWorkspaceRails` (`packages/google/src/production.ts`) to utilize `delegatedConfig` and `delegatedSubjectArgs`. All Drive operations (generate pdf, publish file, list files) now execute under Domain-Wide Delegation (impersonating the configured Workspace user) rather than the generic Service Account.
 - Added extensive diagnostic error logging to `packages/google/src/errors.ts`, extracting stringified JSON bodies and specific `error_description` fields from Google API failures into the `GoogleAdapterError` message, making UI toast notifications instantly actionable.
+- **Portal UI/UX Hardening:** Implemented a professional "Side-Sheet" pattern for job details, adopting a progressive disclosure layout that preserves navigation context. 
+- **Telemetry Encapsulation:** Isolated complex technical metadata into a collapsible forensic card, decluttering the primary operational interface for field and dispatch personnel.
+- **Visual Identity:** Standardized portal nomenclature to "KHARON OPS" and introduced a professional initials-based User Avatar in the header.
+- **Premium Visualization:** Upgraded dashboard action cards and job list items with enhanced visual depth, semantic iconography, and risk scores.
+- **Cloudflare Deployment:** Successfully deployed the unified application to both staging (`kharon-unified-api.kharonops.workers.dev`) and production (`tequit.co.za`) environments.
 
 ### [Fixed]
 - Resolved `404 Not Found` errors in document generation by enforcing Domain-Wide Delegation impersonation, removing the need to manually share template files and destination folders with the underlying GCP Service Account email.

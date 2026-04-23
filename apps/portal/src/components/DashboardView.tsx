@@ -22,57 +22,94 @@ const ICONS = {
   audit: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7",
   checklist: "M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 0 2-2h2a2 2 0 0 0 2 2m-6 9l2 2 4-4",
   visibility: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
-  finance: "M12 1v22M5 6h8a4 4 0 0 1 0 8H9a4 4 0 0 0 0 8h10"
+  finance: "M12 1v22M5 6h8a4 4 0 0 1 0 8H9a4 4 0 0 0 0 8h10",
+  arrowRight: "M5 12h14M12 5l7 7-7 7"
 };
 
-interface ActionCardProps {
+interface QuickStartCardProps {
   icon: string;
   label: string;
-  description: string;
-  onClick: () => void;
-  accent?: "blue" | "green" | "amber" | "purple" | "slate" | "rose";
+  tool: string;
+  onClick: (tool: string) => void;
   badge?: string | number;
 }
 
-function ActionCard({ icon, label, description, onClick, accent = "blue", badge }: ActionCardProps): React.JSX.Element {
+function QuickStartCard({ icon, label, tool, onClick, badge }: QuickStartCardProps): React.JSX.Element {
   return (
-    <button type="button" className={`action-card action-card--${accent}`} onClick={onClick}>
-      <div className="action-card__icon">
-        <Icon d={icon} size={18} />
-        {badge !== undefined ? <span className="action-card__badge">{badge}</span> : null}
+    <button type="button" className="quick-start-card" onClick={() => onClick(tool)}>
+      <div className="quick-start-card__icon">
+        <Icon d={icon} size={20} />
+        {badge !== undefined && badge > 0 ? <span className="quick-start-card__badge">{badge}</span> : null}
       </div>
-      <div className="action-card__body">
-        <span className="action-card__label">{label}</span>
-        <span className="action-card__desc">{description}</span>
-      </div>
-      <span className="action-card__arrow" aria-hidden="true">
-        Open
-      </span>
+      <span className="quick-start-card__label">{label}</span>
+      <Icon d={ICONS.arrowRight} size={16} className="quick-start-card__arrow" />
     </button>
   );
 }
 
-interface SectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-function DashSection({ title, children }: SectionProps): React.JSX.Element {
-  return (
-    <section className="dash-section">
-      <h2 className="dash-section__title">{title}</h2>
-      <div className="dash-section__grid">{children}</div>
-    </section>
-  );
-}
-
-const ROLE_DISPLAY: Record<string, { label: string; sub: string }> = {
-  technician: { label: "Field Technician", sub: "FIELD OPERATIONS" },
-  dispatcher: { label: "Dispatch Controller", sub: "SCHEDULING AND COMMS" },
-  client: { label: "Client Portal", sub: "SERVICE VISIBILITY" },
-  finance: { label: "Finance Command", sub: "BILLING AND INTEGRITY" },
-  admin: { label: "Administration", sub: "PLATFORM ADMIN" },
-  super_admin: { label: "Platform Command", sub: "SUPER ADMIN | FULL ACCESS" }
+const ROLE_DISPLAY: Record<string, { label: string; sub: string; primaryTool: string; quickStart: Array<{ icon: string; label: string; tool: string }> }> = {
+  technician: {
+    label: "Field Technician",
+    sub: "FIELD OPERATIONS",
+    primaryTool: "jobs",
+    quickStart: [
+      { icon: ICONS.jobs, label: "My Jobs", tool: "jobs" },
+      { icon: ICONS.checklist, label: "Jobcard", tool: "jobs" },
+      { icon: ICONS.documents, label: "Reports", tool: "documents" }
+    ]
+  },
+  dispatcher: {
+    label: "Dispatch Controller",
+    sub: "SCHEDULING AND COMMS",
+    primaryTool: "schedule",
+    quickStart: [
+      { icon: ICONS.dispatch, label: "Job Queue", tool: "schedule" },
+      { icon: ICONS.jobs, label: "All Jobs", tool: "jobs" },
+      { icon: ICONS.comms, label: "Messages", tool: "comms" },
+      { icon: ICONS.people, label: "Directory", tool: "people" }
+    ]
+  },
+  client: {
+    label: "Client Portal",
+    sub: "SERVICE VISIBILITY",
+    primaryTool: "jobs",
+    quickStart: [
+      { icon: ICONS.visibility, label: "Service Status", tool: "jobs" },
+      { icon: ICONS.compliance, label: "Documents", tool: "documents" }
+    ]
+  },
+  finance: {
+    label: "Finance Command",
+    sub: "BILLING AND INTEGRITY",
+    primaryTool: "finance",
+    quickStart: [
+      { icon: ICONS.finance, label: "Financial Overview", tool: "finance" },
+      { icon: ICONS.jobs, label: "Job Portfolio", tool: "jobs" },
+      { icon: ICONS.documents, label: "Ledger", tool: "documents" }
+    ]
+  },
+  admin: {
+    label: "Administration",
+    sub: "PLATFORM ADMIN",
+    primaryTool: "admin",
+    quickStart: [
+      { icon: ICONS.jobs, label: "All Jobs", tool: "jobs" },
+      { icon: ICONS.people, label: "Users", tool: "people" },
+      { icon: ICONS.documents, label: "Documents", tool: "documents" },
+      { icon: ICONS.admin, label: "Settings", tool: "admin" }
+    ]
+  },
+  super_admin: {
+    label: "Platform Command",
+    sub: "SUPER ADMIN | FULL ACCESS",
+    primaryTool: "admin",
+    quickStart: [
+      { icon: ICONS.admin, label: "System Health", tool: "admin" },
+      { icon: ICONS.jobs, label: "All Jobs", tool: "jobs" },
+      { icon: ICONS.dispatch, label: "Dispatch", tool: "schedule" },
+      { icon: ICONS.finance, label: "Finance", tool: "finance" }
+    ]
+  }
 };
 
 interface DashboardViewProps {
@@ -85,293 +122,56 @@ interface DashboardViewProps {
 
 export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogout, overrideRole }: DashboardViewProps): React.JSX.Element {
   const role = overrideRole || session.session.role;
-  const meta = ROLE_DISPLAY[role] ?? { label: "Operations", sub: role.toUpperCase() };
-
-  if (role === "technician") {
-    return (
-      <main className="dashboard-view">
-        <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
-
-        <DashSection title="My Jobs">
-          <ActionCard
-            icon={ICONS.jobs}
-            label="Open Work Orders"
-            description="Manage and update your active jobs."
-            onClick={() => onEnterWorkspace("jobs")}
-            accent="green"
-            badge={openJobCount}
-          />
-        </DashSection>
-
-        <DashSection title="On-Site Closeout">
-          <ActionCard
-            icon={ICONS.checklist}
-            label="Jobcard Generator"
-            description="Capture readings, photos, and sign-off."
-            onClick={() => onEnterWorkspace("jobs")}
-            accent="blue"
-          />
-          <ActionCard
-            icon={ICONS.documents}
-            label="Prior Reports"
-            description="Review historical jobcards and service reports."
-            onClick={() => onEnterWorkspace("documents")}
-            accent="slate"
-          />
-        </DashSection>
-      </main>
-    );
-  }
-
-  if (role === "dispatcher") {
-    return (
-      <main className="dashboard-view">
-        <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
-
-        <DashSection title="Dispatch">
-          <ActionCard
-            icon={ICONS.jobs}
-            label="Job Workspace"
-            description="Open job details, notes, and document generation context."
-            onClick={() => onEnterWorkspace("jobs")}
-            accent="blue"
-            badge={openJobCount}
-          />
-          <ActionCard
-            icon={ICONS.dispatch}
-            label="Job Queue"
-            description="Assign and schedule open engagements."
-            onClick={() => onEnterWorkspace("schedule")}
-            accent="amber"
-            badge={openJobCount}
-          />
-          <ActionCard
-            icon={ICONS.scheduling}
-            label="Scheduling"
-            description="Confirm or adjust maintenance windows."
-            onClick={() => onEnterWorkspace("schedule")}
-            accent="amber"
-          />
-        </DashSection>
-
-        <DashSection title="Communication">
-          <ActionCard
-            icon={ICONS.comms}
-            label="Client Updates"
-            description="Send messages linked to service records."
-            onClick={() => onEnterWorkspace("comms")}
-            accent="blue"
-          />
-          <ActionCard
-            icon={ICONS.people}
-            label="People Directory"
-            description="Review active contacts and sync operator details."
-            onClick={() => onEnterWorkspace("people")}
-            accent="purple"
-          />
-        </DashSection>
-
-        <DashSection title="Documents">
-          <ActionCard
-            icon={ICONS.documents}
-            label="Document Control"
-            description="Review and release jobcards and reports."
-            onClick={() => onEnterWorkspace("documents")}
-            accent="slate"
-          />
-        </DashSection>
-      </main>
-    );
-  }
-
-  if (role === "client") {
-    return (
-      <main className="dashboard-view">
-        <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
-
-        <DashSection title="Active Services">
-          <ActionCard
-            icon={ICONS.visibility}
-            label="Service Status"
-            description="Track live progress of your active jobs."
-            onClick={() => onEnterWorkspace("jobs")}
-            accent="blue"
-            badge={openJobCount}
-          />
-        </DashSection>
-
-        <DashSection title="Compliance Documents">
-          <ActionCard
-            icon={ICONS.compliance}
-            label="Reports and Evidence"
-            description="Review published statutory certificates and reports."
-            onClick={() => onEnterWorkspace("documents")}
-            accent="green"
-          />
-        </DashSection>
-      </main>
-    );
-  }
-
-  if (role === "admin") {
-    return (
-      <main className="dashboard-view">
-        <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
-
-        <DashSection title="Jobs">
-          <ActionCard
-            icon={ICONS.jobs}
-            label="All Engagements"
-            description="Global access to active jobs."
-            onClick={() => onEnterWorkspace("jobs")}
-            accent="blue"
-            badge={openJobCount}
-          />
-        </DashSection>
-
-        <DashSection title="Operations">
-          <ActionCard
-            icon={ICONS.people}
-            label="People Directory"
-            description="Review active users and sync shared contacts."
-            onClick={() => onEnterWorkspace("people")}
-            accent="purple"
-          />
-          <ActionCard
-            icon={ICONS.documents}
-            label="Document Control"
-            description="Manage platform-wide reports and certificates."
-            onClick={() => onEnterWorkspace("documents")}
-            accent="slate"
-          />
-        </DashSection>
-
-        <DashSection title="Administration">
-          <ActionCard
-            icon={ICONS.admin}
-            label="Platform Governance"
-            description="Health checks, automation queues, and audits."
-            onClick={() => onEnterWorkspace("admin")}
-            accent="rose"
-          />
-        </DashSection>
-      </main>
-    );
-  }
-
-  if (role === "finance") {
-    return (
-      <main className="dashboard-view">
-        <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
-
-        <DashSection title="Finance Operations">
-          <ActionCard
-            icon={ICONS.finance}
-            label="Financial Pulse"
-            description="Review quoting, invoicing, debtors, and statements."
-            onClick={() => onEnterWorkspace("finance")}
-            accent="green"
-          />
-          <ActionCard
-            icon={ICONS.jobs}
-            label="Job Portfolio"
-            description="Review operational job context linked to financial workflows."
-            onClick={() => onEnterWorkspace("jobs")}
-            accent="blue"
-            badge={openJobCount}
-          />
-          <ActionCard
-            icon={ICONS.documents}
-            label="Published Ledger"
-            description="Inspect generated and published document evidence."
-            onClick={() => onEnterWorkspace("documents")}
-            accent="slate"
-          />
-        </DashSection>
-      </main>
-    );
-  }
+  const meta = ROLE_DISPLAY[role] ?? { 
+    label: "Operations", 
+    sub: role.toUpperCase(),
+    primaryTool: "jobs",
+    quickStart: [{ icon: ICONS.jobs, label: "Get Started", tool: "jobs" }]
+  };
 
   return (
     <main className="dashboard-view">
       <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
 
-      <DashSection title="Field Operations">
-        <ActionCard
-          icon={ICONS.jobs}
-          label="Work Orders"
-          description="Technician context for active jobs."
-          onClick={() => onEnterWorkspace("jobs")}
-          accent="green"
-          badge={openJobCount}
-        />
-        <ActionCard
-          icon={ICONS.checklist}
-          label="Generate Jobcard"
-          description="Field jobcard builder context."
-          onClick={() => onEnterWorkspace("jobs")}
-          accent="green"
-        />
-      </DashSection>
+      <section className="dashboard-intro">
+        <p className="dashboard-intro__text">
+          Welcome back. You have <strong>{openJobCount} active job{openJobCount !== 1 ? "s" : ""}</strong> in the system.
+        </p>
+        <button 
+          type="button" 
+          className="btn-primary btn-primary--large"
+          onClick={() => onEnterWorkspace(meta.primaryTool)}
+        >
+          <Icon d={ICONS.jobs} size={18} />
+          Go to {meta.primaryTool === "schedule" ? "Dispatch" : meta.primaryTool.charAt(0).toUpperCase() + meta.primaryTool.slice(1)}
+        </button>
+      </section>
 
-      <DashSection title="Dispatch">
-        <ActionCard
-          icon={ICONS.dispatch}
-          label="Job Queue"
-          description="Assignment and triage context."
-          onClick={() => onEnterWorkspace("schedule")}
-          accent="amber"
-          badge={openJobCount}
-        />
-        <ActionCard
-          icon={ICONS.scheduling}
-          label="Schedule Control"
-          description="Modify and confirm service windows."
-          onClick={() => onEnterWorkspace("schedule")}
-          accent="amber"
-        />
-      </DashSection>
+      <section className="quick-start-section">
+        <h2 className="quick-start-section__title">Quick Start</h2>
+        <div className="quick-start-grid">
+          {meta.quickStart.map((item, index) => (
+            <QuickStartCard
+              key={index}
+              icon={item.icon}
+              label={item.label}
+              tool={item.tool}
+              onClick={onEnterWorkspace}
+              badge={item.tool === "jobs" ? openJobCount : undefined}
+            />
+          ))}
+        </div>
+      </section>
 
-      <DashSection title="Client and Communications">
-        <ActionCard
-          icon={ICONS.comms}
-          label="Client Comms"
-          description="Job-linked messaging interface."
-          onClick={() => onEnterWorkspace("comms")}
-          accent="blue"
-        />
-        <ActionCard
-          icon={ICONS.people}
-          label="People Registry"
-          description="Sync users, clients, and technicians."
-          onClick={() => onEnterWorkspace("people")}
-          accent="purple"
-        />
-      </DashSection>
-
-      <DashSection title="Admin and Governance">
-        <ActionCard
-          icon={ICONS.finance}
-          label="Finance Workspace"
-          description="Cross-role finance and debtors oversight."
-          onClick={() => onEnterWorkspace("finance")}
-          accent="green"
-        />
-        <ActionCard
-          icon={ICONS.documents}
-          label="Document Control"
-          description="Global management of jobs and reports."
-          onClick={() => onEnterWorkspace("documents")}
-          accent="slate"
-        />
-        <ActionCard
-          icon={ICONS.audit}
-          label="Platform Governance"
-          description="Health checks and structural configuration."
-          onClick={() => onEnterWorkspace("admin")}
-          accent="rose"
-        />
-      </DashSection>
+      <section className="dashboard-help">
+        <div className="dashboard-help__card">
+          <Icon d={ICONS.compliance} size={24} />
+          <div>
+            <h3>Need Assistance?</h3>
+            <p>Contact support or refer to the documentation for guidance on using the portal.</p>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
@@ -382,7 +182,6 @@ function DashHeader({ name, label, sub, onLogout }: { name: string; label: strin
       <div>
         <h1>{label}</h1>
         <p className="role-tag">{sub}</p>
-        <p className="dashboard-header__welcome">Welcome back, {name}</p>
       </div>
       <button type="button" className="logout-button" onClick={onLogout}>
         Sign out
