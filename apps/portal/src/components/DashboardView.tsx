@@ -2,9 +2,24 @@ import React from "react";
 import type { Role } from "@kharon/domain";
 import type { PortalSession } from "../apiClient";
 
-function Icon({ d, size = 20, className }: { d: string; size?: number; className?: string }): React.JSX.Element {
+// Accessible Icon component with proper ARIA support
+function Icon({ d, size = 20, className, title }: { d: string; size?: number; className?: string; title?: string }): React.JSX.Element {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth={1.8} 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+      role={title ? "img" : "presentation"}
+      aria-hidden={!title}
+      aria-label={title}
+    >
+      {title && <title>{title}</title>}
       <path d={d} />
     </svg>
   );
@@ -37,15 +52,25 @@ interface QuickStartCardProps {
 function QuickStartCard({ icon, label, tool, onClick, badge }: QuickStartCardProps): React.JSX.Element {
   const hasBadge = badge !== undefined && (typeof badge === "number" ? badge > 0 : badge.length > 0);
   return (
-    <button type="button" className="quick-start-card glass-panel-interactive" onClick={() => onClick(tool)}>
-      <div className="quick-start-card__icon text-primary">
+    <button 
+      type="button" 
+      className="quick-start-card glass-panel" 
+      onClick={() => onClick(tool)}
+      aria-label={`Navigate to ${label}`}
+      tabIndex={0}
+    >
+      <div className="quick-start-card__icon text-primary" aria-hidden="true">
         <Icon d={icon} size={24} />
       </div>
       <div className="flex-1 text-left">
         <span className="quick-start-card__label font-semibold text-white">{label}</span>
       </div>
-      {hasBadge && <span className="quick-start-card__badge">{badge}</span>}
-      <div className="quick-start-card__arrow opacity-50 transition-transform">
+      {hasBadge && (
+        <span className="quick-start-card__badge" aria-label={`${badge} items`}>
+          {badge}
+        </span>
+      )}
+      <div className="quick-start-card__arrow opacity-50 transition-transform" aria-hidden="true">
         <Icon d={ICONS.arrowRight} size={16} />
       </div>
     </button>
@@ -145,47 +170,57 @@ export function DashboardView({
   };
 
   return (
-    <main className="dashboard-view">
-      <header className="dashboard-header glass-panel mb-8 p-6 lg:p-8 flex items-center justify-between">
+    <main className="dashboard-view" role="main" aria-label="Main dashboard">
+      <header className="dashboard-header glass-panel mb-8 p-6 lg:p-8 flex items-center justify-between" role="banner">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">{meta.label}</h1>
-          <p className="status-chip status-chip--active">{meta.sub}</p>
+          <p className="status-chip status-chip--active" role="status">{meta.sub}</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="hidden sm:block text-right">
             <p className="font-semibold text-white">{session.session.display_name}</p>
             <p className="text-xs opacity-50">{session.session.user_id}</p>
           </div>
-          <button type="button" className="button button--ghost shrink-0" onClick={onLogout}>
+          <button 
+            type="button" 
+            className="btn btn-secondary shrink-0" 
+            onClick={onLogout}
+            aria-label="Sign out of your account"
+          >
             Sign out
           </button>
         </div>
       </header>
 
-      <section className="dashboard-intro glass-panel p-6 lg:p-8 mb-8 relative overflow-hidden">
+      <section className="dashboard-intro glass-panel p-6 lg:p-8 mb-8 relative overflow-hidden" aria-labelledby="welcome-heading">
         <div className="relative z-10">
-          <h2 className="text-xl font-semibold text-white mb-2">Welcome back, {session.session.display_name.split(' ')[0]}</h2>
+          <h2 id="welcome-heading" className="text-xl font-semibold text-white mb-2">
+            Welcome back, {session.session.display_name.split(' ')[0]}
+          </h2>
           <p className="dashboard-intro__text mb-6 opacity-75 max-w-2xl">
             You currently have <strong className="text-white">{openJobCount} active job{openJobCount !== 1 ? "s" : ""}</strong> requiring attention in the system workflow. 
             Proceed to your primary workspace to continue operations.
           </p>
           <button 
             type="button" 
-            className="button button--primary"
+            className="btn btn-primary"
             onClick={() => onEnterWorkspace(meta.primaryTool)}
+            aria-label={`Go to ${meta.primaryTool === "schedule" ? "Dispatch" : meta.primaryTool}`}
           >
-            <Icon d={ICONS.jobs} size={18} className="mr-2" />
+            <Icon d={ICONS.jobs} size={18} className="mr-2" title="Jobs" />
             Go to {meta.primaryTool === "schedule" ? "Dispatch" : meta.primaryTool.charAt(0).toUpperCase() + meta.primaryTool.slice(1)}
           </button>
         </div>
         
         {/* Decorative background element */}
-        <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-primary opacity-10 blur-3xl pointer-events-none"></div>
+        <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-primary opacity-10 blur-3xl pointer-events-none" aria-hidden="true"></div>
       </section>
 
-      <section className="quick-start-section mb-8">
-        <h2 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-4 px-1">Quick Start Modules</h2>
-        <div className="quick-start-grid">
+      <section className="quick-start-section mb-8" aria-labelledby="quick-start-heading">
+        <h2 id="quick-start-heading" className="text-sm font-bold uppercase tracking-wider opacity-50 mb-4 px-1">
+          Quick Start Modules
+        </h2>
+        <div className="quick-start-grid" role="list">
           {meta.quickStart.map((item, index) => (
             <QuickStartCard
               key={index}
@@ -200,86 +235,71 @@ export function DashboardView({
       </section>
 
       {!onboardingDismissed && (
-        <section className="dashboard-help mb-8">
-          <div className="glass-panel p-6 border-l-4 border-l-primary flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <section className="dashboard-help mb-8" aria-label="Onboarding information">
+          <div className="glass-panel p-6 border-l-4 border-l-primary flex flex-col sm:flex-row sm:items-center justify-between gap-4" role="region">
             <div className="flex gap-4 items-start">
-              <div className="mt-1 text-primary">
+              <div className="mt-1 text-primary" aria-hidden="true">
                 <Icon d={ICONS.checklist} size={24} />
               </div>
               <div>
                 <h3 className="font-semibold text-white mb-1">First-time Checklist</h3>
-                <p className="text-sm opacity-75">1. Open Jobs module. 2. Review assigned jobcard status and notes. 3. Use Schedule or Files for next actions.</p>
+                <p className="text-sm opacity-75">
+                  1. Open Jobs module. 2. Review assigned jobcard status and notes. 3. Use Schedule or Files for next actions.
+                </p>
               </div>
             </div>
-            <button className="button button--ghost shrink-0" type="button" onClick={onDismissOnboarding}>
+            <button 
+              className="btn btn-secondary shrink-0" 
+              type="button" 
+              onClick={onDismissOnboarding}
+              aria-label="Dismiss onboarding checklist"
+            >
               Dismiss
             </button>
           </div>
         </section>
       )}
 
-      <section className="dashboard-help">
-        <div className="glass-panel p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <section className="dashboard-help" aria-label="System support information">
+        <div className="glass-panel p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4" role="region">
           <div className="flex gap-4 items-start">
-            <div className="mt-1 opacity-50">
+            <div className="mt-1 opacity-50" aria-hidden="true">
               <Icon d={ICONS.compliance} size={24} />
             </div>
             <div>
               <h3 className="font-semibold text-white mb-1">System Support</h3>
-              <p className="text-sm opacity-75">Contact support or refer to the compliance documentation for guidance on using the portal features and reporting defects.</p>
+              <p className="text-sm opacity-75">
+                Contact support or refer to the compliance documentation for guidance on using the portal features and reporting defects.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       <style>{`
-        /* Dashboard Layout & Utilities */
         .dashboard-view {
-          max-width: 1200px;
+          max-width: var(--container-max);
           margin: 0 auto;
           width: 100%;
+          padding: 0 var(--space-4);
         }
         
-        .glass-panel {
-          background: rgba(20, 20, 25, 0.4);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .glass-panel-interactive {
-          background: rgba(20, 20, 25, 0.4);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 12px;
-          transition: all 0.2s ease;
+        .dashboard-header {
           display: flex;
           align-items: center;
-          padding: 1.25rem;
-          gap: 1rem;
-          width: 100%;
-          cursor: pointer;
+          justify-content: space-between;
+          gap: var(--space-4);
         }
-
-        .glass-panel-interactive:hover {
-          background: rgba(255, 255, 255, 0.05);
-          border-color: rgba(var(--color-primary-rgb), 0.5);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        
+        .dashboard-intro__text {
+          font-size: var(--text-base);
+          line-height: 1.6;
         }
-
-        .glass-panel-interactive:hover .quick-start-card__arrow {
-          transform: translateX(4px);
-          opacity: 1;
-        }
-
+        
         .quick-start-grid {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 1rem;
+          gap: var(--space-4);
         }
         
         @media (min-width: 640px) {
@@ -294,14 +314,53 @@ export function DashboardView({
           }
         }
 
+        .quick-start-card {
+          display: flex;
+          align-items: center;
+          padding: var(--space-5);
+          gap: var(--space-4);
+          width: 100%;
+          min-height: var(--touch-target);
+          transition: all var(--transition-fast);
+        }
+
+        .quick-start-card:hover {
+          background: rgba(255, 255, 255, 0.05);
+          border-color: var(--color-accent);
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md), var(--shadow-glow-sm);
+        }
+
+        .quick-start-card:hover .quick-start-card__arrow {
+          transform: translateX(4px);
+          opacity: 1;
+        }
+
         .quick-start-card__badge {
           background: var(--color-primary);
           color: white;
-          font-size: 0.75rem;
+          font-size: var(--text-xs);
           font-weight: 700;
-          padding: 0.125rem 0.5rem;
-          border-radius: 9999px;
-          margin-left: 0.5rem;
+          padding: var(--space-1) var(--space-2);
+          border-radius: var(--radius-full);
+          margin-left: var(--space-2);
+        }
+
+        .status-chip {
+          display: inline-block;
+          font-size: var(--text-xs);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          padding: var(--space-1) var(--space-3);
+          border-radius: var(--radius-full);
+          background: rgba(16, 185, 129, 0.15);
+          color: var(--color-positive);
+        }
+
+        .status-chip--active {
+          background: rgba(99, 102, 241, 0.15);
+          color: var(--color-primary);
         }
 
         /* Helper Classes */
@@ -311,23 +370,23 @@ export function DashboardView({
         .items-center { align-items: center; }
         .items-start { align-items: flex-start; }
         .justify-between { justify-content: space-between; }
-        .gap-4 { gap: 1rem; }
-        .p-6 { padding: 1.5rem; }
-        .mb-1 { margin-bottom: 0.25rem; }
-        .mb-2 { margin-bottom: 0.5rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .mb-6 { margin-bottom: 1.5rem; }
-        .mb-8 { margin-bottom: 2rem; }
-        .mt-1 { margin-top: 0.25rem; }
-        .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
-        .mr-2 { margin-right: 0.5rem; }
-        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
-        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
-        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .gap-4 { gap: var(--space-4); }
+        .p-6 { padding: var(--space-6); }
+        .mb-1 { margin-bottom: var(--space-1); }
+        .mb-2 { margin-bottom: var(--space-2); }
+        .mb-4 { margin-bottom: var(--space-4); }
+        .mb-6 { margin-bottom: var(--space-6); }
+        .mb-8 { margin-bottom: var(--space-8); }
+        .mt-1 { margin-top: var(--space-1); }
+        .px-1 { padding-left: var(--space-1); padding-right: var(--space-1); }
+        .mr-2 { margin-right: var(--space-2); }
+        .text-2xl { font-size: var(--text-2xl); line-height: 2rem; }
+        .text-xl { font-size: var(--text-xl); line-height: 1.75rem; }
+        .text-sm { font-size: var(--text-sm); line-height: 1.25rem; }
+        .text-xs { font-size: var(--text-xs); line-height: 1rem; }
         .font-bold { font-weight: 700; }
         .font-semibold { font-weight: 600; }
-        .text-white { color: #fff; }
+        .text-white { color: var(--color-text); }
         .text-primary { color: var(--color-primary); }
         .text-left { text-align: left; }
         .text-right { text-align: right; }
@@ -345,7 +404,7 @@ export function DashboardView({
         .-top-20 { top: -5rem; }
         .w-64 { width: 16rem; }
         .h-64 { height: 16rem; }
-        .rounded-full { border-radius: 9999px; }
+        .rounded-full { border-radius: var(--radius-full); }
         .bg-primary { background-color: var(--color-primary); }
         .blur-3xl { filter: blur(64px); }
         .pointer-events-none { pointer-events: none; }
@@ -360,6 +419,10 @@ export function DashboardView({
         }
 
         .hidden { display: none; }
+        
+        @media (min-width: 768px) {
+          .lg\\:p-8 { padding: var(--space-8); }
+        }
       `}</style>
     </main>
   );

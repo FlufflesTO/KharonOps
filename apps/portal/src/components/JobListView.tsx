@@ -84,26 +84,33 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
     return Math.min(99, baseByStatus[job.status] + noteBoost);
   }, [job.status, job.last_note]);
 
+  const riskLevel = riskScore > 70 ? 'high' : riskScore > 30 ? 'med' : 'low';
+  const riskLabel = `Risk level: ${riskScore} percent`;
+
   return (
-    <div className={`job-card-wrapper ${isActive ? 'job-card-wrapper--active' : ''}`}>
+    <div className={`job-card-wrapper ${isActive ? 'job-card-wrapper--active' : ''}`} role="listitem">
       <div className="job-card-checkbox">
         <input
           type="checkbox"
           checked={checked}
           onChange={() => onToggle(job.job_id)}
-          aria-label={`Select ${job.job_id}`}
+          aria-label={`Select job ${job.job_id}`}
+          className="custom-checkbox"
+          style={{ width: 'var(--touch-target)', height: 'var(--touch-target)' }}
         />
       </div>
       <button 
         type="button" 
         className="job-card" 
         onClick={() => onClick(job.job_id)}
+        aria-label={`View details for job ${job.job_id}: ${job.title}`}
+        tabIndex={0}
       >
         <div className="job-card__header">
           <span className="job-card__id truncate">
             <Highlight text={job.job_id} query={query} />
           </span>
-          <span className={`status-chip status-chip--${statusTone(job.status)}`}>
+          <span className={`status-chip status-chip--${statusTone(job.status)}`} role="status">
             {JOB_STATUS_LABELS[job.status]}
           </span>
         </div>
@@ -118,13 +125,21 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
 
         <div className="job-card__meta">
           <div className="job-card__meta-item truncate">
-            <span className="meta-icon">👤</span>
+            <span className="meta-icon" aria-hidden="true">👤</span>
             <span><Highlight text={job.technician_name || "Pending Tech"} query={query} /></span>
           </div>
           <div className="job-card__meta-item">
-            <div className={`risk-indicator risk-indicator--${riskScore > 70 ? 'high' : riskScore > 30 ? 'med' : 'low'}`}>
+            <div 
+              className={`risk-indicator risk-indicator--${riskLevel}`}
+              role="progressbar"
+              aria-valuenow={riskScore}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={riskLabel}
+            >
               <div className="risk-bar" style={{ width: `${riskScore}%` }}></div>
-              <span>Risk {riskScore}%</span>
+              <span className="sr-only">{riskLabel}</span>
+              <span aria-hidden="true">Risk {riskScore}%</span>
             </div>
           </div>
         </div>
