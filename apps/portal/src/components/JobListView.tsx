@@ -4,8 +4,8 @@
  * Performance: Virtualization enabled for scale (>1000 rows).
  */
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { List } from "react-window";
+import React, { useMemo, useState, useCallback } from "react";
+import { List, type RowComponentProps } from "react-window";
 import type { JobStatus } from "@kharon/domain";
 
 const JOB_STATUS_LABELS: Record<JobStatus, string> = {
@@ -148,6 +148,43 @@ export interface JobListViewProps {
   onBulkStatusUpdate?: (ids: string[], status: JobStatus) => void;
 }
 
+type VirtualRowProps = {
+  jobs: JobRecord[];
+  selectedJobid: string | null;
+  selectedJobIds: string[];
+  onToggle: (id: string) => void;
+  onSelectJob: (id: string) => void;
+  query: string;
+};
+
+function VirtualRow({
+  index,
+  style,
+  jobs,
+  selectedJobid,
+  selectedJobIds,
+  onToggle,
+  onSelectJob,
+  query
+}: RowComponentProps<VirtualRowProps>): React.JSX.Element | null {
+  const job = jobs[index];
+  if (!job) {
+    return null;
+  }
+
+  return (
+    <JobItem
+      job={job}
+      isActive={job.job_id === selectedJobid}
+      checked={selectedJobIds.includes(job.job_id)}
+      onToggle={onToggle}
+      onClick={onSelectJob}
+      query={query}
+      style={style}
+    />
+  );
+}
+
 export function JobListView({
     jobs,
     selectedJobid,
@@ -180,21 +217,6 @@ export function JobListView({
   const handleToggle = useCallback((id: string) => {
     setSelectedJobIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }, []);
-
-  const VirtualRow = ({ index, style }: { index: number, style: React.CSSProperties }) => {
-    const job = filtered[index]; if (!job) return null;
-    return (
-      <JobItem
-        job={job}
-        isActive={job.job_id === selectedJobid}
-        checked={selectedJobIds.includes(job.job_id)}
-        onToggle={handleToggle}
-        onClick={onSelectJob}
-        query={globalQuery}
-        style={style}
-      />
-    );
-  };
 
   const useVirtualization = filtered.length > 1000;
 
@@ -238,12 +260,19 @@ export function JobListView({
       <div className="job-scroller" style={{ height: '100%', minHeight: 0 }}>
         {useVirtualization ? (
           <List
-            height={600}
-            itemCount={filtered.length}
-            itemSize={140}
-            width="100%"
+            rowCount={filtered.length}
+            rowHeight={140}
+            rowComponent={VirtualRow}
+            rowProps={{
+              jobs: filtered,
+              selectedJobid,
+              selectedJobIds,
+              onToggle: handleToggle,
+              onSelectJob,
+              query: globalQuery
+            }}
+            style={{ height: 600, width: "100%" }}
           >
-            {VirtualRow as any}
           </List>
         ) : (
           filtered.map((job: JobRecord) => (

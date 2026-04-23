@@ -22,6 +22,13 @@ import { chatAlertSchema, gmailNotifySchema, peopleSyncSchema, skillMatrixUpsert
 import type { AppBindings } from "../context.js";
 import type { UserRow, ScheduleRequestRow, ScheduleRow, JobDocumentRow, UpgradeWorkspaceState, OpsIntelligencePayload } from "@kharon/domain";
 
+type DispatchContextPayload = {
+  requests: ScheduleRequestRow[];
+  schedules: ScheduleRow[];
+  documents: JobDocumentRow[];
+  technicians: UserRow[];
+};
+
 
 const workspace = new Hono<AppBindings>();
 
@@ -159,7 +166,7 @@ workspace.get("/dispatch-context", requireRoles("dispatcher", "admin"), async (c
 
   const version = await getCacheVersion(c.env);
   const cacheKey = `dispatch:${version}:${jobid}:${user.user_id}`;
-  const cached = await getCachedJson<OpsIntelligencePayload>(c.env, cacheKey);
+  const cached = await getCachedJson<DispatchContextPayload>(c.env, cacheKey);
   if (cached) return c.json(envelopeSuccess({ correlationId, data: cached }));
 
   const [requests, schedules, documents, users] = await Promise.all([
@@ -181,7 +188,7 @@ workspace.get("/ops-intelligence", requireRoles("dispatcher", "admin", "finance"
   const store = c.get("store");
   const version = await getCacheVersion(c.env);
   const cacheKey = `ops_intel:${version}:${user.role}`;
-  const cached = await getCachedJson<any>(c.env, cacheKey);
+  const cached = await getCachedJson<OpsIntelligencePayload>(c.env, cacheKey);
   if (cached) return c.json(envelopeSuccess({ correlationId, data: cached }));
 
   const [jobs, schedules, documents, escrow, invoices, users, clients, technicians] = await Promise.all([

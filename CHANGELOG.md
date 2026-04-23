@@ -4,6 +4,17 @@ All notable changes to the KharonOps project are documented in this file.
 
 ## [Unreleased] - 2026-04-23
 
+### [Changed]
+- Updated portal virtualization in `JobListView.tsx` to the `react-window@2` `List` API (`rowComponent` + `rowProps`), replacing the legacy child-render function usage.
+- Tightened cache typing in `workspace.ts` by replacing generic `any` cache payload reads with explicit `DispatchContextPayload` and `OpsIntelligencePayload` types.
+
+### [Fixed]
+- Restored repo-wide verification green state for:
+  - `npm run check`
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+
 ### [Added]
 - **Modular Route Architecture:** Extracted 9 standalone route modules from the monolithic `index.ts` (2,135 lines): `auth`, `jobs`, `schedules`, `workspace`, `documents`, `sync`, `admin`, `public`, `finance`. Each module is independently type-checked and imports auth middleware from a shared `middleware/auth.ts`.
 - **Service Layer Extraction:** Created 6 dedicated service modules (`cache`, `compliance`, `governance`, `jobs`, `responses`, `utils`) encapsulating reusable business logic previously inlined in route handlers.
