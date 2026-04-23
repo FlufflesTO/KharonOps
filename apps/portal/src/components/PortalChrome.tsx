@@ -14,8 +14,6 @@ interface PortalChromeProps {
   syncPulseText: string;
   focusMode: boolean;
   onFocusModeChange: (value: boolean) => void;
-  installPromptAvailable: boolean;
-  onInstallApp: () => void;
   queueCount: number;
   onReplayQueue: () => void;
   onLogout: () => void;
@@ -36,8 +34,6 @@ export function PortalChrome({
   syncPulseText,
   focusMode,
   onFocusModeChange,
-  installPromptAvailable,
-  onInstallApp,
   queueCount,
   onReplayQueue,
   onLogout,
@@ -106,16 +102,6 @@ export function PortalChrome({
               >
                 {focusMode ? "Exit Focus" : "Focus"}
               </button>
-              {installPromptAvailable ? (
-                <button 
-                  className="button button--secondary" 
-                  type="button" 
-                  onClick={onInstallApp}
-                  aria-label="Install the Kharon Ops app to your device"
-                >
-                  Install App
-                </button>
-              ) : null}
               <button 
                 className="button button--secondary" 
                 type="button" 

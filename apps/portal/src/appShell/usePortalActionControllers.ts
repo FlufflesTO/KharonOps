@@ -84,8 +84,6 @@ export function usePortalActionControllers(args: {
   authConfig: PortalAuthConfig | null;
   productionAuth: boolean;
   loginToken: string;
-  installPromptEvent: Event | null;
-  setInstallPromptEvent: React.Dispatch<React.SetStateAction<Event | null>>;
   selectedJob: SelectedJob | null;
   selectedJobid: string;
   selectedRequest: SelectedRequest | null;
@@ -162,7 +160,6 @@ export function usePortalActionControllers(args: {
   setOpsIntelligence: React.Dispatch<React.SetStateAction<OpsIntelligencePayload | null>>;
 }): {
   refreshDispatchContext: (jobid: string) => Promise<void>;
-  handleInstallPrompt: () => Promise<void>;
   handleVerifyLocation: () => Promise<void>;
   handleLogin: (token: string) => Promise<void>;
   handleSupportTokenSubmit: () => Promise<void>;
@@ -189,8 +186,6 @@ export function usePortalActionControllers(args: {
     authConfig,
     productionAuth,
     loginToken,
-    installPromptEvent,
-    setInstallPromptEvent,
     selectedJob,
     selectedJobid,
     selectedRequest,
@@ -291,22 +286,6 @@ export function usePortalActionControllers(args: {
       setFeedback(`Dispatch context load failed: ${errorMessage(error)}`);
     }
   }, [dispatchAccessDenied, isDispatchRole, setDispatchAccessDenied, setDispatchContext, setFeedback]);
-
-  const handleInstallPrompt = useCallback(async (): Promise<void> => {
-    if (!installPromptEvent) {
-      setFeedback("Install prompt is not available on this device/browser.");
-      return;
-    }
-    try {
-      const installEvent = installPromptEvent as Event & { prompt?: () => Promise<void>; userChoice?: Promise<{ outcome: string }> };
-      await installEvent.prompt?.();
-      const result = await installEvent.userChoice;
-      setFeedback(result?.outcome === "accepted" ? "PWA install accepted." : "PWA install dismissed.");
-      setInstallPromptEvent(null);
-    } catch (error) {
-      setFeedback(`PWA install prompt failed: ${errorMessage(error)}`);
-    }
-  }, [installPromptEvent, setFeedback, setInstallPromptEvent]);
 
   const handleVerifyLocation = useCallback(async (): Promise<void> => {
     if (!navigator.geolocation) {
@@ -754,7 +733,6 @@ export function usePortalActionControllers(args: {
 
   return {
     refreshDispatchContext,
-    handleInstallPrompt,
     handleVerifyLocation,
     handleLogin,
     handleSupportTokenSubmit,

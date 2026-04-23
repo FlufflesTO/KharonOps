@@ -147,7 +147,6 @@ export function PortalApp(): React.JSX.Element {
     jobsChanged: 0,
     queueChanged: 0
   });
-  const [installPromptEvent, setInstallPromptEvent] = useState<Event | null>(null);
   const [geoVerification, setGeoVerification] = useState<{
     status: "idle" | "verified" | "warning" | "error";
     capturedAt: string;
@@ -410,15 +409,6 @@ export function PortalApp(): React.JSX.Element {
     }
   }, [effectiveRole]);
 
-  useEffect(() => {
-    const onBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      setInstallPromptEvent(event);
-    };
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
-    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
-  }, []);
-
   useLiveSyncController({
     sessionActive: Boolean(session),
     networkOnline,
@@ -482,8 +472,6 @@ export function PortalApp(): React.JSX.Element {
     authConfig,
     productionAuth,
     loginToken,
-    installPromptEvent,
-    setInstallPromptEvent,
     selectedJob,
     selectedJobid,
     selectedRequest,
@@ -669,8 +657,6 @@ export function PortalApp(): React.JSX.Element {
         syncPulseText={syncPulse.at ? `Sync ${new Date(syncPulse.at).toLocaleTimeString()}` : "Sync idle"}
         focusMode={focusMode}
         onFocusModeChange={setFocusMode}
-        installPromptAvailable={Boolean(installPromptEvent)}
-        onInstallApp={() => runAction(portalActions.handleInstallPrompt)}
         queueCount={queueCount}
         onReplayQueue={() => runAction(portalActions.handleReplay)}
         onLogout={() => runAction(portalActions.handleLogout)}
