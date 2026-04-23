@@ -30,6 +30,20 @@ export function apiSecurityHeadersMiddleware() {
       c.header("X-Frame-Options", "DENY");
       c.header("Referrer-Policy", "strict-origin-when-cross-origin");
       c.header("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+      
+      const csp = [
+        "default-src 'self'",
+        "script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' https://accounts.google.com/gsi/client https://static.cloudflareinsights.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com",
+        "img-src 'self' data: https://*.googleusercontent.com https://accounts.google.com",
+        "connect-src 'self' https://accounts.google.com https://cloudflareinsights.com",
+        "frame-src https://accounts.google.com",
+        "object-src 'none'",
+        "base-uri 'self'"
+      ].join("; ");
+      c.header("Content-Security-Policy", csp);
+
       c.header("Vary", mergeVary(c.res.headers.get("Vary"), "Cookie, Cf-Access-Jwt-Assertion"));
     }
   });
