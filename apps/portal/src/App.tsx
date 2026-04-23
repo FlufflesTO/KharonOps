@@ -29,23 +29,110 @@ import { PeopleDirectoryCard } from "./components/PeopleDirectoryCard";
 import { FinanceOpsCard } from "./components/FinanceOpsCard";
 
 
+function pickString(record: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const value = record[key];
+    const text = String(value ?? "").trim();
+    if (text !== "") {
+      return text;
+    }
+  }
+  return "";
+}
+
+function pickNumber(record: Record<string, unknown>, ...keys: string[]): number {
+  for (const key of keys) {
+    const value = Number(record[key] ?? NaN);
+    if (Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return 0;
+}
+
 function asJob(record: Record<string, unknown>): JobRecord {
   const status = String(record.status ?? "draft") as JobStatus;
 
   return {
-    job_id: String(record.job_id ?? ""),
+    job_id: pickString(record, "job_id", "job_uid"),
     title: String(record.title ?? ""),
     status,
-    row_version: Number(record.row_version ?? 0),
-    client_id: String(record.client_id ?? ""),
-    technician_id: String(record.technician_id ?? ""),
+    row_version: pickNumber(record, "row_version"),
+    client_id: pickString(record, "client_id", "client_uid"),
+    technician_id: pickString(record, "technician_id", "technician_uid", "primary_technician_id"),
     client_name: String(record.client_name ?? ""),
     technician_name: String(record.technician_name ?? ""),
     last_note: String(record.last_note ?? ""),
     // Metadata preservation for contextual dispatch
-    active_request_id: String(record.active_request_id ?? ""),
-    active_document_id: String(record.active_document_id ?? ""),
-    suggested_technician_id: String(record.suggested_technician_id ?? "")
+    active_request_id: pickString(record, "active_request_id", "active_request_uid"),
+    active_document_id: pickString(record, "active_document_id", "active_document_uid"),
+    suggested_technician_id: pickString(record, "suggested_technician_id", "suggested_technician_uid")
+  };
+}
+
+function normalizeScheduleRequest(record: Record<string, unknown>): ScheduleRequestRow {
+  return {
+    request_id: pickString(record, "request_id", "request_uid"),
+    job_id: pickString(record, "job_id", "job_uid"),
+    client_id: pickString(record, "client_id", "client_uid"),
+    preferred_slots_json: String(record.preferred_slots_json ?? "[]"),
+    timezone: String(record.timezone ?? ""),
+    notes: String(record.notes ?? ""),
+    status: (String(record.status ?? "requested") as ScheduleRequestRow["status"]),
+    row_version: pickNumber(record, "row_version"),
+    updated_at: String(record.updated_at ?? ""),
+    updated_by: String(record.updated_by ?? ""),
+    correlation_id: String(record.correlation_id ?? "")
+  };
+}
+
+function normalizeSchedule(record: Record<string, unknown>): ScheduleRow {
+  return {
+    schedule_id: pickString(record, "schedule_id", "schedule_uid"),
+    request_id: pickString(record, "request_id", "request_uid"),
+    job_id: pickString(record, "job_id", "job_uid"),
+    calendar_event_id: String(record.calendar_event_id ?? ""),
+    start_at: String(record.start_at ?? ""),
+    end_at: String(record.end_at ?? ""),
+    technician_id: pickString(record, "technician_id", "technician_uid"),
+    status: (String(record.status ?? "confirmed") as ScheduleRow["status"]),
+    row_version: pickNumber(record, "row_version"),
+    updated_at: String(record.updated_at ?? ""),
+    updated_by: String(record.updated_by ?? ""),
+    correlation_id: String(record.correlation_id ?? "")
+  };
+}
+
+function normalizeDocument(record: Record<string, unknown>): JobDocumentRow {
+  return {
+    document_id: pickString(record, "document_id", "document_uid"),
+    job_id: pickString(record, "job_id", "job_uid"),
+    document_type: (String(record.document_type ?? "service_report") as JobDocumentRow["document_type"]),
+    status: (String(record.status ?? "generated") as JobDocumentRow["status"]),
+    drive_file_id: String(record.drive_file_id ?? ""),
+    pdf_file_id: String(record.pdf_file_id ?? ""),
+    published_url: String(record.published_url ?? ""),
+    client_visible: Boolean(record.client_visible ?? false),
+    row_version: pickNumber(record, "row_version"),
+    updated_at: String(record.updated_at ?? ""),
+    updated_by: String(record.updated_by ?? ""),
+    correlation_id: String(record.correlation_id ?? "")
+  };
+}
+
+function normalizeUser(record: Record<string, unknown>): UserRow {
+  return {
+    user_id: pickString(record, "user_id", "user_uid"),
+    email: String(record.email ?? ""),
+    display_name: String(record.display_name ?? ""),
+    role: String(record.role ?? "client") as UserRow["role"],
+    client_id: pickString(record, "client_id", "client_uid"),
+    technician_id: pickString(record, "technician_id", "technician_uid"),
+    active: String(record.active ?? "true") === "false" ? "false" : "true",
+    row_version: pickNumber(record, "row_version"),
+    updated_at: String(record.updated_at ?? ""),
+    updated_by: String(record.updated_by ?? ""),
+    correlation_id: String(record.correlation_id ?? "")
   };
 }
 
@@ -279,7 +366,7 @@ export function PortalApp(): React.JSX.Element {
     }
     try {
       const data = await apiClient.listJobs();
-      const mapped = data.map(asJob);
+      const mapped = data.map(asJob).filter((job) => job.job_id !== "");
       startTransition(() => {
         setJobs(mapped);
         if (!mapped.some((job) => job.job_id === selectedJobid)) {
@@ -316,7 +403,8 @@ export function PortalApp(): React.JSX.Element {
     try {
       const response = await apiClient.history(jobid);
       startTransition(() => {
-        setDocuments(response.data ?? []);
+        const normalized = (response.data ?? []).map((row) => normalizeDocument(row));
+        setDocuments(normalized as unknown as Array<Record<string, unknown>>);
       });
     } catch (error) {
       if (isUnauthorizedError(error)) {
@@ -336,7 +424,12 @@ export function PortalApp(): React.JSX.Element {
     try {
       const data = await apiClient.dispatchContext(jobid);
       startTransition(() => {
-        setDispatchContext(data);
+        setDispatchContext({
+          requests: (data.requests ?? []).map((row) => normalizeScheduleRequest(row as unknown as Record<string, unknown>)),
+          schedules: (data.schedules ?? []).map((row) => normalizeSchedule(row as unknown as Record<string, unknown>)),
+          documents: (data.documents ?? []).map((row) => normalizeDocument(row as unknown as Record<string, unknown>)),
+          technicians: (data.technicians ?? []).map((row) => normalizeUser(row as unknown as Record<string, unknown>))
+        });
       });
     } catch (error) {
       if (isUnauthorizedError(error)) {
@@ -353,7 +446,7 @@ export function PortalApp(): React.JSX.Element {
     try {
       const people = await apiClient.listPeople();
       startTransition(() => {
-        setPeopleDirectory(people);
+        setPeopleDirectory(people.map((row) => normalizeUser(row as unknown as Record<string, unknown>)));
       });
     } catch (error) {
       setFeedback(`People directory load failed: ${errorMessage(error)}`);
