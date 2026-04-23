@@ -4,6 +4,12 @@ All notable changes to the KharonOps project are documented in this file.
 
 ## [Unreleased] - 2026-04-23
 
+### [Added]
+- **Modular Route Architecture:** Extracted 9 standalone route modules from the monolithic `index.ts` (2,135 lines): `auth`, `jobs`, `schedules`, `workspace`, `documents`, `sync`, `admin`, `public`, `finance`. Each module is independently type-checked and imports auth middleware from a shared `middleware/auth.ts`.
+- **Service Layer Extraction:** Created 6 dedicated service modules (`cache`, `compliance`, `governance`, `jobs`, `responses`, `utils`) encapsulating reusable business logic previously inlined in route handlers.
+- **Context Middleware:** Created `middleware/context.ts` with `contextualMiddleware` that injects `RuntimeConfig` and `WorkbookStore` into the Hono request context via `c.set()`.
+- **Typed AppBindings:** Extended `AppBindings.Variables` with `config: RuntimeConfig` and `store: WorkbookStore`, enabling type-safe `c.get("config")` and `c.get("store")` in all route modules.
+
 ### [Changed]
 - **Observability Hardening:** Successfully injected diagnostic logging into the global `app.onError` handler (`apps/api/src/index.ts`). This ensures that future `500` errors will output full stack traces to the logs rather than failing silently, significantly reducing MTTR for infrastructure issues.
 - **Google Sheets API Stabilization:** Implemented a short-lived (2s) in-memory cache for `getRows` in `SheetsWorkbookStore` to coalesce parallel requests and mitigate `429` rate-limiting errors.
