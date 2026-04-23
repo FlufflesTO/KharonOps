@@ -596,6 +596,7 @@ export function PortalApp(): React.JSX.Element {
   if (portalView === "dashboard") {
     return (
       <div className={`portal-shell portal-shell--${effectiveRole}`}>
+        <a href="#main-content" className="skip-link">Skip to main content</a>
         <DashboardView
           session={session}
           openJobCount={openJobCount}
@@ -621,7 +622,8 @@ export function PortalApp(): React.JSX.Element {
 
   return (
     <div className={`portal-shell portal-shell--${effectiveRole}`}>
-        <PortalChrome
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <PortalChrome
         session={session}
         effectiveRole={effectiveRole ?? ""}
         emulatedRole={emulatedRole}

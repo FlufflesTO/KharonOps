@@ -273,7 +273,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
         </aside>
       ) : null}
 
-      <main className="portal-main">
+      <main className="portal-main" id="main-content">
         <section className="workspace-header-card">
           <h1>{activeToolMeta.label}</h1>
           <p>{activeToolMeta.helper.replace("documents", COPY_GLOSSARY.documents.toLowerCase())}</p>
@@ -284,7 +284,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
               value={searchTerm}
               onChange={(event) => onSearchTermChange(event.target.value)}
               placeholder="Search jobs, clients, sites, IDs..."
-              aria-label="Search across workspace data"
+              aria-label="Search across all workspace data"
             />
           </div>
         </section>
