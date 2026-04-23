@@ -197,12 +197,15 @@ function toConflict(job: JobRow, expectedRowVersion: number): ConflictPayload {
 }
 
 function stampEvent(args: { jobid: string; eventType: string; payload: Record<string, unknown>; ctx: { actorUserid: string; correlationId: string } }): JobEventRow {
+  const meta = newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId);
   return {
     event_id: `EVT-${crypto.randomUUID()}`,
     job_id: args.jobid,
     event_type: args.eventType,
     payload_json: JSON.stringify(args.payload),
-    ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
+    ...meta,
+    created_at: meta.updated_at,
+    created_by: meta.updated_by
   };
 }
 

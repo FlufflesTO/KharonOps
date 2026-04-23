@@ -337,7 +337,7 @@ export function JobListView({
       {selectedJobIds.length > 0 && (
         <div className="bulk-actions animate-in">
           <span>{selectedJobIds.length} Selected</span>
-          <button onClick={() => onBulkStatusUpdate(selectedJobIds, "performed")}>Batch: Performed</button>
+          <button onClick={() => onBulkStatusUpdate?.(selectedJobIds, "performed")}>Batch: Performed</button>
           <button onClick={() => setSelectedJobIds([])} className="btn-ghost">Clear</button>
         </div>
       )}

@@ -134,12 +134,15 @@ function jobRowFromPg(row: PgRow | undefined): JobRow {
 
 function jobEventRowFromPg(row: PgRow | undefined): JobEventRow {
   if (!row) throw new Error("Missing row for JobEventRow mapping");
+  const meta = rowToMutableMeta(row);
   return {
     event_id: String(row.event_id),
     job_id: String(row.job_id),
     event_type: String(row.event_type),
     payload_json: String(row.payload_json ?? "{}"),
-    ...rowToMutableMeta(row)
+    ...meta,
+    created_at: meta.updated_at,
+    created_by: meta.updated_by
   };
 }
 
@@ -336,12 +339,15 @@ function stampEvent(args: {
   payload: Record<string, unknown>;
   ctx: StoreContext;
 }): JobEventRow {
+  const meta = newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId);
   return {
     event_id: `EVT-${crypto.randomUUID()}`,
     job_id: args.jobid,
     event_type: args.eventType,
     payload_json: JSON.stringify(args.payload),
-    ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
+    ...meta,
+    created_at: meta.updated_at,
+    created_by: meta.updated_by
   };
 }
 

@@ -5,6 +5,8 @@ All notable changes to the KharonOps project are documented in this file.
 ## [Unreleased] - 2026-04-23
 
 ### [Changed]
+- **API Cache Hardening:** Updated `getKvNamespace`, `getCacheVersion`, `bumpCacheVersion`, `getCachedJson`, and `putCachedJson` in `apps/api/src/index.ts` to gracefully handle `undefined` environment bindings. This resolves a critical 500 error regression in contract tests where Hono context environment is not populated during simulated requests.
+- **KV Production Compliance:** Enforced a minimum 60-second `expirationTtl` for all Cloudflare KV operations in the `putCachedJson` utility, satisfying strict runtime constraints for the production environment.
 - **Nomenclature Cleanup:** Eradicated residual "UID" technical terminology from the user-facing interface and internal data models. Replaced all fallback instances of `_uid` properties (e.g. `job_uid`, `client_uid`) with strict `_id` equivalents across `App.tsx` and the Domain package (`types.ts`, `schema.ts`, `rbac.ts`) to align with the canonical governance taxonomy.
 - Updated `docs` and `drive` operations in `createProductionWorkspaceRails` (`packages/google/src/production.ts`) to utilize `delegatedConfig` and `delegatedSubjectArgs`. All Drive operations (generate pdf, publish file, list files) now execute under Domain-Wide Delegation (impersonating the configured Workspace user) rather than the generic Service Account.
 - Added extensive diagnostic error logging to `packages/google/src/errors.ts`, extracting stringified JSON bodies and specific `error_description` fields from Google API failures into the `GoogleAdapterError` message, making UI toast notifications instantly actionable.

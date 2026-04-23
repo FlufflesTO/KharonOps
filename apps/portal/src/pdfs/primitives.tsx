@@ -120,8 +120,8 @@ export const ChecklistTable = ({ items }: { items: ChecklistItem[] }) => (
           key={`${item.label}-${index}`}
           style={[
             styles.tableRow,
-            isAlt && styles.tableRowAlt,
-            isLast && styles.tableLastRow,
+            ...(isAlt ? [styles.tableRowAlt] : []),
+            ...(isLast ? [styles.tableLastRow] : []),
           ]}
         >
           <View style={styles.colTask}>

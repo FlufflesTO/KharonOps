@@ -148,7 +148,8 @@ type KvLikeNamespace = {
 const memoryCache = new Map<string, { expiresAt: number; value: string }>();
 let memoryCacheVersion = 1;
 
-function getKvNamespace(env: AppBindings["Bindings"]): KvLikeNamespace | null {
+function getKvNamespace(env: AppBindings["Bindings"] | undefined): KvLikeNamespace | null {
+  if (!env) return null;
   const candidate = env.KHARON_CACHE as Partial<KvLikeNamespace> | undefined;
   if (candidate && typeof candidate.get === "function" && typeof candidate.put === "function") {
     return candidate as KvLikeNamespace;
@@ -156,7 +157,7 @@ function getKvNamespace(env: AppBindings["Bindings"]): KvLikeNamespace | null {
   return null;
 }
 
-async function getCacheVersion(env: AppBindings["Bindings"]): Promise<number> {
+async function getCacheVersion(env: AppBindings["Bindings"] | undefined): Promise<number> {
   const kv = getKvNamespace(env);
   if (!kv) {
     return memoryCacheVersion;
@@ -175,7 +176,7 @@ async function getCacheVersion(env: AppBindings["Bindings"]): Promise<number> {
   }
 }
 
-async function bumpCacheVersion(env: AppBindings["Bindings"]): Promise<void> {
+async function bumpCacheVersion(env: AppBindings["Bindings"] | undefined): Promise<void> {
   const kv = getKvNamespace(env);
   if (!kv) {
     memoryCacheVersion += 1;
@@ -192,7 +193,7 @@ async function bumpCacheVersion(env: AppBindings["Bindings"]): Promise<void> {
   }
 }
 
-async function getCachedJson<T>(env: AppBindings["Bindings"], key: string): Promise<T | null> {
+async function getCachedJson<T>(env: AppBindings["Bindings"] | undefined, key: string): Promise<T | null> {
   const kv = getKvNamespace(env);
   if (!kv) {
     const hit = memoryCache.get(key);
@@ -213,7 +214,7 @@ async function getCachedJson<T>(env: AppBindings["Bindings"], key: string): Prom
   }
 }
 
-async function putCachedJson(env: AppBindings["Bindings"], key: string, value: unknown, ttlSeconds = 60): Promise<void> {
+async function putCachedJson(env: AppBindings["Bindings"] | undefined, key: string, value: unknown, ttlSeconds = 60): Promise<void> {
   const payload = JSON.stringify(value);
   const kv = getKvNamespace(env);
   if (!kv) {
@@ -221,7 +222,9 @@ async function putCachedJson(env: AppBindings["Bindings"], key: string, value: u
     return;
   }
   try {
-    await kv.put(key, payload, { expirationTtl: ttlSeconds });
+    // Cloudflare KV requires a minimum of 60 seconds for expirationTtl
+    const finalTtl = Math.max(60, ttlSeconds);
+    await kv.put(key, payload, { expirationTtl: finalTtl });
   } catch (error) {
     console.error("KV putCachedJson failed, falling back to memory:", error);
     memoryCache.set(key, { value: payload, expiresAt: Date.now() + ttlSeconds * 1000 });

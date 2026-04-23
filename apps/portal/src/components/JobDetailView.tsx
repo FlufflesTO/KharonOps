@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import type { Role, JobStatus, JobEventRow } from "@kharon/domain";
+import type { Role, JobStatus, JobEventRow, DocumentType } from "@kharon/domain";
 import { type JobRecord, statusTone } from "./JobListView";
 import { CertificationForm } from "./CertificationForm";
 import { ForensicTimeline } from "./ForensicTimeline";
@@ -140,7 +140,7 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
           <div className="control-group">
             <label className="eyebrow">COMPLIANCE & EVIDENCE GENERATION</label>
             <div className="combo-input">
-              <select value={props.documentType} onChange={(e) => props.setDocumentType(e.target.value as any)}>
+              <select value={props.documentType} onChange={(e) => props.setDocumentType(e.target.value as DocumentType)}>
                 <option value="jobcard">Internal Jobcard</option>
                 <option value="service_report">SANS Service Report</option>
                 <option value="certificate">Certificate of Compliance</option>
