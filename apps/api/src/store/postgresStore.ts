@@ -134,12 +134,15 @@ function jobRowFromPg(row: PgRow | undefined): JobRow {
 
 function jobEventRowFromPg(row: PgRow | undefined): JobEventRow {
   if (!row) throw new Error("Missing row for JobEventRow mapping");
+  const meta = rowToMutableMeta(row);
   return {
     event_id: String(row.event_id),
     job_id: String(row.job_id),
     event_type: String(row.event_type),
     payload_json: String(row.payload_json ?? "{}"),
-    ...rowToMutableMeta(row)
+    ...meta,
+    created_at: meta.updated_at,
+    created_by: meta.updated_by
   };
 }
 
@@ -336,12 +339,15 @@ function stampEvent(args: {
   payload: Record<string, unknown>;
   ctx: StoreContext;
 }): JobEventRow {
+  const meta = newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId);
   return {
     event_id: `EVT-${crypto.randomUUID()}`,
     job_id: args.jobid,
     event_type: args.eventType,
     payload_json: JSON.stringify(args.payload),
-    ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
+    ...meta,
+    created_at: meta.updated_at,
+    created_by: meta.updated_by
   };
 }
 
@@ -1661,7 +1667,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
   async pullSyncData(args: {
     actor: SessionUser;
     since: string;
-  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[] }> {
+  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
     const pool = await this.getPool();
     const jobResult = await pool.query(
       `SELECT * FROM ${this.schema}.svr_jobs ORDER BY updated_at DESC`
@@ -1676,6 +1682,8 @@ export class PostgresWorkbookStore implements WorkbookStore {
 
     const jobids = filteredJobs.map((j) => j.job_id);
     let queue: SyncQueueRow[] = [];
+    let events: JobEventRow[] = [];
+
     if (jobids.length > 0) {
       const placeholders = jobids.map((_, i) => `$${i + 1}`).join(", ");
       const queueResult = await pool.query(
@@ -1683,9 +1691,15 @@ export class PostgresWorkbookStore implements WorkbookStore {
         jobids
       );
       queue = queueResult.rows.map(syncQueueRowFromPg);
+
+      const eventsResult = await pool.query(
+        `SELECT * FROM ${this.schema}.svr_job_events WHERE job_id IN (${placeholders}) ORDER BY updated_at DESC`,
+        jobids
+      );
+      events = eventsResult.rows.map(jobEventRowFromPg);
     }
 
-    return { jobs: filteredJobs, queue };
+    return { jobs: filteredJobs, queue, events };
   }
 
   // -- Internal helpers ----------------------------------------------------

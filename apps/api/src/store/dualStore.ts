@@ -634,7 +634,7 @@ export class DualWorkbookStore implements WorkbookStore {
   async pullSyncData(args: {
     actor: SessionUser;
     since: string;
-  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[] }> {
+  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
     return this.primary.pullSyncData(args);
   }
 

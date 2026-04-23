@@ -1,4 +1,9 @@
-import React, { useMemo, useState } from "react";
+/**
+ * Project KharonOps - Job List View (Refactored)
+ * Purpose: High-density operational dashboard with grid-safety and robust truncation.
+ */
+
+import React, { useEffect, useMemo, useState } from "react";
 import type { JobStatus } from "@kharon/domain";
 
 const JOB_STATUS_LABELS: Record<JobStatus, string> = {
@@ -19,6 +24,10 @@ export interface JobRecord {
   technician_id: string;
   client_name?: string;
   technician_name?: string;
+  updated_at?: string;
+  site_id?: string;
+  site_lat?: number | null;
+  site_lng?: number | null;
   last_note: string;
   active_request_id?: string;
   active_document_id?: string;
@@ -44,168 +53,379 @@ export function statusTone(status: string): "active" | "warning" | "critical" | 
 interface JobItemProps {
   job: JobRecord;
   isActive: boolean;
+  checked: boolean;
+  onToggle: (id: string) => void;
   onClick: (id: string) => void;
+  query: string;
 }
 
-function JobItem({ job, isActive, onClick }: JobItemProps): React.JSX.Element {
-  const riskScore = (() => {
+function Highlight({ text, query }: { text: string; query: string }): React.JSX.Element {
+  const trimmed = query.trim();
+  if (!trimmed) return <>{text}</>;
+  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "ig"));
+  return (
+    <>
+      {parts.map((part, idx) => 
+        part.toLowerCase() === trimmed.toLowerCase() 
+          ? <mark key={idx} className="highlight">{part}</mark> 
+          : <span key={idx}>{part}</span>
+      )}
+    </>
+  );
+}
+
+const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, onClick, query }: JobItemProps): React.JSX.Element {
+  const riskScore = useMemo(() => {
     const baseByStatus: Record<JobStatus, number> = {
-      draft: 55,
-      performed: 35,
-      rejected: 78,
-      approved: 22,
-      certified: 10,
-      cancelled: 5
+      draft: 55, performed: 35, rejected: 78, approved: 22, certified: 10, cancelled: 5
     };
     const noteBoost = /urgent|critical|fault|overdue/i.test(job.last_note ?? "") ? 12 : 0;
     return Math.min(99, baseByStatus[job.status] + noteBoost);
-  })();
-
-  const clientDisplay = job.client_name?.trim() || "Not Assigned";
-  const technicianDisplay = job.technician_name?.trim() || "Pending Assignment";
+  }, [job.status, job.last_note]);
 
   return (
-    <button type="button" className={isActive ? "job-item job-item--active" : "job-item"} onClick={() => onClick(job.job_id)}>
-      <div className="job-item__top">
-        <strong>{job.job_id}</strong>
-        <span className={`status-chip status-chip--${statusTone(job.status)}`}>{JOB_STATUS_LABELS[job.status]}</span>
+    <div className={`job-card-wrapper ${isActive ? 'job-card-wrapper--active' : ''}`}>
+      <div className="job-card-checkbox">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={() => onToggle(job.job_id)}
+          aria-label={`Select ${job.job_id}`}
+        />
       </div>
-      <span className="job-item__title">{job.title}</span>
-      <span className="job-item__meta">
-        Client: {clientDisplay}
-      </span>
-      <span className="job-item__meta">
-        Tech: {technicianDisplay}
-      </span>
-      <span className="job-item__meta">
-        Risk Score {riskScore}
-      </span>
-    </button>
+      <button 
+        type="button" 
+        className="job-card" 
+        onClick={() => onClick(job.job_id)}
+      >
+        <div className="job-card__header">
+          <span className="job-card__id truncate">
+            <Highlight text={job.job_id} query={query} />
+          </span>
+          <span className={`status-chip status-chip--${statusTone(job.status)}`}>
+            {JOB_STATUS_LABELS[job.status]}
+          </span>
+        </div>
+        
+        <div className="job-card__title truncate">
+          <Highlight text={job.title} query={query} />
+        </div>
+
+        <div className="job-card__client truncate">
+          <Highlight text={job.client_name || "Unassigned Client"} query={query} />
+        </div>
+
+        <div className="job-card__meta">
+          <div className="job-card__meta-item truncate">
+            <span className="meta-icon">👤</span>
+            <span><Highlight text={job.technician_name || "Pending Tech"} query={query} /></span>
+          </div>
+          <div className="job-card__meta-item">
+            <div className={`risk-indicator risk-indicator--${riskScore > 70 ? 'high' : riskScore > 30 ? 'med' : 'low'}`}>
+              <div className="risk-bar" style={{ width: `${riskScore}%` }}></div>
+              <span>Risk {riskScore}%</span>
+            </div>
+          </div>
+        </div>
+      </button>
+
+      <style>{`
+        .job-card-wrapper {
+          display: flex;
+          align-items: stretch;
+          gap: 0.5rem;
+          margin-bottom: 0.75rem;
+          position: relative;
+        }
+        .job-card-checkbox {
+          display: flex;
+          align-items: center;
+          padding: 0 0.5rem;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .job-card {
+          flex: 1;
+          min-width: 0;
+          text-align: left;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 1rem;
+          border-radius: 12px;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+        .job-card-wrapper--active .job-card {
+          background: rgba(var(--color-primary-rgb), 0.1);
+          border-color: var(--color-primary);
+          box-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.1);
+        }
+        .job-card:hover {
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.2);
+          transform: translateY(-2px);
+        }
+        .job-card__header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 0.75rem;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+        .job-card__id {
+          font-family: monospace;
+          font-size: 0.75rem;
+          color: var(--color-primary);
+          opacity: 0.8;
+          font-weight: 600;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .job-card__title {
+          font-size: 1rem;
+          font-weight: 700;
+          margin-bottom: 0.25rem;
+          color: #fff;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .job-card__client {
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.5);
+          margin-bottom: 1rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .job-card__meta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+          margin-top: auto;
+        }
+        .job-card__meta-item {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.4);
+          min-width: 0;
+        }
+        .job-card__meta-item span:not(.meta-icon) {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .meta-icon {
+          flex-shrink: 0;
+        }
+        .risk-indicator {
+          width: 100px;
+          height: 18px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 100px;
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .risk-indicator span {
+          position: relative;
+          z-index: 1;
+          font-size: 0.6rem;
+          font-weight: 800;
+          color: #fff;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .risk-bar {
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          opacity: 0.6;
+        }
+        .risk-indicator--high .risk-bar { background: var(--color-critical); }
+        .risk-indicator--med .risk-bar { background: var(--color-warning); }
+        .risk-indicator--low .risk-bar { background: var(--color-active); }
+      `}</style>
+    </div>
   );
-}
+});
 
 type StatusFilter = JobStatus | "all" | "open";
-const DEFAULT_STATUS_FILTER: StatusFilter = "open";
 
-interface JobListViewProps {
+export interface JobListViewProps {
   jobs: JobRecord[];
-  selectedJobid: string;
+  selectedJobid: string | null;
   onSelectJob: (id: string) => void;
   title: string;
+  globalQuery: string;
+  onGlobalQueryChange: (q: string) => void;
+  onBulkStatusUpdate?: (ids: string[], status: JobStatus) => void;
 }
 
-export function JobListView({ jobs, selectedJobid, onSelectJob, title }: JobListViewProps): React.JSX.Element {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(DEFAULT_STATUS_FILTER);
-  const [searchQuery, setSearchQuery] = useState("");
+export function JobListView({
+    jobs,
+    selectedJobid,
+    onSelectJob,
+    title,
+    globalQuery,
+    onGlobalQueryChange,
+    onBulkStatusUpdate
+  }: JobListViewProps): React.JSX.Element {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
+  const [visibleCount, setVisibleCount] = useState(50);
 
   const filtered = useMemo(() => {
     let result = jobs;
-
     if (statusFilter === "open") {
-      result = result.filter((job) => job.status !== "cancelled" && job.status !== "certified");
+      result = result.filter((j: JobRecord) => j.status !== "cancelled" && j.status !== "certified");
     } else if (statusFilter !== "all") {
-      result = result.filter((job) => job.status === statusFilter);
+      result = result.filter((j: JobRecord) => j.status === statusFilter);
     }
-
-    const query = searchQuery.trim().toLowerCase();
-    if (query !== "") {
-      result = result.filter(
-        (job) =>
-          job.job_id.toLowerCase().includes(query) ||
-          job.title.toLowerCase().includes(query) ||
-          job.client_id.toLowerCase().includes(query) ||
-          job.technician_id.toLowerCase().includes(query) ||
-          (job.client_name ?? "").toLowerCase().includes(query) ||
-          (job.technician_name ?? "").toLowerCase().includes(query)
+    const q = globalQuery.toLowerCase();
+    if (q) {
+      result = result.filter((j: JobRecord) => j.job_id.toLowerCase().includes(q) || 
+        j.title.toLowerCase().includes(q) ||
+        (j.client_name ?? "").toLowerCase().includes(q)
       );
     }
-
     return result;
-  }, [jobs, searchQuery, statusFilter]);
-
-  const heatmap = useMemo(() => {
-    const buckets = { high: 0, medium: 0, low: 0 };
-    for (const job of filtered) {
-      const score = /urgent|critical|fault|overdue/i.test(job.last_note ?? "")
-        ? 75
-        : job.status === "rejected"
-          ? 80
-          : job.status === "draft"
-            ? 60
-            : job.status === "performed"
-              ? 40
-              : 15;
-      if (score >= 70) buckets.high += 1;
-      else if (score >= 40) buckets.medium += 1;
-      else buckets.low += 1;
-    }
-    return buckets;
-  }, [filtered]);
+  }, [jobs, globalQuery, statusFilter]);
 
   return (
-    <section className="workspace-card job-list-panel">
-      <div className="panel-heading panel-heading--inline">
-        <div>
-          <p className="panel-eyebrow">Jobs</p>
+    <section className="job-panel glass-panel">
+      <div className="panel-header">
+        <div className="panel-title-block">
+          <span className="eyebrow">OPERATIONAL LEDGER</span>
           <h2>{title}</h2>
         </div>
-        <span className="count-pill" title={`${filtered.length} of ${jobs.length} total`}>
-          {filtered.length}
-          {filtered.length !== jobs.length ? <span className="count-pill__total"> / {jobs.length}</span> : null}
-        </span>
+        <div className="badge-group">
+          <span className="badge badge--primary">{filtered.length} Active</span>
+        </div>
       </div>
 
-      <div className="job-list-filters">
-        <input
-          id="job-list-search"
-          name="job_list_search"
-          className="job-list-filters__search"
-          type="search"
-          placeholder="Search job ID, title, client..."
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          aria-label="Search jobs"
-          autoComplete="off"
-        />
-        <select
-          id="job-list-status-filter"
-          name="job_list_status_filter"
-          className="job-list-filters__select"
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-          aria-label="Filter by status"
-        >
-          <option value="open">Open Jobs</option>
-          <option value="all">All Statuses</option>
-          <optgroup label="Specific Status">
-            {(Object.keys(JOB_STATUS_LABELS) as JobStatus[]).map((status) => (
-              <option key={status} value={status}>
-                {JOB_STATUS_LABELS[status]}
-              </option>
-            ))}
-          </optgroup>
+      <div className="filter-system">
+        <div className="search-wrapper">
+          <input
+            type="search"
+            placeholder="Filter jobs..."
+            value={globalQuery}
+            onChange={(e) => onGlobalQueryChange(e.target.value)}
+          />
+        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
+          <option value="open">Open State</option>
+          <option value="all">All States</option>
+          <option value="performed">Performed</option>
+          <option value="certified">Certified</option>
         </select>
       </div>
 
-      <div className="button-row" style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid var(--color-border)" }}>
-        <span className="status-chip status-chip--critical">High risk {heatmap.high}</span>
-        <span className="status-chip status-chip--warning">Medium {heatmap.medium}</span>
-        <span className="status-chip status-chip--active">Low {heatmap.low}</span>
-      </div>
+      {selectedJobIds.length > 0 && (
+        <div className="bulk-actions animate-in">
+          <span>{selectedJobIds.length} Selected</span>
+          <button onClick={() => onBulkStatusUpdate?.(selectedJobIds, "performed")}>Batch: Performed</button>
+          <button onClick={() => setSelectedJobIds([])} className="btn-ghost">Clear</button>
+        </div>
+      )}
 
-      <div className="job-list">
-        {filtered.length === 0 ? (
-          <p className="muted-copy">
-            {jobs.length === 0
-              ? "No jobs currently available for this role."
-              : "No jobs match the current filter. Adjust the search or status filter above."}
-          </p>
-        ) : (
-          filtered.map((job) => <JobItem key={job.job_id} job={job} isActive={job.job_id === selectedJobid} onClick={onSelectJob} />)
+      <div className="job-scroller">
+        {filtered.slice(0, visibleCount).map((job: JobRecord) => (
+          <JobItem
+            key={job.job_id}
+            job={job}
+            isActive={job.job_id === selectedJobid}
+            checked={selectedJobIds.includes(job.job_id)}
+            onToggle={(id) => setSelectedJobIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+            onClick={onSelectJob}
+            query={globalQuery}
+          />
+        ))}
+        {filtered.length > visibleCount && (
+          <button className="load-more" onClick={() => setVisibleCount(v => v + 50)}>Load More Entries</button>
         )}
       </div>
+
+      <style>{`
+        .job-panel {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          padding: 1.5rem;
+          overflow: hidden;
+        }
+        .panel-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 1.5rem;
+        }
+        .eyebrow {
+          font-size: 0.6rem;
+          font-weight: 900;
+          letter-spacing: 0.2em;
+          color: var(--color-primary);
+          margin-bottom: 0.25rem;
+          display: block;
+        }
+        .filter-system {
+          display: grid;
+          grid-template-columns: 1fr 180px;
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+        }
+        @media (max-width: 640px) {
+          .filter-system { grid-template-columns: 1fr; }
+        }
+        .search-wrapper input {
+          width: 100%;
+          background: rgba(0,0,0,0.2);
+          border: 1px solid rgba(255,255,255,0.1);
+          padding: 0.6rem 1rem;
+          border-radius: 8px;
+          color: #fff;
+        }
+        .job-scroller {
+          flex: 1;
+          overflow-y: auto;
+          padding-right: 0.5rem;
+        }
+        .bulk-actions {
+          background: var(--color-primary);
+          padding: 0.75rem 1rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          font-size: 0.8rem;
+          font-weight: 700;
+        }
+        .load-more {
+          width: 100%;
+          padding: 1rem;
+          background: transparent;
+          border: 1px dashed rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.4);
+          border-radius: 8px;
+          margin-top: 1rem;
+          cursor: pointer;
+        }
+        .load-more:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+      `}</style>
     </section>
   );
 }
-
-

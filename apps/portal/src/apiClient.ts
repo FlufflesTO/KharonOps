@@ -171,6 +171,34 @@ export interface UpgradeWorkspaceState {
   skills: SkillMatrixRecord[];
 }
 
+export interface SyncPullPayload {
+  jobs: Array<Record<string, unknown>>;
+  queue: Array<Record<string, unknown>>;
+  events: Array<Record<string, unknown>>;
+}
+
+export interface SchemaDriftIssue {
+  code: string;
+  severity: "warning" | "critical";
+  detail: string;
+}
+
+export interface SchemaDriftPayload {
+  generated_at: string;
+  healthy: boolean;
+  issue_count: number;
+  issues: SchemaDriftIssue[];
+}
+
+export interface OpsIntelligencePayload {
+  generated_at: string;
+  jobs: { open: number; critical: number; stale_over_24h: number };
+  operations: { schedules_total: number; documents_pending_publish: number; escrow_locked: number };
+  finance: { outstanding_amount: number };
+  sync: { queue_conflicts: number };
+  schema_drift: { healthy: boolean; issue_count: number };
+}
+
 export const apiClient = {
   async login(idToken: string, options?: { gsiClientId?: string }): Promise<PortalSession> {
     const result = await request<PortalSession>("/api/v1/auth/google-login", {
@@ -455,6 +483,24 @@ export const apiClient = {
       method: "POST",
       body: JSON.stringify({ mutations })
     });
+  },
+  async syncPull(since: string): Promise<SyncPullPayload> {
+    const result = await request<SyncPullPayload>(`/api/v1/sync/pull?since=${encodeURIComponent(since)}`, {
+      method: "GET"
+    });
+    return requireData(result, "Sync pull succeeded but no payload was returned.");
+  },
+  async schemaDrift(): Promise<SchemaDriftPayload> {
+    const result = await request<SchemaDriftPayload>("/api/v1/workspace/schema-drift", {
+      method: "GET"
+    });
+    return requireData(result, "Schema drift request succeeded but no payload was returned.");
+  },
+  async opsIntelligence(): Promise<OpsIntelligencePayload> {
+    const result = await request<OpsIntelligencePayload>("/api/v1/workspace/ops-intelligence", {
+      method: "GET"
+    });
+    return requireData(result, "Operational intelligence request succeeded but no payload was returned.");
   }
 };
 

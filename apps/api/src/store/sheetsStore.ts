@@ -407,6 +407,23 @@ function parseSyncQueue(row: Row): SyncQueueRow {
   };
 }
 
+function parseJobEvent(row: Row): JobEventRow {
+  const updated_at = field(row, "updated_at");
+  const updated_by = field(row, "updated_by");
+  return {
+    event_id: field(row, "event_id"),
+    job_id: field(row, "job_id"),
+    event_type: field(row, "event_type"),
+    payload_json: field(row, "payload_json"),
+    row_version: toNum(field(row, "row_version")),
+    updated_at: updated_at,
+    updated_by: updated_by,
+    correlation_id: field(row, "correlation_id"),
+    created_at: String(row.created_at ?? updated_at ?? ""),
+    created_by: String(row.created_by ?? updated_by ?? "")
+  };
+}
+
 function parseFinanceQuote(row: Row): FinanceQuoteRow {
   return {
     quote_id: field(row, "quote_id"),
@@ -857,16 +874,16 @@ export class SheetsWorkbookStore implements WorkbookStore {
     };
 
     await this.rails.sheets.upsertRow("Jobs_Master", "job_id", serializeJobRow(updated, currentRaw));
-    await this.appendJobEvent({
-      event_id: `EVT-${crypto.randomUUID()}`,
-      job_id: updated.job_id,
-      event_type: "status_changed",
-      payload_json: JSON.stringify({ from: current.status, to: updated.status }),
-      row_version: 1,
-      updated_at: nowIso(),
-      updated_by: args.ctx.actorUserid,
-      correlation_id: args.ctx.correlationId
-    });
+    const statusEventMeta = { updated_at: nowIso(), updated_by: args.ctx.actorUserid, correlation_id: args.ctx.correlationId, row_version: 1 };
+      await this.appendJobEvent({
+        event_id: `EVT-${crypto.randomUUID()}`,
+        job_id: updated.job_id,
+        event_type: "status_changed",
+        payload_json: JSON.stringify({ from: current.status, to: updated.status }),
+        ...statusEventMeta,
+        created_at: statusEventMeta.updated_at,
+        created_by: statusEventMeta.updated_by
+      });
 
     return { job: updated, conflict: null };
   }
@@ -894,16 +911,16 @@ export class SheetsWorkbookStore implements WorkbookStore {
     };
 
     await this.rails.sheets.upsertRow("Jobs_Master", "job_id", serializeJobRow(updated, currentRaw));
-    await this.appendJobEvent({
-      event_id: `EVT-${crypto.randomUUID()}`,
-      job_id: updated.job_id,
-      event_type: "note_added",
-      payload_json: JSON.stringify({ note: args.note }),
-      row_version: 1,
-      updated_at: nowIso(),
-      updated_by: args.ctx.actorUserid,
-      correlation_id: args.ctx.correlationId
-    });
+    const noteEventMeta = { updated_at: nowIso(), updated_by: args.ctx.actorUserid, correlation_id: args.ctx.correlationId, row_version: 1 };
+      await this.appendJobEvent({
+        event_id: `EVT-${crypto.randomUUID()}`,
+        job_id: updated.job_id,
+        event_type: "note_added",
+        payload_json: JSON.stringify({ note: args.note }),
+        ...noteEventMeta,
+        created_at: noteEventMeta.updated_at,
+        created_by: noteEventMeta.updated_by
+      });
 
     return { job: updated, conflict: null };
   }
@@ -1190,7 +1207,10 @@ export class SheetsWorkbookStore implements WorkbookStore {
     return { job: updated, conflict: null };
   }
 
-  async pullSyncData(args: { actor: SessionUser; since: string }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[] }> {
+  async pullSyncData(args: {
+    actor: SessionUser;
+    since: string;
+  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
     const sinceTs = Date.parse(args.since);
     const jobs = (await this.listJobsForUser(args.actor)).filter((job) =>
       Number.isNaN(sinceTs) ? true : Date.parse(job.updated_at) >= sinceTs
@@ -1200,6 +1220,10 @@ export class SheetsWorkbookStore implements WorkbookStore {
       .map(parseSyncQueue)
       .filter((entry) => jobs.some((job) => job.job_id === entry.job_id));
 
-    return { jobs, queue };
+    const events = (await this.rows("Job_Events"))
+      .map(parseJobEvent)
+      .filter((entry) => jobs.some((job) => job.job_id === entry.job_id));
+
+    return { jobs, queue, events };
   }
 }

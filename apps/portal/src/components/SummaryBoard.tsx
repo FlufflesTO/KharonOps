@@ -25,6 +25,7 @@ interface SummaryBoardProps {
   generatedDocumentCount: number;
   adminAuditCount: number;
   networkOnline: boolean;
+  syncPulseText: string;
 }
 
 export function SummaryBoard({
@@ -34,40 +35,41 @@ export function SummaryBoard({
   queueCount,
   generatedDocumentCount,
   adminAuditCount,
-  networkOnline
+  networkOnline,
+  syncPulseText
 }: SummaryBoardProps): React.JSX.Element {
   const cards = React.useMemo(() => {
     switch (role) {
       case "client":
         return [
-          { label: "Visible jobs", value: openJobCount, detail: "Service records in scope" },
-          { label: "Current status", value: selectedJobStatus, detail: "Live posture" },
-          { label: "Reports", value: generatedDocumentCount, detail: "Published documents" },
-          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: "Session availability" }
+          { label: "Active jobs", value: openJobCount, detail: "Current service work" },
+          { label: "Selected job", value: selectedJobStatus, detail: "Latest status" },
+          { label: "Files", value: generatedDocumentCount, detail: "Published reports" },
+          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: syncPulseText }
         ];
       case "admin":
         return [
-          { label: "Open jobs", value: openJobCount, detail: "Active records" },
-          { label: "Queued mutations", value: queueCount, detail: "Offline changes pending" },
-          { label: "Documents in scope", value: generatedDocumentCount, detail: "Loaded history" },
-          { label: "Loaded audits", value: adminAuditCount, detail: "Audit trail fetched" }
+          { label: "Open jobs", value: openJobCount, detail: "Work in progress" },
+          { label: "Queued changes", value: queueCount, detail: "Waiting to sync" },
+          { label: "Files loaded", value: generatedDocumentCount, detail: "Current history" },
+          { label: "Audit entries", value: adminAuditCount, detail: syncPulseText }
         ];
       case "finance":
         return [
-          { label: "Billable jobs", value: openJobCount, detail: "Active financial scope" },
-          { label: "Selected status", value: selectedJobStatus, detail: "Current workflow stage" },
-          { label: "Documents in scope", value: generatedDocumentCount, detail: "Generated/published evidence" },
-          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: "Session availability" }
+          { label: "Billable jobs", value: openJobCount, detail: "Open finance items" },
+          { label: "Selected job", value: selectedJobStatus, detail: "Current stage" },
+          { label: "Files in scope", value: generatedDocumentCount, detail: "Generated and published" },
+          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: syncPulseText }
         ];
       default:
         return [
-          { label: "Open jobs", value: openJobCount, detail: "Active records" },
-          { label: "Selected status", value: selectedJobStatus, detail: "Current state" },
-          { label: "Queued mutations", value: queueCount, detail: "Offline changes pending" },
-          { label: "Documents in scope", value: generatedDocumentCount, detail: "Loaded history" }
+          { label: "Open jobs", value: openJobCount, detail: "Work in progress" },
+          { label: "Selected job", value: selectedJobStatus, detail: "Current status" },
+          { label: "Queued changes", value: queueCount, detail: "Waiting to sync" },
+          { label: "Files in scope", value: generatedDocumentCount, detail: syncPulseText }
         ];
     }
-  }, [role, openJobCount, selectedJobStatus, queueCount, generatedDocumentCount, adminAuditCount, networkOnline]);
+  }, [role, openJobCount, selectedJobStatus, queueCount, generatedDocumentCount, adminAuditCount, networkOnline, syncPulseText]);
 
   return (
     <section className="summary-grid">

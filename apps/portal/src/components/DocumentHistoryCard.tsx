@@ -26,15 +26,15 @@ export function DocumentHistoryCard({
     <article className="workspace-card">
       <div className="panel-heading panel-heading--inline">
         <div>
-          <p className="panel-eyebrow">Documents</p>
-          <h2>Document history</h2>
+          <p className="panel-eyebrow">Files</p>
+          <h2>File History</h2>
         </div>
         <button className="button button--ghost" type="button" onClick={onRefresh}>
           Refresh
         </button>
       </div>
       <p className="muted-copy">
-        {selectedJobid ? `Current context: ${selectedJobid}` : "No job is currently selected."}
+        {selectedJobid ? `Current job: ${selectedJobid}` : "No job selected yet."}
       </p>
       <div className="history-table">
         {(documents ?? []).length === 0 ? (
@@ -69,7 +69,7 @@ export function DocumentHistoryCard({
                         onClick={() => onPublish(docid, rowVersion, true)}
                         title="Publish and make visible to client"
                       >
-                        Publish (Client)
+                        Publish to Client
                       </button>
                     </div>
                   )}

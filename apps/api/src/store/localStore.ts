@@ -197,12 +197,15 @@ function toConflict(job: JobRow, expectedRowVersion: number): ConflictPayload {
 }
 
 function stampEvent(args: { jobid: string; eventType: string; payload: Record<string, unknown>; ctx: { actorUserid: string; correlationId: string } }): JobEventRow {
+  const meta = newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId);
   return {
     event_id: `EVT-${crypto.randomUUID()}`,
     job_id: args.jobid,
     event_type: args.eventType,
     payload_json: JSON.stringify(args.payload),
-    ...newMutableMeta(args.ctx.actorUserid, args.ctx.correlationId)
+    ...meta,
+    created_at: meta.updated_at,
+    created_by: meta.updated_by
   };
 }
 
@@ -698,7 +701,10 @@ export class LocalWorkbookStore implements WorkbookStore {
     };
   }
 
-  async pullSyncData(args: { actor: SessionUser; since: string }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[] }> {
+  async pullSyncData(args: {
+    actor: SessionUser;
+    since: string;
+  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
     const sinceTs = Date.parse(args.since);
     const jobs = [...this.data.jobs.values()]
       .filter((job) => canReadJob(args.actor, job))
@@ -709,6 +715,10 @@ export class LocalWorkbookStore implements WorkbookStore {
       .filter((entry) => jobs.some((job) => job.job_id === entry.job_id))
       .map((entry) => immutableClone(entry));
 
-    return { jobs, queue };
+    const events = [...this.data.jobEvents.values()]
+      .filter((entry) => jobs.some((job) => job.job_id === entry.job_id))
+      .map((entry) => immutableClone(entry));
+
+    return { jobs, queue, events };
   }
 }

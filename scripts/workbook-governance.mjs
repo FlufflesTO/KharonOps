@@ -260,7 +260,7 @@ async function main() {
 
   const jobTechIdChanges = [];
   const primaryTechIdCol = jobsSheet.headerMap.get("primary_technician_id");
-  const primaryTechNameCol = jobsSheet.headerMap.get("primary_technician_name");
+
   for (const row of jobsSheet.rows) {
     const current = normalizeText(row.data.primary_technician_id || row.data.technician_id);
     if (current !== "") continue;

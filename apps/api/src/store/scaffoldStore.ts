@@ -243,7 +243,7 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     return this.notImplemented("resolveSyncConflict");
   }
 
-  async pullSyncData(_args: { actor: SessionUser; since: string }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[] }> {
+  async pullSyncData(_args: { actor: SessionUser; since: string }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
     return this.notImplemented("pullSyncData");
   }
 }
