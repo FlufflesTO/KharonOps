@@ -346,6 +346,8 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
 
+    console.error(`[API Error] ${correlationId}:`, error);
+
     return c.json(
       envelopeError({
         correlationId,
