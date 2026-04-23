@@ -36,67 +36,67 @@ export function WorkspaceInfo({
     switch (role) {
       case "client":
         return {
-          title: "Client service visibility",
-          body: "A cleaner client workspace focused on live service visibility, scheduling preference capture, and published reports with supporting evidence.",
-          supportTitle: "Client guidance",
-          supportIntro: "This surface should feel calm and readable. It is for visibility, approvals, and records rather than internal operational detail.",
+          title: "Client workspace",
+          body: "See active work, approve what needs approval, and review published records without internal operations noise.",
+          supportTitle: "What this view is for",
+          supportIntro: "This space is for visibility and follow-up, not internal dispatch detail.",
           supportItems: [
-            "Track planned maintenance or callout status and the latest service note without calling dispatch.",
-            "Submit preferred windows directly from the active site service record.",
-            "Review published jobcards, service reports, and compliance-facing evidence once closeout is complete."
+            "Track planned work and the latest status from one place.",
+            "Send preferred windows from the active service record.",
+            "Review published jobcards, reports, and evidence after closeout."
           ],
           selectedJobTitle: "Service record",
           documentsTitle: "Reports and evidence",
-          jobsTitle: "Visible site activity"
+          jobsTitle: "Open work"
         };
       case "technician":
         return {
-          title: "Field execution workspace",
-          body: "A technician view should emphasise job state, note capture, readings, and controlled closeout generation from site with minimal distraction.",
+          title: "Technician workspace",
+          body: "Focus on the current job, capture notes and readings, and finish the work cleanly.",
           supportTitle: "Field checklist",
-          supportIntro: "The technician surface is for execution. Keep status, notes, readings, and closeout controls close to the active work order.",
+          supportIntro: "Keep status, notes, and closeout controls close to the current work order.",
           supportItems: [
-            "Advance status as work moves from assigned to on-site, paused, or complete.",
-            "Capture site notes and service readings against the active work order as events happen.",
-            "Generate the current jobcard or service report before the visit closes."
+            "Move the job forward as the visit progresses.",
+            "Capture notes and readings against the active work order.",
+            "Generate the jobcard or report before you close out."
           ],
           selectedJobTitle: "Active work order",
           documentsTitle: "Document history",
-          jobsTitle: "Assigned and available work"
+          jobsTitle: "Assigned work"
         };
       case "dispatcher":
         return {
-          title: "Dispatch coordination deck",
-          body: "A dispatcher workspace should foreground maintenance cadence, callouts, scheduling control, communication rails, and the current operational posture.",
-          supportTitle: "Dispatch posture",
-          supportIntro: "This view is for orchestration rather than field detail. Confirm timing, move resources, and keep client updates aligned with the job record.",
+          title: "Dispatch workspace",
+          body: "Plan visits, assign people, and keep communication tied to the job record.",
+          supportTitle: "Dispatch checklist",
+          supportIntro: "Use this view to confirm timing, move resources, and keep updates aligned.",
           supportItems: [
-            "Confirm maintenance and callout requests with technician assignment and exact windows.",
-            "Reschedule work with row-version discipline instead of side-channel changes.",
-            "Send controlled Gmail and chat updates linked to the selected service record."
+            "Confirm requests with the right technician and time window.",
+            "Reschedule work from the record instead of side-channel changes.",
+            "Send updates linked to the selected service record."
           ],
           selectedJobTitle: "Operational job context",
           documentsTitle: "Document history",
-          jobsTitle: "Assigned and available work"
+          jobsTitle: "Assigned work"
         };
       case "admin":
         return {
-          title: "Administrative control surface",
-          body: "An admin workspace should read like an executive operations console: platform posture, audit access, controlled documents, and privileged recovery actions.",
-          supportTitle: "Governance posture",
-          supportIntro: "Administrative users need oversight, not noise. Surface audit readiness, platform state, document control, and privileged actions clearly.",
+          title: "Admin workspace",
+          body: "See platform state, manage settings, and review audit and recovery actions in one place.",
+          supportTitle: "Admin checklist",
+          supportIntro: "Keep oversight, audit access, and recovery actions visible without extra noise.",
           supportItems: [
-            "Inspect health and audit surfaces from the same operational context as service delivery.",
-            "Review dispatch rails and controlled outputs while retaining administrative oversight.",
-            "Keep privileged retries and platform recovery separate from day-to-day execution."
+            "Check health and audit surfaces from the same workspace.",
+            "Review dispatch and output controls from one place.",
+            "Keep recovery actions separate from daily work."
           ],
           selectedJobTitle: "Operational job context",
           documentsTitle: "Document history",
-          jobsTitle: "Assigned and available work"
+          jobsTitle: "Assigned work"
         };
       default:
         return {
-          title: "Operations workspace",
+          title: "Workspace",
           body: "",
           supportTitle: "Workspace guidance",
           supportIntro: "",
@@ -113,57 +113,57 @@ export function WorkspaceInfo({
       case "client":
         return [
           {
-            label: "Current visibility",
-            detail: selectedJob ? `${selectedJob.job_id} is ${selectedJob.status}` : "Select a service record to view live status."
+            label: "Current work",
+            detail: selectedJob ? `${selectedJob.job_id} is ${selectedJob.status}` : "Select a record to view live status."
           },
           {
-            label: "Scheduling path",
-            detail: networkOnline ? "Preferred service windows can be submitted now." : "Offline now; scheduling actions resume when connectivity returns."
+            label: "Scheduling",
+            detail: networkOnline ? "Preferred windows can be submitted now." : "Offline now; scheduling resumes when connectivity returns."
           },
           {
             label: "Published outputs",
-            detail: generatedDocumentCount > 0 ? `${generatedDocumentCount} report or evidence rows loaded in scope.` : "Published outputs will appear once service closeout is complete."
+            detail: generatedDocumentCount > 0 ? `${generatedDocumentCount} report or evidence rows loaded.` : "Published outputs appear after closeout."
           }
         ];
       case "technician":
         return [
           {
             label: "Field state",
-            detail: selectedJob ? `Use ${selectedJob.job_id} as the active work order.` : "Select a work order before posting field updates."
+            detail: selectedJob ? `Use ${selectedJob.job_id} as the active work order.` : "Select a work order before posting updates."
           },
           {
-            label: "Queue posture",
-            detail: queueCount > 0 ? `${queueCount} offline-safe mutations are waiting for replay.` : "No queued field mutations are waiting for replay."
+            label: "Queue",
+            detail: queueCount > 0 ? `${queueCount} offline-safe changes are waiting.` : "No queued changes are waiting."
           },
           {
-            label: "Closeout readiness",
-            detail: generatedDocumentCount > 0 ? `${generatedDocumentCount} controlled outputs are visible in history.` : "Generate the current jobcard or service report when the visit is ready to close."
+            label: "Closeout",
+            detail: generatedDocumentCount > 0 ? `${generatedDocumentCount} outputs are visible in history.` : "Generate the current jobcard or report when the visit is ready."
           }
         ];
       case "dispatcher":
         return [
           {
             label: "Control window",
-            detail: selectedJob ? `Dispatch is centred on ${selectedJob.job_id}.` : "Select a job to expose schedule and outbound controls."
+            detail: selectedJob ? `Dispatch is centred on ${selectedJob.job_id}.` : "Select a job to show schedule and outbound controls."
           },
           {
-            label: "Queue posture",
-            detail: queueCount > 0 ? `${queueCount} operational mutations remain queued.` : "No queued mutations are waiting for replay."
+            label: "Queue",
+            detail: queueCount > 0 ? `${queueCount} changes remain queued.` : "No queued changes are waiting."
           },
           {
-            label: "Outbound readiness",
-            detail: networkOnline ? "Gmail and chat rails are available from this session." : "Connectivity is offline; outbound service communications should be treated as delayed."
+            label: "Outbound",
+            detail: networkOnline ? "Messaging rails are available from this session." : "Connectivity is offline; outbound messages may be delayed."
           }
         ];
       case "admin":
         return [
           {
             label: "Control window",
-            detail: selectedJob ? `Administrative context is anchored on ${selectedJob.job_id}.` : "Select a job to align governance and operational review."
+            detail: selectedJob ? `Administrative context is anchored on ${selectedJob.job_id}.` : "Select a job to align review and governance."
           },
           {
             label: "Audit surface",
-            detail: generatedDocumentCount > 0 ? `${generatedDocumentCount} document records are currently loaded.` : "Load document history to verify closeout posture."
+            detail: generatedDocumentCount > 0 ? `${generatedDocumentCount} document records are loaded.` : "Load document history to verify closeout."
           },
           {
             label: "Platform posture",

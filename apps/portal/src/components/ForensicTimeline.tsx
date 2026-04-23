@@ -1,7 +1,6 @@
 /**
- * Project KharonOps - Forensic Timeline (Enhanced with Live Sync)
- * Purpose: High-fidelity visual state log for operational traceability.
- * Design: Chrono-Audit System (Glassmorphism + Digital Typography)
+ * Project KharonOps - Forensic Timeline
+ * Purpose: Compact event history for the selected job.
  */
 
 import React from 'react';
@@ -34,9 +33,9 @@ export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({ events, jobI
 
   if (jobEvents.length === 0) {
     return (
-      <div className="forensic-empty glass-panel">
+    <div className="forensic-empty glass-panel">
         <div className="empty-pulse"></div>
-        <p>Awaiting operational activity log...</p>
+        <p>No activity yet for this job.</p>
       </div>
     );
   }
@@ -50,7 +49,7 @@ export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({ events, jobI
         </div>
         <div className="flex items-center gap-4">
            <PresenceIndicator userId="system-monitor" className="opacity-80" />
-           <span className="event-count">{jobEvents.length} Ledger Entries</span>
+          <span className="event-count">{jobEvents.length} events</span>
         </div>
       </div>
 
@@ -234,14 +233,14 @@ const TimelineItem: React.FC<{ event: JobEventRow; isLatest: boolean }> = ({ eve
       case 'status_changed':
         return (
           <span>
-            Operational state transitioned from <span className="payload-highlight">{payload.from}</span> to <span className="payload-highlight">{payload.to}</span>
+            Status changed from <span className="payload-highlight">{payload.from}</span> to <span className="payload-highlight">{payload.to}</span>
           </span>
         );
       case 'NOTE_ADDED':
       case 'note_added':
         return (
           <div>
-            Analyst commentary appended:
+            Note added:
             <div className="note-bubble">"{payload.note}"</div>
           </div>
         );
@@ -249,13 +248,13 @@ const TimelineItem: React.FC<{ event: JobEventRow; isLatest: boolean }> = ({ eve
       case 'documents.publish':
         return (
           <span>
-            Compliance artifact <span className="payload-highlight">{payload.document_type || 'PDF'}</span> committed to client vault.
+            Document <span className="payload-highlight">{payload.document_type || 'PDF'}</span> published.
           </span>
         );
       case 'SCHEDULE_CONFIRMED':
         return (
           <span>
-            Service window fixed: <span className="payload-highlight">{new Date(payload.start_at).toLocaleDateString()}</span>
+            Service window confirmed: <span className="payload-highlight">{new Date(payload.start_at).toLocaleDateString()}</span>
           </span>
         );
       default:

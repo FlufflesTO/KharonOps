@@ -54,6 +54,7 @@ import { TechHelpCard } from "./components/TechHelpCard";
 import { ClientOverviewCard } from "./components/ClientOverviewCard";
 import { ClientInvoicesCard } from "./components/ClientInvoicesCard";
 import { ClientSupportCard } from "./components/ClientSupportCard";
+import { PortalChrome } from "./components/PortalChrome";
 import {
  renderComplianceDocument } from "./appShell/renderComplianceDocument";
 import {
@@ -70,12 +71,11 @@ import {
   normalizeScheduleRequest,
   normalizeUser,
   nowPlusHours,
-  ROLE_LABELS,
-  ROLE_PRIMARY_TOOLS,
   toIsoOrNull,
   toLocalInputValue,
   WORKSPACE_TOOL_META
 } from "./appShell/helpers";
+import { getWorkspaceToolGroups } from "./appShell/navigation";
 import { useActionRunner } from "./appShell/useActionRunner";
 import { useLiveSyncController } from "./appShell/useLiveSyncController";
 import { useWorkspacePersistence } from "./appShell/useWorkspacePersistence";
@@ -129,8 +129,6 @@ export function PortalApp(): React.JSX.Element {
   const [upgradeState, setUpgradeState] = useState<UpgradeWorkspaceState>(EMPTY_UPGRADE_STATE);
   const [focusMode, setFocusMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [showMoreNav, setShowMoreNav] = useState(false);
   const [defaultWorkspaceTool, setDefaultWorkspaceTool] = useState("jobs");
   const [pinnedTools, setPinnedTools] = useState<string[]>([]);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
@@ -188,14 +186,10 @@ export function PortalApp(): React.JSX.Element {
     return tools;
   }, [canAccessPeopleDirectory, isAdmin, isDispatchRole, isFinanceRole, isSuperAdmin]);
   const showOperationalEngagements = activeWorkspaceTool === "jobs";
-  const primaryRoleTools = ROLE_PRIMARY_TOOLS[effectiveRole ?? "client"] ?? ["jobs", "documents"];
-  const primaryNavTools = allowedWorkspaceTools.filter((tool) => primaryRoleTools.includes(tool));
-  const orderedPrimaryNavTools = [...primaryNavTools].sort((a, b) => {
-    const aPinned = pinnedTools.includes(a) ? 0 : 1;
-    const bPinned = pinnedTools.includes(b) ? 0 : 1;
-    return aPinned - bPinned;
-  });
-  const moreNavTools = allowedWorkspaceTools.filter((tool) => !primaryRoleTools.includes(tool));
+  const { primaryTools, moreTools } = useMemo(
+    () => getWorkspaceToolGroups(effectiveRole ?? "client", allowedWorkspaceTools),
+    [effectiveRole, allowedWorkspaceTools]
+  );
   const activeToolMeta = WORKSPACE_TOOL_META[activeWorkspaceTool] ?? {
     label: "Workspace",
     helper: "Use the sidebar to move between sections"
@@ -370,10 +364,6 @@ export function PortalApp(): React.JSX.Element {
         (document.getElementById("job-search-input") ?? document.getElementById("workspace-global-search"))?.focus();
       }
 
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setCommandPaletteOpen(true);
-      }
       if (event.key.toLowerCase() === "j") {
         setActiveWorkspaceTool("jobs");
       }
@@ -382,9 +372,6 @@ export function PortalApp(): React.JSX.Element {
       }
       if (event.key.toLowerCase() === "f") {
         setFocusMode((prev) => !prev);
-      }
-      if (event.key === "Escape") {
-        setCommandPaletteOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -1173,165 +1160,30 @@ export function PortalApp(): React.JSX.Element {
 
   return (
     <div className={`portal-shell portal-shell--${effectiveRole}`}>
-      <header className="portal-topbar">
-        <div className="portal-topbar__brand">
-          <div className="portal-mark">
-            <svg viewBox="0 0 100 100" width="32" height="32" aria-hidden="true">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8" />
-              <circle cx="50" cy="50" r="12" fill="currentColor" />
-            </svg>
-          </div>
-          <div className="user-avatar" title={session.session.display_name}>
-            {session.session.display_name.split(' ').map(n => n[0]).join('').toUpperCase()}
-          </div>
-          <div>
-            <div className="portal-title">KHARON OPS</div>
-            <div className="portal-subtitle">
-              {ROLE_LABELS[effectiveRole ?? ""] ?? String(effectiveRole ?? "").toUpperCase()}
-              {emulatedRole && <span className="emulation-tag"> [EMULATING: {emulatedRole.toUpperCase()}]</span>}
-            </div>
-          </div>
-        </div>
-
-        <div className="portal-topbar__actions">
-          <label className="toggle-inline">
-            <input
-              id="portal-offline-queue-toggle"
-              name="portal_offline_queue_toggle"
-              type="checkbox"
-              checked={offlineEnabled}
-              onChange={(event) => setOfflineEnabled(event.target.checked)}
-            />
-            Offline queue mode
-          </label>
-          <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`}>{networkOnline ? "Online" : "Offline"}</span>
-          <span className="status-chip status-chip--neutral" title="Real-time sync pulse">
-            {syncPulse.at ? `Sync ${new Date(syncPulse.at).toLocaleTimeString()}` : "Sync idle"}
-          </span>
-          <button
-            className={`button ${focusMode ? "button--primary" : "button--ghost"}`}
-            type="button"
-            onClick={() => setFocusMode((prev) => !prev)}
-            title="Toggle Focus Mode (F)"
-          >
-            {focusMode ? "Exit Focus" : "Focus"}
-          </button>
-          {installPromptEvent ? (
-            <button className="button button--secondary" type="button" onClick={() => runAction(handleInstallPrompt)}>
-              Install App
-            </button>
-          ) : null}
-          <button className="button button--secondary" type="button" onClick={() => runAction(handleReplay)}>
-            Sync queued changes ({queueCount})
-          </button>
-          <button className="button button--secondary" type="button" onClick={() => setCommandPaletteOpen(true)} aria-label="Open command palette">
-            Command
-          </button>
-          <button className="button button--secondary" type="button" onClick={() => setPortalView("dashboard")}>
-            Dashboard
-          </button>
-          <button className="button button--ghost" type="button" onClick={() => runAction(handleLogout)}>
-            Logout
-          </button>
-        </div>
-      </header>
-
-      <div className={`portal-layout ${showOperationalEngagements ? "portal-layout--with-joblist" : "portal-layout--no-joblist"} ${focusMode ? "portal-layout--focus" : ""}`}>
-        <aside className="portal-nav">
-          <div className="portal-nav__header">
-            <p className="portal-nav__label">Workspace</p>
-            <h3>{activeToolMeta.label}</h3>
-          </div>
-          <label className="field-stack">
-            <span>Default landing section</span>
-            <select
-              aria-label="Default landing section"
-              value={defaultWorkspaceTool}
-              onChange={(event) => setDefaultWorkspaceTool(event.target.value)}
-            >
-              {allowedWorkspaceTools.map((tool) => (
-                <option key={tool} value={tool}>
-                  {tool === "jobs" && effectiveRole === "client"
-                    ? "Approvals"
-                    : (WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <nav className="portal-nav__list" aria-label="Portal sections">
-            <button
-              type="button"
-              className="portal-nav__item"
-              onClick={() => setPortalView("dashboard")}
-            >
-              Overview
-            </button>
-            {orderedPrimaryNavTools.map((tool) => {
-              const item = WORKSPACE_TOOL_META[tool] ?? { label: tool, helper: "" };
-              const displayLabel = tool === "jobs" && effectiveRole === "client" ? "Approvals" : item.label;
-              const active = tool === activeWorkspaceTool;
-              return (
-                <button
-                  key={tool}
-                  type="button"
-                  className={`portal-nav__item ${active ? "portal-nav__item--active" : ""}`}
-                  onClick={() => setActiveWorkspaceTool(tool)}
-                >
-                  <span>{displayLabel}</span>
-                  <small>{item.helper}</small>
-                </button>
-              );
-            })}
-            {moreNavTools.length > 0 ? (
-              <>
-                <button type="button" className="portal-nav__item" onClick={() => setShowMoreNav((value) => !value)}>
-                  <span>{showMoreNav ? "Hide More" : "More Tools"}</span>
-                  <small>{moreNavTools.length} additional section(s)</small>
-                </button>
-                {showMoreNav
-                  ? moreNavTools.map((tool) => {
-                    const item = WORKSPACE_TOOL_META[tool] ?? { label: tool, helper: "" };
-                    const displayLabel = tool === "jobs" && effectiveRole === "client" ? "Approvals" : item.label;
-                    const active = tool === activeWorkspaceTool;
-                    return (
-                      <button
-                        key={tool}
-                        type="button"
-                        className={`portal-nav__item ${active ? "portal-nav__item--active" : ""}`}
-                        onClick={() => setActiveWorkspaceTool(tool)}
-                      >
-                        <span>{displayLabel}</span>
-                        <small>{item.helper}</small>
-                      </button>
-                    );
-                  })
-                  : null}
-              </>
-            ) : null}
-          </nav>
-          <div className="portal-nav__pinboard">
-            <p className="portal-nav__label">Pinned tools</p>
-            <div className="button-row">
-              {allowedWorkspaceTools.map((tool) => {
-                const pinned = pinnedTools.includes(tool);
-                return (
-                  <button
-                    key={tool}
-                    type="button"
-                    className={`button ${pinned ? "button--primary" : "button--ghost"}`}
-                    onClick={() =>
-                      setPinnedTools((prev) => (prev.includes(tool) ? prev.filter((id) => id !== tool) : [...prev, tool]))
-                    }
-                  >
-                    {tool === "jobs" && effectiveRole === "client"
-                      ? "Approvals"
-                      : (WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </aside>
+      <PortalChrome
+        session={session}
+        effectiveRole={effectiveRole ?? ""}
+        emulatedRole={emulatedRole}
+        offlineEnabled={offlineEnabled}
+        onOfflineEnabledChange={setOfflineEnabled}
+        networkOnline={networkOnline}
+        syncPulseText={syncPulse.at ? `Sync ${new Date(syncPulse.at).toLocaleTimeString()}` : "Sync idle"}
+        focusMode={focusMode}
+        onFocusModeChange={setFocusMode}
+        installPromptAvailable={Boolean(installPromptEvent)}
+        onInstallApp={() => runAction(handleInstallPrompt)}
+        queueCount={queueCount}
+        onReplayQueue={() => runAction(handleReplay)}
+        onLogout={() => runAction(handleLogout)}
+        onGoHome={() => setPortalView("dashboard")}
+        allowedWorkspaceTools={allowedWorkspaceTools}
+        defaultWorkspaceTool={defaultWorkspaceTool}
+        onDefaultWorkspaceToolChange={setDefaultWorkspaceTool}
+        activeWorkspaceTool={activeWorkspaceTool}
+        onActiveWorkspaceToolChange={setActiveWorkspaceTool}
+        primaryTools={primaryTools}
+        moreTools={moreTools}
+      >
 
         {showOperationalEngagements ? (
           <aside className="portal-sidebar portal-sidebar--jobs">
@@ -1361,9 +1213,6 @@ export function PortalApp(): React.JSX.Element {
                 placeholder="Search jobs, clients, sites, IDs..."
                 aria-label="Search across workspace data"
               />
-              <button className="button button--secondary" type="button" onClick={() => setCommandPaletteOpen(true)}>
-                Quick actions
-              </button>
             </div>
           </section>
 
@@ -1784,55 +1633,7 @@ export function PortalApp(): React.JSX.Element {
 
           </section>
         </main>
-      </div>
-
-      {commandPaletteOpen ? (
-        <div className="command-palette-backdrop" onClick={() => setCommandPaletteOpen(false)}>
-          <section className="command-palette" onClick={(event) => event.stopPropagation()}>
-            <div className="panel-heading panel-heading--inline">
-              <div>
-                <p className="panel-eyebrow">Quick Actions</p>
-                <h2>Command Palette</h2>
-              </div>
-              <button className="button button--ghost" type="button" onClick={() => setCommandPaletteOpen(false)}>
-                Close
-              </button>
-            </div>
-            <div className="command-palette__list">
-              {allowedWorkspaceTools.map((tool) => (
-                <button
-                  key={tool}
-                  className="portal-nav__item"
-                  type="button"
-                  onClick={() => {
-                    setActiveWorkspaceTool(tool);
-                    setCommandPaletteOpen(false);
-                  }}
-                >
-                  <span>{tool === "jobs" && effectiveRole === "client" ? "Approvals" : (WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}</span>
-                  <small>{(WORKSPACE_TOOL_META[tool] ?? { helper: "" }).helper}</small>
-                </button>
-              ))}
-              <button className="portal-nav__item" type="button" onClick={() => runAction(handleReplay)}>
-                <span>Sync queued changes</span>
-                <small>Run offline replay now</small>
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-
-      <nav className="mobile-action-bar" aria-label="Mobile quick actions">
-        <button className="button button--ghost" type="button" onClick={() => setPortalView("dashboard")}>
-          Home
-        </button>
-        <button className="button button--ghost" type="button" onClick={() => setActiveWorkspaceTool(defaultWorkspaceTool)}>
-          Main
-        </button>
-        <button className="button button--ghost" type="button" onClick={() => setCommandPaletteOpen(true)}>
-          Actions
-        </button>
-      </nav>
+      </PortalChrome>
 
       <footer className="portal-statusbar">
         <OfflineBanner

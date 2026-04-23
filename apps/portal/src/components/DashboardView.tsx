@@ -55,63 +55,63 @@ function QuickStartCard({ icon, label, tool, onClick, badge }: QuickStartCardPro
 
 const ROLE_DISPLAY: Record<string, { label: string; sub: string; primaryTool: string; quickStart: Array<{ icon: string; label: string; tool: string }> }> = {
   technician: {
-    label: "Field Technician",
-    sub: "FIELD OPERATIONS",
+    label: "Technician workspace",
+    sub: "See assigned work and close it out",
     primaryTool: "jobs",
     quickStart: [
-      { icon: ICONS.jobs, label: "My Jobs", tool: "jobs" },
+      { icon: ICONS.jobs, label: "Today’s jobs", tool: "jobs" },
       { icon: ICONS.checklist, label: "Jobcard", tool: "jobs" },
       { icon: ICONS.documents, label: "Reports", tool: "documents" }
     ]
   },
   dispatcher: {
-    label: "Dispatch Controller",
-    sub: "SCHEDULING AND COMMS",
+    label: "Dispatch workspace",
+    sub: "Plan work and keep people moving",
     primaryTool: "schedule",
     quickStart: [
-      { icon: ICONS.dispatch, label: "Job Queue", tool: "schedule" },
-      { icon: ICONS.jobs, label: "All Jobs", tool: "jobs" },
+      { icon: ICONS.dispatch, label: "Schedule", tool: "schedule" },
+      { icon: ICONS.jobs, label: "Jobs", tool: "jobs" },
       { icon: ICONS.comms, label: "Messages", tool: "comms" },
-      { icon: ICONS.people, label: "Directory", tool: "people" }
+      { icon: ICONS.people, label: "Team list", tool: "people" }
     ]
   },
   client: {
-    label: "Client Portal",
-    sub: "SERVICE VISIBILITY",
+    label: "Client workspace",
+    sub: "See what is active and what needs approval",
     primaryTool: "jobs",
     quickStart: [
-      { icon: ICONS.visibility, label: "Service Status", tool: "jobs" },
+      { icon: ICONS.visibility, label: "Open work", tool: "jobs" },
       { icon: ICONS.compliance, label: "Documents", tool: "documents" }
     ]
   },
   finance: {
-    label: "Finance Command",
-    sub: "BILLING AND INTEGRITY",
+    label: "Finance workspace",
+    sub: "Quotes, invoices, payments, and statements",
     primaryTool: "finance",
     quickStart: [
-      { icon: ICONS.finance, label: "Financial Overview", tool: "finance" },
-      { icon: ICONS.jobs, label: "Job Portfolio", tool: "jobs" },
-      { icon: ICONS.documents, label: "Ledger", tool: "documents" }
+      { icon: ICONS.finance, label: "Overview", tool: "finance" },
+      { icon: ICONS.jobs, label: "Jobs", tool: "jobs" },
+      { icon: ICONS.documents, label: "Documents", tool: "documents" }
     ]
   },
   admin: {
-    label: "Administration",
-    sub: "PLATFORM ADMIN",
+    label: "Admin workspace",
+    sub: "Manage settings, people, and oversight",
     primaryTool: "admin",
     quickStart: [
-      { icon: ICONS.jobs, label: "All Jobs", tool: "jobs" },
-      { icon: ICONS.people, label: "Users", tool: "people" },
+      { icon: ICONS.jobs, label: "Jobs", tool: "jobs" },
+      { icon: ICONS.people, label: "People", tool: "people" },
       { icon: ICONS.documents, label: "Documents", tool: "documents" },
       { icon: ICONS.admin, label: "Settings", tool: "admin" }
     ]
   },
   super_admin: {
-    label: "Platform Command",
-    sub: "SUPER ADMIN | FULL ACCESS",
+    label: "Platform oversight",
+    sub: "Health, checks, automation, and governance",
     primaryTool: "admin",
     quickStart: [
-      { icon: ICONS.admin, label: "System Health", tool: "admin" },
-      { icon: ICONS.jobs, label: "All Jobs", tool: "jobs" },
+      { icon: ICONS.admin, label: "Health", tool: "admin" },
+      { icon: ICONS.jobs, label: "Jobs", tool: "jobs" },
       { icon: ICONS.dispatch, label: "Dispatch", tool: "schedule" },
       { icon: ICONS.finance, label: "Finance", tool: "finance" }
     ]
@@ -170,8 +170,8 @@ export function DashboardView({
         <div className="relative z-10">
           <h2 className="text-xl font-semibold text-white mb-2">Welcome back, {session.session.display_name.split(' ')[0]}</h2>
           <p className="dashboard-intro__text mb-6 opacity-75 max-w-2xl">
-            You currently have <strong className="text-white">{openJobCount} active job{openJobCount !== 1 ? "s" : ""}</strong> requiring attention in the system workflow.
-            Proceed to your primary workspace to continue operations.
+            You currently have <strong className="text-white">{openJobCount} active job{openJobCount !== 1 ? "s" : ""}</strong> needing attention.
+            Go to the main workspace to continue.
           </p>
           <button
             type="button"
@@ -179,7 +179,7 @@ export function DashboardView({
             onClick={() => onEnterWorkspace(meta.primaryTool)}
           >
             <Icon d={ICONS.jobs} size={18} className="mr-2" />
-            Go to {meta.primaryTool === "schedule" ? "Dispatch" : meta.primaryTool.charAt(0).toUpperCase() + meta.primaryTool.slice(1)}
+            Open {meta.primaryTool === "schedule" ? "Dispatch" : meta.primaryTool.charAt(0).toUpperCase() + meta.primaryTool.slice(1)}
           </button>
         </div>
 
@@ -188,7 +188,7 @@ export function DashboardView({
       </section>
 
       <section className="quick-start-section mb-8">
-        <h2 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-4 px-1">Quick Start Modules</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-4 px-1">Quick actions</h2>
         <div className="quick-start-grid">
           {meta.quickStart.map((item, index) => (
             <QuickStartCard
@@ -205,14 +205,14 @@ export function DashboardView({
 
       {!onboardingDismissed && (
         <section className="dashboard-help mb-8">
-          <div className="glass-panel p-6 border-l-4 border-l-primary flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex gap-4 items-start">
-              <div className="mt-1 text-primary">
-                <Icon d={ICONS.checklist} size={24} />
-              </div>
-              <div>
-                <h3 className="font-semibold text-white mb-1">First-time Checklist</h3>
-                <p className="text-sm opacity-75">1. Open Jobs module. 2. Review assigned jobcard status and notes. 3. Use Schedule or Files for next actions.</p>
+        <div className="glass-panel p-6 border-l-4 border-l-primary flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex gap-4 items-start">
+            <div className="mt-1 text-primary">
+              <Icon d={ICONS.checklist} size={24} />
+            </div>
+            <div>
+                <h3 className="font-semibold text-white mb-1">First-time checklist</h3>
+                <p className="text-sm opacity-75">1. Open your main section. 2. Review the current job or record. 3. Use the next action that fits the task.</p>
               </div>
             </div>
             <button className="button button--ghost shrink-0" type="button" onClick={onDismissOnboarding}>
@@ -229,8 +229,8 @@ export function DashboardView({
               <Icon d={ICONS.compliance} size={24} />
             </div>
             <div>
-              <h3 className="font-semibold text-white mb-1">System Support</h3>
-              <p className="text-sm opacity-75">Contact support or refer to the compliance documentation for guidance on using the portal features and reporting defects.</p>
+              <h3 className="font-semibold text-white mb-1">Need help?</h3>
+              <p className="text-sm opacity-75">Contact support or check the guidance pages if you need help using the portal.</p>
             </div>
           </div>
         </div>

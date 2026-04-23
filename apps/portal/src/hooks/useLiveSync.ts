@@ -24,7 +24,7 @@ export function useLiveSync(jobId: string | null) {
           }
         }
       } catch (err) {
-        console.warn('Live sync poll failed', err);
+        void err;
       }
       timerRef.current = setTimeout(poll, 5000); // 5s pseudo-live
     };
