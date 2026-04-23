@@ -5,7 +5,7 @@
 Kharon Unified Rebuild v1 currently consists of:
 
 - `apps/site` as the public marketing site
-- `apps/portal` as the authenticated operations portal
+- `apps/portal` as the authenticated operations portal for client, technician, dispatcher, finance, admin, and super_admin roles
 - `apps/api` as the Hono API on Cloudflare Workers
 - Cloudflare Workers static assets serving `dist/public`
 - Google Workspace rails for Sheets, Drive, Docs, Calendar, Gmail, Chat, and People integrations
@@ -21,6 +21,7 @@ Launch on the current Cloudflare-only delivery model:
 - Cloudflare Workers for API and static delivery
 - Google Workspace rails for operational integrations
 - Google Sheets as the temporary production source of truth
+- `npm run check` as the default build-and-test validation gate
 
 Reason:
 
@@ -65,6 +66,7 @@ Good fit options:
 ### Phase 0: Credibility Polish
 
 - replace illustrative claims with client-safe production copy
+- keep public contact, role coverage, and support copy aligned with the portal surface
 
 ### Phase 1: Current-Stack Production Hardening
 

@@ -5,9 +5,9 @@
 Replace Google Sheets as the canonical transactional store while keeping:
 
 - the current API contract
-- the current portal flows
-- the current role model
+- the current portal flows and role model
 - the current Google Workspace integrations where still useful
+- the current public contact intake contract
 
 The goal is to remove the main scaling and operability bottleneck without forcing a frontend rewrite.
 
@@ -36,6 +36,7 @@ In production, `createWorkbookStore()` currently selects `SheetsWorkbookStore`. 
 - data integrity at larger team size
 - customer-grade auditability
 - productization into a sellable SME system
+- the current role set already includes client, technician, dispatcher, finance, admin, and super_admin
 
 ## Migration Rules
 

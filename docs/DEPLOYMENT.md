@@ -83,9 +83,6 @@ Compatibility fallbacks still supported by runtime:
    ```bash
    npm install
    npm run check
-   npm run build
-   npm run test
-   npm run lint
    ```
 2. Deploy staging:
    ```bash
@@ -101,6 +98,7 @@ Compatibility fallbacks still supported by runtime:
    - `/`
    - `/portal/`
    - `/api/v1/auth/session`
+   - `/api/v1/public/contact`
    - `/api/v1/admin/health` with an authenticated admin session
 
 ## Cutover Utilities

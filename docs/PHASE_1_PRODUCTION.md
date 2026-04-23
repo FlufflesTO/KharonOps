@@ -26,7 +26,8 @@ This phase is about shipping the current system safely, not replacing major infr
 
 1. Replace remaining illustrative proof points and example projects.
 2. Confirm service coverage wording and contact details.
-3. Freeze marketing copy for the first production launch.
+3. Reflect the live portal role set and support intake flow.
+4. Freeze marketing copy for the first production launch.
 
 ### Step 2: Lock final domains
 
@@ -120,9 +121,6 @@ Check:
 ```bash
 npm install
 npm run check
-npm run build
-npm run test
-npm run lint
 node scripts/migrate-workbook.mjs
 node scripts/cutover-rehearsal.mjs
 ```
@@ -146,7 +144,8 @@ Smoke test:
 8. schedule request
 9. document generation
 10. document publish
-11. admin health
+11. client support intake
+12. admin health
 
 ### Step 11: Run production cutover
 

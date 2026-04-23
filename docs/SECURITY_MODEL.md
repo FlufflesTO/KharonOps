@@ -19,6 +19,7 @@ Cookie flags:
 
 - RBAC and ownership checks are server-side only.
 - No client-provided role or ownership claim is trusted.
+- Portal roles currently enforced end to end: client, technician, dispatcher, finance, admin, super_admin.
 
 ## Request Integrity
 
@@ -37,14 +38,21 @@ Cookie flags:
 Privileged actions append audits for:
 
 - dispatcher and admin status actions
+- finance actions that mutate invoice or payment state
 - schedule confirmations and reschedules
 - document publish actions
 - workspace rail triggers
 - admin automation retries
+- super-admin business-unit and platform control actions
 
 ### System Actor ids
 
 System-initiated operations (cron, webhooks, automated reconciliation) use namespaced ids in the format `system:<function-name>` (e.g., `system:reconcile-ledger`, `system:hse-escalation`). The literal string `"system"` must never be hardcoded as an actor identity — every audit entry must bind to a verifiable actor id.
+
+## Public Intake
+
+- public contact requests are accepted without a session
+- public intake still passes through request validation, audit capture, and backend queueing where applicable
 
 ## Offline Sync Safety
 

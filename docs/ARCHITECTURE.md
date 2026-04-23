@@ -20,8 +20,10 @@ Kharon Unified Rebuild v1 is a single Cloudflare-hosted product with:
 
 - shared design tokens from `packages/ui`
 - public marketing site
-- portal for client, technician, dispatcher, finance, admin, and super_admin roles
-- client support intake, admin settings, and super-admin business-unit workflow surfaces are implemented in the portal shell
+- **Redesigned Role-Based Portal:** Modular, component-driven architecture for client, technician, dispatcher, finance, admin, and super_admin roles.
+- **Workflow Components:** Each role utilizes specialized React components for task-first workflows (e.g., `FinanceQuotesCard`, `TechMyDayCard`, `AdminDashboard`).
+- **Progressive Disclosure:** Advanced technical diagnostics and platform controls are encapsulated behind specialized SuperAdmin modules with detailed viewing affordances.
+- **Responsive Layouts:** Fluid, sidebar-driven navigation optimized for mobile, tablet, and desktop environments.
 - offline support in the portal:
   - service worker caches shell
   - IndexedDB queue stores mutations

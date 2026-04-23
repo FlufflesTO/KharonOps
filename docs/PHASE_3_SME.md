@@ -54,7 +54,9 @@ Current roles are operational:
 - client
 - technician
 - dispatcher
+- finance
 - admin
+- super_admin
 
 For a product, add:
 
@@ -80,6 +82,7 @@ You need a repeatable onboarding flow:
 4. configure service regions and operating hours
 5. import sites, assets, and contacts
 6. configure document templates and notification rules
+7. map legacy operational roles into tenant-scoped equivalents
 
 This should not require engineering intervention for every customer.
 

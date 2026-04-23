@@ -9,7 +9,7 @@ Execute hard cutover from the legacy system to Kharon Unified Rebuild v1 with a 
 1. internal pilot sign-off complete
 2. all required Cloudflare secrets configured
 3. workbook schema migration completed
-4. contract and offline test suite green
+4. `npm run check` green
 5. rollback package prepared and validated
 
 ## T-7 Days
@@ -35,6 +35,9 @@ Execute hard cutover from the legacy system to Kharon Unified Rebuild v1 with a 
    - status update with row version
    - schedule request and confirm
    - document generate and publish
+   - public contact intake submission
+   - admin workspace preference save/load
+   - super-admin business-unit add/activate/disable
    - sync push and pull with a conflict case
 5. enable client access only after internal smoke passes
 

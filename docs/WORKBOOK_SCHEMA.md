@@ -51,7 +51,7 @@ Both `Clients_Master` and `Technicians_Master` must have an `active_flag` (alias
 - `user_id`
 - `email`
 - `display_name`
-- `role` (`client|technician|dispatcher|admin`)
+- `role` (`client|technician|dispatcher|finance|admin|super_admin`)
 - `client_id`
 - `technician_id`
 - `active`
