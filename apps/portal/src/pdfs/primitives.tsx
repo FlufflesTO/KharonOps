@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View, Image } from '@react-pdf/renderer';
 import { styles, COLORS, SERVICE_PROVIDER } from './styles';
-import { ChecklistItem, DocumentPayload, ChecklistStatus } from './types';
+import type { ChecklistItem, DocumentPayload, ChecklistStatus } from './types';
 
 export const formatDate = (value: string): string => {
   const [year, month, day] = value.split('-').map(Number);
@@ -85,7 +85,7 @@ export const StatusCell = ({ active, tone }: { active: boolean; tone: ChecklistS
     tone === 'pass' ? styles.statusCellPass : tone === 'fail' ? styles.statusCellFail : styles.statusCellNa;
 
   return (
-    <View style={[styles.statusCell, active && toneStyle]}>
+    <View style={[styles.statusCell, active ? toneStyle : {}]}>
       <Text style={styles.statusCellText}>{active ? 'X' : ''}</Text>
     </View>
   );

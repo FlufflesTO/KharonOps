@@ -1,6 +1,6 @@
 import React from 'react';
 import { pdf } from '@react-pdf/renderer';
-import { DocumentPayload } from './types';
+import type { DocumentPayload } from './types';
 import { JobcardPDF } from './JobcardPDF';
 import { FireServiceReportPDF } from './FireServiceReportPDF';
 import { FireCertificatePDF } from './FireCertificatePDF';

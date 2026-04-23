@@ -139,7 +139,7 @@ export function AdminPanelCard({
               ) : (
                 <ul className="list-disc pl-5 text-sm space-y-1">
                   {schemaDrift.issues.map((issue) => (
-                    <li key={issue.code} className={issue.severity === "high" ? "text-critical" : "text-warning"}>
+                    <li key={issue.code} className={issue.severity === "critical" ? "text-critical" : "text-warning"}>
                       <strong>{issue.severity.toUpperCase()}:</strong> {issue.detail}
                     </li>
                   ))}

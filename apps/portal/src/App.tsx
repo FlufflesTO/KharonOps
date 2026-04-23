@@ -127,15 +127,18 @@ function normalizeDocument(record: Record<string, unknown>): JobDocumentRow {
 }
 
 function normalizeJobEvent(record: Record<string, unknown>): JobEventRow {
-  return {
-    event_id: pickString(record, "event_id"),
-    job_id: pickString(record, "job_id"),
-    event_type: String(record.event_type ?? ""),
-    payload_json: String(record.payload_json ?? "{}"),
-    created_at: String(record.created_at ?? ""),
-    created_by: String(record.created_by ?? ""),
-    correlation_id: String(record.correlation_id ?? "")
-  };
+    return {
+      event_id: String(record.event_id ?? ""),
+      job_id: String(record.job_id ?? ""),
+      event_type: String(record.event_type ?? ""),
+      payload_json: String(record.payload_json ?? "{}"),
+      row_version: Number(record.row_version ?? 1),
+      updated_at: String(record.updated_at ?? ""),
+      updated_by: String(record.updated_by ?? ""),
+      correlation_id: String(record.correlation_id ?? ""),
+      created_at: String(record.created_at ?? record.updated_at ?? ""),
+      created_by: String(record.created_by ?? record.updated_by ?? "")
+    };
 }
 
 function normalizeUser(record: Record<string, unknown>): UserRow {
@@ -667,7 +670,7 @@ export function PortalApp(): React.JSX.Element {
                 for (const job of incoming) {
                   const idx = next.findIndex((j) => j.job_id === job.job_id);
                   if (idx >= 0) {
-                    if (Date.parse(job.updated_at) >= Date.parse(next[idx].updated_at)) {
+                    if (Date.parse(job.updated_at || "") >= Date.parse(next[idx]?.updated_at || "")) {
                       next[idx] = job;
                     }
                   } else {
@@ -1678,7 +1681,7 @@ export function PortalApp(): React.JSX.Element {
               viewKey={effectiveRole ?? "client"}
               globalQuery={searchTerm}
               onGlobalQueryChange={setSearchTerm}
-              onBulkStatusUpdate={(ids, status) => runAction(() => handleBulkStatusUpdate(ids, status))}
+              onBulkStatusUpdate={(ids: string[], status: JobStatus) => runAction(() => handleBulkStatusUpdate(ids, status))}
               title="Jobs List"
             />
           </aside>

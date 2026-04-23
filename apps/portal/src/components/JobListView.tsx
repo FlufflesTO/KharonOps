@@ -265,15 +265,25 @@ const JobItem = React.memo(function JobItem({ job, isActive, checked, onToggle, 
 
 type StatusFilter = JobStatus | "all" | "open";
 
+export interface JobListViewProps {
+  jobs: JobRecord[];
+  selectedJobid: string | null;
+  onSelectJob: (id: string) => void;
+  title: string;
+  globalQuery: string;
+  onGlobalQueryChange: (q: string) => void;
+  onBulkStatusUpdate?: (ids: string[], status: JobStatus) => void;
+}
+
 export function JobListView({
-  jobs,
-  selectedJobid,
-  onSelectJob,
-  title,
-  globalQuery,
-  onGlobalQueryChange,
-  onBulkStatusUpdate
-}: any): React.JSX.Element {
+    jobs,
+    selectedJobid,
+    onSelectJob,
+    title,
+    globalQuery,
+    onGlobalQueryChange,
+    onBulkStatusUpdate
+  }: JobListViewProps): React.JSX.Element {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(50);
@@ -281,14 +291,13 @@ export function JobListView({
   const filtered = useMemo(() => {
     let result = jobs;
     if (statusFilter === "open") {
-      result = result.filter((j: any) => j.status !== "cancelled" && j.status !== "certified");
+      result = result.filter((j: JobRecord) => j.status !== "cancelled" && j.status !== "certified");
     } else if (statusFilter !== "all") {
-      result = result.filter((j: any) => j.status === statusFilter);
+      result = result.filter((j: JobRecord) => j.status === statusFilter);
     }
     const q = globalQuery.toLowerCase();
     if (q) {
-      result = result.filter((j: any) => 
-        j.job_id.toLowerCase().includes(q) || 
+      result = result.filter((j: JobRecord) => j.job_id.toLowerCase().includes(q) || 
         j.title.toLowerCase().includes(q) ||
         (j.client_name ?? "").toLowerCase().includes(q)
       );
@@ -334,7 +343,7 @@ export function JobListView({
       )}
 
       <div className="job-scroller">
-        {filtered.slice(0, visibleCount).map((job: any) => (
+        {filtered.slice(0, visibleCount).map((job: JobRecord) => (
           <JobItem
             key={job.job_id}
             job={job}

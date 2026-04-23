@@ -135,6 +135,33 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
           </div>
         </section>
 
+        {/* Document Generation */}
+        <section className="detail-section">
+          <div className="control-group">
+            <label className="eyebrow">COMPLIANCE & EVIDENCE GENERATION</label>
+            <div className="combo-input">
+              <select value={props.documentType} onChange={(e) => props.setDocumentType(e.target.value as any)}>
+                <option value="jobcard">Internal Jobcard</option>
+                <option value="service_report">SANS Service Report</option>
+                <option value="certificate">Certificate of Compliance</option>
+              </select>
+              <button 
+                className="btn-primary" 
+                onClick={props.onDocumentGenerate}
+                disabled={!props.canGenerateDocuments}
+                title={props.documentGenerateDisabledReason || "Generate PDF"}
+              >
+                Generate & Publish
+              </button>
+            </div>
+            {props.documentGenerateDisabledReason && (
+              <p style={{ color: 'var(--color-warning)', fontSize: '0.75rem', marginTop: '0.5rem' }}>
+                {props.documentGenerateDisabledReason}
+              </p>
+            )}
+          </div>
+        </section>
+
         {/* Forensic Feed */}
         <section className="detail-section">
           <ForensicTimeline events={events} jobId={selectedJob.job_id} />

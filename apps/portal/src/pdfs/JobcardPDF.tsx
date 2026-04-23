@@ -1,7 +1,7 @@
 import React from 'react';
 import { Document, Page, View, Text } from '@react-pdf/renderer';
 import { styles, SERVICE_PROVIDER } from './styles';
-import { DocumentPayload } from './types';
+import type { DocumentPayload } from './types';
 import { Section, InfoGrid, yesNo, formatDate, TechnicianSignaturePanel, ClientSignaturePanel } from './primitives';
 
 export const JobcardPDF = ({ data }: { data: DocumentPayload }) => (
