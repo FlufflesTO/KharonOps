@@ -30,28 +30,42 @@ sync.get("/pull", async (c) => {
   const since = c.req.query("since") ?? "1970-01-01T00:00:00.000Z";
   const sinceTs = Date.parse(since);
 
-  const version = await getCacheVersion(c.env);
-  const cacheKey = `sync_pull_full:${version}:${user.user_id}`;
-  const cached = await getCachedJson<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }>(c.env, cacheKey);
+  try {
+    const version = await getCacheVersion(c.env);
+    const cacheKey = `sync_pull_full:${version}:${user.user_id}`;
+    const cached = await getCachedJson<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }>(c.env, cacheKey);
 
-  let data: { jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] };
-  if (cached) {
-    data = {
-      jobs: cached.jobs.filter(j => Date.parse(j.updated_at) >= sinceTs),
-      queue: cached.queue.filter(q => Date.parse(q.updated_at) >= sinceTs),
-      events: cached.events.filter(e => Date.parse(e.updated_at) >= sinceTs)
-    };
-  } else {
-    data = await readSyncSnapshot({ store, actor: user, since: "1970-01-01T00:00:00.000Z" });
-    await putCachedJson(c.env, cacheKey, data, 30);
-    data = {
-      jobs: data.jobs.filter(j => Date.parse(j.updated_at) >= sinceTs),
-      queue: data.queue.filter(q => Date.parse(q.updated_at) >= sinceTs),
-      events: data.events.filter(e => Date.parse(e.updated_at) >= sinceTs)
-    };
+    let data: { jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] };
+    if (cached) {
+      data = {
+        jobs: cached.jobs.filter((j) => Date.parse(j.updated_at) >= sinceTs),
+        queue: cached.queue.filter((q) => Date.parse(q.updated_at) >= sinceTs),
+        events: cached.events.filter((e) => Date.parse(e.updated_at) >= sinceTs)
+      };
+    } else {
+      data = await readSyncSnapshot({ store, actor: user, since: "1970-01-01T00:00:00.000Z" });
+      await putCachedJson(c.env, cacheKey, data, 30);
+      data = {
+        jobs: data.jobs.filter((j) => Date.parse(j.updated_at) >= sinceTs),
+        queue: data.queue.filter((q) => Date.parse(q.updated_at) >= sinceTs),
+        events: data.events.filter((e) => Date.parse(e.updated_at) >= sinceTs)
+      };
+    }
+
+    return c.json(envelopeSuccess({ correlationId, data }));
+  } catch (error) {
+    console.error("sync pull failed, returning empty snapshot", {
+      correlationId,
+      user: user.user_id,
+      error: String(error)
+    });
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: { jobs: [], queue: [], events: [] }
+      })
+    );
   }
-
-  return c.json(envelopeSuccess({ correlationId, data }));
 });
 
 sync.post("/push", async (c) => {

@@ -121,7 +121,7 @@ export function ContactPage(): React.JSX.Element {
         />
       </Helmet>
 
-      <section className="site-section">
+      <section className="site-section contact-page">
         <div className="section-heading">
           <p className="section-kicker">Contact</p>
           <h2>Tell us what you need and we’ll direct it to the right team.</h2>
@@ -144,7 +144,7 @@ export function ContactPage(): React.JSX.Element {
           ))}
         </div>
 
-        <div className="operations-board detail-grid">
+        <div className="contact-layout">
           <article className="operations-flow">
             <div className="operations-flow__header">
               <h3>Contact form</h3>
@@ -261,7 +261,7 @@ export function ContactPage(): React.JSX.Element {
                 <p className="site-form__status">{statusMessage}</p>
               </div>
 
-              <div className="detail-actions">
+              <div className="detail-actions contact-actions">
                 <button className="site-button site-button--primary" type="submit" disabled={submitting}>
                   {submitting ? "Submitting…" : "Submit request"}
                 </button>

@@ -1647,6 +1647,11 @@ main > * {
   font-size: 0.8rem;
 }
 
+.hero-trust-pill {
+  text-decoration: none;
+  color: inherit;
+}
+
 .public-hero__panel {
   display: grid;
   gap: 0.9rem;
@@ -1795,6 +1800,21 @@ main > * {
   margin-bottom: 1.2rem;
 }
 
+.contact-page {
+  max-width: 72rem;
+}
+
+.contact-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.95fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.contact-actions {
+  flex-wrap: wrap;
+}
+
 .contact-path {
   width: 100%;
   display: grid;
@@ -1892,6 +1912,10 @@ main > * {
   .contact-paths {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .contact-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1920,6 +1944,10 @@ main > * {
     grid-template-columns: 1fr;
   }
 
+  .contact-layout {
+    grid-template-columns: 1fr;
+  }
+
   .public-hero__copy h1 {
     max-width: 100%;
     font-size: clamp(2.3rem, 12vw, 4rem);
@@ -1927,5 +1955,9 @@ main > * {
 
   .contact-paths {
     gap: 0.7rem;
+  }
+
+  .contact-page {
+    max-width: 100%;
   }
 }

@@ -1,13 +1,58 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { caseStudies, companyProfile, industries, partnerLogos, services, standards, trustSignals } from "../constants/siteData";
+import { companyProfile, contactPaths, serviceGroups } from "../constants/siteData";
+
+const quickPaths = [
+  {
+    title: "Services",
+    description: "See the work we do and choose the system or service you need.",
+    to: "/services"
+  },
+  {
+    title: "Industries",
+    description: "Jump to the environment that looks most like your site.",
+    to: "/industries"
+  },
+  {
+    title: "Compliance",
+    description: "Open documentation, certificates, and governance support.",
+    to: "/compliance"
+  },
+  {
+    title: "Resources",
+    description: "Use the guides and checklists when you need a simple next step.",
+    to: "/resources"
+  },
+  {
+    title: "Contact",
+    description: "Request a quote, maintenance visit, or urgent callout.",
+    to: "/contact"
+  },
+  {
+    title: "About",
+    description: "Read who we are and where we work.",
+    to: "/about"
+  }
+] as const;
+
+const valuePillars = [
+  {
+    title: "Fast routing",
+    copy: "Each request path points to a dedicated page, so visitors do not need to scroll through everything first."
+  },
+  {
+    title: "Plain language",
+    copy: "Services and industries are described the way clients actually ask for them."
+  },
+  {
+    title: "Clear next steps",
+    copy: "Every page ends with a direct action, not a dead-end marketing paragraph."
+  }
+] as const;
 
 export function HomePage(): React.JSX.Element {
-  const featuredServices = services.slice(0, 6);
-  const featuredIndustries = industries;
-  const featuredCases = caseStudies.slice(0, 3);
-  const trustStandards = standards.slice(0, 4);
+  const featuredServices = serviceGroups.flatMap((group) => group.items).slice(0, 4);
 
   return (
     <>
@@ -15,7 +60,7 @@ export function HomePage(): React.JSX.Element {
         <title>Kharon | Fire and Security Solutions</title>
         <meta
           name="description"
-          content="Fire detection, suppression, access control, CCTV, maintenance, and compliance support for commercial and technical sites."
+          content="Fire detection, suppression, access control, CCTV, maintenance, compliance support, and direct contact routing."
         />
       </Helmet>
 
@@ -23,40 +68,43 @@ export function HomePage(): React.JSX.Element {
         <div className="public-hero__inner">
           <div className="public-hero__copy">
             <p className="section-kicker">Kharon Fire and Security Solutions</p>
-            <h1>Fire and Security Systems, Designed, Installed, and Maintained.</h1>
+            <h1>One place to choose the right service, industry, or support path.</h1>
             <p className="public-hero__summary">
-              Kharon helps businesses protect people, buildings, and operations with fire detection, suppression, access
-              control, CCTV, and ongoing maintenance.
+              This site is organised as a simple front door. Use it to reach services, industries, documentation, resources,
+              or contact quickly without wading through a long landing page.
             </p>
             <div className="hero-actions">
               <Link className="site-button site-button--primary" to="/contact?intent=project">
-                Request a Site Visit
+                Request a Quote
               </Link>
-              <Link className="site-button site-button--secondary" to="/contact?intent=maintenance">
-                Book Maintenance
+              <Link className="site-button site-button--secondary" to="/services">
+                Browse Services
               </Link>
-              <Link className="hero-inline-link" to="/contact?intent=urgent_callout">
-                Emergency callout
+              <Link className="hero-inline-link" to="/resources">
+                Open guides
               </Link>
             </div>
-            <div className="public-hero__trust" aria-label="Trust signals">
-              {trustSignals.map((signal) => (
-                <span key={signal}>{signal}</span>
+            <div className="public-hero__trust" aria-label="Request paths">
+              {contactPaths.map((path) => (
+                <Link key={path.value} to={`/contact?intent=${path.value}`} className="hero-trust-pill">
+                  <span className="hero-trust-pill__dot" />
+                  <span>{path.label}</span>
+                </Link>
               ))}
             </div>
           </div>
 
           <aside className="public-hero__panel" aria-label="Company snapshot">
-            <span className="public-hero__panel-label">Trusted support since 2016</span>
-            <strong>{companyProfile.serviceFootprint.join(" / ")}</strong>
+            <span className="public-hero__panel-label">Direct navigation</span>
+            <strong>Start with the page that does one job well.</strong>
             <p>
-              Standards-led fire and security work for commercial, industrial, hospitality, healthcare, and education
-              sites.
+              Kharon supports {companyProfile.serviceFootprint.join(", ")} and keeps the public website focused on fast
+              routing into the right path.
             </p>
             <ul>
-              <li>{trustStandards.join(" · ")}</li>
-              <li>Clear reporting and handover packs</li>
-              <li>Planned maintenance and urgent response</li>
+              <li>Services, industries, compliance, and contact all have their own pages</li>
+              <li>Portal and public site are separated by purpose</li>
+              <li>Mobile visitors get short paths instead of a long scroll</li>
             </ul>
           </aside>
         </div>
@@ -64,14 +112,37 @@ export function HomePage(): React.JSX.Element {
 
       <section className="site-section">
         <div className="section-heading">
-          <p className="section-kicker">Services</p>
-          <h2>Choose a service.</h2>
+          <p className="section-kicker">Start here</p>
+          <h2>Choose the page that matches what you need.</h2>
           <p className="section-subtitle">
-            Four to six core services give most buyers a clear next step. If you are not sure what you need, contact us and
-            we will help you decide.
+            The home page now works as a hub, not a brochure wall.
           </p>
         </div>
-        <div className="service-grid">
+        <div className="service-grid service-grid--compact">
+          {quickPaths.map((item) => (
+            <Link key={item.title} to={item.to} className="service-card service-card--link">
+              <div className="service-card__header">
+                <div className="service-card__code">{item.title.slice(0, 2).toUpperCase()}</div>
+                <div>
+                  <h3>{item.title}</h3>
+                  <span className="service-card__meta">Navigate directly</span>
+                </div>
+              </div>
+              <p>{item.description}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="site-section">
+        <div className="section-heading section-heading--tight">
+          <p className="section-kicker">What we do</p>
+          <h2>Core services at a glance.</h2>
+          <p className="section-subtitle section-subtitle--small">
+            If you want the detail, use the services page. This section only gives the shortlist.
+          </p>
+        </div>
+        <div className="service-grid service-grid--compact">
           {featuredServices.map((service) => (
             <Link key={service.slug} to={`/services/${service.slug}`} className="service-card service-card--link">
               <div className="service-card__header">
@@ -88,105 +159,40 @@ export function HomePage(): React.JSX.Element {
       </section>
 
       <section className="site-section">
-        <div className="section-heading">
-          <p className="section-kicker">Why Kharon</p>
-          <h2>Practical delivery that stays clear after the work is done.</h2>
+        <div className="section-heading section-heading--tight">
+          <p className="section-kicker">How to use the site</p>
+          <h2>Short pages, clear routes, no dead ends.</h2>
         </div>
         <div className="pillar-grid">
-          <article className="pillar-card">
-            <h3>Clear reporting</h3>
-            <p>Service notes, certificates, and action items stay readable for clients, contractors, and auditors.</p>
-          </article>
-          <article className="pillar-card">
-            <h3>Qualified support</h3>
-            <p>Fire and security work is planned and delivered by people who understand the systems and the site.</p>
-          </article>
-          <article className="pillar-card">
-            <h3>Planned maintenance</h3>
-            <p>Regular servicing reduces surprises, keeps systems reliable, and makes compliance easier to prove.</p>
-          </article>
-          <article className="pillar-card">
-            <h3>Fast fault response</h3>
-            <p>When something fails, you get direct support, clear diagnosis, and a documented closeout.</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="site-section">
-        <div className="section-heading">
-          <p className="section-kicker">Industries</p>
-          <h2>Support for the places people work, learn, stay, and store critical equipment.</h2>
-        </div>
-        <div className="case-grid">
-          {featuredIndustries.map((industry) => (
-            <Link key={industry.slug} to={`/industries/${industry.slug}`} className="case-card case-card--link">
-              <div className="case-card__visual">
-                <span>{industry.title}</span>
-              </div>
-              <div className="case-card__body">
-                <p>{industry.summary}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="site-section">
-        <div className="section-heading">
-          <p className="section-kicker">Proof</p>
-          <h2>Examples of recent work.</h2>
-        </div>
-        <div className="case-grid">
-          {featuredCases.map((study) => (
-            <article key={study.slug} className="case-card">
-              <div className="case-card__visual">
-                <span>{study.siteType}</span>
-              </div>
-              <div className="case-card__body">
-                <h3>{study.title}</h3>
-                <p>{study.challenge}</p>
-                <ul className="service-list service-list--compact">
-                  {study.scope.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-                <p>
-                  <strong>Result:</strong> {study.result}
-                </p>
-              </div>
+          {valuePillars.map((pillar) => (
+            <article key={pillar.title} className="pillar-card">
+              <h3>{pillar.title}</h3>
+              <p>{pillar.copy}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="site-section">
+      <section className="site-section cta-section">
         <div className="cta-panel">
           <div className="cta-panel__copy">
             <p className="section-kicker">Next step</p>
-            <h2>Tell us what you need.</h2>
-            <p>Request a quote, book maintenance, or ask for urgent help and we will route it to the right team.</p>
+            <h2>Go straight to the page you need.</h2>
+            <p>
+              If you already know the path, use it. If not, start with services or contact and we will route it from there.
+            </p>
           </div>
           <div className="cta-panel__actions">
             <Link className="site-button site-button--primary" to="/contact?intent=project">
-              Request a Quote
+              Contact us
             </Link>
-            <Link className="site-button site-button--secondary" to="/contact?intent=maintenance">
-              Book Maintenance
+            <Link className="site-button site-button--secondary" to="/services">
+              Services
             </Link>
-            <Link className="site-button site-button--secondary" to="/contact?intent=urgent_callout">
-              Emergency Callout
+            <Link className="site-button site-button--secondary" to="/industries">
+              Industries
             </Link>
           </div>
-        </div>
-      </section>
-
-      <section className="site-section site-section--compact" aria-hidden="true">
-        <div className="logo-strip">
-          {partnerLogos.map((logo) => (
-            <span key={logo} className="logo-item">
-              {logo}
-            </span>
-          ))}
         </div>
       </section>
     </>
