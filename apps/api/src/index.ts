@@ -1463,10 +1463,27 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const user = getSessionUser(c);
     const since = c.req.query("since") ?? "1970-01-01T00:00:00.000Z";
 
+    // Use KV cache to reduce upstream pressure (GLOBAL-010/429 mitigation)
+    const version = await getCacheVersion(c.env);
+    const cacheKey = `sync_pull:${version}:${user.user_id}:${since}`;
+    const cached = await getCachedJson<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }>(c.env, cacheKey);
+    
+    if (cached) {
+      return c.json(
+        envelopeSuccess({
+          correlationId,
+          data: cached
+        })
+      );
+    }
+
     const pulled = await store.pullSyncData({
       actor: user,
       since
     });
+
+    // Cache sync results for 60s (minimum KV TTL)
+    await putCachedJson(c.env, cacheKey, pulled, 60);
 
     return c.json(
       envelopeSuccess({

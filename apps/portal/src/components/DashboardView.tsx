@@ -37,13 +37,17 @@ interface QuickStartCardProps {
 function QuickStartCard({ icon, label, tool, onClick, badge }: QuickStartCardProps): React.JSX.Element {
   const hasBadge = badge !== undefined && (typeof badge === "number" ? badge > 0 : badge.length > 0);
   return (
-    <button type="button" className="quick-start-card" onClick={() => onClick(tool)}>
-      <div className="quick-start-card__icon">
-        <Icon d={icon} size={20} />
-        {hasBadge ? <span className="quick-start-card__badge">{badge}</span> : null}
+    <button type="button" className="quick-start-card glass-panel-interactive" onClick={() => onClick(tool)}>
+      <div className="quick-start-card__icon text-primary">
+        <Icon d={icon} size={24} />
       </div>
-      <span className="quick-start-card__label">{label}</span>
-      <Icon d={ICONS.arrowRight} size={16} className="quick-start-card__arrow" />
+      <div className="flex-1 text-left">
+        <span className="quick-start-card__label font-semibold text-white">{label}</span>
+      </div>
+      {hasBadge && <span className="quick-start-card__badge">{badge}</span>}
+      <div className="quick-start-card__arrow opacity-50 transition-transform">
+        <Icon d={ICONS.arrowRight} size={16} />
+      </div>
     </button>
   );
 }
@@ -142,24 +146,45 @@ export function DashboardView({
 
   return (
     <main className="dashboard-view">
-      <DashHeader name={session.session.display_name} label={meta.label} sub={meta.sub} onLogout={onLogout} />
+      <header className="dashboard-header glass-panel mb-8 p-6 lg:p-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-1">{meta.label}</h1>
+          <p className="status-chip status-chip--active">{meta.sub}</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:block text-right">
+            <p className="font-semibold text-white">{session.session.display_name}</p>
+            <p className="text-xs opacity-50">{session.session.user_id}</p>
+          </div>
+          <button type="button" className="button button--ghost shrink-0" onClick={onLogout}>
+            Sign out
+          </button>
+        </div>
+      </header>
 
-      <section className="dashboard-intro">
-        <p className="dashboard-intro__text">
-          Welcome back. You have <strong>{openJobCount} active job{openJobCount !== 1 ? "s" : ""}</strong> in the system.
-        </p>
-        <button 
-          type="button" 
-          className="btn-primary btn-primary--large"
-          onClick={() => onEnterWorkspace(meta.primaryTool)}
-        >
-          <Icon d={ICONS.jobs} size={18} />
-          Go to {meta.primaryTool === "schedule" ? "Dispatch" : meta.primaryTool.charAt(0).toUpperCase() + meta.primaryTool.slice(1)}
-        </button>
+      <section className="dashboard-intro glass-panel p-6 lg:p-8 mb-8 relative overflow-hidden">
+        <div className="relative z-10">
+          <h2 className="text-xl font-semibold text-white mb-2">Welcome back, {session.session.display_name.split(' ')[0]}</h2>
+          <p className="dashboard-intro__text mb-6 opacity-75 max-w-2xl">
+            You currently have <strong className="text-white">{openJobCount} active job{openJobCount !== 1 ? "s" : ""}</strong> requiring attention in the system workflow. 
+            Proceed to your primary workspace to continue operations.
+          </p>
+          <button 
+            type="button" 
+            className="button button--primary"
+            onClick={() => onEnterWorkspace(meta.primaryTool)}
+          >
+            <Icon d={ICONS.jobs} size={18} className="mr-2" />
+            Go to {meta.primaryTool === "schedule" ? "Dispatch" : meta.primaryTool.charAt(0).toUpperCase() + meta.primaryTool.slice(1)}
+          </button>
+        </div>
+        
+        {/* Decorative background element */}
+        <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-primary opacity-10 blur-3xl pointer-events-none"></div>
       </section>
 
-      <section className="quick-start-section">
-        <h2 className="quick-start-section__title">Quick Start</h2>
+      <section className="quick-start-section mb-8">
+        <h2 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-4 px-1">Quick Start Modules</h2>
         <div className="quick-start-grid">
           {meta.quickStart.map((item, index) => (
             <QuickStartCard
@@ -174,45 +199,168 @@ export function DashboardView({
         </div>
       </section>
 
-      <section className="dashboard-help">
-        <div className="dashboard-help__card">
-          <Icon d={ICONS.compliance} size={24} />
-          <div>
-            <h3>Need Assistance?</h3>
-            <p>Contact support or refer to the documentation for guidance on using the portal.</p>
-          </div>
-        </div>
-      </section>
-
-      {!onboardingDismissed ? (
-        <section className="dashboard-help">
-          <div className="dashboard-help__card">
-            <Icon d={ICONS.checklist} size={24} />
-            <div>
-              <h3>First-time Checklist</h3>
-              <p>1. Open Jobs. 2. Review status and notes. 3. Use Schedule or Files for next actions.</p>
+      {!onboardingDismissed && (
+        <section className="dashboard-help mb-8">
+          <div className="glass-panel p-6 border-l-4 border-l-primary flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex gap-4 items-start">
+              <div className="mt-1 text-primary">
+                <Icon d={ICONS.checklist} size={24} />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">First-time Checklist</h3>
+                <p className="text-sm opacity-75">1. Open Jobs module. 2. Review assigned jobcard status and notes. 3. Use Schedule or Files for next actions.</p>
+              </div>
             </div>
-            <button className="button button--ghost" type="button" onClick={onDismissOnboarding}>
+            <button className="button button--ghost shrink-0" type="button" onClick={onDismissOnboarding}>
               Dismiss
             </button>
           </div>
         </section>
-      ) : null}
+      )}
+
+      <section className="dashboard-help">
+        <div className="glass-panel p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex gap-4 items-start">
+            <div className="mt-1 opacity-50">
+              <Icon d={ICONS.compliance} size={24} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white mb-1">System Support</h3>
+              <p className="text-sm opacity-75">Contact support or refer to the compliance documentation for guidance on using the portal features and reporting defects.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <style>{`
+        /* Dashboard Layout & Utilities */
+        .dashboard-view {
+          max-width: 1200px;
+          margin: 0 auto;
+          width: 100%;
+        }
+        
+        .glass-panel {
+          background: rgba(20, 20, 25, 0.4);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-panel-interactive {
+          background: rgba(20, 20, 25, 0.4);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          padding: 1.25rem;
+          gap: 1rem;
+          width: 100%;
+          cursor: pointer;
+        }
+
+        .glass-panel-interactive:hover {
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(var(--color-primary-rgb), 0.5);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-panel-interactive:hover .quick-start-card__arrow {
+          transform: translateX(4px);
+          opacity: 1;
+        }
+
+        .quick-start-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+        
+        @media (min-width: 640px) {
+          .quick-start-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        
+        @media (min-width: 1024px) {
+          .quick-start-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        .quick-start-card__badge {
+          background: var(--color-primary);
+          color: white;
+          font-size: 0.75rem;
+          font-weight: 700;
+          padding: 0.125rem 0.5rem;
+          border-radius: 9999px;
+          margin-left: 0.5rem;
+        }
+
+        /* Helper Classes */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-1 { flex: 1; }
+        .items-center { align-items: center; }
+        .items-start { align-items: flex-start; }
+        .justify-between { justify-content: space-between; }
+        .gap-4 { gap: 1rem; }
+        .p-6 { padding: 1.5rem; }
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mt-1 { margin-top: 0.25rem; }
+        .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
+        .mr-2 { margin-right: 0.5rem; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .font-bold { font-weight: 700; }
+        .font-semibold { font-weight: 600; }
+        .text-white { color: #fff; }
+        .text-primary { color: var(--color-primary); }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+        .uppercase { text-transform: uppercase; }
+        .tracking-wider { letter-spacing: 0.05em; }
+        .opacity-50 { opacity: 0.5; }
+        .opacity-75 { opacity: 0.75; }
+        .max-w-2xl { max-width: 42rem; }
+        .shrink-0 { flex-shrink: 0; }
+        .relative { position: relative; }
+        .absolute { position: absolute; }
+        .overflow-hidden { overflow: hidden; }
+        .z-10 { z-index: 10; }
+        .-right-20 { right: -5rem; }
+        .-top-20 { top: -5rem; }
+        .w-64 { width: 16rem; }
+        .h-64 { height: 16rem; }
+        .rounded-full { border-radius: 9999px; }
+        .bg-primary { background-color: var(--color-primary); }
+        .blur-3xl { filter: blur(64px); }
+        .pointer-events-none { pointer-events: none; }
+        .border-l-4 { border-left-width: 4px; border-left-style: solid; }
+        .border-l-primary { border-left-color: var(--color-primary); }
+        .transition-transform { transition-property: transform; transition-duration: 0.2s; }
+
+        @media (min-width: 640px) {
+          .sm\\:block { display: block; }
+          .sm\\:flex-row { flex-direction: row; }
+          .sm\\:items-center { align-items: center; }
+        }
+
+        .hidden { display: none; }
+      `}</style>
     </main>
   );
 }
-
-function DashHeader({ name, label, sub, onLogout }: { name: string; label: string; sub: string; onLogout: () => void }): React.JSX.Element {
-  return (
-    <header className="dashboard-header">
-      <div>
-        <h1>{label}</h1>
-        <p className="role-tag">{sub}</p>
-      </div>
-      <button type="button" className="logout-button" onClick={onLogout}>
-        Sign out
-      </button>
-    </header>
-  );
-}
-

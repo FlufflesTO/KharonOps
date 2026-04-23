@@ -698,7 +698,10 @@ export class LocalWorkbookStore implements WorkbookStore {
     };
   }
 
-  async pullSyncData(args: { actor: SessionUser; since: string }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[] }> {
+  async pullSyncData(args: {
+    actor: SessionUser;
+    since: string;
+  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
     const sinceTs = Date.parse(args.since);
     const jobs = [...this.data.jobs.values()]
       .filter((job) => canReadJob(args.actor, job))
@@ -709,6 +712,10 @@ export class LocalWorkbookStore implements WorkbookStore {
       .filter((entry) => jobs.some((job) => job.job_id === entry.job_id))
       .map((entry) => immutableClone(entry));
 
-    return { jobs, queue };
+    const events = [...this.data.jobEvents.values()]
+      .filter((entry) => jobs.some((job) => job.job_id === entry.job_id))
+      .map((entry) => immutableClone(entry));
+
+    return { jobs, queue, events };
   }
 }

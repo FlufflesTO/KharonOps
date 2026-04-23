@@ -1731,6 +1731,14 @@ summary:focus-visible {
   gap: 0;
 }
 
+.job-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
 .job-list-filters {
   display: flex;
   flex-direction: column;
@@ -1915,15 +1923,20 @@ summary:focus-visible {
 
 /* ── Smart Job Cards ───────────────────────────────────────────────────────── */
 .job-card {
+  width: 100%;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  padding: 1rem;
   text-align: left;
   transition: var(--transition-smooth);
   cursor: pointer;
-  display: grid;
-  gap: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .job-card:hover {
@@ -1982,29 +1995,35 @@ mark.highlight {
 .job-card__header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  gap: 1rem;
 }
 
 .job-card__id {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: var(--color-text-soft);
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .job-card__client {
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .job-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  font-size: 0.8rem;
+  gap: 0.4rem 0.8rem;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
+  margin-top: 0.15rem;
 }
 
 .job-card__meta-item {

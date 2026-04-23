@@ -108,5 +108,8 @@ export interface WorkbookStore {
     mergePatch?: Record<string, unknown>;
     ctx: StoreContext;
   }): Promise<{ job: JobRow; conflict: ConflictPayload | null }>;
-  pullSyncData(args: { actor: SessionUser; since: string }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[] }>;
+  pullSyncData(args: {
+    actor: SessionUser;
+    since: string;
+  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }>;
 }

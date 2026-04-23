@@ -174,6 +174,7 @@ export interface UpgradeWorkspaceState {
 export interface SyncPullPayload {
   jobs: Array<Record<string, unknown>>;
   queue: Array<Record<string, unknown>>;
+  events: Array<Record<string, unknown>>;
 }
 
 export interface SchemaDriftIssue {

@@ -1,5 +1,5 @@
 import React, { startTransition, useEffect, useMemo, useState } from "react";
-import type { JobDocumentRow, OfflineQueueItem, ScheduleRequestRow, ScheduleRow, UserRow, JobStatus, Role } from "@kharon/domain";
+import type { JobDocumentRow, OfflineQueueItem, ScheduleRequestRow, ScheduleRow, UserRow, JobStatus, Role, JobEventRow } from "@kharon/domain";
 import { listAllowedStatusTransitions } from "@kharon/domain";
 import {
   apiClient,
@@ -122,6 +122,18 @@ function normalizeDocument(record: Record<string, unknown>): JobDocumentRow {
     row_version: pickNumber(record, "row_version"),
     updated_at: String(record.updated_at ?? ""),
     updated_by: String(record.updated_by ?? ""),
+    correlation_id: String(record.correlation_id ?? "")
+  };
+}
+
+function normalizeJobEvent(record: Record<string, unknown>): JobEventRow {
+  return {
+    event_id: pickString(record, "event_id"),
+    job_id: pickString(record, "job_id"),
+    event_type: String(record.event_type ?? ""),
+    payload_json: String(record.payload_json ?? "{}"),
+    created_at: String(record.created_at ?? ""),
+    created_by: String(record.created_by ?? ""),
     correlation_id: String(record.correlation_id ?? "")
   };
 }
@@ -278,6 +290,7 @@ export function PortalApp(): React.JSX.Element {
   const [session, setSession] = useState<PortalSession | null>(null);
   const [authConfig, setAuthConfig] = useState<PortalAuthConfig | null>(null);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
+  const [jobEvents, setJobEvents] = useState<JobEventRow[]>([]);
   const [selectedJobid, setSelectedJobid] = useState("");
   const [portalView, setPortalView] = useState<"dashboard" | "workspace">("dashboard");
   const [activeWorkspaceTool, setActiveWorkspaceTool] = useState("jobs");
@@ -643,11 +656,49 @@ export function PortalApp(): React.JSX.Element {
         const response = await apiClient.syncPull(since);
         const jobsChanged = response.jobs?.length ?? 0;
         const queueChanged = response.queue?.length ?? 0;
+        const eventsChanged = response.events?.length ?? 0;
+
+        if (jobsChanged > 0 || eventsChanged > 0) {
+          startTransition(() => {
+            if (jobsChanged > 0) {
+              const incoming = (response.jobs ?? []).map(asJob);
+              setJobs((prev) => {
+                const next = [...prev];
+                for (const job of incoming) {
+                  const idx = next.findIndex((j) => j.job_id === job.job_id);
+                  if (idx >= 0) {
+                    if (Date.parse(job.updated_at) >= Date.parse(next[idx].updated_at)) {
+                      next[idx] = job;
+                    }
+                  } else {
+                    next.push(job);
+                  }
+                }
+                return next;
+              });
+            }
+
+            if (eventsChanged > 0) {
+              const incomingEvents = (response.events ?? []).map(normalizeJobEvent);
+              setJobEvents((prev) => {
+                const next = [...prev];
+                for (const ev of incomingEvents) {
+                  if (!next.some((existing) => existing.event_id === ev.event_id)) {
+                    next.push(ev);
+                  }
+                }
+                return next;
+              });
+            }
+          });
+        }
+
         const at = new Date().toISOString();
         setLastSyncPullAt(at);
         setSyncPulse({ at, jobsChanged, queueChanged });
-      } catch {
+      } catch (error) {
         // Keep pulse passive when pull fails
+        console.error("Sync pull failed", error);
       }
     };
     void poll();
@@ -1716,6 +1767,7 @@ export function PortalApp(): React.JSX.Element {
                 geoVerification={geoVerification}
                 onVerifyLocation={handleVerifyLocation}
                 syncPulseText={syncPulseText}
+                events={jobEvents}
               />
             ) : null}
 

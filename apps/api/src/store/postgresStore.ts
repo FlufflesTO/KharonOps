@@ -1661,7 +1661,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
   async pullSyncData(args: {
     actor: SessionUser;
     since: string;
-  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[] }> {
+  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
     const pool = await this.getPool();
     const jobResult = await pool.query(
       `SELECT * FROM ${this.schema}.svr_jobs ORDER BY updated_at DESC`
@@ -1676,6 +1676,8 @@ export class PostgresWorkbookStore implements WorkbookStore {
 
     const jobids = filteredJobs.map((j) => j.job_id);
     let queue: SyncQueueRow[] = [];
+    let events: JobEventRow[] = [];
+
     if (jobids.length > 0) {
       const placeholders = jobids.map((_, i) => `$${i + 1}`).join(", ");
       const queueResult = await pool.query(
@@ -1683,9 +1685,15 @@ export class PostgresWorkbookStore implements WorkbookStore {
         jobids
       );
       queue = queueResult.rows.map(syncQueueRowFromPg);
+
+      const eventsResult = await pool.query(
+        `SELECT * FROM ${this.schema}.svr_job_events WHERE job_id IN (${placeholders}) ORDER BY updated_at DESC`,
+        jobids
+      );
+      events = eventsResult.rows.map(jobEventRowFromPg);
     }
 
-    return { jobs: filteredJobs, queue };
+    return { jobs: filteredJobs, queue, events };
   }
 
   // -- Internal helpers ----------------------------------------------------

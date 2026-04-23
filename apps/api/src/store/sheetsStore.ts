@@ -407,6 +407,19 @@ function parseSyncQueue(row: Row): SyncQueueRow {
   };
 }
 
+function parseJobEvent(row: Row): JobEventRow {
+  return {
+    event_id: field(row, "event_id"),
+    job_id: field(row, "job_id"),
+    event_type: field(row, "event_type"),
+    payload_json: field(row, "payload_json"),
+    row_version: toNum(field(row, "row_version")),
+    updated_at: field(row, "updated_at"),
+    updated_by: field(row, "updated_by"),
+    correlation_id: field(row, "correlation_id")
+  };
+}
+
 function parseFinanceQuote(row: Row): FinanceQuoteRow {
   return {
     quote_id: field(row, "quote_id"),
@@ -1190,7 +1203,10 @@ export class SheetsWorkbookStore implements WorkbookStore {
     return { job: updated, conflict: null };
   }
 
-  async pullSyncData(args: { actor: SessionUser; since: string }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[] }> {
+  async pullSyncData(args: {
+    actor: SessionUser;
+    since: string;
+  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
     const sinceTs = Date.parse(args.since);
     const jobs = (await this.listJobsForUser(args.actor)).filter((job) =>
       Number.isNaN(sinceTs) ? true : Date.parse(job.updated_at) >= sinceTs
@@ -1200,6 +1216,10 @@ export class SheetsWorkbookStore implements WorkbookStore {
       .map(parseSyncQueue)
       .filter((entry) => jobs.some((job) => job.job_id === entry.job_id));
 
-    return { jobs, queue };
+    const events = (await this.rows("Job_Events"))
+      .map(parseJobEvent)
+      .filter((entry) => jobs.some((job) => job.job_id === entry.job_id));
+
+    return { jobs, queue, events };
   }
 }
