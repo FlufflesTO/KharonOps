@@ -2063,6 +2063,20 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   api.get("/workspace/ops-intelligence", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
+
+    const version = await getCacheVersion(c.env);
+    const cacheKey = `ops_intel:${version}:${user.role}`;
+    const cached = await getCachedJson<Record<string, unknown>>(c.env, cacheKey);
+    
+    if (cached) {
+      return c.json(
+        envelopeSuccess({
+          correlationId,
+          data: cached
+        })
+      );
+    }
+
     const [jobs, schedules, documents, escrow, invoices, users, clients, technicians] = await Promise.all([
       store.listJobsForUser(user),
       store.listSchedules(),
