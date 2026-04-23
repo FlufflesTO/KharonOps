@@ -79,7 +79,7 @@ export function PortalChrome({
           </div>
         </div>
 
-        <div className="portal-topbar__actions">
+        <div className="portal-topbar__actions" role="toolbar" aria-label="Portal actions">
           <label className="toggle-inline">
             <input
               id="portal-offline-queue-toggle"
@@ -87,11 +87,14 @@ export function PortalChrome({
               type="checkbox"
               checked={offlineEnabled}
               onChange={(event) => onOfflineEnabledChange(event.target.checked)}
+              aria-label="Toggle offline queue mode"
             />
             Offline queue mode
           </label>
-          <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`}>{networkOnline ? "Online" : "Offline"}</span>
-          <span className="status-chip status-chip--neutral" title="Real-time sync pulse">
+          <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`} role="status" aria-live="polite">
+            {networkOnline ? "Online" : "Offline"}
+          </span>
+          <span className="status-chip status-chip--neutral" title="Real-time sync pulse" aria-label={`Sync status: ${syncPulseText}`}>
             {syncPulseText}
           </span>
           <button
@@ -99,21 +102,28 @@ export function PortalChrome({
             type="button"
             onClick={() => onFocusModeChange(!focusMode)}
             title="Toggle Focus Mode (F)"
+            aria-pressed={focusMode}
+            aria-label={focusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
           >
             {focusMode ? "Exit Focus" : "Focus"}
           </button>
           {installPromptAvailable ? (
-            <button className="button button--secondary" type="button" onClick={onInstallApp}>
+            <button className="button button--secondary" type="button" onClick={onInstallApp} aria-label="Install Kharon Ops app">
               Install App
             </button>
           ) : null}
-          <button className="button button--secondary" type="button" onClick={onReplayQueue}>
+          <button 
+            className="button button--secondary" 
+            type="button" 
+            onClick={onReplayQueue}
+            aria-label={`Synchronize ${queueCount} queued changes`}
+          >
             Sync queued changes ({queueCount})
           </button>
-          <button className="button button--secondary" type="button" onClick={onGoHome}>
+          <button className="button button--secondary" type="button" onClick={onGoHome} aria-label="Go to overview dashboard">
             Overview
           </button>
-          <button className="button button--ghost" type="button" onClick={onLogout}>
+          <button className="button button--ghost" type="button" onClick={onLogout} aria-label="Log out of Kharon Ops">
             Logout
           </button>
         </div>
@@ -127,11 +137,13 @@ export function PortalChrome({
             <p className="portal-nav__helper">{activeToolMeta.helper}</p>
           </div>
 
-          <nav className="portal-nav__list" aria-label="Portal sections">
+          <nav className="portal-nav__list" aria-label="Portal sections" role="navigation">
             <button
               type="button"
               className={`portal-nav__item ${activeWorkspaceTool === "jobs" ? "portal-nav__item--active" : ""}`}
               onClick={() => onActiveWorkspaceToolChange("jobs")}
+              aria-current={activeWorkspaceTool === "jobs" ? "page" : undefined}
+              aria-label={`Navigate to ${getRoleMenuLabel("jobs", effectiveRole)} - Primary workspace`}
             >
               <span>{getRoleMenuLabel("jobs", effectiveRole)}</span>
               <small>Primary workspace</small>
@@ -148,6 +160,8 @@ export function PortalChrome({
                     type="button"
                     className={`portal-nav__item ${active ? "portal-nav__item--active" : ""}`}
                     onClick={() => onActiveWorkspaceToolChange(tool)}
+                    aria-current={active ? "page" : undefined}
+                    aria-label={`Navigate to ${getRoleMenuLabel(tool, effectiveRole)}${item.helper ? ` - ${item.helper}` : ""}`}
                   >
                     <span>{getRoleMenuLabel(tool, effectiveRole)}</span>
                     <small>{item.helper}</small>
