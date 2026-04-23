@@ -1480,33 +1480,41 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
     const since = c.req.query("since") ?? "1970-01-01T00:00:00.000Z";
+    const sinceTs = Date.parse(since);
 
     // Use KV cache to reduce upstream pressure (GLOBAL-010/429 mitigation)
+    // We cache the FULL sync dataset for the user for 30 seconds and filter locally.
     const version = await getCacheVersion(c.env);
-    const cacheKey = `sync_pull:${version}:${user.user_id}:${since}`;
+    const cacheKey = `sync_pull_full:${version}:${user.user_id}`;
     const cached = await getCachedJson<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }>(c.env, cacheKey);
     
+    let data: { jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] };
     if (cached) {
-      return c.json(
-        envelopeSuccess({
-          correlationId,
-          data: cached
-        })
-      );
+      data = {
+        jobs: cached.jobs.filter(j => Date.parse(j.updated_at) >= sinceTs),
+        queue: cached.queue.filter(q => Date.parse(q.updated_at) >= sinceTs),
+        events: cached.events.filter(e => Date.parse(e.updated_at) >= sinceTs)
+      };
+    } else {
+      // Fetch full set (since beginning) to populate cache
+      data = await store.pullSyncData({
+        actor: user,
+        since: "1970-01-01T00:00:00.000Z"
+      });
+      await putCachedJson(c.env, cacheKey, data, 30);
+      
+      // Filter for the actual response
+      data = {
+        jobs: data.jobs.filter(j => Date.parse(j.updated_at) >= sinceTs),
+        queue: data.queue.filter(q => Date.parse(q.updated_at) >= sinceTs),
+        events: data.events.filter(e => Date.parse(e.updated_at) >= sinceTs)
+      };
     }
-
-    const pulled = await store.pullSyncData({
-      actor: user,
-      since
-    });
-
-    // Cache sync results for 60s (minimum KV TTL)
-    await putCachedJson(c.env, cacheKey, pulled, 60);
 
     return c.json(
       envelopeSuccess({
         correlationId,
-        data: pulled
+        data
       })
     );
   });
@@ -2104,32 +2112,36 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       .filter((invoice) => invoice.status !== "paid")
       .reduce((sum, invoice) => sum + invoice.amount, 0);
 
+    const payload = {
+      generated_at: nowIso(),
+      jobs: {
+        open: openJobs,
+        critical: criticalJobs,
+        stale_over_24h: staleJobs
+      },
+      operations: {
+        schedules_total: schedules.length,
+        documents_pending_publish: pendingPublish,
+        escrow_locked: lockedEscrow
+      },
+      finance: {
+        outstanding_amount: outstanding
+      },
+      sync: {
+        queue_conflicts: 0
+      },
+      schema_drift: {
+        healthy: drift.healthy,
+        issue_count: drift.issues.length
+      }
+    };
+
+    await putCachedJson(c.env, cacheKey, payload, 60);
+
     return c.json(
       envelopeSuccess({
         correlationId,
-        data: {
-          generated_at: nowIso(),
-          jobs: {
-            open: openJobs,
-            critical: criticalJobs,
-            stale_over_24h: staleJobs
-          },
-          operations: {
-            schedules_total: schedules.length,
-            documents_pending_publish: pendingPublish,
-            escrow_locked: lockedEscrow
-          },
-          finance: {
-            outstanding_amount: outstanding
-          },
-          sync: {
-            queue_conflicts: 0
-          },
-          schema_drift: {
-            healthy: drift.healthy,
-            issue_count: drift.issues.length
-          }
-        }
+        data: payload
       })
     );
   });

@@ -380,7 +380,7 @@ export function PortalApp(): React.JSX.Element {
   const isDispatchRole = effectiveRole === "dispatcher" || effectiveRole === "super_admin";
   const isFinanceRole = effectiveRole === "finance" || effectiveRole === "super_admin";
   const canAccessPeopleDirectory = effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin";
-  const canGenerateDocuments = effectiveRole === "technician" || effectiveRole === "dispatcher" || effectiveRole === "super_admin";
+  const canGenerateDocuments = effectiveRole === "technician" || effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin";
   const isAdmin = effectiveRole === "admin" || effectiveRole === "super_admin";
   const isSuperAdmin = effectiveRole === "super_admin";
   const allowedWorkspaceTools = useMemo(() => {
@@ -702,12 +702,16 @@ export function PortalApp(): React.JSX.Element {
         setLastSyncPullAt(at);
         setSyncPulse({ at, jobsChanged: jobsChanged, queueChanged: 0 });
       } catch (error) {
+        if (errorCode(error) === "google_transient_error") {
+          console.warn("Sync pull deferred due to 429 quota limit.");
+          return;
+        }
         console.error("Sync pull failed", error);
       }
     };
 
     void poll();
-    const intervalId = window.setInterval(poll, 30000);
+    const intervalId = window.setInterval(poll, 60000);
     return () => window.clearInterval(intervalId);
   }, [networkOnline, session, selectedJobid, isDispatchRole, lastSyncPullAt]);
 
@@ -1149,12 +1153,19 @@ export function PortalApp(): React.JSX.Element {
   }
 
   async function handleLogout(): Promise<void> {
-    await apiClient.logout();
-    setSession(null);
-    setEmulatedRole("");
-    setActiveWorkspaceTool("jobs");
-    setPortalView("dashboard");
-    setFeedback("Session cleared.");
+    try {
+      await apiClient.logout();
+    } catch (error) {
+      console.warn("Logout request failed, clearing session anyway", error);
+    } finally {
+      startTransition(() => {
+        setSession(null);
+        setEmulatedRole("");
+        setActiveWorkspaceTool("jobs");
+        setPortalView("dashboard");
+        setFeedback("Session cleared.");
+      });
+    }
   }
 
   async function queueMutation(mutation: Omit<OfflineQueueItem, "created_at">): Promise<void> {
