@@ -6,8 +6,6 @@
 
 import { Hono } from "hono";
 import {
-  statusUpdateSchema,
-  noteSchema,
   envelopeError,
   envelopeSuccess,
   canReadJob,
@@ -23,6 +21,7 @@ import { buildNameLookups } from "../services/nameEnrichment.js";
 import { getCacheVersion, getCachedJson, putCachedJson } from "../services/cache.js";
 import { assertComplianceGuardrails } from "../services/compliance.js";
 import { rowVersionConflictResponse } from "../services/responses.js";
+import { noteSchema, statusUpdateSchema } from "../schemas/requests.js";
 import { getSessionUser, requireSession } from "../middleware/auth.js";
 import type { AppBindings } from "../context.js";
 

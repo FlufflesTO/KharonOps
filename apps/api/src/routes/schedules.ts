@@ -6,9 +6,6 @@
 
 import { Hono } from "hono";
 import {
-  scheduleRequestSchema,
-  scheduleConfirmSchema,
-  scheduleRescheduleSchema,
   envelopeError,
   envelopeSuccess,
   canRequestSchedule,
@@ -19,6 +16,7 @@ import {
 import { parseJsonBody } from "../services/parse.js";
 import { createMutable, createStoreContext } from "../services/meta.js";
 import { rowVersionConflictResponse } from "../services/responses.js";
+import { scheduleConfirmSchema, scheduleRequestSchema, scheduleRescheduleSchema } from "../schemas/requests.js";
 import { requireSession, getSessionUser } from "../middleware/auth.js";
 import type { AppBindings } from "../context.js";
 import type { ScheduleRequestRow, ScheduleRow } from "@kharon/domain";

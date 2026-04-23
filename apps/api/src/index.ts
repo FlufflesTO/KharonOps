@@ -1,22 +1,15 @@
-/**
- * KharonOps — Unified API (Production)
- * Purpose: Entry point for Cloudflare Workers API. Handles middleware registration and route modularization.
- * Dependencies: hono, @kharon/domain, ./routes/*
- * Structural Role: Central API Gateway
- */
-
 import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { logger } from "hono/logger";
-import { envelopeError, envelopeSuccess } from "@kharon/domain";
-
+import { ZodError } from "zod";
+import { envelopeError } from "@kharon/domain";
+import { GoogleAdapterError } from "@kharon/google";
 import { createRuntimeConfig } from "./config.js";
-import { SheetsWorkbookStore } from "./store/sheetsStore.js";
-import { logApiEvent } from "./services/logging.js";
-import { contextMiddleware } from "./middleware/context.js";
-import { sessionMiddleware, accessMiddleware } from "./middleware/auth.js";
-
-// Routes
+import type { AppBindings } from "./context.js";
+import { accessMiddleware, sessionMiddleware } from "./middleware/auth.js";
+import { correlationMiddleware } from "./middleware/correlation.js";
+import { apiSecurityHeadersMiddleware } from "./middleware/security.js";
+import { bumpCacheVersion } from "./services/cache.js";
+import { envCacheKey, logApiEvent, parseEnvBindings } from "./services/utils.js";
+import { createWorkbookStore } from "./store/factory.js";
 import auth from "./routes/auth.js";
 import jobs from "./routes/jobs.js";
 import schedules from "./routes/schedules.js";
@@ -27,57 +20,133 @@ import admin from "./routes/admin.js";
 import publicRoutes from "./routes/public.js";
 import finance from "./routes/finance.js";
 
-import type { AppBindings } from "./context.js";
+export function createApp(env: Record<string, string | undefined> = {}): Hono<AppBindings> {
+  const config = createRuntimeConfig(env);
+  const store = createWorkbookStore(config);
+  let schemaInitPromise: Promise<void> | null = null;
 
-export function createApp(env?: any) {
   const app = new Hono<AppBindings>();
-
-  // 1. Global Middleware
-  app.use("*", logger());
-  app.use("*", cors({
-    origin: (origin) => {
-      if (!origin) return null;
-      const allowed = ["tequit.co.za", "kharon.co.za", "localhost"];
-      return allowed.some(domain => origin.endsWith(domain)) ? origin : null;
-    },
-    credentials: true,
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Correlation-ID", "Cf-Access-Jwt-Assertion"]
-  }));
-
-  // 2. Security Headers
+  app.use("*", correlationMiddleware);
+  app.use("*", apiSecurityHeadersMiddleware());
   app.use("*", async (c, next) => {
-    c.header("X-Content-Type-Options", "nosniff");
-    c.header("X-Frame-Options", "DENY");
-    c.header("Referrer-Policy", "strict-origin-when-cross-origin");
-    await next();
-  });
-
-  // 3. Dependency Injection & Context
-  app.use("*", async (c, next) => {
-    const correlationId = c.req.header("X-Correlation-ID") || crypto.randomUUID();
-    c.set("correlationId", correlationId);
-
-    const config = createRuntimeConfig(c.env || env);
-    const store = new SheetsWorkbookStore(config);
-
     c.set("config", config);
     c.set("store", store);
+    await next();
+  });
+  app.use("/api/v1/*", accessMiddleware(config));
+  app.use("*", sessionMiddleware(config));
 
+  app.use("/api/v1/*", async (c, next) => {
+    const path = c.req.path;
+    const skipSchemaInit =
+      path === "/api/v1/auth/config" ||
+      path === "/api/v1/auth/session" ||
+      path === "/api/v1/auth/logout";
+
+    if (skipSchemaInit) {
+      await next();
+      return;
+    }
+
+    if (!schemaInitPromise) {
+      schemaInitPromise = store.ensureSchema();
+    }
+    await schemaInitPromise;
     await next();
   });
 
-  // 4. Authentication Middleware
-  app.use("*", async (c, next) => {
-    const config = c.get("config");
-    await sessionMiddleware(config)(c, next);
-  });
-  app.use("*", async (c, next) => {
-    const config = c.get("config");
-    await accessMiddleware(config)(c, next);
+  app.use("/api/v1/*", async (c, next) => {
+    await next();
+    const method = c.req.method.toUpperCase();
+    const isMutation = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
+    const skipPaths = new Set(["/api/v1/auth/google-login", "/api/v1/auth/logout"]);
+
+    if (!isMutation || c.res.status >= 400 || skipPaths.has(c.req.path)) {
+      return;
+    }
+
+    try {
+      await bumpCacheVersion(c.env);
+    } catch (error) {
+      logApiEvent("warn", "cache.version.bump_failed", {
+        correlationId: c.get("correlationId"),
+        path: c.req.path,
+        error: String(error)
+      });
+    }
   });
 
-  // 5. Route Registration
+  app.onError((error, c) => {
+    const correlationId = c.get("correlationId") ?? crypto.randomUUID();
+
+    if (error instanceof SyntaxError) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "invalid_json",
+            message: "Request body must be valid JSON"
+          }
+        }),
+        400
+      );
+    }
+
+    if (error instanceof GoogleAdapterError) {
+      const status = (error.status >= 400 && error.status <= 599 ? error.status : 500) as
+        | 400
+        | 401
+        | 403
+        | 404
+        | 429
+        | 500;
+
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details
+          }
+        }),
+        status
+      );
+    }
+
+    if (error instanceof ZodError) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "validation_error",
+            message: "Request validation failed",
+            details: { issues: error.issues }
+          }
+        }),
+        400
+      );
+    }
+
+    logApiEvent("error", "api.unhandled_error", {
+      correlationId,
+      path: c.req.path,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
+    return c.json(
+      envelopeError({
+        correlationId,
+        error: {
+          code: "internal_error",
+          message: "Unexpected server error"
+        }
+      }),
+      500
+    );
+  });
+
   app.route("/api/v1/auth", auth);
   app.route("/api/v1/jobs", jobs);
   app.route("/api/v1/schedules", schedules);
@@ -88,48 +157,85 @@ export function createApp(env?: any) {
   app.route("/api/v1/public", publicRoutes);
   app.route("/api/v1/workspace/upgrade/finance", finance);
 
-  // 6. Root & Health
-  app.get("/", (c) => c.text("KharonOps API v1.0.0 (Unified)"));
-  app.get("/health", (c) => {
-    const correlationId = c.get("correlationId");
-    return c.json(envelopeSuccess({
-      correlationId,
-      data: { status: "ok", timestamp: new Date().toISOString() }
-    }));
-  });
+  app.get("*", async (c) => {
+    if (c.req.path.startsWith("/api/")) {
+      return c.json(
+        envelopeError({
+          correlationId: c.get("correlationId"),
+          error: { code: "not_found", message: "API endpoint not found" }
+        }),
+        404
+      );
+    }
 
-  // 7. Global Error Handling
-  app.onError((err, c) => {
-    const correlationId = c.get("correlationId") || "err-ctx-missing";
-    logApiEvent("error", "api.global_error", {
-      correlationId,
-      error: err.message,
-      stack: err.stack,
-      path: c.req.path
+    if (!c.env.ASSETS) {
+      return c.json(
+        envelopeError({
+          correlationId: c.get("correlationId"),
+          error: {
+            code: "assets_binding_unavailable",
+            message: "Static assets binding is not configured."
+          }
+        }),
+        503
+      );
+    }
+
+    let assetResponse = await c.env.ASSETS.fetch(c.req.raw);
+    if (assetResponse.status === 404 && c.req.method === "GET") {
+      const fallbackUrl = new URL(c.req.url);
+      const isPortal = c.req.path.startsWith("/portal/");
+      fallbackUrl.pathname = isPortal ? "/portal/index.html" : "/index.html";
+      const fallbackReq = new Request(fallbackUrl.toString(), c.req.raw);
+      assetResponse = await c.env.ASSETS.fetch(fallbackReq);
+    }
+
+    const mergedHeaders = new Headers(assetResponse.headers);
+    c.res.headers.forEach((value, key) => {
+      mergedHeaders.set(key, value);
     });
 
-    return c.json(envelopeError({
-      correlationId,
-      error: {
-        code: "internal_error",
-        message: err.message || "An unexpected error occurred"
-      }
-    }), 500);
-  });
-
-  app.notFound((c) => {
-    const correlationId = c.get("correlationId");
-    return c.json(envelopeError({
-      correlationId,
-      error: {
-        code: "not_found",
-        message: `Route ${c.req.path} not found`
-      }
-    }), 404);
+    return new Response(assetResponse.body, {
+      status: assetResponse.status,
+      statusText: assetResponse.statusText,
+      headers: mergedHeaders
+    });
   });
 
   return app;
 }
 
-const app = createApp();
-export default app;
+const runtimeAppCache = new Map<string, Hono<AppBindings>>();
+let processEnvApp: Hono<AppBindings> | null = null;
+
+function getProcessEnvApp(): Hono<AppBindings> {
+  if (processEnvApp) {
+    return processEnvApp;
+  }
+
+  const processEnv = parseEnvBindings((globalThis as { process?: { env?: Record<string, string> } }).process?.env ?? {});
+  processEnvApp = createApp(processEnv);
+  return processEnvApp;
+}
+
+function getRuntimeApp(runtimeEnv: Record<string, string | undefined>): Hono<AppBindings> {
+  const key = envCacheKey(runtimeEnv);
+  const cached = runtimeAppCache.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  const created = createApp(runtimeEnv);
+  runtimeAppCache.set(key, created);
+  return created;
+}
+
+export default {
+  fetch(request: Request, env: Record<string, unknown>) {
+    const runtimeEnv = parseEnvBindings(env);
+    if (Object.keys(runtimeEnv).length > 0) {
+      return getRuntimeApp(runtimeEnv).fetch(request, env);
+    }
+    return getProcessEnvApp().fetch(request, env);
+  }
+};

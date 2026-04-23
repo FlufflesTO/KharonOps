@@ -47,7 +47,6 @@ import {
   type SkillMatrixRow,
   type ClientRow,
   type TechnicianRow,
-  type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";
 import type { StoreContext } from "./types.js";
@@ -384,10 +383,6 @@ export class DualWorkbookStore implements WorkbookStore {
     await this._mirrorWrite("upsertSkillMatrix", row.user_id, () => this.mirror.upsertSkillMatrix(row));
   }
 
-  async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
-    return this.primary.getUpgradeWorkspaceState();
-  }
-
   // -- Job operations ------------------------------------------------------
 
   async listJobsForUser(user: SessionUser): Promise<JobRow[]> {
@@ -589,6 +584,10 @@ export class DualWorkbookStore implements WorkbookStore {
     return this.primary.listSyncQueueByJob(jobid);
   }
 
+  async listJobEventsByJob(jobid: string): Promise<JobEventRow[]> {
+    return this.primary.listJobEventsByJob(jobid);
+  }
+
   // -- Sync operations -----------------------------------------------------
 
   async applySyncMutations(args: {
@@ -629,13 +628,6 @@ export class DualWorkbookStore implements WorkbookStore {
     }
 
     return primaryResult;
-  }
-
-  async pullSyncData(args: {
-    actor: SessionUser;
-    since: string;
-  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
-    return this.primary.pullSyncData(args);
   }
 
   // -- Consistency verification --------------------------------------------

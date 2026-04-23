@@ -6,8 +6,6 @@
 
 import { Hono } from "hono";
 import {
-  documentGenerateSchema,
-  documentPublishSchema,
   envelopeError,
   envelopeSuccess,
   canGenerateDocument,
@@ -20,6 +18,7 @@ import { parseJsonBody } from "../services/parse.js";
 import { createMutable, createStoreContext } from "../services/meta.js";
 import { rowVersionConflictResponse } from "../services/responses.js";
 import { getCacheVersion, getCachedJson, putCachedJson } from "../services/cache.js";
+import { documentGenerateSchema, documentPublishSchema } from "../schemas/requests.js";
 import { requireSession, getSessionUser } from "../middleware/auth.js";
 import type { AppBindings } from "../context.js";
 import type { JobDocumentRow } from "@kharon/domain";

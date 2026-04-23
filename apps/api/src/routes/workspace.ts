@@ -6,10 +6,6 @@
 
 import { Hono } from "hono";
 import {
-  gmailNotifySchema,
-  chatAlertSchema,
-  peopleSyncSchema,
-  skillMatrixUpsertSchema,
   envelopeSuccess,
   envelopeError,
   bumpMutableMeta,
@@ -21,6 +17,8 @@ import { createMutable, createStoreContext } from "../services/meta.js";
 import { getCacheVersion, getCachedJson, putCachedJson } from "../services/cache.js";
 import { detectSchemaDrift } from "../services/governance.js";
 import { nowIso } from "../services/utils.js";
+import { readUpgradeWorkspaceState } from "../services/workspaceState.js";
+import { chatAlertSchema, gmailNotifySchema, peopleSyncSchema, skillMatrixUpsertSchema } from "../schemas/requests.js";
 import type { AppBindings } from "../context.js";
 import type { UserRow, ScheduleRequestRow, ScheduleRow, JobDocumentRow } from "@kharon/domain";
 
@@ -60,7 +58,7 @@ workspace.get("/upgrade/state", requireRoles("dispatcher", "admin", "finance"), 
 
   if (cached) return c.json(envelopeSuccess({ correlationId, data: cached }));
 
-  const data = await store.getUpgradeWorkspaceState();
+  const data = await readUpgradeWorkspaceState(store);
   await putCachedJson(c.env, cacheKey, data, 60);
   return c.json(envelopeSuccess({ correlationId, data }));
 });

@@ -6,10 +6,6 @@
 
 import { Hono } from "hono";
 import {
-  financeQuoteCreateSchema,
-  financeQuoteStatusSchema,
-  financeInvoiceFromQuoteSchema,
-  financeEscrowLockSchema,
   envelopeSuccess,
   envelopeError,
   bumpMutableMeta
@@ -18,6 +14,12 @@ import { requireRoles, requireSession, getSessionUser } from "../middleware/auth
 import { parseJsonBody } from "../services/parse.js";
 import { createMutable, createStoreContext } from "../services/meta.js";
 import { nowIso } from "../services/utils.js";
+import {
+  financeEscrowLockSchema,
+  financeInvoiceFromQuoteSchema,
+  financeQuoteCreateSchema,
+  financeQuoteStatusSchema
+} from "../schemas/requests.js";
 import type { AppBindings } from "../context.js";
 import type { FinanceDebtorRow, FinanceStatementRow, FinanceInvoiceRow } from "@kharon/domain";
 

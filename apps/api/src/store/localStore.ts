@@ -24,7 +24,6 @@ import {
   type SkillMatrixRow,
   type ClientRow,
   type TechnicianRow,
-  type UpgradeWorkspaceState,
   type UserRow
 } from "@kharon/domain";
 import type { WorkbookStore } from "./types.js";
@@ -318,18 +317,6 @@ export class LocalWorkbookStore implements WorkbookStore {
     this.data.skills.set(row.user_id, immutableClone(row));
   }
 
-  async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
-    const [quotes, invoices, statements, debtors, escrow, skills] = await Promise.all([
-      this.listFinanceQuotes(),
-      this.listFinanceInvoices(),
-      this.listFinanceStatements(),
-      this.listFinanceDebtors(),
-      this.listEscrowRows(),
-      this.listSkillMatrix()
-    ]);
-    return { quotes, invoices, statements, debtors, escrow, skills };
-  }
-
   async listJobsForUser(user: SessionUser): Promise<JobRow[]> {
     return [...this.data.jobs.values()].filter((job) => canReadJob(user, job)).map((job) => immutableClone(job));
   }
@@ -535,6 +522,13 @@ export class LocalWorkbookStore implements WorkbookStore {
       .map((row) => immutableClone(row));
   }
 
+  async listJobEventsByJob(jobid: string): Promise<JobEventRow[]> {
+    return [...this.data.jobEvents.values()]
+      .filter((row) => row.job_id === jobid)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+      .map((row) => immutableClone(row));
+  }
+
   async applySyncMutations(args: {
     actor: SessionUser;
     mutations: SyncMutation[];
@@ -701,24 +695,4 @@ export class LocalWorkbookStore implements WorkbookStore {
     };
   }
 
-  async pullSyncData(args: {
-    actor: SessionUser;
-    since: string;
-  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
-    const sinceTs = Date.parse(args.since);
-    const jobs = [...this.data.jobs.values()]
-      .filter((job) => canReadJob(args.actor, job))
-      .filter((job) => Number.isNaN(sinceTs) || Date.parse(job.updated_at) >= sinceTs)
-      .map((job) => immutableClone(job));
-
-    const queue = [...this.data.syncQueue.values()]
-      .filter((entry) => jobs.some((job) => job.job_id === entry.job_id))
-      .map((entry) => immutableClone(entry));
-
-    const events = [...this.data.jobEvents.values()]
-      .filter((entry) => jobs.some((job) => job.job_id === entry.job_id))
-      .map((entry) => immutableClone(entry));
-
-    return { jobs, queue, events };
-  }
 }

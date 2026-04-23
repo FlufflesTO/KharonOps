@@ -5,12 +5,13 @@
  */
 
 import { Hono } from "hono";
-import { googleLoginSchema, envelopeError, envelopeSuccess } from "@kharon/domain";
+import { envelopeError, envelopeSuccess } from "@kharon/domain";
 import { verifyIdentity } from "../auth/google.js";
 import { createSessionToken, setSessionCookie, clearSessionCookie } from "../auth/session.js";
 import { parseJsonBody } from "../services/parse.js";
 import { createStoreContext } from "../services/meta.js";
 import { logApiEvent, parseGoogleTokenAudienceFromJwt } from "../services/utils.js";
+import { googleLoginSchema } from "../schemas/requests.js";
 import type { AppBindings } from "../context.js";
 import { GoogleAdapterError } from "@kharon/google";
 

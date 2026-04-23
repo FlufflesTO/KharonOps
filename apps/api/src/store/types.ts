@@ -19,7 +19,6 @@ import type {
   SkillMatrixRow,
   TechnicianRow,
   ClientRow,
-  UpgradeWorkspaceState,
   UserRow
 } from "@kharon/domain";
 
@@ -71,6 +70,7 @@ export interface WorkbookStore {
   upsertSyncQueue(row: SyncQueueRow): Promise<void>;
   getSyncQueue(mutationid: string): Promise<SyncQueueRow | null>;
   listSyncQueueByJob(jobid: string): Promise<SyncQueueRow[]>;
+  listJobEventsByJob(jobid: string): Promise<JobEventRow[]>;
   listUsers(): Promise<UserRow[]>;
   listClients(): Promise<ClientRow[]>;
   listTechnicians(): Promise<TechnicianRow[]>;
@@ -93,7 +93,6 @@ export interface WorkbookStore {
   upsertEscrow(row: EscrowRow): Promise<void>;
   listSkillMatrix(): Promise<SkillMatrixRow[]>;
   upsertSkillMatrix(row: SkillMatrixRow): Promise<void>;
-  getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState>;
   applySyncMutations(args: {
     actor: SessionUser;
     mutations: SyncMutation[];
@@ -108,8 +107,4 @@ export interface WorkbookStore {
     mergePatch?: Record<string, unknown>;
     ctx: StoreContext;
   }): Promise<{ job: JobRow; conflict: ConflictPayload | null }>;
-  pullSyncData(args: {
-    actor: SessionUser;
-    since: string;
-  }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }>;
 }

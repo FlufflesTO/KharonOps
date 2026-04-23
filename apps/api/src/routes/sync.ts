@@ -6,8 +6,6 @@
 
 import { Hono } from "hono";
 import {
-  syncPushSchema,
-  resolveConflictSchema,
   envelopeSuccess,
   envelopeError
 } from "@kharon/domain";
@@ -16,6 +14,8 @@ import { parseJsonBody } from "../services/parse.js";
 import { createStoreContext } from "../services/meta.js";
 import { getCacheVersion, getCachedJson, putCachedJson } from "../services/cache.js";
 import { rowVersionConflictResponse } from "../services/responses.js";
+import { readSyncSnapshot } from "../services/syncRead.js";
+import { resolveConflictSchema, syncPushSchema } from "../schemas/requests.js";
 import type { AppBindings } from "../context.js";
 import type { JobRow, SyncQueueRow, JobEventRow } from "@kharon/domain";
 
@@ -42,7 +42,7 @@ sync.get("/pull", async (c) => {
       events: cached.events.filter(e => Date.parse(e.updated_at) >= sinceTs)
     };
   } else {
-    data = await store.pullSyncData({ actor: user, since: "1970-01-01T00:00:00.000Z" });
+    data = await readSyncSnapshot({ store, actor: user, since: "1970-01-01T00:00:00.000Z" });
     await putCachedJson(c.env, cacheKey, data, 30);
     data = {
       jobs: data.jobs.filter(j => Date.parse(j.updated_at) >= sinceTs),

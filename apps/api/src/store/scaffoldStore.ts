@@ -18,7 +18,6 @@ import type {
   SkillMatrixRow,
   ClientRow,
   TechnicianRow,
-  UpgradeWorkspaceState,
   UserRow
 } from "@kharon/domain";
 import type { StoreContext, WorkbookStore } from "./types.js";
@@ -148,6 +147,10 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     return this.notImplemented("listSyncQueueByJob");
   }
 
+  async listJobEventsByJob(_jobid: string): Promise<JobEventRow[]> {
+    return this.notImplemented("listJobEventsByJob");
+  }
+
   async listUsers(): Promise<UserRow[]> {
     return this.notImplemented("listUsers");
   }
@@ -219,10 +222,6 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     this.notImplemented("upsertSkillMatrix");
   }
 
-  async getUpgradeWorkspaceState(): Promise<UpgradeWorkspaceState> {
-    return this.notImplemented("getUpgradeWorkspaceState");
-  }
-
   async applySyncMutations(_args: {
     actor: SessionUser;
     mutations: SyncMutation[];
@@ -243,7 +242,4 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
     return this.notImplemented("resolveSyncConflict");
   }
 
-  async pullSyncData(_args: { actor: SessionUser; since: string }): Promise<{ jobs: JobRow[]; queue: SyncQueueRow[]; events: JobEventRow[] }> {
-    return this.notImplemented("pullSyncData");
-  }
 }

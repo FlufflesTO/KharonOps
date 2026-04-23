@@ -5,10 +5,11 @@
  */
 
 import { Hono } from "hono";
-import { publicContactRequestSchema, envelopeSuccess } from "@kharon/domain";
+import { envelopeSuccess } from "@kharon/domain";
 import { parseJsonBody } from "../services/parse.js";
 import { createStoreContext } from "../services/meta.js";
 import { logApiEvent, enquiryTypeLabel } from "../services/utils.js";
+import { publicContactRequestSchema } from "../schemas/requests.js";
 import type { AppBindings } from "../context.js";
 
 const publicRouter = new Hono<AppBindings>();

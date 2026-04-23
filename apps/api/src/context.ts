@@ -5,13 +5,8 @@
  */
 
 import type { SessionUser } from "@kharon/domain";
-<<<<<<< Updated upstream
 import type { RuntimeConfig } from "./config.js";
 import type { WorkbookStore } from "./store/types.js";
-=======
-import type { WorkbookStore } from "./store/types.js";
-import type { RuntimeConfig } from "./config.js";
->>>>>>> Stashed changes
 
 export interface AppBindings {
   Bindings: {
