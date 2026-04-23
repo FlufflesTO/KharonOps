@@ -74,24 +74,16 @@ export function HomePage(): React.JSX.Element {
               or contact quickly without wading through a long landing page.
             </p>
             <div className="hero-actions">
-              <Link className="site-button site-button--primary" to="/contact?intent=project">
+              <Link className="site-button site-button--primary site-button--large" to="/contact?intent=project">
                 Request a Quote
               </Link>
-              <Link className="site-button site-button--secondary" to="/services">
+              <Link className="site-button site-button--outline" to="/services">
                 Browse Services
               </Link>
-              <Link className="hero-inline-link" to="/resources">
-                Open guides
-              </Link>
             </div>
-            <div className="public-hero__trust" aria-label="Request paths">
-              {contactPaths.map((path) => (
-                <Link key={path.value} to={`/contact?intent=${path.value}`} className="hero-trust-pill">
-                  <span className="hero-trust-pill__dot" />
-                  <span>{path.label}</span>
-                </Link>
-              ))}
-            </div>
+            <p className="hero-help-hint">
+              Urgent? <Link to="/contact?intent=urgent_callout">Emergency callouts here</Link>
+            </p>
           </div>
 
           <aside className="public-hero__panel" aria-label="Company snapshot">
