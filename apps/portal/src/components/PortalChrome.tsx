@@ -80,40 +80,66 @@ export function PortalChrome({
         </div>
 
         <div className="portal-topbar__actions">
-          <label className="toggle-inline">
-            <input
-              id="portal-offline-queue-toggle"
-              name="portal_offline_queue_toggle"
-              type="checkbox"
-              checked={offlineEnabled}
-              onChange={(event) => onOfflineEnabledChange(event.target.checked)}
-            />
-            Offline queue mode
-          </label>
-          <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`}>{networkOnline ? "Online" : "Offline"}</span>
-          <span className="status-chip status-chip--neutral" title="Real-time sync pulse">
+          <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`} aria-label={`Network status: ${networkOnline ? "Online" : "Offline"}`}>{networkOnline ? "Online" : "Offline"}</span>
+          <span className="status-chip status-chip--neutral" title="Real-time sync pulse" aria-label={`Last sync pulse: ${syncPulseText}`}>
             {syncPulseText}
           </span>
-          <button
-            className={`button ${focusMode ? "button--primary" : "button--ghost"}`}
-            type="button"
-            onClick={() => onFocusModeChange(!focusMode)}
-            title="Toggle Focus Mode (F)"
+          <details className="portal-topbar__utilities">
+            <summary className="button button--ghost" aria-label="Utility menu">More</summary>
+            <div className="portal-topbar__utility-menu">
+              <label className="toggle-inline">
+                <input
+                  id="portal-offline-queue-toggle"
+                  name="portal_offline_queue_toggle"
+                  type="checkbox"
+                  checked={offlineEnabled}
+                  onChange={(event) => onOfflineEnabledChange(event.target.checked)}
+                />
+                Offline queue mode
+              </label>
+              <button
+                className={`button ${focusMode ? "button--primary" : "button--ghost"}`}
+                type="button"
+                onClick={() => onFocusModeChange(!focusMode)}
+                title="Toggle Focus Mode (F)"
+                aria-label={focusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
+              >
+                {focusMode ? "Exit Focus" : "Focus"}
+              </button>
+              {installPromptAvailable ? (
+                <button 
+                  className="button button--secondary" 
+                  type="button" 
+                  onClick={onInstallApp}
+                  aria-label="Install the Kharon Ops app to your device"
+                >
+                  Install App
+                </button>
+              ) : null}
+              <button 
+                className="button button--secondary" 
+                type="button" 
+                onClick={onReplayQueue}
+                aria-label={`Sync ${queueCount} queued changes to the server`}
+              >
+                Sync queued changes ({queueCount})
+              </button>
+              <button 
+                className="button button--secondary" 
+                type="button" 
+                onClick={onGoHome}
+                aria-label="Return to your role dashboard overview"
+              >
+                Overview
+              </button>
+            </div>
+          </details>
+          <button 
+            className="button button--ghost" 
+            type="button" 
+            onClick={onLogout}
+            aria-label="Sign out of the portal"
           >
-            {focusMode ? "Exit Focus" : "Focus"}
-          </button>
-          {installPromptAvailable ? (
-            <button className="button button--secondary" type="button" onClick={onInstallApp}>
-              Install App
-            </button>
-          ) : null}
-          <button className="button button--secondary" type="button" onClick={onReplayQueue}>
-            Sync queued changes ({queueCount})
-          </button>
-          <button className="button button--secondary" type="button" onClick={onGoHome}>
-            Overview
-          </button>
-          <button className="button button--ghost" type="button" onClick={onLogout}>
             Logout
           </button>
         </div>

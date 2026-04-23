@@ -6,6 +6,55 @@
   --role-glow: rgba(99, 102, 241, 0.22);
 }
 
+/* --- UX/UI Audit Fixes --- */
+.emulation-tag {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(240, 192, 80, 0.15);
+  border: 1px solid rgba(240, 192, 80, 0.3);
+  border-radius: 4px;
+  color: #f0c050;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+.button,
+button,
+input,
+select,
+textarea,
+.portal-nav__item,
+.quick-start-card,
+.job-item,
+.job-card {
+  min-height: 44px; /* WCAG AA Minimum Touch Target */
+}
+
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--color-primary);
+  color: white;
+  padding: 1rem 2rem;
+  z-index: 100;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
 .portal-shell--client {
   --role-accent: #4f9dff;
   --role-glow: rgba(79, 157, 255, 0.25);
@@ -835,7 +884,7 @@ summary:focus-visible {
   padding-top: var(--space-2);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .workspace-brief {
     grid-template-columns: 1fr;
   }

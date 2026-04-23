@@ -46,15 +46,13 @@ export function AdminPanelCard({
   return (
     <article className="workspace-card glass-panel">
       <div className="panel-heading">
-        <p className="panel-eyebrow">Settings</p>
-        <h2>Platform Controls</h2>
+        <p className="panel-eyebrow">Admin tools</p>
+        <h2>Admin tools</h2>
       </div>
 
       <section className="admin-section glass-panel-inner mb-6">
-        <h3 className="text-base font-bold text-white mb-2">Role Emulation</h3>
-        <p className="text-sm opacity-75 mb-4">
-          Temporarily switch to another role to verify workflow coverage and access permissions.
-        </p>
+        <h3 className="text-base font-bold text-white mb-2">View as role</h3>
+        <p className="text-sm opacity-75 mb-4">Temporarily switch to another role to verify workflow coverage and access.</p>
         <div className="flex flex-wrap gap-2">
           {(["client", "technician", "dispatcher", "finance", "admin"] as const).map((role) => (
             <button
@@ -70,7 +68,7 @@ export function AdminPanelCard({
           </button>
           {emulatedRole && (
             <button className="button button--secondary button--compact ml-auto" onClick={() => onEmulateRole("")}>
-              End Emulation
+              Clear view
             </button>
           )}
         </div>
@@ -78,64 +76,64 @@ export function AdminPanelCard({
 
       <div className="flex flex-wrap gap-3 mb-8">
         <button className="button button--secondary" onClick={onLoadHealth}>
-          Refresh system health
+          Refresh summary
         </button>
         <button className="button button--secondary" onClick={onLoadAudits}>
-          Refresh audits ({adminAuditCount})
+          Refresh checks ({adminAuditCount})
         </button>
         <button className="button button--secondary" onClick={onLoadSchemaDrift}>
-          Schema drift scan
+          Data checks
         </button>
         <button className="button button--secondary" onClick={onLoadOpsIntelligence}>
-          Operational intelligence
+          System summary
         </button>
         <button className="button button--primary" onClick={onLoadAutomationJobs}>
-          Load automation queue
+          Background tasks
         </button>
       </div>
 
       <div className="admin-grid">
         <section className="admin-section mb-8">
-          <h3>Operational Intelligence</h3>
+          <h3>System summary</h3>
           {opsIntelligence ? (
             <div className="posture-grid">
               <div className="kpi-card">
-                <span>Open Jobs</span>
+                <span>Jobs needing review</span>
                 <strong>{opsIntelligence.jobs.open}</strong>
               </div>
               <div className="kpi-card">
-                <span>Critical Jobs</span>
+                <span>Priority jobs</span>
                 <strong className={opsIntelligence.jobs.critical > 0 ? "text-critical" : ""}>{opsIntelligence.jobs.critical}</strong>
               </div>
               <div className="kpi-card">
-                <span>Stale &gt;24h</span>
+                <span>Older than 24h</span>
                 <strong className={opsIntelligence.jobs.stale_over_24h > 0 ? "text-warning" : ""}>{opsIntelligence.jobs.stale_over_24h}</strong>
               </div>
               <div className="kpi-card">
-                <span>Pending Publish</span>
+                <span>Pending files</span>
                 <strong>{opsIntelligence.operations.documents_pending_publish}</strong>
               </div>
               <div className="kpi-card">
-                <span>Escrow Locked</span>
+                <span>Files on hold</span>
                 <strong>{opsIntelligence.operations.escrow_locked}</strong>
               </div>
               <div className="kpi-card">
-                <span>Outstanding Amount</span>
+                <span>Money owed</span>
                 <strong className="truncate">{opsIntelligence.finance.outstanding_amount.toFixed(2)}</strong>
               </div>
             </div>
           ) : (
-            <p className="muted-copy p-4 bg-white/5 rounded-md border border-white/10">Load operational intelligence to view live diagnostics.</p>
+            <p className="muted-copy p-4 bg-white/5 rounded-md border border-white/10">Load the summary to view current office work.</p>
           )}
         </section>
 
         <section className="admin-section mb-8">
-          <h3>Schema Drift Protection</h3>
+          <h3>Data checks</h3>
           {schemaDrift ? (
             <div className={`feedback-panel ${schemaDrift.healthy ? "border-l-active" : "border-l-critical"}`}>
-              <p className="mb-2">Health: <strong className={schemaDrift.healthy ? "text-active" : "text-critical"}>{schemaDrift.healthy ? "Healthy" : "Attention needed"}</strong></p>
+              <p className="mb-2">Status: <strong className={schemaDrift.healthy ? "text-active" : "text-critical"}>{schemaDrift.healthy ? "Healthy" : "Attention needed"}</strong></p>
               {schemaDrift.issues.length === 0 ? (
-                <p className="muted-copy text-sm">No schema drift issues detected across the ledger.</p>
+                <p className="muted-copy text-sm">No data issues detected across the workbook.</p>
               ) : (
                 <ul className="list-disc pl-5 text-sm space-y-1">
                   {schemaDrift.issues.map((issue) => (
@@ -147,22 +145,22 @@ export function AdminPanelCard({
               )}
             </div>
           ) : (
-            <p className="muted-copy p-4 bg-white/5 rounded-md border border-white/10">Run schema drift scan to validate workbook integrity.</p>
+            <p className="muted-copy p-4 bg-white/5 rounded-md border border-white/10">Run data checks to validate workbook consistency.</p>
           )}
         </section>
 
         <section className="admin-section mb-8 col-span-full">
-          <h3>System Health</h3>
+          <h3>Latest checks</h3>
           <div className="feedback-panel overflow-x-auto">
             <pre className="text-xs font-mono opacity-75">{JSON.stringify(adminHealth, null, 2)}</pre>
           </div>
         </section>
 
         <section className="admin-section mb-8 col-span-full">
-          <h3>Automation Jobs</h3>
+          <h3>Background tasks</h3>
           <div className="automation-list">
             {adminAutomationJobs.length === 0 ? (
-              <p className="muted-copy p-4 bg-white/5 rounded-md border border-white/10">No automation jobs loaded.</p>
+              <p className="muted-copy p-4 bg-white/5 rounded-md border border-white/10">No background tasks loaded.</p>
             ) : (
               <div className="space-y-2">
                 {adminAutomationJobs.map((job) => {
@@ -193,11 +191,11 @@ export function AdminPanelCard({
         </section>
 
         <section className="admin-section col-span-full">
-          <h3>Audit Trail Verification</h3>
-          <p className="text-sm opacity-75 mb-4">Cryptographic verification status for loaded audit entries.</p>
+          <h3>Recent activity</h3>
+          <p className="text-sm opacity-75 mb-4">Verification status for loaded activity entries.</p>
           <div className="history-table">
             {adminAudits.length === 0 ? (
-              <p className="muted-copy p-4 text-center">No audits loaded. Click Refresh Audits.</p>
+              <p className="muted-copy p-4 text-center">No activity loaded. Click Refresh checks.</p>
             ) : (
               (() => {
                 let prevHash = "ROOT";

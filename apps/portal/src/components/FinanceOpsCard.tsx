@@ -2,14 +2,7 @@ import React, { useMemo, useState } from "react";
 import type { UpgradeWorkspaceState } from "../apiClient";
 import type { JobRecord } from "./JobListView";
 
-const MODULES = [
-  "Financial Pulse",
-  "Quoting Hub",
-  "Invoicing Engine",
-  "Expense Panel",
-  "Debtors Monitor",
-  "Statement Ledger"
-] as const;
+const MODULES = ["Overview", "Quotes", "Invoices", "Money Owed", "Statements"] as const;
 
 interface FinanceOpsCardProps {
   jobs: JobRecord[];
@@ -55,8 +48,7 @@ export function FinanceOpsCard({
   onRebuildAnalytics
 }: FinanceOpsCardProps): React.JSX.Element {
   const [moduleIndex, setModuleIndex] = useState(0);
-  const [quoteJobid, setQuoteJobid] = useState("");
-  const [quoteClientid, setQuoteClientid] = useState("");
+  const [quoteJobid, setQuoteJobid] = useState(jobs[0]?.job_id ?? "");
   const [quoteDescription, setQuoteDescription] = useState("Remedial works proposal");
   const [quoteAmount, setQuoteAmount] = useState("0");
   const [invoiceDueDate, setInvoiceDueDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
@@ -65,21 +57,22 @@ export function FinanceOpsCard({
   const [selectedEscrowDocumentid, setSelectedEscrowDocumentid] = useState("");
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
 
+  const jobLookup = useMemo(() => new Map(jobs.map((job) => [job.job_id, job])), [jobs]);
+
   const financials = useMemo(() => {
     const activeJobs = jobs.filter((job) => job.status !== "cancelled");
-    const pipelineValue = activeJobs.reduce((acc, job) => acc + deriveJobValue(job), 0);
+    const openWorkValue = activeJobs.reduce((acc, job) => acc + deriveJobValue(job), 0);
     const invoiceReady = jobs.filter((job) => job.status === "approved" || job.status === "certified");
     const certified = jobs.filter((job) => job.status === "certified");
     const generatedDocs = documents.filter((doc) => String(doc.status) === "generated").length;
     const publishedDocs = documents.filter((doc) => String(doc.status) === "published").length;
 
     return {
-      pipelineValue,
+      openWorkValue,
       invoiceReadyCount: invoiceReady.length,
       certifiedCount: certified.length,
       generatedDocs,
       publishedDocs,
-      overdueCount: Math.max(0, invoiceReady.length - certified.length),
       issuedInvoices: store.invoices.filter((item) => item.status !== "paid").length,
       paidInvoices: store.invoices.filter((item) => item.status === "paid").length,
       totalDebt: store.debtors.reduce((acc, item) => acc + item.total_due, 0)
@@ -92,13 +85,14 @@ export function FinanceOpsCard({
   );
 
   const selectedQuote = store.quotes.find((item) => item.quote_id === selectedQuoteid) ?? null;
+  const selectedJobForQuote = jobLookup.get(quoteJobid) ?? null;
 
   return (
     <article className="workspace-card workspace-card--primary glass-panel">
       <div className="panel-heading panel-heading--inline flex-wrap gap-4">
         <div>
-          <p className="panel-eyebrow">Finance Portal</p>
-          <h2>Finance and Integrity Workspace</h2>
+          <p className="panel-eyebrow">Finance</p>
+          <h2>Finance</h2>
         </div>
         <div className="button-row">
           <span className="status-chip status-chip--active">Live</span>
@@ -125,28 +119,28 @@ export function FinanceOpsCard({
         {moduleIndex === 0 && (
           <div className="posture-grid">
             <div className="kpi-card">
-              <span>Projected Pipeline</span>
-              <strong className="truncate">{asMoney(financials.pipelineValue)}</strong>
+              <span>Overview</span>
+              <strong className="truncate">{asMoney(financials.openWorkValue)}</strong>
             </div>
             <div className="kpi-card">
-              <span>Invoice Ready Jobs</span>
+              <span>Ready to invoice</span>
               <strong>{financials.invoiceReadyCount}</strong>
             </div>
             <div className="kpi-card">
-              <span>Certified Closeouts</span>
-              <strong>{financials.certifiedCount}</strong>
+              <span>Paid invoices</span>
+              <strong>{financials.paidInvoices}</strong>
             </div>
             <div className="kpi-card">
-              <span>Outstanding Debt</span>
+              <span>Money owed</span>
               <strong className="truncate">{asMoney(financials.totalDebt)}</strong>
             </div>
             <div className="kpi-card">
-              <span>Open Invoices</span>
+              <span>Open invoices</span>
               <strong>{financials.issuedInvoices}</strong>
             </div>
             <div className="kpi-card">
-              <span>Paid Invoices</span>
-              <strong>{financials.paidInvoices}</strong>
+              <span>Published files</span>
+              <strong>{financials.publishedDocs}</strong>
             </div>
           </div>
         )}
@@ -155,12 +149,15 @@ export function FinanceOpsCard({
           <div className="control-stack">
             <div className="form-grid form-grid--two">
               <label className="field-stack">
-                <span>Job id</span>
-                <input value={quoteJobid} onChange={(e) => setQuoteJobid(e.target.value)} placeholder="JOB-1001" />
-              </label>
-              <label className="field-stack">
-                <span>Client id</span>
-                <input value={quoteClientid} onChange={(e) => setQuoteClientid(e.target.value)} placeholder="CLI-001" />
+                <span>Work reference</span>
+                <select value={quoteJobid} onChange={(e) => setQuoteJobid(e.target.value)}>
+                  <option value="">Choose work item</option>
+                  {jobs.map((job) => (
+                    <option key={job.job_id} value={job.job_id}>
+                      {job.title || "Job"} | {job.client_name || job.client_id || "Client"} | {job.job_id}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="field-stack">
                 <span>Description</span>
@@ -175,12 +172,13 @@ export function FinanceOpsCard({
               <button
                 className="button button--primary"
                 type="button"
+                disabled={!selectedJobForQuote}
                 onClick={() => {
                   const amount = Number(quoteAmount);
-                  if (!quoteJobid.trim() || !quoteClientid.trim() || !Number.isFinite(amount) || amount <= 0) return;
+                  if (!selectedJobForQuote || !Number.isFinite(amount) || amount <= 0) return;
                   onCreateQuote({
-                    job_id: quoteJobid.trim(),
-                    client_id: quoteClientid.trim(),
+                    job_id: selectedJobForQuote.job_id,
+                    client_id: selectedJobForQuote.client_id || selectedJobForQuote.client_name || "client",
                     description: quoteDescription.trim(),
                     amount
                   });
@@ -192,21 +190,29 @@ export function FinanceOpsCard({
               </button>
             </div>
             <div className="history-table mt-8">
-              {store.quotes.map((quote) => (
-                <div key={quote.quote_id} className="history-row">
-                  <strong className="truncate">{quote.quote_id}</strong>
-                  <span className="truncate">{quote.job_id}</span>
-                  <span className="truncate">{asMoney(quote.amount)}</span>
-                  <div className="flex justify-end gap-2 shrink-0">
-                    <button className="button button--ghost" type="button" onClick={() => setSelectedQuoteid(quote.quote_id)}>
-                      Select
-                    </button>
-                    <button className="button button--secondary" type="button" onClick={() => onUpdateQuoteStatus(quote.quote_id, "approved")}>
-                      Approve
-                    </button>
+              {store.quotes.map((quote) => {
+                const quoteDescription = String((quote as Record<string, unknown>).description ?? "Quote");
+                const job = jobLookup.get(String(quote.job_id));
+                return (
+                  <div key={quote.quote_id} className="history-row">
+                    <div className="flex flex-col truncate">
+                      <strong className="truncate">{quoteDescription}</strong>
+                      <small className="truncate opacity-75">
+                        {job?.title ?? "Work item"} | {job?.client_name ?? String(quote.client_id)}
+                      </small>
+                    </div>
+                    <span className="truncate">{asMoney(quote.amount)}</span>
+                    <div className="flex justify-end gap-2 shrink-0">
+                      <button className="button button--ghost" type="button" onClick={() => setSelectedQuoteid(quote.quote_id)}>
+                        Select
+                      </button>
+                      <button className="button button--secondary" type="button" onClick={() => onUpdateQuoteStatus(quote.quote_id, "approved")}>
+                        Approve
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -215,16 +221,20 @@ export function FinanceOpsCard({
           <div className="control-stack">
             <div className="form-grid form-grid--two">
               <label className="field-stack">
-                <span>Selected quote</span>
+                <span>Approved quote</span>
                 <select value={selectedQuoteid} onChange={(e) => setSelectedQuoteid(e.target.value)}>
                   <option value="">Choose approved quote</option>
                   {store.quotes
                     .filter((quote) => quote.status === "approved")
-                    .map((quote) => (
-                      <option key={quote.quote_id} value={quote.quote_id}>
-                        {quote.quote_id} | {quote.job_id} | {asMoney(quote.amount)}
-                      </option>
-                    ))}
+                    .map((quote) => {
+                      const description = String((quote as Record<string, unknown>).description ?? quote.quote_id);
+                      const job = jobLookup.get(String(quote.job_id));
+                      return (
+                        <option key={quote.quote_id} value={quote.quote_id}>
+                          {description} | {job?.title ?? quote.job_id} | {asMoney(quote.amount)}
+                        </option>
+                      );
+                    })}
                 </select>
               </label>
               <label className="field-stack">
@@ -246,29 +256,36 @@ export function FinanceOpsCard({
               </button>
             </div>
             <div className="history-table mt-8">
-              {store.invoices.map((invoice) => (
-                <div key={invoice.invoice_id} className="history-row">
-                  <div className="flex items-center gap-2 truncate">
-                    <input
-                      type="checkbox"
-                      checked={selectedInvoiceIds.includes(invoice.invoice_id)}
-                      onChange={() =>
-                        setSelectedInvoiceIds((prev) =>
-                          prev.includes(invoice.invoice_id)
-                            ? prev.filter((id) => id !== invoice.invoice_id)
-                            : [...prev, invoice.invoice_id]
-                        )
-                      }
-                    />
-                    <strong className="truncate">{invoice.invoice_id}</strong>
+              {store.invoices.map((invoice) => {
+                const invoiceClient = String((invoice as Record<string, unknown>).client_name ?? invoice.client_id);
+                const invoiceJob = String((invoice as Record<string, unknown>).job_id ?? "");
+                const job = invoiceJob ? jobLookup.get(invoiceJob) ?? null : null;
+                return (
+                  <div key={invoice.invoice_id} className="history-row">
+                    <div className="flex items-center gap-2 truncate">
+                      <input
+                        type="checkbox"
+                        checked={selectedInvoiceIds.includes(invoice.invoice_id)}
+                        onChange={() =>
+                          setSelectedInvoiceIds((prev) =>
+                            prev.includes(invoice.invoice_id)
+                              ? prev.filter((id) => id !== invoice.invoice_id)
+                              : [...prev, invoice.invoice_id]
+                          )
+                        }
+                      />
+                      <div className="flex flex-col truncate">
+                        <strong className="truncate">{job?.title ?? invoiceClient}</strong>
+                        <small className="truncate opacity-75">{invoice.invoice_id}</small>
+                      </div>
+                    </div>
+                    <span className="truncate">{asMoney(invoice.amount)}</span>
+                    <span className={`status-chip status-chip--${invoice.status === "paid" ? "active" : "warning"} shrink-0`}>
+                      {invoice.status}
+                    </span>
                   </div>
-                  <span className="truncate">{invoice.client_id}</span>
-                  <span className="truncate">{asMoney(invoice.amount)}</span>
-                  <span className={`status-chip status-chip--${invoice.status === "paid" ? "active" : "warning"} shrink-0`}>
-                    {invoice.status}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="flex justify-end mt-4">
               <button
@@ -281,7 +298,7 @@ export function FinanceOpsCard({
                   }
                 }}
               >
-                Bulk reconcile selected invoices
+                Reconcile selected invoices
               </button>
             </div>
           </div>
@@ -289,36 +306,21 @@ export function FinanceOpsCard({
 
         {moduleIndex === 3 && (
           <div className="control-stack">
-            <p className="inline-note p-4 bg-white/5 border border-white/10 rounded-lg">
-              Expense panel is available for operational logging. Current release prioritizes invoice and debt workflows.
-            </p>
-            <div className="posture-grid mt-6">
-              <div className="kpi-card">
-                <span>Generated docs</span>
-                <strong>{financials.generatedDocs}</strong>
-              </div>
-              <div className="kpi-card">
-                <span>Published docs</span>
-                <strong>{financials.publishedDocs}</strong>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {moduleIndex === 4 && (
-          <div className="control-stack">
             <div className="flex justify-start mb-4">
               <button className="button button--secondary" type="button" onClick={onRebuildAnalytics}>
-                Rebuild debtors profile
+                Rebuild money owed summary
               </button>
             </div>
             <div className="history-table">
               {store.debtors.length === 0 ? (
-                <p className="muted-copy p-4">No debtors profile computed yet.</p>
+                <p className="muted-copy p-4">No money owed summary computed yet.</p>
               ) : (
                 store.debtors.map((debtor) => (
                   <div key={debtor.client_id} className="history-row">
-                    <strong className="truncate">{debtor.client_id}</strong>
+                    <div className="flex flex-col truncate">
+                      <strong className="truncate">Client account</strong>
+                      <small className="truncate opacity-75">{debtor.client_id}</small>
+                    </div>
                     <span className="truncate">{asMoney(debtor.total_due)}</span>
                     <span className="truncate text-xs opacity-75">
                       30d {asMoney(debtor.bucket_30)} | 60d {asMoney(debtor.bucket_60)}
@@ -333,18 +335,21 @@ export function FinanceOpsCard({
           </div>
         )}
 
-        {moduleIndex === 5 && (
+        {moduleIndex === 4 && (
           <div className="control-stack">
             <div className="form-grid form-grid--two">
               <label className="field-stack">
-                <span>Invoice for reconciliation</span>
+                <span>Invoice to settle</span>
                 <select value={selectedInvoiceid} onChange={(e) => setSelectedInvoiceid(e.target.value)}>
                   <option value="">Select invoice</option>
-                  {store.invoices.map((invoice) => (
-                    <option key={invoice.invoice_id} value={invoice.invoice_id}>
-                      {invoice.invoice_id} | {invoice.client_id} | {invoice.status}
-                    </option>
-                  ))}
+                  {store.invoices.map((invoice) => {
+                    const invoiceClient = String((invoice as Record<string, unknown>).client_name ?? invoice.client_id);
+                    return (
+                      <option key={invoice.invoice_id} value={invoice.invoice_id}>
+                        {invoiceClient} | {invoice.invoice_id} | {invoice.status}
+                      </option>
+                    );
+                  })}
                 </select>
               </label>
               <label className="field-stack">
@@ -353,7 +358,7 @@ export function FinanceOpsCard({
                   <option value="">Select published document</option>
                   {escrowEligibleDocuments.map((doc) => (
                     <option key={String(doc.document_id)} value={String(doc.document_id)}>
-                      {String(doc.document_id)} | {String(doc.document_type)}
+                      {String(doc.document_type)} | {String(doc.document_id)}
                     </option>
                   ))}
                 </select>
@@ -378,13 +383,16 @@ export function FinanceOpsCard({
               </button>
             </div>
             <div className="history-table mb-8">
-              <h3 className="text-sm font-bold opacity-50 mb-2 px-1">Escrow Records</h3>
+              <h3 className="text-sm font-bold opacity-50 mb-2 px-1">Escrow records</h3>
               {store.escrow.length === 0 ? (
                 <p className="muted-copy">No escrow records yet.</p>
               ) : (
                 store.escrow.map((item) => (
                   <div key={item.document_id} className="history-row">
-                    <strong className="truncate">{item.document_id}</strong>
+                    <div className="flex flex-col truncate">
+                      <strong className="truncate">{String(item.status === "released" ? "Released file" : "Held file")}</strong>
+                      <small className="truncate opacity-75">{item.document_id}</small>
+                    </div>
                     <span className="truncate">{item.invoice_id}</span>
                     <span className="truncate">{item.status === "released" ? item.released_at : item.locked_at}</span>
                     <span className={`status-chip status-chip--${item.status === "released" ? "active" : "warning"} shrink-0`}>
@@ -395,13 +403,16 @@ export function FinanceOpsCard({
               )}
             </div>
             <div className="history-table">
-              <h3 className="text-sm font-bold opacity-50 mb-2 px-1">Statement Ledger</h3>
+              <h3 className="text-sm font-bold opacity-50 mb-2 px-1">Statements</h3>
               {store.statements.length === 0 ? (
-                <p className="muted-copy">No statements generated. Rebuild debtors profile first.</p>
+                <p className="muted-copy">No statements generated. Rebuild money owed summary first.</p>
               ) : (
                 store.statements.map((statement) => (
                   <div key={statement.statement_id} className="history-row">
-                    <strong className="truncate">{statement.statement_id}</strong>
+                    <div className="flex flex-col truncate">
+                      <strong className="truncate">Statement</strong>
+                      <small className="truncate opacity-75">{statement.statement_id}</small>
+                    </div>
                     <span className="truncate">{statement.client_id}</span>
                     <span className="truncate">{statement.period_label}</span>
                     <span className="truncate">{asMoney(statement.closing_balance)}</span>
@@ -414,7 +425,6 @@ export function FinanceOpsCard({
       </div>
 
       <style>{`
-        /* Flexbox and Layout Utilities */
         .flex { display: flex; }
         .flex-wrap { flex-wrap: wrap; }
         .items-center { align-items: center; }
@@ -438,10 +448,9 @@ export function FinanceOpsCard({
         .font-bold { font-weight: 700; }
         .opacity-50 { opacity: 0.5; }
         .opacity-75 { opacity: 0.75; }
-        .bg-white\\/5 { background-color: rgba(255, 255, 255, 0.05); }
-        .border-white\\/10 { border-color: rgba(255, 255, 255, 0.1); }
+        .bg-white\/5 { background-color: rgba(255, 255, 255, 0.05); }
+        .border-white\/10 { border-color: rgba(255, 255, 255, 0.1); }
         .rounded-lg { border-radius: 0.5rem; }
-        
         .module-tabs {
           display: flex;
           flex-wrap: wrap;
@@ -493,9 +502,7 @@ export function FinanceOpsCard({
           color: #fff;
           font-weight: 800;
         }
-        .form-grid--two {
-          grid-template-columns: 1fr;
-        }
+        .form-grid--two { grid-template-columns: 1fr; }
         @media (min-width: 768px) {
           .form-grid--two { grid-template-columns: repeat(2, 1fr); }
         }

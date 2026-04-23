@@ -54,12 +54,19 @@ function QuickStartCard({ icon, label, tool, onClick, badge }: QuickStartCardPro
 
 const ROLE_DISPLAY: Record<
   Role,
-  { label: string; sub: string; primaryTool: string; quickStart: Array<{ icon: string; label: string; tool: string }> }
+  {
+    label: string;
+    sub: string;
+    primaryTool: string;
+    primaryActionLabel: string;
+    quickStart: Array<{ icon: string; label: string; tool: string }>;
+  }
 > = {
   client: {
     label: DASHBOARD_COPY.client.subtitle,
     sub: DASHBOARD_COPY.client.prompt,
     primaryTool: "client_support",
+    primaryActionLabel: "Request service",
     quickStart: [
       { icon: ICONS.comms, label: "Request", tool: "client_support" },
       { icon: ICONS.visibility, label: "My Jobs", tool: "jobs" },
@@ -70,6 +77,7 @@ const ROLE_DISPLAY: Record<
     label: DASHBOARD_COPY.technician.subtitle,
     sub: DASHBOARD_COPY.technician.prompt,
     primaryTool: "tech_day",
+    primaryActionLabel: "Open today",
     quickStart: [
       { icon: ICONS.jobs, label: "Today", tool: "tech_day" },
       { icon: ICONS.checklist, label: "Assigned Jobs", tool: "jobs" },
@@ -81,6 +89,7 @@ const ROLE_DISPLAY: Record<
     label: DASHBOARD_COPY.dispatcher.subtitle,
     sub: DASHBOARD_COPY.dispatcher.prompt,
     primaryTool: "dispatch_unassigned",
+    primaryActionLabel: "Review assignments",
     quickStart: [
       { icon: ICONS.dispatch, label: "Schedule", tool: "schedule" },
       { icon: ICONS.jobs, label: "Unassigned", tool: "dispatch_unassigned" },
@@ -92,6 +101,7 @@ const ROLE_DISPLAY: Record<
     label: DASHBOARD_COPY.finance.subtitle,
     sub: DASHBOARD_COPY.finance.prompt,
     primaryTool: "finance_invoices",
+    primaryActionLabel: "Open invoices",
     quickStart: [
       { icon: ICONS.finance, label: "Invoices", tool: "finance_invoices" },
       { icon: ICONS.finance, label: "Payments", tool: "finance_payments" },
@@ -102,6 +112,7 @@ const ROLE_DISPLAY: Record<
     label: DASHBOARD_COPY.admin.subtitle,
     sub: DASHBOARD_COPY.admin.prompt,
     primaryTool: "admin_dashboard",
+    primaryActionLabel: "Open admin tools",
     quickStart: [
       { icon: ICONS.admin, label: "Settings", tool: "admin" },
       { icon: ICONS.audit, label: "Audit", tool: "admin_dashboard" },
@@ -112,6 +123,7 @@ const ROLE_DISPLAY: Record<
     label: DASHBOARD_COPY.super_admin.subtitle,
     sub: DASHBOARD_COPY.super_admin.prompt,
     primaryTool: "sa_health",
+    primaryActionLabel: "Check platform health",
     quickStart: [
       { icon: ICONS.admin, label: "Health", tool: "sa_health" },
       { icon: ICONS.checklist, label: "Checks", tool: "sa_checks" },
@@ -174,7 +186,7 @@ export function DashboardView({
           </p>
           <button type="button" className="button button--primary" onClick={() => onEnterWorkspace(meta.primaryTool)}>
             <Icon d={ICONS.jobs} size={18} className="mr-2" />
-            Open {meta.primaryTool === "dispatch_unassigned" ? "Dispatch" : meta.primaryTool.charAt(0).toUpperCase() + meta.primaryTool.slice(1)}
+            {meta.primaryActionLabel}
           </button>
         </div>
         <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-primary opacity-10 blur-3xl pointer-events-none"></div>
@@ -215,19 +227,6 @@ export function DashboardView({
         </section>
       ) : null}
 
-      <section className="dashboard-help">
-        <div className="glass-panel p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex gap-4 items-start">
-            <div className="mt-1 opacity-50">
-              <Icon d={ICONS.checklist} size={24} />
-            </div>
-            <div>
-              <h3 className="font-semibold text-white mb-1">Need help?</h3>
-              <p className="text-sm opacity-75">Contact support or check the guidance pages if you need help using the portal.</p>
-            </div>
-          </div>
-        </div>
-      </section>
     </main>
   );
 }

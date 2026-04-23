@@ -16,3 +16,34 @@
 .portal-nav__secondary .portal-nav__item small {
   white-space: normal;
 }
+
+.portal-topbar__utilities {
+  position: relative;
+}
+
+.portal-topbar__utilities > summary {
+  list-style: none;
+}
+
+.portal-topbar__utilities > summary::-webkit-details-marker {
+  display: none;
+}
+
+.portal-topbar__utility-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.75rem);
+  z-index: 20;
+  min-width: 220px;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(8, 15, 28, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+}
+
+.portal-topbar__utility-menu .toggle-inline {
+  margin: 0;
+}

@@ -13,21 +13,21 @@ export function SuperAdminSystemHealth({ adminHealth, onRefresh, isLoading }: Su
     <article className="workspace-card">
       <div className="panel-heading panel-heading--inline">
         <div>
-          <p className="panel-eyebrow">Stability</p>
-          <h2>Platform health diagnostics</h2>
+          <p className="panel-eyebrow">Platform health</p>
+          <h2>Latest checks</h2>
         </div>
         <button 
           className="button button--secondary" 
           onClick={onRefresh}
           disabled={isLoading}
         >
-          {isLoading ? "Checking..." : "Refresh Health"}
+          {isLoading ? "Checking..." : "Refresh checks"}
         </button>
       </div>
 
       {!adminHealth ? (
         <div className="highlight-box">
-          <p>Request a health check to verify connectivity to core services and infrastructure.</p>
+          <p>Request a check to verify connectivity to core services and infrastructure.</p>
         </div>
       ) : (
         <div className="control-stack">
@@ -51,15 +51,15 @@ export function SuperAdminSystemHealth({ adminHealth, onRefresh, isLoading }: Su
 
           <section className="control-block">
             <div className="control-block__head">
-              <h3>Diagnostic Details</h3>
-              <p>Advanced system metadata for infrastructure monitoring.</p>
+              <h3>Advanced details</h3>
+              <p>Detailed system metadata for support and troubleshooting.</p>
             </div>
             
             <button 
               className="button button--ghost" 
               onClick={() => setShowRaw(!showRaw)}
             >
-              {showRaw ? "Hide Technical Details" : "Show Technical Details"}
+              {showRaw ? "Hide technical details" : "Show technical details"}
             </button>
 
             {showRaw && (

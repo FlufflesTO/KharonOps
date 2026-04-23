@@ -1,6 +1,7 @@
 import React from "react";
 import type { Role } from "@kharon/domain";
 import type { OpsIntelligencePayload } from "../apiClient";
+import { DASHBOARD_COPY } from "../copy/portalCopy";
 
 interface AdminDashboardProps {
   opsIntelligence: OpsIntelligencePayload | null;
@@ -24,8 +25,8 @@ export function AdminDashboard({ opsIntelligence, onEnterTool, canSwitchRoles, e
   return (
     <article className="workspace-card">
       <div className="panel-heading">
-        <p className="panel-eyebrow">Office Dashboard</p>
-        <h2>Welcome back to the office</h2>
+        <p className="panel-eyebrow">{DASHBOARD_COPY.admin.subtitle}</p>
+        <h2>{DASHBOARD_COPY.admin.prompt}</h2>
       </div>
 
       {!opsIntelligence ? (
@@ -57,19 +58,19 @@ export function AdminDashboard({ opsIntelligence, onEnterTool, canSwitchRoles, e
 
           <section className="summary-grid">
             <div className="summary-card" onClick={() => onEnterTool("jobs")} style={{ cursor: 'pointer' }}>
-              <span className="summary-card__label">Jobs Needing Attention</span>
+              <span className="summary-card__label">Jobs needing attention</span>
               <strong className={opsIntelligence.jobs.critical > 0 ? "text-critical" : ""}>
                 {opsIntelligence.jobs.critical}
               </strong>
-              <small>Critical jobs requiring office review</small>
+              <small>Critical jobs requiring review</small>
             </div>
             <div className="summary-card" onClick={() => onEnterTool("documents")} style={{ cursor: 'pointer' }}>
-              <span className="summary-card__label">Pending Documents</span>
+              <span className="summary-card__label">Pending files</span>
               <strong>{opsIntelligence.operations.documents_pending_publish}</strong>
               <small>Ready to be reviewed and published</small>
             </div>
             <div className="summary-card" onClick={() => onEnterTool("schedule")} style={{ cursor: 'pointer' }}>
-              <span className="summary-card__label">Active Work</span>
+              <span className="summary-card__label">Active work</span>
               <strong>{opsIntelligence.jobs.open}</strong>
               <small>Jobs currently in progress</small>
             </div>
@@ -77,16 +78,16 @@ export function AdminDashboard({ opsIntelligence, onEnterTool, canSwitchRoles, e
 
           <section className="control-block">
             <div className="control-block__head">
-              <h3>Urgent Office Actions</h3>
-              <p>Items requiring your immediate signature or approval.</p>
+              <h3>Office actions</h3>
+              <p>Items requiring your immediate review.</p>
             </div>
             <div className="fact-list">
               {opsIntelligence.jobs.critical > 0 ? (
                 <div className="highlight-box border-critical">
-                  <span className="highlight-box__label">Critical Jobs</span>
+                  <span className="highlight-box__label">Critical jobs</span>
                   <p>There are {opsIntelligence.jobs.critical} jobs marked as critical. Please check the jobs list for details.</p>
                   <button className="button button--secondary mt-2" onClick={() => onEnterTool("jobs")}>
-                    View Critical Jobs
+                    Review jobs
                   </button>
                 </div>
               ) : (
@@ -95,8 +96,8 @@ export function AdminDashboard({ opsIntelligence, onEnterTool, canSwitchRoles, e
 
               {opsIntelligence.operations.documents_pending_publish > 0 && (
                 <div className="highlight-box border-active mt-4">
-                  <span className="highlight-box__label">Documents Pending</span>
-                  <p>{opsIntelligence.operations.documents_pending_publish} documents are waiting for review before they can be sent to clients.</p>
+                  <span className="highlight-box__label">Files pending</span>
+                  <p>{opsIntelligence.operations.documents_pending_publish} files are waiting for review before they can be sent to clients.</p>
                   <button className="button button--secondary mt-2" onClick={() => onEnterTool("documents")}>
                     Review Documents
                   </button>

@@ -12,8 +12,8 @@ export function SuperAdminOverview({ opsIntelligence, onRefresh, isLoading }: Su
     <article className="workspace-card">
       <div className="panel-heading panel-heading--inline">
         <div>
-          <p className="panel-eyebrow">Platform Overview</p>
-          <h2>System health and performance</h2>
+          <p className="panel-eyebrow">Platform health</p>
+          <h2>Latest checks</h2>
         </div>
         <button 
           className="button button--secondary" 
@@ -26,32 +26,32 @@ export function SuperAdminOverview({ opsIntelligence, onRefresh, isLoading }: Su
 
       {!opsIntelligence ? (
         <div className="highlight-box">
-          <p>No operational data loaded. Click refresh to pull the latest platform diagnostics.</p>
+          <p>No summary loaded. Click refresh to pull the latest checks.</p>
         </div>
       ) : (
         <div className="admin-grid">
           <section className="summary-grid">
             <div className="summary-card">
-              <span className="summary-card__label">Active Work</span>
+              <span className="summary-card__label">Jobs needing review</span>
               <strong>{opsIntelligence.jobs.open}</strong>
-              <small>Open jobs in the ledger</small>
+              <small>Open jobs awaiting action</small>
             </div>
             <div className="summary-card">
-              <span className="summary-card__label">Action Required</span>
+              <span className="summary-card__label">Priority jobs</span>
               <strong className={opsIntelligence.jobs.critical > 0 ? "text-critical" : ""}>
                 {opsIntelligence.jobs.critical}
               </strong>
               <small>Critical priority jobs</small>
             </div>
             <div className="summary-card">
-              <span className="summary-card__label">Stale Jobs</span>
+              <span className="summary-card__label">Older than 24h</span>
               <strong className={opsIntelligence.jobs.stale_over_24h > 0 ? "text-warning" : ""}>
                 {opsIntelligence.jobs.stale_over_24h}
               </strong>
               <small>No updates in 24 hours</small>
             </div>
             <div className="summary-card">
-              <span className="summary-card__label">Pending Files</span>
+              <span className="summary-card__label">Pending files</span>
               <strong>{opsIntelligence.operations.documents_pending_publish}</strong>
               <small>Generated but not published</small>
             </div>
@@ -59,8 +59,8 @@ export function SuperAdminOverview({ opsIntelligence, onRefresh, isLoading }: Su
 
           <section className="control-block">
             <div className="control-block__head">
-              <h3>Financial Posture</h3>
-              <p>Outstanding balances and escrow status across all business units.</p>
+              <h3>Money owed</h3>
+              <p>Outstanding balances and held files across the business.</p>
             </div>
             <div className="posture-grid">
               <div>
@@ -76,20 +76,20 @@ export function SuperAdminOverview({ opsIntelligence, onRefresh, isLoading }: Su
           
           <section className="control-block">
             <div className="control-block__head">
-              <h3>Next Actions</h3>
-              <p>Top priorities for platform maintenance.</p>
+              <h3>Review items</h3>
+              <p>Top priorities for follow-up.</p>
             </div>
             <div className="fact-list">
               {opsIntelligence.jobs.critical > 0 && (
                 <div className="highlight-box">
-                  <span className="highlight-box__label">Critical Issue</span>
-                  <p>{opsIntelligence.jobs.critical} jobs are marked critical. Review the jobs ledger for details.</p>
+                  <span className="highlight-box__label">Critical jobs</span>
+                  <p>{opsIntelligence.jobs.critical} jobs are marked critical. Review the jobs list for details.</p>
                 </div>
               )}
               {opsIntelligence.operations.documents_pending_publish > 10 && (
                 <div className="highlight-box">
-                  <span className="highlight-box__label">Document Queue</span>
-                  <p>A high volume of documents is waiting to be published. Check automations health.</p>
+                  <span className="highlight-box__label">File queue</span>
+                  <p>A high volume of files is waiting to be published.</p>
                 </div>
               )}
               {opsIntelligence.jobs.critical === 0 && opsIntelligence.operations.documents_pending_publish <= 10 && (
