@@ -30,6 +30,8 @@ export function PortalAuth({
   feedback
 }: PortalAuthProps): React.JSX.Element {
   const [showHelp, setShowHelp] = useState(false);
+  const showGoogleSignIn = productionAuth && Boolean(authConfig?.google_client_id);
+  const showDevTokens = authConfig?.dev_tokens_enabled === true;
 
   return (
     <div className="portal-auth-shell">
@@ -45,14 +47,14 @@ export function PortalAuth({
               Secure access to your work, tools, and team.
             </p>
 
-            {productionAuth ? (
+            {showGoogleSignIn ? (
               <div className="auth-action-stack">
                 <GoogleSignIn clientId={authConfig?.google_client_id ?? ""} onLogin={onLogin} />
                 <p className="auth-help-hint">
                   Use your company Google account to continue.
                 </p>
               </div>
-            ) : (
+            ) : showDevTokens ? (
               <div className="auth-dev-stack">
                 <label className="field-stack">
                   <span className="field-label">Development Token</span>
@@ -82,6 +84,12 @@ export function PortalAuth({
                   <QuickLoginButton label="finance" token="dev-finance" onClick={onLogin} />
                   <QuickLoginButton label="admin" token="dev-admin" onClick={onLogin} />
                 </div>
+              </div>
+            ) : (
+              <div className="auth-action-stack">
+                <p className="auth-help-hint">
+                  Sign-in options are still loading. Refresh the page if this does not clear within a few seconds.
+                </p>
               </div>
             )}
 

@@ -85,6 +85,23 @@ import { useWorkspacePersistence } from "./appShell/useWorkspacePersistence";
 import { usePortalDataControllers } from "./appShell/usePortalDataControllers";
 import { usePortalActionControllers } from "./appShell/usePortalActionControllers";
 
+function resolveWithin<T>(promise: Promise<T>, timeoutMs: number): Promise<{ timedOut: boolean; value?: T }> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = globalThis.setTimeout(() => resolve({ timedOut: true }), timeoutMs);
+
+    promise.then(
+      (value) => {
+        globalThis.clearTimeout(timeoutId);
+        resolve({ timedOut: false, value });
+      },
+      (error) => {
+        globalThis.clearTimeout(timeoutId);
+        reject(error);
+      }
+    );
+  });
+}
+
 export function PortalApp(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<PortalSession | null>(null);
@@ -548,6 +565,38 @@ export function PortalApp(): React.JSX.Element {
     setOpsIntelligence
   });
 
+  // Initial synchronization and authentication validation
+  useEffect(() => {
+    let isActive = true;
+    const init = async () => {
+      try {
+        await refreshSession();
+        const config = await refreshAuthConfig();
+        if (isActive) {
+          setAuthConfig(config);
+        }
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
+
+      void resolveWithin(refreshQueueCount(), 2_500)
+        .then((result) => {
+          if (result.timedOut) {
+            console.warn("Offline queue bootstrap timed out; continuing without queue status.");
+          }
+        })
+        .catch((error) => {
+          console.warn("Offline queue bootstrap failed", error);
+        });
+    };
+    void init();
+    return () => {
+      isActive = false;
+    };
+  }, [refreshAuthConfig, refreshQueueCount, refreshSession]);
+
   const runAdminLoader = useCallback(
     (action: (() => Promise<void>) | undefined, missingMessage: string) => {
       if (!action) {
@@ -597,7 +646,7 @@ export function PortalApp(): React.JSX.Element {
   if (loading) {
     return (
       <div className="portal-shell portal-shell--loading">
-        <div className="loading-card">Loading portal workspaceâ€¦</div>
+        <div className="loading-card">Loading portal workspace...</div>
       </div>
     );
   }
@@ -793,5 +842,6 @@ export function PortalApp(): React.JSX.Element {
     </div>
   );
 }
+
 
 
