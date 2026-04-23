@@ -70,8 +70,15 @@
 
 1. Google OIDC login with real tenant account.
 2. Role-gated job visibility across all roles.
-3. Browser UX sanity check for contact intake, resources request links, and portal dashboard navigation.
-4. Document generate/publish in Drive + Docs PDF output.
-5. Gmail notify + Chat alert + People sync execution against live Google rails.
-6. Offline mutation queue and replay with forced disconnect.
-7. Admin health and audit endpoints under load.
+3. Role workflow sanity check:
+   - client support intake submission
+   - technician day/check-in/document flow
+   - dispatcher scheduling and daily-plan flow
+   - finance quote/invoice/payment/debtors flow
+   - admin workspace preference save/load
+   - super-admin business-unit add/activate/disable flow
+4. Browser UX sanity check for contact intake, resources request links, and portal dashboard navigation.
+5. Document generate/publish in Drive + Docs PDF output.
+6. Gmail notify + Chat alert + People sync execution against live Google rails.
+7. Offline mutation queue and replay with forced disconnect.
+8. Admin health and audit endpoints under load.

@@ -5,6 +5,14 @@ All notable changes to the KharonOps project are documented in this file.
 ## [Unreleased] - 2026-04-23
 
 ### [Changed]
+- Hardened portal role workflows end to end:
+  - client support now submits a live public contact request
+  - admin workspace preferences now persist and apply immediately
+  - super-admin business-unit management now supports local editing and activation
+- Converged the default validation path so `npm run check` runs build and test together.
+- Updated repo documentation to reflect the current role surface and validation model.
+
+### [Changed]
 - **Portal UI Redesign:** Re-engineered the portal experience for a task-first, non-technical user base.
   - **Login Experience:** Simplified sign-in flow with a welcoming, single-card layout. Removed technical jargon ("Operational Command", "Unified engineering control") in favor of plain language.
   - **SuperAdmin Portal:** Modularized platform controls into specialized views (Overview, Users & Roles, Business Units, Data Checks, Automations, System Health, Activity Log). Implemented progressive disclosure to hide technical diagnostics behind "Show Details" affordances.

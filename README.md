@@ -2,8 +2,12 @@
 
 Unified public website and operations portal for Kharon Fire and Security Solutions, delivered from Cloudflare Workers.
 
-## Current Release Highlights (2026-04-22)
+## Current Release Highlights (2026-04-23)
 
+- Role coverage hardened end to end across client, technician, dispatcher, finance, admin, and super_admin portals.
+- Client support now submits a real public contact request instead of a placeholder action.
+- Admin workspace preferences are now live and persistent, and super-admin business-unit management is editable locally.
+- Validation now converges through `npm run check`, which runs the build and full test suite together.
 - Finance Portal role added across domain RBAC, API auth, local seed users, and portal login/dashboard surfaces.
 - Dispatch operations upgraded with drag and drop scheduling, SLA countdown visibility, and daily capacity balancing.
 - Document workflow upgraded with compliance escrow lock and release controls tied to reconciliation actions.
@@ -27,11 +31,11 @@ The portal has been redesigned for task-first, non-technical efficiency across a
 - **Universal Experience:** Unified sidebar-driven navigation with progressive disclosure for advanced tools. Optimized for mobile, tablet, and desktop.
 - **Role-Specific Workspaces:**
   - **SuperAdmin:** Modular platform controls (Health, Data Checks, Automations, Audit Log).
-  - **Admin:** Office management (Dashboard, Jobs, Staff, Settings).
+  - **Admin:** Office management (Dashboard, Jobs, Staff, Settings) with live workspace preference controls.
   - **Finance:** Business-first finance tools (Quotes, Invoices, Payments, Debtors).
   - **Dispatch:** Operational coordination (Schedule Board, Unassigned Queue, Daily Plan).
   - **Technician:** Guided field execution (My Day, Check In/Out, Simple Reporting).
-  - **Client:** Trust-based service tracking (Overview, Documents, Invoices).
+  - **Client:** Trust-based service tracking (Overview, Documents, Invoices, Support intake).
 - **Design Tokens:** Modern blue/purple/black/gray palette with spacious, responsive card layouts and human-friendly terminology.
 
 ## Stack

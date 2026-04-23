@@ -20,7 +20,8 @@ Kharon Unified Rebuild v1 is a single Cloudflare-hosted product with:
 
 - shared design tokens from `packages/ui`
 - public marketing site
-- portal for client, technician, dispatcher, and admin roles
+- portal for client, technician, dispatcher, finance, admin, and super_admin roles
+- client support intake, admin settings, and super-admin business-unit workflow surfaces are implemented in the portal shell
 - offline support in the portal:
   - service worker caches shell
   - IndexedDB queue stores mutations
@@ -112,7 +113,18 @@ Enforced server-side:
 - client: own jobs and schedule requests
 - technician: assigned jobs and controlled document generation for owned jobs
 - dispatcher: operational overrides and workspace actions
-- admin: full access, audits, and recovery actions
+- finance: quotes, invoices, payments, debtors, and statements
+- admin: full access, audits, recovery actions, and workspace preference management
+- super_admin: platform health, data checks, automations, activity, and business-unit governance
+
+Portal role workspaces map to the current primary tool sets:
+
+- client: overview, jobs, documents, invoices, support
+- technician: my day, jobs, check-in/out, documents, help
+- dispatcher: dashboard, schedule, unassigned queue, people, comms, daily plan
+- finance: overview, quotes, invoices, payments, debtors, statements
+- admin: dashboard, jobs, people, documents, schedule, settings
+- super_admin: overview, users, business units, data checks, automations, health, activity
 
 ## Controlled Documents
 

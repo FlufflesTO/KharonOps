@@ -55,6 +55,10 @@ Error example:
 - `GET /api/v1/sync/pull`
 - `POST /api/v1/sync/push`
 
+## Public Endpoints
+
+- `POST /api/v1/public/contact` - captures public support and contact requests from the website and portal support card
+
 ## Admin Endpoints
 
 - `GET /api/v1/admin/health`
@@ -95,3 +99,4 @@ Common status codes used by the runtime:
 - `row_version` is returned on mutable operations to support optimistic concurrency.
 - `conflict` is populated for conflict responses (`409`) and includes server state.
 - Cloudflare Access can be enabled for `/api/v1/*` via runtime config.
+- Public contact requests are accepted without a session and still flow through the standard envelope and audit capture path.
