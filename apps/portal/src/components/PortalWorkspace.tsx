@@ -1,7 +1,14 @@
-// @ts-nocheck
 import React from "react";
-import type { JobStatus, Role } from "@kharon/domain";
-import type { JobEventRow, PortalSession, OpsIntelligencePayload, PeopleDirectoryEntry, SchemaDriftPayload, SkillMatrixRecord, UpgradeWorkspaceState } from "../apiClient";
+import type { JobStatus, Role, JobEventRow, ScheduleRequestRow, ScheduleRow, JobDocumentRow } from "@kharon/domain";
+import type { 
+  PortalSession, 
+  OpsIntelligencePayload, 
+  PeopleDirectoryEntry, 
+  SchemaDriftPayload, 
+  SkillMatrixRecord, 
+  UpgradeWorkspaceState,
+  AutomationJobEntry
+} from "../apiClient";
 import type { JobRecord } from "./JobListView";
 import { JobListView } from "./JobListView";
 import { JobDetailView } from "./JobDetailView";
@@ -49,7 +56,106 @@ type GeoVerification = {
 };
 
 interface PortalWorkspaceProps {
-  state: any;
+  state: {
+    portalView: "dashboard" | "workspace";
+    session: PortalSession | null;
+    effectiveRole: Role | "";
+    emulatedRole: Role | "";
+    jobs: JobRecord[];
+    selectedJobid: string;
+    onSelectJobid: (id: string) => void;
+    searchTerm: string;
+    onSearchTermChange: (q: string) => void;
+    activeWorkspaceTool: string;
+    onActiveWorkspaceToolChange: (tool: string) => void;
+    allowedWorkspaceTools: string[];
+    defaultWorkspaceTool: string;
+    onboardingDismissed: boolean;
+    onDismissOnboarding: () => void;
+    openJobCount: number;
+    selectedJob: JobRecord | null;
+    selectedJobStatus: string;
+    selectedJobDocumentCount: number;
+    selectedRequestid: string;
+    selectedScheduleid: string;
+    selectedDocumentid: string;
+    dispatchRequests: ScheduleRequestRow[];
+    dispatchSchedules: ScheduleRow[];
+    dispatchDocuments: JobDocumentRow[];
+    technicians: PeopleDirectoryEntry[];
+    preferredStart: string;
+    setPreferredStart: (v: string) => void;
+    preferredEnd: string;
+    setPreferredEnd: (v: string) => void;
+    confirmStart: string;
+    setConfirmStart: (v: string) => void;
+    confirmEnd: string;
+    setConfirmEnd: (v: string) => void;
+    confirmTechid: string;
+    setConfirmTechid: (v: string) => void;
+    rescheduleStart: string;
+    setRescheduleStart: (v: string) => void;
+    rescheduleEnd: string;
+    setRescheduleEnd: (v: string) => void;
+    rescheduleRowVersion: number;
+    setRescheduleRowVersion: (v: number) => void;
+    documentType: "jobcard" | "service_report" | "certificate";
+    setDocumentType: (v: "jobcard" | "service_report" | "certificate") => void;
+    onStatusUpdate: () => void;
+    onNote: () => void;
+    noteValue: string;
+    setNoteValue: (v: string) => void;
+    statusTarget: JobStatus;
+    setStatusTarget: (s: JobStatus) => void;
+    selectableStatuses: JobStatus[];
+    onScheduleRequest: () => void;
+    onScheduleConfirm: () => void;
+    onReschedule: () => void;
+    onDocumentGenerate: () => void;
+    onDocumentPublish: () => void;
+    onBulkStatusUpdate: (ids: string[], status: JobStatus) => void;
+    canGenerateDocuments: boolean;
+    documentGenerateDisabledReason: string;
+    documentAccessDenied: boolean;
+    dispatchAccessDenied: boolean;
+    geoVerification: GeoVerification;
+    onVerifyLocation: () => void;
+    syncPulseText: string;
+    jobEvents: JobEventRow[];
+    notifications: Array<{ id: string; tone: "warning" | "critical" | "active"; title: string; detail: string }>;
+    onDismissNotification: (id: string) => void;
+    onDismissAllNotifications: () => void;
+    actionPending: boolean;
+    feedback: string;
+    generatedDocumentCount: number;
+    queueCount: number;
+    adminAuditCount: number;
+    networkOnline: boolean;
+    opsIntelligence: OpsIntelligencePayload | null;
+    schemaDrift: SchemaDriftPayload | null;
+    adminHealth: Record<string, unknown> | null;
+    adminAudits: Array<Record<string, unknown>>;
+    adminAutomationJobs: Array<Record<string, unknown>>;
+    adminAutomationJobEntries: Array<Record<string, unknown>>;
+    automationJobs: AutomationJobEntry[];
+    selectedAutomationJobid: string;
+    onSelectAutomationJobid: (id: string) => void;
+    onLoadHealth: () => void;
+    onLoadAudits: () => void;
+    onLoadAutomationJobs: () => void;
+    onRetryAutomation: (id: string) => void;
+    onEmulateRole: (role: Role | "") => void;
+    onLoadSchemaDrift: () => void;
+    onLoadOpsIntelligence: () => void;
+    peopleDirectory: PeopleDirectoryEntry[];
+    upgradeState: UpgradeWorkspaceState;
+    setFeedback: (f: string) => void;
+    refreshUpgradeWorkspaceState: () => Promise<void>;
+    onUpsertSkill: (payload: SkillMatrixRecord) => void;
+    onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => void;
+    selectedJobTitle: string;
+    onLogout: () => void;
+  };
 }
 
 export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Element {
@@ -133,7 +239,6 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
     adminHealth,
     adminAudits,
     adminAutomationJobs,
-    adminAutomationJobEntries: _adminAutomationJobEntries,
     automationJobs,
     selectedAutomationJobid,
     onSelectAutomationJobid,
@@ -147,7 +252,6 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
     peopleDirectory,
     upgradeState,
     setFeedback,
-    refreshUpgradeWorkspaceState,
     onUpsertSkill,
     onPeopleSync,
     selectedJobTitle,
@@ -169,7 +273,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
         onboardingDismissed={onboardingDismissed}
         onDismissOnboarding={onDismissOnboarding}
         onEnterWorkspace={(tool) => onActiveWorkspaceToolChange(tool)}
-        onLogout={() => undefined}
+        onLogout={onLogout}
       />
     );
   }
@@ -314,7 +418,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
               setPreferredStart={setPreferredStart}
               preferredEnd={preferredEnd}
               setPreferredEnd={setPreferredEnd}
-              requests={dispatchRequests as any}
+              requests={dispatchRequests}
               selectedRequestid={selectedRequestid}
               setSelectedRequestid={() => undefined}
               confirmStart={confirmStart}
@@ -323,8 +427,8 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
               setConfirmEnd={setConfirmEnd}
               confirmTechid={confirmTechid}
               setConfirmTechid={setConfirmTechid}
-              technicians={technicians as any}
-              schedules={dispatchSchedules as any}
+              technicians={technicians}
+              schedules={dispatchSchedules}
               selectedScheduleid={selectedScheduleid}
               setSelectedScheduleid={() => undefined}
               rescheduleStart={rescheduleStart}
@@ -333,7 +437,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
               setRescheduleEnd={setRescheduleEnd}
               rescheduleRowVersion={rescheduleRowVersion}
               setRescheduleRowVersion={setRescheduleRowVersion}
-              documents={dispatchDocuments as any}
+              documents={dispatchDocuments}
               selectedDocumentid={selectedDocumentid}
               setSelectedDocumentid={() => undefined}
               onScheduleRequest={onScheduleRequest}
@@ -364,7 +468,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
                 adminAudits={adminAudits}
                 adminAutomationJobs={adminAutomationJobs}
                 adminAuditCount={adminAuditCount}
-                automationJobs={automationJobs as any}
+                automationJobs={automationJobs}
                 selectedAutomationJobid={selectedAutomationJobid}
                 setSelectedAutomationJobid={onSelectAutomationJobid}
                 onLoadHealth={onLoadHealth}
@@ -388,7 +492,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
               people={peopleDirectory}
               skillsState={upgradeState.skills}
               onUpsertSkill={onUpsertSkill}
-              onSync={onPeopleSync as any}
+              onSync={onPeopleSync}
               onFeedback={setFeedback}
             />
           ) : null}
@@ -449,7 +553,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
           ) : null}
 
           {activeWorkspaceTool === "people" && (effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin") ? (
-            <PeopleDirectoryCard people={peopleDirectory} skillsState={upgradeState.skills} onUpsertSkill={onUpsertSkill} onSync={onPeopleSync as any} onFeedback={setFeedback} />
+            <PeopleDirectoryCard people={peopleDirectory} skillsState={upgradeState.skills} onUpsertSkill={onUpsertSkill} onSync={onPeopleSync} onFeedback={setFeedback} />
           ) : null}
         </section>
       </main>

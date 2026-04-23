@@ -20,9 +20,6 @@ interface PortalChromeProps {
   onReplayQueue: () => void;
   onLogout: () => void;
   onGoHome: () => void;
-  allowedWorkspaceTools: string[];
-  defaultWorkspaceTool: string;
-  onDefaultWorkspaceToolChange: (tool: string) => void;
   activeWorkspaceTool: string;
   onActiveWorkspaceToolChange: (tool: string) => void;
   primaryTools: string[];
@@ -45,9 +42,6 @@ export function PortalChrome({
   onReplayQueue,
   onLogout,
   onGoHome,
-  allowedWorkspaceTools,
-  defaultWorkspaceTool,
-  onDefaultWorkspaceToolChange,
   activeWorkspaceTool,
   onActiveWorkspaceToolChange,
   primaryTools,
@@ -132,21 +126,6 @@ export function PortalChrome({
             <h3>{activeToolMeta.label}</h3>
             <p className="portal-nav__helper">{activeToolMeta.helper}</p>
           </div>
-
-          <label className="field-stack">
-            <span>Default landing section</span>
-            <select
-              aria-label="Default landing section"
-              value={defaultWorkspaceTool}
-              onChange={(event) => onDefaultWorkspaceToolChange(event.target.value)}
-            >
-              {allowedWorkspaceTools.map((tool) => (
-              <option key={tool} value={tool}>
-                  {getRoleMenuLabel(tool, effectiveRole)}
-                </option>
-              ))}
-            </select>
-          </label>
 
           <nav className="portal-nav__list" aria-label="Portal sections">
             <button

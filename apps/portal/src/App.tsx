@@ -1179,9 +1179,6 @@ export function PortalApp(): React.JSX.Element {
         onReplayQueue={() => runAction(handleReplay)}
         onLogout={() => runAction(handleLogout)}
         onGoHome={() => setPortalView("dashboard")}
-        allowedWorkspaceTools={allowedWorkspaceTools}
-        defaultWorkspaceTool={defaultWorkspaceTool}
-        onDefaultWorkspaceToolChange={setDefaultWorkspaceTool}
         activeWorkspaceTool={activeWorkspaceTool}
         onActiveWorkspaceToolChange={setActiveWorkspaceTool}
         primaryTools={primaryTools}

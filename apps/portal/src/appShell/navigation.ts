@@ -17,11 +17,9 @@ export function getRoleMenuLabel(tool: string, role: Role | ""): string {
 
 export function getWorkspaceToolGroups(effectiveRole: Role | "", allowedWorkspaceTools: string[]): {
   primaryTools: string[];
-  moreTools: string[];
 } {
   const primaryRoleTools = (ROLE_PRIMARY_NAV[effectiveRole || "client"] ?? []).map((item) => item.tool);
   return {
-    primaryTools: allowedWorkspaceTools.filter((tool) => primaryRoleTools.includes(tool)),
-    moreTools: allowedWorkspaceTools.filter((tool) => !primaryRoleTools.includes(tool))
+    primaryTools: allowedWorkspaceTools.filter((tool) => primaryRoleTools.includes(tool))
   };
 }
