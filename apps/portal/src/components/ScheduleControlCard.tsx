@@ -90,6 +90,7 @@ export function ScheduleControlCard({
 
 }: ScheduleControlCardProps): React.JSX.Element {
   const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>({});
+  const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([]);
   const selectedRequest = requests.find((request) => request.request_id === selectedRequestid) ?? null;
   const selectedSchedule = schedules.find((schedule) => schedule.schedule_id === selectedScheduleid) ?? null;
   const selectedDocument = documents.find((document) => document.document_id === selectedDocumentid) ?? null;
@@ -124,16 +125,16 @@ export function ScheduleControlCard({
   return (
     <article className="workspace-card">
       <div className="panel-heading">
-        <p className="panel-eyebrow">Dispatch</p>
-        <h2>Schedule control</h2>
+        <p className="panel-eyebrow">Schedule</p>
+        <h2>Planning & Scheduling</h2>
       </div>
 
       {disableActions ? <p className="muted-copy">Select a job to request, confirm, reschedule, or publish from live records.</p> : null}
 
       <div className="control-block">
         <div className="control-block__head">
-          <h3>Dispatch planner</h3>
-          <p>Drag requests into technician lanes for capacity-balanced dispatch. Use Confirm request to commit.</p>
+          <h3>Planner Board</h3>
+          <p>Drag requests onto technicians to balance workload, then confirm the booking.</p>
         </div>
         {requests.length === 0 ? (
           <p className="muted-copy">No incoming requests to plan yet.</p>
@@ -151,10 +152,25 @@ export function ScheduleControlCard({
                     onDragStart={(event) => event.dataTransfer.setData("text/plain", request.request_id)}
                     style={{ cursor: "grab" }}
                   >
-                    <strong>{request.request_id}</strong>
+                    <strong>
+                      <label style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedRequestIds.includes(request.request_id)}
+                          onChange={() =>
+                            setSelectedRequestIds((prev) =>
+                              prev.includes(request.request_id)
+                                ? prev.filter((value) => value !== request.request_id)
+                                : [...prev, request.request_id]
+                            )
+                          }
+                        />
+                        <span>{request.request_id}</span>
+                      </label>
+                    </strong>
                     <span>{request.status}</span>
                     <span className={`status-chip status-chip--${sla?.breached ? "critical" : "warning"}`}>{sla?.text ?? "SLA n/a"}</span>
-                    <span>{assigned ? `Draft -> ${assigned}` : "Unassigned"}</span>
+                    <span>{assigned ? `Draft: ${assigned}` : "Unassigned"}</span>
                   </div>
                 );
               })}
@@ -178,19 +194,37 @@ export function ScheduleControlCard({
                     <span>{technician.display_name}</span>
                     <strong>{techid || "n/a"}</strong>
                     <small className={`status-chip status-chip--${overloaded ? "critical" : "active"}`}>{load} assigned</small>
-                    <small>{overloaded ? "Over capacity" : "Within capacity"}</small>
+                    <small>{overloaded ? "Overloaded" : "Available"}</small>
                   </div>
                 );
               })}
             </div>
           </div>
         )}
+        <div className="button-row" style={{ marginTop: "0.75rem" }}>
+          <button
+            className="button button--ghost"
+            type="button"
+            disabled={selectedRequestIds.length === 0 || !confirmTechid}
+            onClick={() => {
+              setDraftAssignments((prev) => {
+                const next = { ...prev };
+                for (const requestid of selectedRequestIds) {
+                  next[requestid] = confirmTechid;
+                }
+                return next;
+              });
+            }}
+          >
+            Bulk assign selected requests
+          </button>
+        </div>
       </div>
 
       <div className="control-block">
         <div className="control-block__head">
-          <h3>Preferred slot request</h3>
-          <p>Dispatch requests are tied directly to {selectedJobid || "the selected job"}.</p>
+          <h3>Request Time Slot</h3>
+          <p>These requests are linked to {selectedJobid || "the selected job"}.</p>
         </div>
         <div className="form-grid form-grid--three">
           <label className="field-stack">
@@ -224,8 +258,8 @@ export function ScheduleControlCard({
 
       <div className="control-block">
         <div className="control-block__head">
-          <h3>Confirm request</h3>
-          <p>Choose the stored request and assign the technician from the active people directory.</p>
+          <h3>Confirm Booking</h3>
+          <p>Choose a request, assign a technician, and confirm the final date and time.</p>
         </div>
         {requests.length === 0 ? (
           <p className="muted-copy">No schedule requests exist for this job yet.</p>
@@ -290,7 +324,7 @@ export function ScheduleControlCard({
               />
             </label>
             <div className="field-stack field-stack--full">
-              <span>Request detail</span>
+                <span>Request details</span>
               <p className="inline-note">{parseRequestedSlot(selectedRequest)}</p>
             </div>
             <div className="field-stack field-stack--action field-stack--full">
@@ -306,10 +340,10 @@ export function ScheduleControlCard({
                     setConfirmTechid(draft);
                   }}
                 >
-                  Use draft assignment
+                  Use draft
                 </button>
                 <button className="button button--primary" type="button" onClick={onScheduleConfirm} disabled={disableActions}>
-                  Confirm request
+                  Confirm booking
                 </button>
               </div>
             </div>
@@ -319,8 +353,8 @@ export function ScheduleControlCard({
 
       <div className="control-block">
         <div className="control-block__head">
-          <h3>Reschedule</h3>
-          <p>Reschedule from the stored event record instead of entering internal schedule IDs manually.</p>
+          <h3>Move Booking</h3>
+          <p>Update an existing booking using the stored event details.</p>
         </div>
         {schedules.length === 0 ? (
           <p className="muted-copy">No confirmed schedules exist for this job yet.</p>
@@ -381,8 +415,8 @@ export function ScheduleControlCard({
 
       <div className="control-block">
         <div className="control-block__head">
-          <h3>Publish document</h3>
-          <p>Release the generated record that belongs to this job and keep the operational trail intact.</p>
+          <h3>Publish File</h3>
+          <p>Publish a generated file for this job while keeping the audit trail intact.</p>
         </div>
         {documents.length === 0 ? (
           <p className="muted-copy">Generate a document from the job detail view before publishing it here.</p>

@@ -221,6 +221,41 @@ const EMPTY_UPGRADE_STATE: UpgradeWorkspaceState = {
   skills: []
 };
 
+const ROLE_LABELS: Record<string, string> = {
+  client: "Client",
+  technician: "Technician",
+  dispatcher: "Dispatch",
+  finance: "Finance",
+  admin: "Admin",
+  super_admin: "Super Admin"
+};
+
+const WORKSPACE_TOOL_META: Record<string, { label: string; helper: string }> = {
+  jobs: { label: "Jobs", helper: "View and update active jobs" },
+  schedule: { label: "Schedule", helper: "Plan, assign, and confirm visits" },
+  documents: { label: "Files", helper: "Review and publish job files" },
+  comms: { label: "Messages", helper: "Share updates with clients and teams" },
+  finance: { label: "Finance", helper: "Quotes, invoices, and escrow controls" },
+  people: { label: "Team", helper: "People directory and skills matrix" },
+  admin: { label: "Settings", helper: "Platform controls and audit tools" }
+};
+
+const ROLE_PRIMARY_TOOLS: Record<string, string[]> = {
+  client: ["jobs", "documents"],
+  technician: ["jobs", "documents"],
+  dispatcher: ["jobs", "schedule", "comms"],
+  finance: ["finance", "jobs", "documents"],
+  admin: ["jobs", "people", "admin"],
+  super_admin: ["jobs", "schedule", "finance", "admin"]
+};
+
+const COPY_GLOSSARY = {
+  documents: "Files",
+  engagements: "Jobs",
+  mutations: "Queued changes",
+  governance: "Settings"
+} as const;
+
 export function PortalApp(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<PortalSession | null>(null);
@@ -267,6 +302,13 @@ export function PortalApp(): React.JSX.Element {
   const [documentAccessDenied, setDocumentAccessDenied] = useState(false);
   const [dispatchAccessDenied, setDispatchAccessDenied] = useState(false);
   const [upgradeState, setUpgradeState] = useState<UpgradeWorkspaceState>(EMPTY_UPGRADE_STATE);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [showMoreNav, setShowMoreNav] = useState(false);
+  const [defaultWorkspaceTool, setDefaultWorkspaceTool] = useState("jobs");
+  const [pinnedTools, setPinnedTools] = useState<string[]>([]);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const [dismissedNotifications, setDismissedNotifications] = useState<string[]>([]);
 
 
   const realRole = session?.session.role ?? null;
@@ -293,8 +335,32 @@ export function PortalApp(): React.JSX.Element {
     activeWorkspaceTool === "documents" ||
     activeWorkspaceTool === "comms" ||
     activeWorkspaceTool === "finance";
+  const primaryRoleTools = ROLE_PRIMARY_TOOLS[effectiveRole ?? "client"] ?? ["jobs", "documents"];
+  const primaryNavTools = allowedWorkspaceTools.filter((tool) => primaryRoleTools.includes(tool));
+  const orderedPrimaryNavTools = [...primaryNavTools].sort((a, b) => {
+    const aPinned = pinnedTools.includes(a) ? 0 : 1;
+    const bPinned = pinnedTools.includes(b) ? 0 : 1;
+    return aPinned - bPinned;
+  });
+  const moreNavTools = allowedWorkspaceTools.filter((tool) => !primaryRoleTools.includes(tool));
+  const activeToolMeta = WORKSPACE_TOOL_META[activeWorkspaceTool] ?? {
+    label: "Workspace",
+    helper: "Use the sidebar to move between sections"
+  };
+  const filteredJobs = useMemo(() => {
+    const query = globalSearch.trim().toLowerCase();
+    if (!query) {
+      return jobs;
+    }
+    return jobs.filter((job) =>
+      [job.job_id, job.title, job.client_id, job.technician_id, job.client_name ?? "", job.technician_name ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [globalSearch, jobs]);
 
-  const selectedJob = useMemo(() => jobs.find((job) => job.job_id === selectedJobid) ?? null, [jobs, selectedJobid]);
+  const selectedJob = useMemo(() => filteredJobs.find((job) => job.job_id === selectedJobid) ?? null, [filteredJobs, selectedJobid]);
   const selectableStatuses = useMemo<JobStatus[]>(
     () => {
       if (!selectedJob) return ["draft"];
@@ -325,10 +391,40 @@ export function PortalApp(): React.JSX.Element {
     [dispatchDocuments, selectedDocumentid]
   );
 
-  const openJobCount = jobs.filter((job) => job.status !== "certified" && job.status !== "cancelled").length;
+  const openJobCount = filteredJobs.filter((job) => job.status !== "certified" && job.status !== "cancelled").length;
   const generatedDocumentCount = documents.length;
   const selectedJobStatus = selectedJob?.status ?? "No selection";
   const productionAuth = authConfig?.mode === "production";
+  const notifications = useMemo(() => {
+    const items: Array<{ id: string; tone: "warning" | "critical" | "active"; title: string; detail: string }> = [];
+    if (!networkOnline || queueCount > 0) {
+      items.push({
+        id: "sync",
+        tone: networkOnline ? "warning" : "critical",
+        title: networkOnline ? "Changes waiting to sync" : "Offline mode enabled",
+        detail: networkOnline ? `${queueCount} queued change(s)` : "Reconnect to sync queued updates"
+      });
+    }
+    const highRisk = filteredJobs.filter((job) => /urgent|critical|fault|overdue/i.test(job.last_note ?? "")).length;
+    if (highRisk > 0) {
+      items.push({
+        id: "risk",
+        tone: "critical",
+        title: "High-risk jobs detected",
+        detail: `${highRisk} job(s) require immediate attention`
+      });
+    }
+    const pendingEscrow = upgradeState.escrow.filter((item) => item.status === "locked").length;
+    if (pendingEscrow > 0) {
+      items.push({
+        id: "escrow",
+        tone: "warning",
+        title: "Certificates on escrow hold",
+        detail: `${pendingEscrow} file(s) waiting for payment reconciliation`
+      });
+    }
+    return items.filter((item) => !dismissedNotifications.includes(item.id));
+  }, [dismissedNotifications, filteredJobs, networkOnline, queueCount, upgradeState.escrow]);
 
   const runAction = (action: () => Promise<void>): void => {
     if (actionPending) {
@@ -349,6 +445,64 @@ export function PortalApp(): React.JSX.Element {
         setActionPending(false);
       });
   };
+
+  useEffect(() => {
+    if (!effectiveRole) {
+      return;
+    }
+    const prefKey = `kharon_workspace_pref_${effectiveRole}`;
+    try {
+      const raw = localStorage.getItem(prefKey);
+      if (!raw) {
+        return;
+      }
+      const parsed = JSON.parse(raw) as { defaultTool?: string; pinnedTools?: string[]; onboardingDismissed?: boolean };
+      if (parsed.defaultTool && allowedWorkspaceTools.includes(parsed.defaultTool)) {
+        setDefaultWorkspaceTool(parsed.defaultTool);
+      }
+      if (Array.isArray(parsed.pinnedTools)) {
+        setPinnedTools(parsed.pinnedTools.filter((tool) => allowedWorkspaceTools.includes(tool)));
+      }
+      setOnboardingDismissed(Boolean(parsed.onboardingDismissed));
+    } catch {
+      // ignore malformed preference payload
+    }
+  }, [allowedWorkspaceTools, effectiveRole]);
+
+  useEffect(() => {
+    if (!allowedWorkspaceTools.includes(defaultWorkspaceTool)) {
+      setDefaultWorkspaceTool(allowedWorkspaceTools[0] ?? "jobs");
+    }
+  }, [allowedWorkspaceTools, defaultWorkspaceTool]);
+
+  useEffect(() => {
+    if (!effectiveRole) {
+      return;
+    }
+    const prefKey = `kharon_workspace_pref_${effectiveRole}`;
+    localStorage.setItem(
+      prefKey,
+      JSON.stringify({
+        defaultTool: defaultWorkspaceTool,
+        pinnedTools,
+        onboardingDismissed
+      })
+    );
+  }, [defaultWorkspaceTool, effectiveRole, onboardingDismissed, pinnedTools]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+      if (event.key === "Escape") {
+        setCommandPaletteOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   async function refreshQueueCount(): Promise<void> {
     try {
@@ -732,6 +886,23 @@ export function PortalApp(): React.JSX.Element {
     setFeedback("Status updated.");
   }
 
+  async function handleBulkStatusUpdate(jobIds: string[], status: JobStatus): Promise<void> {
+    if (jobIds.length === 0) {
+      setFeedback("Select one or more jobs before running a bulk update.");
+      return;
+    }
+    const candidates = jobs.filter((job) => jobIds.includes(job.job_id));
+    if (candidates.length === 0) {
+      setFeedback("No matching jobs were found for this bulk action.");
+      return;
+    }
+    for (const job of candidates) {
+      await apiClient.updateStatus(job.job_id, status, job.row_version);
+    }
+    await refreshJobs();
+    setFeedback(`Bulk update complete: ${candidates.length} job(s) set to ${status}.`);
+  }
+
   async function handleNote(): Promise<void> {
     if (!selectedJob || noteValue.trim() === "") {
       return;
@@ -1012,8 +1183,11 @@ export function PortalApp(): React.JSX.Element {
           session={session}
           openJobCount={openJobCount}
           overrideRole={effectiveRole as Role}
+          onboardingDismissed={onboardingDismissed}
+          onDismissOnboarding={() => setOnboardingDismissed(true)}
           onEnterWorkspace={(tool) => {
-            setActiveWorkspaceTool(tool);
+            const targetTool = tool === "jobs" ? defaultWorkspaceTool : tool;
+            setActiveWorkspaceTool(allowedWorkspaceTools.includes(targetTool) ? targetTool : tool);
             setPortalView("workspace");
           }}
           onLogout={() => runAction(handleLogout)}
@@ -1044,7 +1218,7 @@ export function PortalApp(): React.JSX.Element {
           <div>
             <div className="portal-title">KHARON OPS</div>
             <div className="portal-subtitle">
-              {effectiveRole?.toUpperCase()}
+              {ROLE_LABELS[effectiveRole ?? ""] ?? String(effectiveRole ?? "").toUpperCase()}
               {emulatedRole && <span className="emulation-tag"> [EMULATING: {emulatedRole.toUpperCase()}]</span>}
             </div>
           </div>
@@ -1059,14 +1233,17 @@ export function PortalApp(): React.JSX.Element {
               checked={offlineEnabled}
               onChange={(event) => setOfflineEnabled(event.target.checked)}
             />
-            Force queue mode
+            Offline queue mode
           </label>
           <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`}>{networkOnline ? "Online" : "Offline"}</span>
+          <button className="button button--secondary" type="button" onClick={() => runAction(handleReplay)}>
+            Sync queued changes ({queueCount})
+          </button>
+          <button className="button button--secondary" type="button" onClick={() => setCommandPaletteOpen(true)} aria-label="Open command palette">
+            Command
+          </button>
           <button className="button button--secondary" type="button" onClick={() => setPortalView("dashboard")}>
             Dashboard
-          </button>
-          <button className="button button--secondary" type="button" onClick={() => runAction(handleReplay)}>
-            Execute Queue ({queueCount})
           </button>
           <button className="button button--ghost" type="button" onClick={() => runAction(handleLogout)}>
             Logout
@@ -1074,19 +1251,150 @@ export function PortalApp(): React.JSX.Element {
         </div>
       </header>
 
-      <div className={`portal-layout ${showOperationalEngagements ? "" : "portal-layout--no-sidebar"}`}>
+      <div className={`portal-layout ${showOperationalEngagements ? "portal-layout--with-joblist" : "portal-layout--no-joblist"}`}>
+        <aside className="portal-nav">
+          <div className="portal-nav__header">
+            <p className="portal-nav__label">Workspace</p>
+            <h3>{activeToolMeta.label}</h3>
+          </div>
+          <label className="field-stack">
+            <span>Default landing section</span>
+            <select
+              aria-label="Default landing section"
+              value={defaultWorkspaceTool}
+              onChange={(event) => setDefaultWorkspaceTool(event.target.value)}
+            >
+              {allowedWorkspaceTools.map((tool) => (
+                <option key={tool} value={tool}>
+                  {(WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <nav className="portal-nav__list" aria-label="Portal sections">
+            <button
+              type="button"
+              className="portal-nav__item"
+              onClick={() => setPortalView("dashboard")}
+            >
+              Overview
+            </button>
+            {orderedPrimaryNavTools.map((tool) => {
+              const item = WORKSPACE_TOOL_META[tool] ?? { label: tool, helper: "" };
+              const active = tool === activeWorkspaceTool;
+              return (
+                <button
+                  key={tool}
+                  type="button"
+                  className={`portal-nav__item ${active ? "portal-nav__item--active" : ""}`}
+                  onClick={() => setActiveWorkspaceTool(tool)}
+                >
+                  <span>{item.label}</span>
+                  <small>{item.helper}</small>
+                </button>
+              );
+            })}
+            {moreNavTools.length > 0 ? (
+              <>
+                <button type="button" className="portal-nav__item" onClick={() => setShowMoreNav((value) => !value)}>
+                  <span>{showMoreNav ? "Hide More" : "More Tools"}</span>
+                  <small>{moreNavTools.length} additional section(s)</small>
+                </button>
+                {showMoreNav
+                  ? moreNavTools.map((tool) => {
+                    const item = WORKSPACE_TOOL_META[tool] ?? { label: tool, helper: "" };
+                    const active = tool === activeWorkspaceTool;
+                    return (
+                      <button
+                        key={tool}
+                        type="button"
+                        className={`portal-nav__item ${active ? "portal-nav__item--active" : ""}`}
+                        onClick={() => setActiveWorkspaceTool(tool)}
+                      >
+                        <span>{item.label}</span>
+                        <small>{item.helper}</small>
+                      </button>
+                    );
+                  })
+                  : null}
+              </>
+            ) : null}
+          </nav>
+          <div className="portal-nav__pinboard">
+            <p className="portal-nav__label">Pinned tools</p>
+            <div className="button-row">
+              {allowedWorkspaceTools.map((tool) => {
+                const pinned = pinnedTools.includes(tool);
+                return (
+                  <button
+                    key={tool}
+                    type="button"
+                    className={`button ${pinned ? "button--primary" : "button--ghost"}`}
+                    onClick={() =>
+                      setPinnedTools((prev) => (prev.includes(tool) ? prev.filter((id) => id !== tool) : [...prev, tool]))
+                    }
+                  >
+                    {(WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
         {showOperationalEngagements ? (
-          <aside className="portal-sidebar">
+          <aside className="portal-sidebar portal-sidebar--jobs">
             <JobListView
-              jobs={jobs}
+              jobs={filteredJobs}
               selectedJobid={selectedJobid}
               onSelectJob={setSelectedJobid}
+              viewKey={effectiveRole ?? "client"}
+              globalQuery={globalSearch}
+              onGlobalQueryChange={setGlobalSearch}
+              onBulkStatusUpdate={(ids, status) => runAction(() => handleBulkStatusUpdate(ids, status))}
               title="Jobs List"
             />
           </aside>
         ) : null}
 
         <main className="portal-main">
+          <section className="workspace-header-card">
+            <h1>{activeToolMeta.label}</h1>
+            <p>{activeToolMeta.helper.replace("documents", COPY_GLOSSARY.documents.toLowerCase())}</p>
+            <div className="workspace-header-card__actions">
+              <input
+                type="search"
+                value={globalSearch}
+                onChange={(event) => setGlobalSearch(event.target.value)}
+                placeholder="Search jobs, clients, sites, IDs..."
+                aria-label="Search across workspace data"
+              />
+              <button className="button button--secondary" type="button" onClick={() => setCommandPaletteOpen(true)}>
+                Quick actions
+              </button>
+            </div>
+          </section>
+
+          {notifications.length > 0 ? (
+            <section className="notification-center" aria-live="polite">
+              {notifications.map((item) => (
+                <article key={item.id} className="notification-card">
+                  <span className={`status-chip status-chip--${item.tone}`}>{item.title}</span>
+                  <p>{item.detail}</p>
+                  <button className="button button--ghost" type="button" onClick={() => setDismissedNotifications((prev) => [...prev, item.id])}>
+                    Dismiss
+                  </button>
+                </article>
+              ))}
+              <button className="button button--secondary" type="button" onClick={() => setDismissedNotifications(notifications.map((item) => item.id))}>
+                Dismiss all
+              </button>
+            </section>
+          ) : null}
+
+          {actionPending ? <p className="inline-note">Loading latest updates…</p> : null}
+          {/failed|error|unavailable/i.test(feedback) ? <p className="inline-note">Action could not complete. Check connection and try again.</p> : null}
+
           <SummaryBoard
             role={effectiveRole || "client"}
             openJobCount={openJobCount}
@@ -1275,6 +1583,54 @@ export function PortalApp(): React.JSX.Element {
           </section>
         </main>
       </div>
+
+      {commandPaletteOpen ? (
+        <div className="command-palette-backdrop" onClick={() => setCommandPaletteOpen(false)}>
+          <section className="command-palette" onClick={(event) => event.stopPropagation()}>
+            <div className="panel-heading panel-heading--inline">
+              <div>
+                <p className="panel-eyebrow">Quick Actions</p>
+                <h2>Command Palette</h2>
+              </div>
+              <button className="button button--ghost" type="button" onClick={() => setCommandPaletteOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="command-palette__list">
+              {allowedWorkspaceTools.map((tool) => (
+                <button
+                  key={tool}
+                  className="portal-nav__item"
+                  type="button"
+                  onClick={() => {
+                    setActiveWorkspaceTool(tool);
+                    setCommandPaletteOpen(false);
+                  }}
+                >
+                  <span>{(WORKSPACE_TOOL_META[tool] ?? { label: tool }).label}</span>
+                  <small>{(WORKSPACE_TOOL_META[tool] ?? { helper: "" }).helper}</small>
+                </button>
+              ))}
+              <button className="portal-nav__item" type="button" onClick={() => runAction(handleReplay)}>
+                <span>Sync queued changes</span>
+                <small>Run offline replay now</small>
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      <nav className="mobile-action-bar" aria-label="Mobile quick actions">
+        <button className="button button--ghost" type="button" onClick={() => setPortalView("dashboard")}>
+          Home
+        </button>
+        <button className="button button--ghost" type="button" onClick={() => setActiveWorkspaceTool(defaultWorkspaceTool)}>
+          Main
+        </button>
+        <button className="button button--ghost" type="button" onClick={() => setCommandPaletteOpen(true)}>
+          Actions
+        </button>
+      </nav>
 
       <footer className="portal-statusbar">
         <OfflineBanner

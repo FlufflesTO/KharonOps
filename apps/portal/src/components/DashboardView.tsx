@@ -118,9 +118,19 @@ interface DashboardViewProps {
   onEnterWorkspace: (tool: string) => void;
   onLogout: () => void;
   overrideRole?: Role;
+  onboardingDismissed?: boolean;
+  onDismissOnboarding?: () => void;
 }
 
-export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogout, overrideRole }: DashboardViewProps): React.JSX.Element {
+export function DashboardView({
+  session,
+  openJobCount,
+  onEnterWorkspace,
+  onLogout,
+  overrideRole,
+  onboardingDismissed,
+  onDismissOnboarding
+}: DashboardViewProps): React.JSX.Element {
   const role = overrideRole || session.session.role;
   const meta = ROLE_DISPLAY[role] ?? { 
     label: "Operations", 
@@ -172,6 +182,21 @@ export function DashboardView({ session, openJobCount, onEnterWorkspace, onLogou
           </div>
         </div>
       </section>
+
+      {!onboardingDismissed ? (
+        <section className="dashboard-help">
+          <div className="dashboard-help__card">
+            <Icon d={ICONS.checklist} size={24} />
+            <div>
+              <h3>First-time Checklist</h3>
+              <p>1. Open Jobs. 2. Review status and notes. 3. Use Schedule or Files for next actions.</p>
+            </div>
+            <button className="button button--ghost" type="button" onClick={onDismissOnboarding}>
+              Dismiss
+            </button>
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }

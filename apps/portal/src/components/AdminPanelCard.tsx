@@ -38,14 +38,14 @@ export function AdminPanelCard({
   return (
     <article className="workspace-card">
       <div className="panel-heading">
-        <p className="panel-eyebrow">Admin</p>
-        <h2>Health, Automation, and Forensic Audit</h2>
+        <p className="panel-eyebrow">Settings</p>
+        <h2>Platform Controls</h2>
       </div>
 
       <section className="admin-section" style={{ marginBottom: "1rem", padding: "1rem", background: "rgba(255,255,255,0.02)", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
-        <h3 style={{ marginTop: 0, marginBottom: "1rem", fontSize: "1rem" }}>Role Emulation (Diagnostic)</h3>
+        <h3 style={{ marginTop: 0, marginBottom: "1rem", fontSize: "1rem" }}>Role Emulation</h3>
         <p style={{ fontSize: "0.85rem", marginBottom: "1rem", opacity: 0.7 }}>
-          Temporarily switch active dashboard view to verify workflow parity.
+          Temporarily switch to another role to verify workflow coverage.
         </p>
         <div className="button-row" style={{ flexWrap: "wrap" }}>
           {(["client", "technician", "dispatcher", "finance", "admin"] as const).map((role) => (
@@ -70,13 +70,13 @@ export function AdminPanelCard({
 
       <div className="button-row" style={{ marginBottom: "1rem" }}>
         <button className="button button--secondary" onClick={onLoadHealth}>
-          Refresh Health
+          Refresh system health
         </button>
         <button className="button button--secondary" onClick={onLoadAudits}>
-          Refresh Audits ({adminAuditCount})
+          Refresh audits ({adminAuditCount})
         </button>
         <button className="button button--primary" onClick={onLoadAutomationJobs}>
-          Load Automation Queue
+          Load automation queue
         </button>
       </div>
 
@@ -128,8 +128,8 @@ export function AdminPanelCard({
       </section>
 
       <section className="admin-section">
-        <h3>Forensic Audit Provenance</h3>
-        <p className="muted-copy">Hash-chained verification over loaded audit entries.</p>
+        <h3>Audit Trail Verification</h3>
+        <p className="muted-copy">Verification status for loaded audit entries.</p>
         <div className="history-table">
           {adminAudits.length === 0 ? (
             <p className="muted-copy">No audits loaded. Click Refresh Audits.</p>
@@ -140,12 +140,16 @@ export function AdminPanelCard({
                 const payload = JSON.stringify(entry);
                 const hash = btoa(`${prevHash}:${payload}`).slice(0, 24);
                 const anomaly = typeof entry.action !== "string" || String(entry.action).trim() === "";
+                const actor = String(entry.actor ?? entry.updated_by ?? "system");
+                const before = String(entry.before ?? entry.previous_status ?? "n/a");
+                const after = String(entry.after ?? entry.next_status ?? "n/a");
                 const row = (
                   <div key={`${String(entry.audit_id ?? index)}-${index}`} className="history-row">
                     <strong>{String(entry.audit_id ?? `AUD-${index}`)}</strong>
                     <span>{String(entry.action ?? "unknown_action")}</span>
                     <span>{String(entry.at ?? entry.updated_at ?? "n/a")}</span>
-                    <span className="history-row__url">{hash}</span>
+                    <span className="history-row__url">{hash} | {actor}</span>
+                    <span className="history-row__url">Before: {before} {"->"} After: {after}</span>
                     <span className={`status-chip status-chip--${anomaly ? "critical" : "active"}`}>{anomaly ? "anomaly" : "verified"}</span>
                   </div>
                 );

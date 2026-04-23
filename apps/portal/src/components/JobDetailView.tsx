@@ -55,13 +55,20 @@ export function JobDetailView({
 
   const postureItems = [
     {
-      label: "Service posture",
+      label: "Job status",
       detail: selectedJob ? selectedJob.status : "Awaiting job selection"
     },
     {
-      label: "Lead technician",
-      detail: selectedJob?.technician_id || "Pending assignment"
+      label: "Assigned technician",
+      detail: selectedJob?.technician_name || selectedJob?.technician_id || "Pending assignment"
     }
+  ];
+  const timeline = [
+    { id: "draft", label: "Requested" },
+    { id: "approved", label: "Assigned" },
+    { id: "performed", label: "Performed" },
+    { id: "certified", label: "Certified" },
+    { id: "paid", label: "Paid" }
   ];
 
   if (!selectedJob) {
@@ -81,7 +88,7 @@ export function JobDetailView({
       <div className="side-sheet__scroll">
         <div className="panel-heading panel-heading--inline">
           <div>
-            <p className="panel-eyebrow">Active Engagement</p>
+            <p className="panel-eyebrow">Selected Job</p>
             <h2 style={{ fontSize: '1.6rem' }}>{selectedJob.title}</h2>
           </div>
           <span className={`status-chip status-chip--${statusTone(selectedJob.status)}`}>
@@ -97,10 +104,18 @@ export function JobDetailView({
             </div>
           ))}
         </div>
+        <div className="timeline-strip" aria-label="Job progress timeline">
+          {timeline.map((step, index) => (
+            <div key={step.id} className={`timeline-strip__item ${selectedJob.status === step.id ? "timeline-strip__item--active" : ""}`}>
+              <span>{index + 1}</span>
+              <small>{step.label}</small>
+            </div>
+          ))}
+        </div>
 
         {selectedJob.last_note ? (
           <div className="highlight-box">
-            <span className="highlight-box__label">Latest Dispatch Note</span>
+            <span className="highlight-box__label">Latest Note</span>
             <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
               {selectedJob.last_note}
             </p>
@@ -108,23 +123,23 @@ export function JobDetailView({
         ) : null}
 
         <details className="telemetry-card">
-          <summary>System Telemetry</summary>
+          <summary>Job Details</summary>
           <div className="telemetry-grid">
             <div className="telemetry-item">
-              <label>Correlation ID</label>
-              <value>{selectedJob.job_id}</value>
+              <label>Job ID</label>
+              <code>{selectedJob.job_id}</code>
             </div>
             <div className="telemetry-item">
-              <label>SVR version</label>
-              <value>v{selectedJob.row_version}</value>
+              <label>Version</label>
+              <code>v{selectedJob.row_version}</code>
             </div>
             <div className="telemetry-item">
-              <label>Client Ref</label>
-              <value>{selectedJob.client_id || "NOT_BOUND"}</value>
+              <label>Client</label>
+              <code>{selectedJob.client_name || selectedJob.client_id || "Not assigned"}</code>
             </div>
             <div className="telemetry-item">
-              <label>Auth Actor</label>
-              <value>{selectedJob.technician_id || "UNASSIGNED"}</value>
+              <label>Technician</label>
+              <code>{selectedJob.technician_name || selectedJob.technician_id || "Unassigned"}</code>
             </div>
           </div>
         </details>
@@ -132,12 +147,12 @@ export function JobDetailView({
       {isFieldRole && (
         <div className="control-block">
           <div className="control-block__head">
-            <h3>Field controls</h3>
+            <h3>Update Job</h3>
           </div>
 
           <div className="control-stack">
             <label className="field-stack">
-              <span>Status transition</span>
+              <span>Set status</span>
               <div className="button-row">
                 <select name="job_status_target" value={statusTarget} onChange={(event) => setStatusTarget(event.target.value as JobStatus)}>
                   {selectableStatuses.map((status) => (
@@ -146,14 +161,17 @@ export function JobDetailView({
                     </option>
                   ))}
                 </select>
-                <button className="button button--primary" onClick={onStatusUpdate}>
-                  Apply
+                <button className="button button--primary" onClick={onStatusUpdate} disabled={statusTarget === selectedJob.status}>
+                  Update status
                 </button>
+                {statusTarget === selectedJob.status ? (
+                  <small className="inline-note">Status is already set to {selectedJob.status}.</small>
+                ) : null}
               </div>
             </label>
 
             <label className="field-stack">
-              <span>Operator note</span>
+              <span>Add note</span>
               <div className="button-row">
                 <input
                   name="job_operator_note"
@@ -161,9 +179,10 @@ export function JobDetailView({
                   onChange={(event) => setNoteValue(event.target.value)}
                   placeholder="Add note to selected job"
                 />
-                <button className="button button--secondary" onClick={onNote}>
-                  Save note
+                <button className="button button--secondary" onClick={onNote} disabled={noteValue.trim().length === 0}>
+                  Save
                 </button>
+                {noteValue.trim().length === 0 ? <small className="inline-note">Note cannot be empty.</small> : null}
               </div>
             </label>
           </div>
@@ -207,7 +226,7 @@ export function JobDetailView({
       {isFieldRole && (
         <div className="control-block">
           <div className="control-block__head">
-            <h3>Controlled documents</h3>
+            <h3>Documents</h3>
           </div>
           <div className="button-row">
             <select
@@ -220,7 +239,7 @@ export function JobDetailView({
               <option value="certificate">Certificate</option>
             </select>
             <button className="button button--secondary" onClick={onDocumentGenerate} disabled={!canGenerateDocuments}>
-              Generate
+              Create document
             </button>
           </div>
 

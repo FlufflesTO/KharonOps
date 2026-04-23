@@ -63,6 +63,7 @@ export function FinanceOpsCard({
   const [selectedQuoteid, setSelectedQuoteid] = useState("");
   const [selectedInvoiceid, setSelectedInvoiceid] = useState("");
   const [selectedEscrowDocumentid, setSelectedEscrowDocumentid] = useState("");
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
 
   const financials = useMemo(() => {
     const activeJobs = jobs.filter((job) => job.status !== "cancelled");
@@ -246,12 +247,41 @@ export function FinanceOpsCard({
             <div className="history-table">
               {store.invoices.map((invoice) => (
                 <div key={invoice.invoice_id} className="history-row">
-                  <strong>{invoice.invoice_id}</strong>
+                  <strong>
+                    <label style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedInvoiceIds.includes(invoice.invoice_id)}
+                        onChange={() =>
+                          setSelectedInvoiceIds((prev) =>
+                            prev.includes(invoice.invoice_id)
+                              ? prev.filter((id) => id !== invoice.invoice_id)
+                              : [...prev, invoice.invoice_id]
+                          )
+                        }
+                      />
+                      <span>{invoice.invoice_id}</span>
+                    </label>
+                  </strong>
                   <span>{invoice.client_id}</span>
                   <span>{asMoney(invoice.amount)}</span>
                   <span className={`status-chip status-chip--${invoice.status === "paid" ? "active" : "warning"}`}>{invoice.status}</span>
                 </div>
               ))}
+            </div>
+            <div className="button-row">
+              <button
+                className="button button--ghost"
+                type="button"
+                disabled={selectedInvoiceIds.length === 0}
+                onClick={() => {
+                  for (const invoiceid of selectedInvoiceIds) {
+                    onReconcileInvoice(invoiceid);
+                  }
+                }}
+              >
+                Bulk reconcile selected invoices
+              </button>
             </div>
           </div>
         ) : null}

@@ -28,6 +28,7 @@
     "deploy:public": "npx wrangler deploy --env public",
     "deploy:staging": "npx wrangler deploy --env staging",
     "deploy:staging-public": "npx wrangler deploy --env staging-public",
+    "ui:tokens:check": "node ./scripts/check-design-tokens.mjs",
     "pretest": "npm run build:packages",
     "test": "vitest run",
     "lint": "eslint ."
