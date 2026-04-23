@@ -39,7 +39,9 @@ import {
   type JobDocumentRow,
   type JobRow,
   type ScheduleRequestRow,
-  type ScheduleRow
+  type ScheduleRow,
+  type UpgradeWorkspaceState,
+  type UserRow
 } from "@kharon/domain";
 import { GoogleAdapterError } from "@kharon/google";
 import { createRuntimeConfig } from "./config.js";
@@ -136,6 +138,73 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+type KvLikeNamespace = {
+  get: (key: string) => Promise<string | null>;
+  put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>;
+};
+
+const memoryCache = new Map<string, { expiresAt: number; value: string }>();
+let memoryCacheVersion = 1;
+
+function getKvNamespace(env: Record<string, unknown>): KvLikeNamespace | null {
+  const candidate = env.KHARON_CACHE as Partial<KvLikeNamespace> | undefined;
+  if (candidate && typeof candidate.get === "function" && typeof candidate.put === "function") {
+    return candidate as KvLikeNamespace;
+  }
+  return null;
+}
+
+async function getCacheVersion(env: Record<string, unknown>): Promise<number> {
+  const kv = getKvNamespace(env);
+  if (!kv) {
+    return memoryCacheVersion;
+  }
+  const raw = await kv.get("cache:workspace:version");
+  const parsed = Number(raw ?? "1");
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return parsed;
+  }
+  await kv.put("cache:workspace:version", "1");
+  return 1;
+}
+
+async function bumpCacheVersion(env: Record<string, unknown>): Promise<void> {
+  const kv = getKvNamespace(env);
+  if (!kv) {
+    memoryCacheVersion += 1;
+    memoryCache.clear();
+    return;
+  }
+  const current = await getCacheVersion(env);
+  await kv.put("cache:workspace:version", String(current + 1));
+}
+
+async function getCachedJson<T>(env: Record<string, unknown>, key: string): Promise<T | null> {
+  const kv = getKvNamespace(env);
+  if (!kv) {
+    const hit = memoryCache.get(key);
+    if (!hit || hit.expiresAt < Date.now()) {
+      return null;
+    }
+    return JSON.parse(hit.value) as T;
+  }
+  const value = await kv.get(key);
+  if (!value) {
+    return null;
+  }
+  return JSON.parse(value) as T;
+}
+
+async function putCachedJson(env: Record<string, unknown>, key: string, value: unknown, ttlSeconds = 45): Promise<void> {
+  const payload = JSON.stringify(value);
+  const kv = getKvNamespace(env);
+  if (!kv) {
+    memoryCache.set(key, { value: payload, expiresAt: Date.now() + ttlSeconds * 1000 });
+    return;
+  }
+  await kv.put(key, payload, { expirationTtl: ttlSeconds });
+}
+
 export function createApp(env: Record<string, string | undefined> = {}): Hono<AppBindings> {
   const config = createRuntimeConfig(env);
   const store = createWorkbookStore(config);
@@ -163,6 +232,25 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     }
     await schemaInitPromise;
     await next();
+  });
+
+  app.use("/api/v1/*", async (c, next) => {
+    await next();
+    const method = c.req.method.toUpperCase();
+    const isMutation = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
+    const skipPaths = new Set(["/api/v1/auth/google-login", "/api/v1/auth/logout"]);
+    if (!isMutation || c.res.status >= 400 || skipPaths.has(c.req.path)) {
+      return;
+    }
+    try {
+      await bumpCacheVersion(c.env as Record<string, unknown>);
+    } catch (error) {
+      logApiEvent("warn", "cache.version.bump_failed", {
+        correlationId: c.get("correlationId"),
+        path: c.req.path,
+        error: String(error)
+      });
+    }
   });
 
   app.onError((error, c) => {
@@ -539,9 +627,113 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     return { clients, technicians, users };
   }
 
+  function detectSchemaDrift(args: {
+    jobs: JobRow[];
+    users: Awaited<ReturnType<WorkbookStore["listUsers"]>>;
+    clients: Awaited<ReturnType<WorkbookStore["listClients"]>>;
+    technicians: Awaited<ReturnType<WorkbookStore["listTechnicians"]>>;
+  }): {
+    healthy: boolean;
+    issues: Array<{ code: string; severity: "warning" | "critical"; detail: string }>;
+  } {
+    const issues: Array<{ code: string; severity: "warning" | "critical"; detail: string }> = [];
+
+    const missingJobIds = args.jobs.filter((row) => row.job_id.trim() === "").length;
+    if (missingJobIds > 0) {
+      issues.push({
+        code: "jobs_missing_id",
+        severity: "critical",
+        detail: `${missingJobIds} job row(s) are missing job_id`
+      });
+    }
+
+    const missingClientRefs = args.jobs.filter((row) => row.client_id.trim() === "").length;
+    if (missingClientRefs > 0) {
+      issues.push({
+        code: "jobs_missing_client_id",
+        severity: "warning",
+        detail: `${missingClientRefs} job row(s) are missing client_id`
+      });
+    }
+
+    const missingUserIds = args.users.filter((row) => row.user_id.trim() === "").length;
+    if (missingUserIds > 0) {
+      issues.push({
+        code: "users_missing_id",
+        severity: "critical",
+        detail: `${missingUserIds} user row(s) are missing user_id`
+      });
+    }
+
+    const missingClientNames = args.clients.filter((row) => row.client_name.trim() === "").length;
+    if (missingClientNames > 0) {
+      issues.push({
+        code: "clients_missing_name",
+        severity: "warning",
+        detail: `${missingClientNames} client row(s) are missing client_name`
+      });
+    }
+
+    const missingTechnicianNames = args.technicians.filter((row) => row.display_name.trim() === "").length;
+    if (missingTechnicianNames > 0) {
+      issues.push({
+        code: "technicians_missing_name",
+        severity: "warning",
+        detail: `${missingTechnicianNames} technician row(s) are missing display_name`
+      });
+    }
+
+    return {
+      healthy: !issues.some((issue) => issue.severity === "critical"),
+      issues
+    };
+  }
+
+  async function assertComplianceGuardrails(job: JobRow, nextStatus: JobRow["status"], correlationId: string): Promise<string | null> {
+    if (nextStatus === "performed" && job.technician_id.trim() === "") {
+      return "A technician must be assigned before marking a job as performed.";
+    }
+    if (nextStatus === "certified") {
+      const documents = await store.listDocuments(job.job_id);
+      const hasCertificate = documents.some((document) => document.document_type === "certificate");
+      if (!hasCertificate) {
+        return "Generate a certificate document before setting job status to certified.";
+      }
+      const lockedEscrow = await store.getEscrowByDocument(
+        documents.find((document) => document.document_type === "certificate")?.document_id ?? ""
+      );
+      if (lockedEscrow?.status === "locked") {
+        return "Certificate escrow is locked. Reconcile the related invoice before certification.";
+      }
+    }
+    await store.appendAudit({
+      action: "compliance.guardrail.check",
+      payload: {
+        job_id: job.job_id,
+        next_status: nextStatus,
+        result: "pass"
+      },
+      ctx: createStoreContext("system:guardrail", correlationId),
+      entry_type: "compliance_guardrail"
+    });
+    return null;
+  }
+
   api.get("/jobs", requireSession(), async (c) => {
     const correlationId = c.get("correlationId");
     const user = getSessionUser(c);
+    const version = await getCacheVersion(c.env as Record<string, unknown>);
+    const cacheKey = `jobs:${version}:${user.user_id}:${user.role}`;
+    const cached = await getCachedJson<Array<Record<string, unknown>>>(c.env as Record<string, unknown>, cacheKey);
+
+    if (cached) {
+      return c.json(
+        envelopeSuccess({
+          correlationId,
+          data: cached
+        })
+      );
+    }
 
     const [jobs, sources] = await Promise.all([
       store.listJobsForUser(user),
@@ -555,6 +747,8 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       client_name: clientNameByid.get(job.client_id) ?? "",
       technician_name: technicianNameByid.get(job.technician_id) ?? ""
     }));
+
+    await putCachedJson(c.env as Record<string, unknown>, cacheKey, enrichedJobs, 30);
 
     return c.json(
       envelopeSuccess({
@@ -658,6 +852,32 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
               to: body.status,
               allowed: listAllowedStatusTransitions(existing.status)
             }
+          }
+        }),
+        400
+      );
+    }
+
+    const guardrailFailure = await assertComplianceGuardrails(existing, body.status, correlationId);
+    if (guardrailFailure) {
+      await store.appendAudit({
+        action: "compliance.guardrail.block",
+        payload: {
+          job_id: existing.job_id,
+          from_status: existing.status,
+          to_status: body.status,
+          reason: guardrailFailure
+        },
+        ctx: createStoreContext(user.user_id, correlationId),
+        entry_type: "compliance_guardrail"
+      });
+      return c.json(
+        envelopeError({
+          correlationId,
+          rowVersion: existing.row_version,
+          error: {
+            code: "compliance_guardrail_failed",
+            message: guardrailFailure
           }
         }),
         400
@@ -1375,10 +1595,23 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
   api.get("/workspace/people", requireSession(), requireRoles("dispatcher", "admin"), async (c) => {
     const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const version = await getCacheVersion(c.env as Record<string, unknown>);
+    const cacheKey = `people:${version}:${user.role}`;
+    const cached = await getCachedJson<UserRow[]>(c.env as Record<string, unknown>, cacheKey);
+    if (cached) {
+      return c.json(
+        envelopeSuccess({
+          correlationId,
+          data: cached
+        })
+      );
+    }
     const users = await store.listUsers();
     const activeUsers = users
       .filter((row) => row.active === "true")
       .sort((a, b) => a.display_name.localeCompare(b.display_name));
+    await putCachedJson(c.env as Record<string, unknown>, cacheKey, activeUsers, 60);
 
     return c.json(
       envelopeSuccess({
@@ -1390,7 +1623,20 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
   api.get("/workspace/upgrade/state", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
     const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const version = await getCacheVersion(c.env as Record<string, unknown>);
+    const cacheKey = `upgrade:${version}:${user.role}`;
+    const cached = await getCachedJson<UpgradeWorkspaceState>(c.env as Record<string, unknown>, cacheKey);
+    if (cached) {
+      return c.json(
+        envelopeSuccess({
+          correlationId,
+          data: cached
+        })
+      );
+    }
     const data = await store.getUpgradeWorkspaceState();
+    await putCachedJson(c.env as Record<string, unknown>, cacheKey, data, 45);
     return c.json(
       envelopeSuccess({
         correlationId,
@@ -1692,6 +1938,23 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
       );
     }
 
+    const version = await getCacheVersion(c.env as Record<string, unknown>);
+    const cacheKey = `dispatch:${version}:${jobid}:${user.user_id}`;
+    const cached = await getCachedJson<{
+      requests: ScheduleRequestRow[];
+      schedules: ScheduleRow[];
+      documents: JobDocumentRow[];
+      technicians: UserRow[];
+    }>(c.env as Record<string, unknown>, cacheKey);
+    if (cached) {
+      return c.json(
+        envelopeSuccess({
+          correlationId,
+          data: cached
+        })
+      );
+    }
+
     const [requests, schedules, documents, users] = await Promise.all([
       store.listScheduleRequests(jobid),
       store.listSchedules(jobid),
@@ -1702,15 +1965,100 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const technicians = users
       .filter((row) => row.active === "true" && row.role === "technician")
       .sort((a, b) => a.display_name.localeCompare(b.display_name));
+    const payload = {
+      requests,
+      schedules,
+      documents,
+      technicians
+    };
+    await putCachedJson(c.env as Record<string, unknown>, cacheKey, payload, 20);
+
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: payload
+      })
+    );
+  });
+
+  api.get("/workspace/schema-drift", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const [jobs, users, clients, technicians] = await Promise.all([
+      store.listJobsForUser(user),
+      store.listUsers(),
+      store.listClients(),
+      store.listTechnicians()
+    ]);
+    const drift = detectSchemaDrift({ jobs, users, clients, technicians });
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          generated_at: nowIso(),
+          healthy: drift.healthy,
+          issue_count: drift.issues.length,
+          issues: drift.issues
+        }
+      })
+    );
+  });
+
+  api.get("/workspace/ops-intelligence", requireSession(), requireRoles("dispatcher", "admin", "finance"), async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const [jobs, schedules, documents, escrow, invoices, users, clients, technicians] = await Promise.all([
+      store.listJobsForUser(user),
+      store.listSchedules(),
+      store.listDocuments(),
+      store.listEscrowRows(),
+      store.listFinanceInvoices(),
+      store.listUsers(),
+      store.listClients(),
+      store.listTechnicians()
+    ]);
+
+    const drift = detectSchemaDrift({
+      jobs,
+      users,
+      clients,
+      technicians
+    });
+
+    const openJobs = jobs.filter((job) => !["certified", "cancelled"].includes(job.status)).length;
+    const criticalJobs = jobs.filter((job) => /urgent|critical|fault|overdue/i.test(job.last_note)).length;
+    const staleJobs = jobs.filter((job) => Date.now() - Date.parse(job.updated_at || "1970-01-01T00:00:00.000Z") > 86400000).length;
+    const pendingPublish = documents.filter((doc) => doc.status !== "published").length;
+    const lockedEscrow = escrow.filter((row) => row.status === "locked").length;
+    const outstanding = invoices
+      .filter((invoice) => invoice.status !== "paid")
+      .reduce((sum, invoice) => sum + invoice.amount, 0);
 
     return c.json(
       envelopeSuccess({
         correlationId,
         data: {
-          requests,
-          schedules,
-          documents,
-          technicians
+          generated_at: nowIso(),
+          jobs: {
+            open: openJobs,
+            critical: criticalJobs,
+            stale_over_24h: staleJobs
+          },
+          operations: {
+            schedules_total: schedules.length,
+            documents_pending_publish: pendingPublish,
+            escrow_locked: lockedEscrow
+          },
+          finance: {
+            outstanding_amount: outstanding
+          },
+          sync: {
+            queue_conflicts: 0
+          },
+          schema_drift: {
+            healthy: drift.healthy,
+            issue_count: drift.issues.length
+          }
         }
       })
     );

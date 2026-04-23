@@ -4,10 +4,12 @@ import { listAllowedStatusTransitions } from "@kharon/domain";
 import {
   apiClient,
   type AutomationJobEntry,
+  type OpsIntelligencePayload,
   type PeopleDirectoryEntry,
   type PortalAuthConfig,
   type PortalDispatchContext,
   type PortalSession,
+  type SchemaDriftPayload,
   type SkillMatrixRecord,
   type UpgradeWorkspaceState
 } from "./apiClient";
@@ -62,6 +64,10 @@ function asJob(record: Record<string, unknown>): JobRecord {
     technician_id: pickString(record, "technician_id", "primary_technician_id"),
     client_name: String(record.client_name ?? ""),
     technician_name: String(record.technician_name ?? ""),
+    updated_at: String(record.updated_at ?? ""),
+    site_id: pickString(record, "site_id"),
+    site_lat: Number.isFinite(Number(record.site_lat ?? record.latitude ?? NaN)) ? Number(record.site_lat ?? record.latitude) : null,
+    site_lng: Number.isFinite(Number(record.site_lng ?? record.longitude ?? NaN)) ? Number(record.site_lng ?? record.longitude) : null,
     last_note: String(record.last_note ?? ""),
     // Metadata preservation for contextual dispatch
     active_request_id: pickString(record, "active_request_id"),
@@ -155,6 +161,17 @@ function toLocalInputValue(value: string): string {
     return nowPlusHours(1);
   }
   return new Date(parsed).toISOString().slice(0, 16);
+}
+
+function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const r = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return r * c;
 }
 
 function errorMessage(error: unknown): string {
@@ -310,6 +327,32 @@ export function PortalApp(): React.JSX.Element {
   const [pinnedTools, setPinnedTools] = useState<string[]>([]);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [dismissedNotifications, setDismissedNotifications] = useState<string[]>([]);
+  const [schemaDrift, setSchemaDrift] = useState<SchemaDriftPayload | null>(null);
+  const [opsIntelligence, setOpsIntelligence] = useState<OpsIntelligencePayload | null>(null);
+  const [lastSyncPullAt, setLastSyncPullAt] = useState(new Date(0).toISOString());
+  const [syncPulse, setSyncPulse] = useState<{ at: string; jobsChanged: number; queueChanged: number }>({
+    at: "",
+    jobsChanged: 0,
+    queueChanged: 0
+  });
+  const [installPromptEvent, setInstallPromptEvent] = useState<Event | null>(null);
+  const [geoVerification, setGeoVerification] = useState<{
+    status: "idle" | "verified" | "warning" | "error";
+    capturedAt: string;
+    distanceMeters: number | null;
+    accuracyMeters: number | null;
+    message: string;
+    latitude: number | null;
+    longitude: number | null;
+  }>({
+    status: "idle",
+    capturedAt: "",
+    distanceMeters: null,
+    accuracyMeters: null,
+    message: "",
+    latitude: null,
+    longitude: null
+  });
 
 
   const realRole = session?.session.role ?? null;
@@ -389,7 +432,11 @@ export function PortalApp(): React.JSX.Element {
 
   const openJobCount = filteredJobs.filter((job) => job.status !== "certified" && job.status !== "cancelled").length;
   const generatedDocumentCount = documents.length;
+  const selectedJobDocumentCount = selectedJob ? documents.filter((document) => String(document.job_id) === selectedJob.job_id).length : 0;
   const selectedJobStatus = selectedJob?.status ?? "No selection";
+  const syncPulseText = syncPulse.at
+    ? `Last sync ${new Date(syncPulse.at).toLocaleTimeString()} (jobs ${syncPulse.jobsChanged}, queue ${syncPulse.queueChanged})`
+    : "Sync pulse idle";
   const productionAuth = authConfig?.mode === "production";
   const notifications = useMemo(() => {
     const items: Array<{ id: string; tone: "warning" | "critical" | "active"; title: string; detail: string }> = [];
@@ -471,6 +518,23 @@ export function PortalApp(): React.JSX.Element {
       })
     );
   }, [selectedJobid, statusTarget, activeWorkspaceTool]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("kharon_geo_verification");
+    if (!saved) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(saved) as typeof geoVerification;
+      setGeoVerification(parsed);
+    } catch {
+      // ignore malformed cache
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("kharon_geo_verification", JSON.stringify(geoVerification));
+  }, [geoVerification]);
 
   useEffect(() => {
     if (!effectiveRole) {
@@ -559,6 +623,57 @@ export function PortalApp(): React.JSX.Element {
       document.documentElement.style.removeProperty("--role-accent");
     }
   }, [effectiveRole]);
+
+  useEffect(() => {
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event);
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
+  }, []);
+
+  useEffect(() => {
+    if (!session || !networkOnline) {
+      return;
+    }
+    const poll = async () => {
+      try {
+        const since = lastSyncPullAt || new Date(0).toISOString();
+        const response = await apiClient.syncPull(since);
+        const jobsChanged = response.jobs?.length ?? 0;
+        const queueChanged = response.queue?.length ?? 0;
+        const at = new Date().toISOString();
+        setLastSyncPullAt(at);
+        setSyncPulse({ at, jobsChanged, queueChanged });
+      } catch {
+        // Keep pulse passive when pull fails
+      }
+    };
+    void poll();
+    const intervalId = window.setInterval(() => {
+      void poll();
+    }, 15000);
+    return () => window.clearInterval(intervalId);
+  }, [lastSyncPullAt, networkOnline, session]);
+
+  useEffect(() => {
+    if (!selectedJob) {
+      return;
+    }
+    const prefix = documentType === "certificate" ? "CERT" : documentType === "service_report" ? "RPT" : "JBC";
+    const suggestedNumber = `${prefix}-${selectedJob.job_id}`.replace(/\s+/g, "-");
+    const payload: Record<string, string> = {
+      job_id: selectedJob.job_id,
+      site_id: selectedJob.site_id ?? "",
+      client_name: selectedJob.client_name ?? "",
+      technician_name: selectedJob.technician_name ?? "",
+      suggested_document_number: suggestedNumber,
+      sync_pulse: syncPulse.at ? new Date(syncPulse.at).toISOString() : "",
+      geo_verified_at: geoVerification.capturedAt
+    };
+    setChecklistData((prev) => ({ ...payload, ...prev }));
+  }, [documentType, geoVerification.capturedAt, selectedJob, syncPulse.at]);
 
   async function refreshQueueCount(): Promise<void> {
     try {
@@ -685,6 +800,87 @@ export function PortalApp(): React.JSX.Element {
     }
   }
 
+  async function loadSchemaDrift(): Promise<void> {
+    try {
+      const payload = await apiClient.schemaDrift();
+      setSchemaDrift(payload);
+      setFeedback(payload.healthy ? "Schema drift scan passed." : `Schema drift detected: ${payload.issue_count} issue(s).`);
+    } catch (error) {
+      setFeedback(`Schema drift scan failed: ${errorMessage(error)}`);
+    }
+  }
+
+  async function loadOpsIntelligence(): Promise<void> {
+    try {
+      const payload = await apiClient.opsIntelligence();
+      setOpsIntelligence(payload);
+      setFeedback("Operational intelligence refreshed.");
+    } catch (error) {
+      setFeedback(`Operational intelligence failed: ${errorMessage(error)}`);
+    }
+  }
+
+  async function handleInstallPrompt(): Promise<void> {
+    if (!installPromptEvent) {
+      setFeedback("Install prompt is not available on this device/browser.");
+      return;
+    }
+    try {
+      const installEvent = installPromptEvent as Event & { prompt?: () => Promise<void>; userChoice?: Promise<{ outcome: string }> };
+      await installEvent.prompt?.();
+      const result = await installEvent.userChoice;
+      setFeedback(result?.outcome === "accepted" ? "PWA install accepted." : "PWA install dismissed.");
+      setInstallPromptEvent(null);
+    } catch (error) {
+      setFeedback(`PWA install prompt failed: ${errorMessage(error)}`);
+    }
+  }
+
+  async function handleVerifyLocation(): Promise<void> {
+    if (!navigator.geolocation) {
+      setGeoVerification((prev) => ({
+        ...prev,
+        status: "error",
+        message: "Geolocation is not supported in this browser."
+      }));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        const accuracyMeters = position.coords.accuracy;
+        const jobLat = selectedJob?.site_lat ?? null;
+        const jobLng = selectedJob?.site_lng ?? null;
+        const dist = jobLat != null && jobLng != null ? distanceMeters(latitude, longitude, jobLat, jobLng) : null;
+        const status: "verified" | "warning" = dist == null || dist <= 500 ? "verified" : "warning";
+        const message =
+          dist == null
+            ? "Location captured. No job site coordinates found in workbook for distance validation."
+            : dist <= 500
+              ? "Location verified within acceptable dispatch radius."
+              : "Captured location is outside expected site radius.";
+        setGeoVerification({
+          status,
+          capturedAt: new Date(position.timestamp).toISOString(),
+          distanceMeters: dist,
+          accuracyMeters,
+          message,
+          latitude,
+          longitude
+        });
+      },
+      (error) => {
+        setGeoVerification((prev) => ({
+          ...prev,
+          status: "error",
+          message: error.message || "Unable to capture location."
+        }));
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+    );
+  }
+
   async function refreshSession(): Promise<void> {
     try {
       const activeSession = await apiClient.session();
@@ -783,6 +979,8 @@ export function PortalApp(): React.JSX.Element {
   useEffect(() => {
     if (activeWorkspaceTool === "admin" && isAdmin) {
       void refreshAutomationJobs();
+      void loadSchemaDrift();
+      void loadOpsIntelligence();
     }
   }, [activeWorkspaceTool, isAdmin]);
 
@@ -1292,6 +1490,9 @@ export function PortalApp(): React.JSX.Element {
             Offline queue mode
           </label>
           <span className={`status-chip status-chip--${networkOnline ? "active" : "critical"}`}>{networkOnline ? "Online" : "Offline"}</span>
+          <span className="status-chip status-chip--neutral" title="Real-time sync pulse">
+            {syncPulse.at ? `Sync ${new Date(syncPulse.at).toLocaleTimeString()}` : "Sync idle"}
+          </span>
           <button
             className={`button ${focusMode ? "button--primary" : "button--ghost"}`}
             type="button"
@@ -1300,6 +1501,11 @@ export function PortalApp(): React.JSX.Element {
           >
             {focusMode ? "Exit Focus" : "Focus"}
           </button>
+          {installPromptEvent ? (
+            <button className="button button--secondary" type="button" onClick={() => runAction(handleInstallPrompt)}>
+              Install App
+            </button>
+          ) : null}
           <button className="button button--secondary" type="button" onClick={() => runAction(handleReplay)}>
             Sync queued changes ({queueCount})
           </button>
@@ -1474,6 +1680,7 @@ export function PortalApp(): React.JSX.Element {
             generatedDocumentCount={generatedDocumentCount}
             adminAuditCount={adminAuditCount}
             networkOnline={networkOnline}
+            syncPulseText={syncPulseText}
           />
 
 
@@ -1505,6 +1712,10 @@ export function PortalApp(): React.JSX.Element {
                 }
                 onChecklistChange={setChecklistData}
                 selectedJobTitle="Job Detail"
+                documentCountForJob={selectedJobDocumentCount}
+                geoVerification={geoVerification}
+                onVerifyLocation={handleVerifyLocation}
+                syncPulseText={syncPulseText}
               />
             ) : null}
 
@@ -1574,6 +1785,10 @@ export function PortalApp(): React.JSX.Element {
                   setActiveWorkspaceTool("jobs");
                   setPortalView("dashboard");
                 }}
+                schemaDrift={schemaDrift}
+                opsIntelligence={opsIntelligence}
+                onLoadSchemaDrift={() => runAction(loadSchemaDrift)}
+                onLoadOpsIntelligence={() => runAction(loadOpsIntelligence)}
 
               />
             ) : null}

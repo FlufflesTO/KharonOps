@@ -1,6 +1,6 @@
 import React from "react";
 import type { Role } from "@kharon/domain";
-import type { AutomationJobEntry } from "../apiClient";
+import type { AutomationJobEntry, OpsIntelligencePayload, SchemaDriftPayload } from "../apiClient";
 
 interface AdminPanelCardProps {
   adminHealth: Record<string, unknown> | null;
@@ -17,6 +17,10 @@ interface AdminPanelCardProps {
   onFeedback: (msg: string) => void;
   emulatedRole: Role | "";
   onEmulateRole: (role: Role | "") => void;
+  schemaDrift: SchemaDriftPayload | null;
+  opsIntelligence: OpsIntelligencePayload | null;
+  onLoadSchemaDrift: () => void;
+  onLoadOpsIntelligence: () => void;
 }
 
 export function AdminPanelCard({
@@ -34,6 +38,10 @@ export function AdminPanelCard({
   onFeedback: _onFeedback,
   emulatedRole,
   onEmulateRole,
+  schemaDrift,
+  opsIntelligence,
+  onLoadSchemaDrift,
+  onLoadOpsIntelligence
 }: AdminPanelCardProps): React.JSX.Element {
   return (
     <article className="workspace-card">
@@ -75,10 +83,52 @@ export function AdminPanelCard({
         <button className="button button--secondary" onClick={onLoadAudits}>
           Refresh audits ({adminAuditCount})
         </button>
+        <button className="button button--secondary" onClick={onLoadSchemaDrift}>
+          Schema drift scan
+        </button>
+        <button className="button button--secondary" onClick={onLoadOpsIntelligence}>
+          Operational intelligence
+        </button>
         <button className="button button--primary" onClick={onLoadAutomationJobs}>
           Load automation queue
         </button>
       </div>
+
+      <section className="admin-section" style={{ marginBottom: "1rem" }}>
+        <h3>Operational Intelligence</h3>
+        {opsIntelligence ? (
+          <div className="telemetry-grid">
+            <div className="telemetry-item"><label>Open Jobs</label><code>{opsIntelligence.jobs.open}</code></div>
+            <div className="telemetry-item"><label>Critical Jobs</label><code>{opsIntelligence.jobs.critical}</code></div>
+            <div className="telemetry-item"><label>Stale {">"}24h</label><code>{opsIntelligence.jobs.stale_over_24h}</code></div>
+            <div className="telemetry-item"><label>Pending Publish</label><code>{opsIntelligence.operations.documents_pending_publish}</code></div>
+            <div className="telemetry-item"><label>Escrow Locked</label><code>{opsIntelligence.operations.escrow_locked}</code></div>
+            <div className="telemetry-item"><label>Outstanding Amount</label><code>{opsIntelligence.finance.outstanding_amount.toFixed(2)}</code></div>
+          </div>
+        ) : (
+          <p className="muted-copy">Load operational intelligence to view live diagnostics.</p>
+        )}
+      </section>
+
+      <section className="admin-section" style={{ marginBottom: "1rem" }}>
+        <h3>Schema Drift Protection</h3>
+        {schemaDrift ? (
+          <div className="feedback-panel">
+            <p style={{ marginTop: 0 }}>Health: <strong>{schemaDrift.healthy ? "Healthy" : "Attention needed"}</strong></p>
+            {schemaDrift.issues.length === 0 ? (
+              <p className="muted-copy">No drift issues detected.</p>
+            ) : (
+              <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                {schemaDrift.issues.map((issue) => (
+                  <li key={issue.code}>{issue.severity.toUpperCase()}: {issue.detail}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <p className="muted-copy">Run schema drift scan to validate workbook integrity.</p>
+        )}
+      </section>
 
       <section className="admin-section" style={{ marginBottom: "1rem" }}>
         <h3>System Health</h3>

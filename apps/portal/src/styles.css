@@ -1080,6 +1080,16 @@ summary:focus-visible {
   color: var(--role-accent);
 }
 
+.timeline-strip__item--complete {
+  border-color: color-mix(in srgb, var(--color-positive) 45%, var(--color-border) 55%);
+  background: color-mix(in srgb, var(--color-positive) 10%, transparent 90%);
+}
+
+.timeline-strip__item--complete span {
+  border-color: var(--color-positive);
+  color: var(--color-positive);
+}
+
 .command-palette-backdrop {
   position: fixed;
   inset: 0;
@@ -1926,6 +1936,40 @@ summary:focus-visible {
   border-color: var(--role-accent);
   background: rgba(99, 102, 241, 0.05);
   box-shadow: 0 0 0 1px var(--role-accent) inset, 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.offline-map {
+  margin-top: 0.8rem;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: 0.7rem;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 0.45rem;
+  background: rgba(7, 12, 24, 0.6);
+}
+
+.offline-map__grid {
+  height: 120px;
+  border-radius: 8px;
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-color: rgba(15, 23, 42, 0.7);
+}
+
+.offline-map__marker {
+  position: absolute;
+  top: 62px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  background: var(--role-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--role-accent) 30%, transparent 70%);
 }
 
 mark.highlight {

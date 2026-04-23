@@ -25,6 +25,18 @@ interface JobDetailViewProps {
   documentGenerateDisabledReason?: string;
   onChecklistChange: (data: Record<string, string>) => void;
   selectedJobTitle: string;
+  documentCountForJob: number;
+  geoVerification: {
+    status: "idle" | "verified" | "warning" | "error";
+    capturedAt: string;
+    distanceMeters: number | null;
+    accuracyMeters: number | null;
+    message: string;
+    latitude: number | null;
+    longitude: number | null;
+  };
+  onVerifyLocation: () => void;
+  syncPulseText: string;
 }
 
 
@@ -49,9 +61,15 @@ export function JobDetailView({
   canGenerateDocuments,
   documentGenerateDisabledReason,
   onChecklistChange,
-  selectedJobTitle
+  selectedJobTitle,
+  documentCountForJob,
+  geoVerification,
+  onVerifyLocation,
+  syncPulseText
 }: JobDetailViewProps): React.JSX.Element {
   const isFieldRole = role === "technician" || role === "dispatcher" || role === "admin" || role === "super_admin";
+  const statusOrder: JobStatus[] = ["draft", "approved", "performed", "certified", "cancelled"];
+  const selectedStatusIndex = Math.max(0, statusOrder.indexOf(selectedJob.status));
 
   const postureItems = [
     {
@@ -61,14 +79,18 @@ export function JobDetailView({
     {
       label: "Assigned technician",
       detail: selectedJob?.technician_name || selectedJob?.technician_id || "Pending assignment"
+    },
+    {
+      label: "Live sync pulse",
+      detail: syncPulseText
     }
   ];
-  const timeline = [
+  const timeline: Array<{ id: JobStatus; label: string }> = [
     { id: "draft", label: "Requested" },
-    { id: "approved", label: "Assigned" },
+    { id: "approved", label: "Approved" },
     { id: "performed", label: "Performed" },
     { id: "certified", label: "Certified" },
-    { id: "paid", label: "Paid" }
+    { id: "cancelled", label: "Closed" }
   ];
 
   if (!selectedJob) {
@@ -106,12 +128,24 @@ export function JobDetailView({
         </div>
         <div className="timeline-strip" aria-label="Job progress timeline">
           {timeline.map((step, index) => (
-            <div key={step.id} className={`timeline-strip__item ${selectedJob.status === step.id ? "timeline-strip__item--active" : ""}`}>
+            <div
+              key={step.id}
+              className={`timeline-strip__item ${
+                selectedJob.status === step.id
+                  ? "timeline-strip__item--active"
+                  : index < selectedStatusIndex
+                    ? "timeline-strip__item--complete"
+                    : ""
+              }`}
+            >
               <span>{index + 1}</span>
               <small>{step.label}</small>
             </div>
           ))}
         </div>
+        <p className="inline-note">
+          Current state updated: {selectedJob.updated_at ? new Date(selectedJob.updated_at).toLocaleString() : "timestamp unavailable"}
+        </p>
 
         {selectedJob.last_note ? (
           <div className="highlight-box">
@@ -248,12 +282,41 @@ export function JobDetailView({
               {documentGenerateDisabledReason ?? "Document generation is not available for this account."}
             </p>
           ) : null}
+          {statusTarget === "certified" && documentCountForJob === 0 ? (
+            <p className="inline-note">Compliance guardrail: generate at least one document before certification.</p>
+          ) : null}
 
           {(documentType === "service_report" || documentType === "certificate") && (
             <CertificationForm jobTitle={selectedJob.title} onChange={onChecklistChange} />
           )}
         </div>
       )}
+
+      <div className="control-block">
+        <div className="control-block__head">
+          <h3>Geographic Verification</h3>
+        </div>
+        <div className="button-row">
+          <button className="button button--secondary" type="button" onClick={onVerifyLocation}>
+            Verify current location
+          </button>
+          <span className={`status-chip status-chip--${geoVerification.status === "verified" ? "active" : geoVerification.status === "warning" ? "warning" : geoVerification.status === "error" ? "critical" : "neutral"}`}>
+            {geoVerification.status}
+          </span>
+        </div>
+        <p className="inline-note">{geoVerification.message || "No geographic verification captured yet."}</p>
+        <div className="telemetry-grid">
+          <div className="telemetry-item"><label>Latitude</label><code>{geoVerification.latitude ?? "n/a"}</code></div>
+          <div className="telemetry-item"><label>Longitude</label><code>{geoVerification.longitude ?? "n/a"}</code></div>
+          <div className="telemetry-item"><label>Accuracy</label><code>{geoVerification.accuracyMeters ? `${geoVerification.accuracyMeters.toFixed(0)}m` : "n/a"}</code></div>
+          <div className="telemetry-item"><label>Distance</label><code>{geoVerification.distanceMeters ? `${geoVerification.distanceMeters.toFixed(0)}m` : "n/a"}</code></div>
+        </div>
+        <div className="offline-map">
+          <div className="offline-map__grid" />
+          <div className="offline-map__marker" />
+          <span>Offline-first map snapshot (cached locally)</span>
+        </div>
+      </div>
 
       </div>
     </div>

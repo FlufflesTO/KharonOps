@@ -25,6 +25,7 @@ interface SummaryBoardProps {
   generatedDocumentCount: number;
   adminAuditCount: number;
   networkOnline: boolean;
+  syncPulseText: string;
 }
 
 export function SummaryBoard({
@@ -34,7 +35,8 @@ export function SummaryBoard({
   queueCount,
   generatedDocumentCount,
   adminAuditCount,
-  networkOnline
+  networkOnline,
+  syncPulseText
 }: SummaryBoardProps): React.JSX.Element {
   const cards = React.useMemo(() => {
     switch (role) {
@@ -43,31 +45,31 @@ export function SummaryBoard({
           { label: "Active jobs", value: openJobCount, detail: "Current service work" },
           { label: "Selected job", value: selectedJobStatus, detail: "Latest status" },
           { label: "Files", value: generatedDocumentCount, detail: "Published reports" },
-          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: "Portal session" }
+          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: syncPulseText }
         ];
       case "admin":
         return [
           { label: "Open jobs", value: openJobCount, detail: "Work in progress" },
           { label: "Queued changes", value: queueCount, detail: "Waiting to sync" },
           { label: "Files loaded", value: generatedDocumentCount, detail: "Current history" },
-          { label: "Audit entries", value: adminAuditCount, detail: "Loaded this session" }
+          { label: "Audit entries", value: adminAuditCount, detail: syncPulseText }
         ];
       case "finance":
         return [
           { label: "Billable jobs", value: openJobCount, detail: "Open finance items" },
           { label: "Selected job", value: selectedJobStatus, detail: "Current stage" },
           { label: "Files in scope", value: generatedDocumentCount, detail: "Generated and published" },
-          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: "Portal session" }
+          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: syncPulseText }
         ];
       default:
         return [
           { label: "Open jobs", value: openJobCount, detail: "Work in progress" },
           { label: "Selected job", value: selectedJobStatus, detail: "Current status" },
           { label: "Queued changes", value: queueCount, detail: "Waiting to sync" },
-          { label: "Files in scope", value: generatedDocumentCount, detail: "Loaded history" }
+          { label: "Files in scope", value: generatedDocumentCount, detail: syncPulseText }
         ];
     }
-  }, [role, openJobCount, selectedJobStatus, queueCount, generatedDocumentCount, adminAuditCount, networkOnline]);
+  }, [role, openJobCount, selectedJobStatus, queueCount, generatedDocumentCount, adminAuditCount, networkOnline, syncPulseText]);
 
   return (
     <section className="summary-grid">

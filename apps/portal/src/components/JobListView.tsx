@@ -19,6 +19,10 @@ export interface JobRecord {
   technician_id: string;
   client_name?: string;
   technician_name?: string;
+  updated_at?: string;
+  site_id?: string;
+  site_lat?: number | null;
+  site_lng?: number | null;
   last_note: string;
   active_request_id?: string;
   active_document_id?: string;
