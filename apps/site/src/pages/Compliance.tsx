@@ -41,10 +41,10 @@ export function CompliancePage(): React.JSX.Element {
       <section className="site-section site-section--split">
         <div className="section-heading">
           <p className="section-kicker">Documentation</p>
-          <h2>Documentation and compliance support.</h2>
+          <h2>Documentation support.</h2>
           <p className="section-subtitle">
-            We help clients keep service records, certificates, and maintenance documentation organised and ready when
-            needed.
+            This page provides context on the service records and certificates we help our clients maintain. 
+            We ensure your documentation is accurate, organised, and ready for your next audit.
           </p>
         </div>
         <div className="operations-board detail-grid">
@@ -105,11 +105,11 @@ export function CompliancePage(): React.JSX.Element {
             <p>We will route the request to the right team and keep the follow-up clear.</p>
           </div>
           <div className="cta-panel__actions">
-            <Link className="site-button site-button--primary" to="/contact?intent=project">
-              Request support
+            <Link className="site-button site-button--primary" to="/contact?intent=compliance">
+              Request Documentation
             </Link>
             <Link className="site-button site-button--secondary" to="/resources">
-              View guides
+              View Guides
             </Link>
           </div>
         </div>

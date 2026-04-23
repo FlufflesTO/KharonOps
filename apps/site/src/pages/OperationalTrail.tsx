@@ -18,10 +18,9 @@ export function OperationalTrailPage(): React.JSX.Element {
       <section className="site-section">
         <div className="section-heading">
           <p className="section-kicker">Case Studies</p>
-          <h2>Examples of recent work.</h2>
+          <h2>Operational history.</h2>
           <p className="section-subtitle">
-            Three featured examples are easier to read than a long project list. Each one shows the site, the challenge,
-            the work, and the result.
+            A selection of recent projects showing how we solve fire and security challenges for our clients.
           </p>
         </div>
         <div className="case-grid">
@@ -49,8 +48,8 @@ export function OperationalTrailPage(): React.JSX.Element {
           ))}
         </div>
         <div className="detail-actions">
-          <Link className="site-button site-button--primary" to="/contact?intent=project">
-            Discuss your project
+          <Link className="site-button site-button--primary site-button--large" to="/contact?intent=project">
+            Request a Consultation
           </Link>
         </div>
       </section>
