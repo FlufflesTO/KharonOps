@@ -140,9 +140,11 @@ export function createRuntimeConfig(env: Record<string, string | undefined>): Ru
   const accessEnabled = accessEnabledRaw === "true";
   const googleClientId = envFirst(env, ["GOOGLE_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "KHARON_GOOGLE_CLIENT_ID"]);
   const superAdminEmails = splitEmails(envFirst(env, ["SUPER_ADMIN_EMAILS", "KHARON_SUPER_ADMIN_EMAILS"]));
-  const rails = createWorkspaceRails(env);
   const railsModeOverride = envFirst(env, ["GOOGLE_RAILS_MODE", "KHARON_RAILS_MODE"]).toLowerCase();
-  const allowLocalRailsInProduction = railsModeOverride === "local";
+  const staleProductionRailsOverride =
+    railsModeOverride === "production" && listMissingGoogleProductionConfig(env).length > 0;
+  const rails = createWorkspaceRails(env);
+  const allowLocalRailsInProduction = railsModeOverride === "local" || staleProductionRailsOverride;
   const storeBackend = parseStoreBackend(env, mode);
   const postgres: PostgresStoreConfig = {
     connectionString: envFirst(env, ["POSTGRES_URL", "DATABASE_URL"]),
@@ -173,6 +175,13 @@ export function createRuntimeConfig(env: Record<string, string | undefined>): Ru
   };
 
   validateStoreConfig(storeBackend, postgres);
+
+  if (staleProductionRailsOverride) {
+    const missing = listMissingGoogleProductionConfig(env);
+    console.warn(
+      `Ignoring stale GOOGLE_RAILS_MODE=production override and falling back to local rails. Missing: ${missing.join(", ")}.`
+    );
+  }
 
   if (mode === "production") {
     validateProductionConfig({

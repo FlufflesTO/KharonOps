@@ -94,8 +94,34 @@ function buildRedirects() {
   return "/portal /portal/ 301\n";
 }
 
+function safeRemove(targetPath) {
+  if (!existsSync(targetPath)) {
+    return;
+  }
+
+  try {
+    rmSync(targetPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 150 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`Skipping locked path during static bundle cleanup: ${targetPath} (${message})`);
+  }
+}
+
 if (existsSync(outputRoot)) {
-  rmSync(outputRoot, { recursive: true, force: true });
+  // Avoid deleting the root output directory on Windows because Explorer,
+  // Miniflare, or antivirus scanners can temporarily lock hidden files.
+  for (const relativePath of [
+    "assets",
+    "portal",
+    "favicon.ico",
+    "index.html",
+    "privacy.html",
+    "terms.html",
+    "_headers",
+    "_redirects"
+  ]) {
+    safeRemove(resolve(outputRoot, relativePath));
+  }
 }
 mkdirSync(outputRoot, { recursive: true });
 

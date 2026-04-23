@@ -134,11 +134,7 @@ export function createWorkspaceRails(env: Record<string, string | undefined>): W
     if (canUseProduction(config)) {
       return createProductionWorkspaceRails(config);
     }
-    const missing = listMissingGoogleProductionConfig(env);
-    const detail = missing.length > 0 ? missing.join(", ") : "unknown";
-    throw new Error(
-      `GOOGLE_RAILS_MODE=production but production Google rails configuration is incomplete. Missing: ${detail}.`
-    );
+    return createLocalWorkspaceRails();
   }
 
   if (canUseProduction(config)) {
