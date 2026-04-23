@@ -687,11 +687,20 @@ function serializePortalFileRow(record: JobDocumentRow, existing: Row = {}, rela
 }
 
 export class SheetsWorkbookStore implements WorkbookStore {
+  private readonly rowCache = new Map<string, { rows: Row[]; expiresAt: number }>();
   constructor(private readonly rails: WorkspaceRails) { }
 
   private async rows(sheetName: string): Promise<Row[]> {
+    const now = Date.now();
+    const hit = this.rowCache.get(sheetName);
+    if (hit && hit.expiresAt > now) {
+      return hit.rows;
+    }
+
     try {
-      return await this.rails.sheets.getRows(sheetName);
+      const rows = await this.rails.sheets.getRows(sheetName);
+      this.rowCache.set(sheetName, { rows, expiresAt: now + 2000 });
+      return rows;
     } catch (error) {
       if (sheetName === "Portal_Files") {
         return [];

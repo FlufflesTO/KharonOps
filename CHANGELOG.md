@@ -5,16 +5,19 @@ All notable changes to the KharonOps project are documented in this file.
 ## [Unreleased] - 2026-04-23
 
 ### [Changed]
-- **API Cache Hardening:** Updated `getKvNamespace`, `getCacheVersion`, `bumpCacheVersion`, `getCachedJson`, and `putCachedJson` in `apps/api/src/index.ts` to gracefully handle `undefined` environment bindings. This resolves a critical 500 error regression in contract tests where Hono context environment is not populated during simulated requests.
+- **Observability Hardening:** Successfully injected diagnostic logging into the global `app.onError` handler (`apps/api/src/index.ts`). This ensures that future `500` errors will output full stack traces to the logs rather than failing silently, significantly reducing MTTR for infrastructure issues.
+- **Google Sheets API Stabilization:** Implemented a short-lived (2s) in-memory cache for `getRows` in `SheetsWorkbookStore` to coalesce parallel requests and mitigate `429` rate-limiting errors.
+- **Contract Test Verification:** Confirmed that the `contract: dispatch-workspace` test suite is passing consistently. Sequential workflow simulations correctly trigger atomic updates in the `LocalWorkbookStore`.
+- **Defensive API Logic:** Added null/undefined checks to the `display_name` sort logic in `/workspace/people` and try/catch protection to the session token decoding layer to prevent unhandled internal server errors.
 - **KV Production Compliance:** Enforced a minimum 60-second `expirationTtl` for all Cloudflare KV operations in the `putCachedJson` utility, satisfying strict runtime constraints for the production environment.
-- **Nomenclature Cleanup:** Eradicated residual "UID" technical terminology from the user-facing interface and internal data models. Replaced all fallback instances of `_uid` properties (e.g. `job_uid`, `client_uid`) with strict `_id` equivalents across `App.tsx` and the Domain package (`types.ts`, `schema.ts`, `rbac.ts`) to align with the canonical governance taxonomy.
-- Updated `docs` and `drive` operations in `createProductionWorkspaceRails` (`packages/google/src/production.ts`) to utilize `delegatedConfig` and `delegatedSubjectArgs`. All Drive operations (generate pdf, publish file, list files) now execute under Domain-Wide Delegation (impersonating the configured Workspace user) rather than the generic Service Account.
-- Added extensive diagnostic error logging to `packages/google/src/errors.ts`, extracting stringified JSON bodies and specific `error_description` fields from Google API failures into the `GoogleAdapterError` message, making UI toast notifications instantly actionable.
+- **Nomenclature Cleanup:** Eradicated residual "UID" technical terminology from the user-facing interface and internal data models. Replaced all fallback instances of `_uid` properties (e.g. `job_uid`, `client_uid`) with strict `_id` equivalents across `App.tsx` and the Domain package (`types.ts`, `schema.ts`, `rbac.ts`).
+- Updated `docs` and `drive` operations in `createProductionWorkspaceRails` (`packages/google/src/production.ts`) to utilize `delegatedConfig` and `delegatedSubjectArgs`.
+- Added extensive diagnostic error logging to `packages/google/src/errors.ts`, extracting stringified JSON bodies and specific `error_description` fields from Google API failures into the `GoogleAdapterError` message.
 - **Portal UI/UX Hardening:** Implemented a professional "Side-Sheet" pattern for job details, adopting a progressive disclosure layout that preserves navigation context. 
 - **Telemetry Encapsulation:** Isolated complex technical metadata into a collapsible forensic card, decluttering the primary operational interface for field and dispatch personnel.
 - **Visual Identity:** Standardized portal nomenclature to "KHARON OPS" and introduced a professional initials-based User Avatar in the header.
 - **Premium Visualization:** Upgraded dashboard action cards and job list items with enhanced visual depth, semantic iconography, and risk scores.
-- **Cloudflare Deployment:** Successfully deployed the unified application to both staging (`kharon-unified-api.kharonops.workers.dev`) and production (`tequit.co.za`) environments.
+- **Cloudflare Deployment:** Successfully deployed the unified application to both staging and production environments.
 
 ### [Fixed]
 - Resolved `404 Not Found` errors in document generation by enforcing Domain-Wide Delegation impersonation, removing the need to manually share template files and destination folders with the underlying GCP Service Account email.

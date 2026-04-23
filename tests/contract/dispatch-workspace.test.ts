@@ -39,9 +39,6 @@ describe("contract: dispatch workspace flows", () => {
         cookie: dispatcherCookie
       }
     });
-    if (peopleResponse.status !== 200) {
-      console.error("[Test Failure] GET /workspace/people failed:", await peopleResponse.text());
-    }
     expect(peopleResponse.status).toBe(200);
     const peopleBody = (await peopleResponse.json()) as {
       data: Array<{ role: string; technician_id: string }>;
