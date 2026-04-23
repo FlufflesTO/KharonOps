@@ -23,6 +23,7 @@ import { DispatchWorkspacePanel } from "../features/dispatch/DispatchWorkspacePa
 import { FinanceWorkspacePanel } from "../features/finance/FinanceWorkspacePanel";
 import { AdminWorkspacePanel } from "../features/admin/AdminWorkspacePanel";
 import { SuperAdminWorkspacePanel } from "../features/superAdmin/SuperAdminWorkspacePanel";
+import { SharedWorkspacePanel } from "../features/shared/SharedWorkspacePanel";
 
 type GeoVerification = {
   status: "idle" | "verified" | "warning" | "error";
@@ -256,6 +257,8 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
       />
     );
   }
+
+  return <SharedWorkspacePanel state={state} />;
 
   return (
     <>
