@@ -219,7 +219,7 @@ export function DashboardView({
         <div className="glass-panel p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex gap-4 items-start">
             <div className="mt-1 opacity-50">
-              <Icon d={ICONS.compliance} size={24} />
+              <Icon d={ICONS.checklist} size={24} />
             </div>
             <div>
               <h3 className="font-semibold text-white mb-1">Need help?</h3>

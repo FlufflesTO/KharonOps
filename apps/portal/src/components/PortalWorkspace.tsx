@@ -13,37 +13,16 @@ import type { JobRecord } from "./JobListView";
 import { JobListView } from "./JobListView";
 import { JobDetailView } from "./JobDetailView";
 import { SummaryBoard } from "./SummaryBoard";
-import { ScheduleControlCard } from "./ScheduleControlCard";
-import { CommunicationRailsCard } from "./CommunicationRailsCard";
-import { AdminPanelCard } from "./AdminPanelCard";
 import { DocumentHistoryCard } from "./DocumentHistoryCard";
 import { DashboardView } from "./DashboardView";
 import { PeopleDirectoryCard } from "./PeopleDirectoryCard";
-import { FinanceOpsCard } from "./FinanceOpsCard";
-import { FinanceOverviewCard } from "./FinanceOverviewCard";
-import { FinanceQuotesCard } from "./FinanceQuotesCard";
-import { FinanceInvoicesCard } from "./FinanceInvoicesCard";
-import { FinancePaymentsCard } from "./FinancePaymentsCard";
-import { FinanceDebtorsCard } from "./FinanceDebtorsCard";
-import { FinanceStatementsCard } from "./FinanceStatementsCard";
-import { SuperAdminOverview } from "./SuperAdminOverview";
-import { SuperAdminDataChecks } from "./SuperAdminDataChecks";
-import { SuperAdminAutomations } from "./SuperAdminAutomations";
-import { SuperAdminSystemHealth } from "./SuperAdminSystemHealth";
-import { SuperAdminActivityLog } from "./SuperAdminActivityLog";
-import { SuperAdminBusinessUnits } from "./SuperAdminBusinessUnits";
-import { AdminDashboard } from "./AdminDashboard";
-import { AdminSettingsCard } from "./AdminSettingsCard";
-import { DispatchDashboardCard } from "./DispatchDashboardCard";
-import { DispatchUnassignedCard } from "./DispatchUnassignedCard";
-import { DispatchDailyPlanCard } from "./DispatchDailyPlanCard";
-import { TechMyDayCard } from "./TechMyDayCard";
-import { TechCheckInOutCard } from "./TechCheckInOutCard";
-import { TechHelpCard } from "./TechHelpCard";
-import { ClientOverviewCard } from "./ClientOverviewCard";
-import { ClientInvoicesCard } from "./ClientInvoicesCard";
-import { ClientSupportCard } from "./ClientSupportCard";
 import { COPY_GLOSSARY, WORKSPACE_TOOL_META } from "../appShell/helpers";
+import { TechnicianWorkspacePanel } from "../features/technician/TechnicianWorkspacePanel";
+import { ClientWorkspacePanel } from "../features/client/ClientWorkspacePanel";
+import { DispatchWorkspacePanel } from "../features/dispatch/DispatchWorkspacePanel";
+import { FinanceWorkspacePanel } from "../features/finance/FinanceWorkspacePanel";
+import { AdminWorkspacePanel } from "../features/admin/AdminWorkspacePanel";
+import { SuperAdminWorkspacePanel } from "../features/superAdmin/SuperAdminWorkspacePanel";
 
 type GeoVerification = {
   status: "idle" | "verified" | "warning" | "error";
@@ -152,7 +131,7 @@ interface PortalWorkspaceProps {
     setFeedback: (f: string) => void;
     refreshUpgradeWorkspaceState: () => Promise<void>;
     onUpsertSkill: (payload: SkillMatrixRecord) => void;
-    onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => void;
+    onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => Promise<void>;
     selectedJobTitle: string;
     onLogout: () => void;
   };
@@ -264,7 +243,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
     helper: "Use the sidebar to move between sections"
   };
 
-  if (portalView === "dashboard") {
+  if (portalView === "dashboard" && session) {
     return (
       <DashboardView
         session={session}
@@ -342,48 +321,90 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
         />
 
         <section className={`workspace-container ${activeWorkspaceTool === "jobs" && selectedJobid ? "workspace-container--split" : ""}`}>
-          {activeWorkspaceTool === "tech_day" && effectiveRole === "technician" ? (
-            <TechMyDayCard jobs={jobs} onSelectJob={onSelectJobid} onEnterTool={(tool) => onActiveWorkspaceToolChange(tool)} />
-          ) : null}
+          <TechnicianWorkspacePanel
+            activeWorkspaceTool={activeWorkspaceTool}
+            effectiveRole={effectiveRole}
+            jobs={jobs}
+            selectedJob={selectedJob}
+            selectedJobTitle={selectedJobTitle}
+            selectedJobDocumentCount={selectedJobDocumentCount}
+            onSelectJobid={onSelectJobid}
+            onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
+            geoVerification={geoVerification}
+            onVerifyLocation={onVerifyLocation}
+            selectableStatuses={selectableStatuses}
+            statusTarget={statusTarget}
+            setStatusTarget={setStatusTarget}
+            noteValue={noteValue}
+            setNoteValue={setNoteValue}
+            onStatusUpdate={onStatusUpdate}
+            onNote={onNote}
+            preferredStart={preferredStart}
+            setPreferredStart={setPreferredStart}
+            preferredEnd={preferredEnd}
+            setPreferredEnd={setPreferredEnd}
+            onScheduleRequest={onScheduleRequest}
+            documentType={documentType}
+            setDocumentType={setDocumentType}
+            onDocumentGenerate={onDocumentGenerate}
+            canGenerateDocuments={canGenerateDocuments && !documentAccessDenied}
+            documentGenerateDisabledReason={documentGenerateDisabledReason}
+            syncPulseText={syncPulseText}
+            jobEvents={jobEvents}
+          />
 
-          {activeWorkspaceTool === "tech_checkin" && effectiveRole === "technician" ? (
-            <TechCheckInOutCard
-              selectedJob={selectedJob}
-              onUpdateStatus={() => onStatusUpdate()}
-              onVerifyLocation={onVerifyLocation}
-              geoStatus={geoVerification.status}
-            />
-          ) : null}
+          <ClientWorkspacePanel
+            activeWorkspaceTool={activeWorkspaceTool}
+            effectiveRole={effectiveRole}
+            jobs={jobs}
+            store={upgradeState}
+            onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
+          />
 
-          {activeWorkspaceTool === "tech_help" && effectiveRole === "technician" ? <TechHelpCard /> : null}
-
-          {activeWorkspaceTool === "admin_dashboard" && (effectiveRole === "admin" || effectiveRole === "super_admin") ? (
-            <AdminDashboard opsIntelligence={opsIntelligence} onEnterTool={(tool) => onActiveWorkspaceToolChange(tool)} isLoading={actionPending} />
-          ) : null}
-
-          {activeWorkspaceTool === "dispatch_dashboard" && (effectiveRole === "dispatcher" || effectiveRole === "super_admin") ? (
-            <DispatchDashboardCard opsIntelligence={opsIntelligence} onEnterTool={(tool) => onActiveWorkspaceToolChange(tool)} isLoading={actionPending} />
-          ) : null}
-
-          {activeWorkspaceTool === "dispatch_unassigned" && (effectiveRole === "dispatcher" || effectiveRole === "super_admin") ? (
-            <DispatchUnassignedCard jobs={jobs} onSelectJob={onSelectJobid} onEnterTool={(tool) => onActiveWorkspaceToolChange(tool)} />
-          ) : null}
-
-          {activeWorkspaceTool === "dispatch_daily" && (effectiveRole === "dispatcher" || effectiveRole === "super_admin") ? (
-            <DispatchDailyPlanCard jobs={jobs} opsIntelligence={opsIntelligence} />
-          ) : null}
-
-          {activeWorkspaceTool === "client_overview" && effectiveRole === "client" ? (
-            <ClientOverviewCard jobs={jobs} store={upgradeState} onEnterTool={(tool) => onActiveWorkspaceToolChange(tool)} />
-          ) : null}
-
-          {activeWorkspaceTool === "client_invoices" && effectiveRole === "client" ? <ClientInvoicesCard store={upgradeState} /> : null}
-          {activeWorkspaceTool === "client_support" && effectiveRole === "client" ? <ClientSupportCard /> : null}
+          <DispatchWorkspacePanel
+            activeWorkspaceTool={activeWorkspaceTool}
+            effectiveRole={effectiveRole}
+            jobs={jobs}
+            dispatchContext={{
+              requests: dispatchRequests,
+              schedules: dispatchSchedules,
+              documents: dispatchDocuments,
+              technicians
+            } as any}
+            selectedJob={selectedJob}
+            selectedRequestid={selectedRequestid}
+            selectedScheduleid={selectedScheduleid}
+            selectedDocumentid={selectedDocumentid}
+            onSelectJobid={onSelectJobid}
+            preferredStart={preferredStart}
+            setPreferredStart={setPreferredStart}
+            preferredEnd={preferredEnd}
+            setPreferredEnd={setPreferredEnd}
+            confirmStart={confirmStart}
+            setConfirmStart={setConfirmStart}
+            confirmEnd={confirmEnd}
+            setConfirmEnd={setConfirmEnd}
+            confirmTechid={confirmTechid}
+            setConfirmTechid={setConfirmTechid}
+            rescheduleStart={rescheduleStart}
+            setRescheduleStart={setRescheduleStart}
+            rescheduleEnd={rescheduleEnd}
+            setRescheduleEnd={setRescheduleEnd}
+            rescheduleRowVersion={rescheduleRowVersion}
+            setRescheduleRowVersion={setRescheduleRowVersion}
+            onScheduleRequest={onScheduleRequest}
+            onScheduleConfirm={onScheduleConfirm}
+            onReschedule={onReschedule}
+            onDocumentPublish={onDocumentPublish}
+            onFeedback={setFeedback}
+            opsIntelligence={opsIntelligence}
+            onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
+          />
 
           {activeWorkspaceTool === "jobs" ? (
             <JobDetailView
               selectedJob={selectedJob}
-              role={effectiveRole ?? "client"}
+              role={(effectiveRole || "client") as Role}
               selectableStatuses={selectableStatuses}
               statusTarget={statusTarget}
               setStatusTarget={setStatusTarget}
@@ -411,98 +432,68 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             />
           ) : null}
 
-          {activeWorkspaceTool === "schedule" && (effectiveRole === "dispatcher" || effectiveRole === "super_admin") && !dispatchAccessDenied ? (
-            <ScheduleControlCard
-              selectedJobid={selectedJob?.job_id ?? ""}
-              preferredStart={preferredStart}
-              setPreferredStart={setPreferredStart}
-              preferredEnd={preferredEnd}
-              setPreferredEnd={setPreferredEnd}
-              requests={dispatchRequests}
-              selectedRequestid={selectedRequestid}
-              setSelectedRequestid={() => undefined}
-              confirmStart={confirmStart}
-              setConfirmStart={setConfirmStart}
-              confirmEnd={confirmEnd}
-              setConfirmEnd={setConfirmEnd}
-              confirmTechid={confirmTechid}
-              setConfirmTechid={setConfirmTechid}
-              technicians={technicians}
-              schedules={dispatchSchedules}
-              selectedScheduleid={selectedScheduleid}
-              setSelectedScheduleid={() => undefined}
-              rescheduleStart={rescheduleStart}
-              setRescheduleStart={setRescheduleStart}
-              rescheduleEnd={rescheduleEnd}
-              setRescheduleEnd={setRescheduleEnd}
-              rescheduleRowVersion={rescheduleRowVersion}
-              setRescheduleRowVersion={setRescheduleRowVersion}
-              documents={dispatchDocuments}
-              selectedDocumentid={selectedDocumentid}
-              setSelectedDocumentid={() => undefined}
-              onScheduleRequest={onScheduleRequest}
-              onScheduleConfirm={onScheduleConfirm}
-              onReschedule={onReschedule}
-              onDocumentPublish={onDocumentPublish}
-              onFeedback={setFeedback}
-            />
-          ) : null}
+          <FinanceWorkspacePanel
+            activeWorkspaceTool={activeWorkspaceTool}
+            effectiveRole={effectiveRole}
+            jobs={jobs}
+            store={upgradeState}
+            onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
+          />
 
-          {activeWorkspaceTool === "comms" && (effectiveRole === "dispatcher" || effectiveRole === "super_admin") ? (
-            <CommunicationRailsCard selectedJobid={selectedJob?.job_id ?? ""} selectedJobTitle={selectedJob?.title ?? ""} onFeedback={setFeedback} />
-          ) : null}
+          <AdminWorkspacePanel
+            activeWorkspaceTool={activeWorkspaceTool}
+            effectiveRole={effectiveRole}
+            session={session}
+            defaultWorkspaceTool={defaultWorkspaceTool}
+            onboardingDismissed={onboardingDismissed}
+            allowedWorkspaceTools={allowedWorkspaceTools}
+            pinnedTools={[]}
+            onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
+            opsIntelligence={opsIntelligence}
+            adminHealth={adminHealth}
+            adminAudits={adminAudits}
+            adminAutomationJobs={adminAutomationJobs}
+            adminAuditCount={adminAuditCount}
+            automationJobs={automationJobs}
+            selectedAutomationJobid={selectedAutomationJobid}
+            onSelectAutomationJobid={onSelectAutomationJobid}
+            onLoadHealth={onLoadHealth}
+            onLoadAudits={onLoadAudits}
+            onLoadAutomationJobs={onLoadAutomationJobs}
+            onRetryAutomation={onRetryAutomation}
+            onEmulateRole={onEmulateRole}
+            schemaDrift={schemaDrift}
+            onLoadSchemaDrift={onLoadSchemaDrift}
+            onLoadOpsIntelligence={onLoadOpsIntelligence}
+            actionPending={actionPending}
+            onFeedback={setFeedback}
+          />
 
-          {activeWorkspaceTool === "admin" ? (
-            effectiveRole === "admin" ? (
-              <AdminSettingsCard
-                session={session}
-                defaultWorkspaceTool={defaultWorkspaceTool}
-                pinnedTools={[]}
-                onboardingDismissed={onboardingDismissed}
-                allowedWorkspaceTools={allowedWorkspaceTools}
-                onSavePreferences={() => undefined}
-              />
-            ) : effectiveRole === "super_admin" ? (
-              <AdminPanelCard
-                adminHealth={adminHealth}
-                adminAudits={adminAudits}
-                adminAutomationJobs={adminAutomationJobs}
-                adminAuditCount={adminAuditCount}
-                automationJobs={automationJobs}
-                selectedAutomationJobid={selectedAutomationJobid}
-                setSelectedAutomationJobid={onSelectAutomationJobid}
-                onLoadHealth={onLoadHealth}
-                onLoadAudits={onLoadAudits}
-                onLoadAutomationJobs={onLoadAutomationJobs}
-                onRetryAutomation={onRetryAutomation}
-                onFeedback={setFeedback}
-                emulatedRole={emulatedRole}
-                onEmulateRole={onEmulateRole}
-                schemaDrift={schemaDrift}
-                opsIntelligence={opsIntelligence}
-                onLoadSchemaDrift={onLoadSchemaDrift}
-                onLoadOpsIntelligence={onLoadOpsIntelligence}
-              />
-            ) : null
-          ) : null}
-
-          {activeWorkspaceTool === "sa_overview" && effectiveRole === "super_admin" ? <SuperAdminOverview opsIntelligence={opsIntelligence} onRefresh={onLoadOpsIntelligence} isLoading={actionPending} /> : null}
-          {activeWorkspaceTool === "sa_users" && effectiveRole === "super_admin" ? (
-            <PeopleDirectoryCard
-              people={peopleDirectory}
-              skillsState={upgradeState.skills}
-              onUpsertSkill={onUpsertSkill}
-              onSync={onPeopleSync}
-              onFeedback={setFeedback}
-            />
-          ) : null}
-          {activeWorkspaceTool === "sa_units" && effectiveRole === "super_admin" ? <SuperAdminBusinessUnits /> : null}
-          {activeWorkspaceTool === "sa_checks" && effectiveRole === "super_admin" ? <SuperAdminDataChecks schemaDrift={schemaDrift} onRefresh={onLoadSchemaDrift} isLoading={actionPending} /> : null}
-          {activeWorkspaceTool === "sa_automations" && effectiveRole === "super_admin" ? <SuperAdminAutomations automationJobs={adminAutomationJobs} onRefresh={onLoadAutomationJobs} onRetry={onRetryAutomation} isLoading={actionPending} /> : null}
-          {activeWorkspaceTool === "sa_health" && effectiveRole === "super_admin" ? <SuperAdminSystemHealth adminHealth={adminHealth} onRefresh={onLoadHealth} isLoading={actionPending} /> : null}
-          {activeWorkspaceTool === "sa_activity" && effectiveRole === "super_admin" ? (
-            <SuperAdminActivityLog adminAudits={adminAudits} adminAuditCount={adminAuditCount} onRefresh={onLoadAudits} isLoading={actionPending} />
-          ) : null}
+          <SuperAdminWorkspacePanel
+            activeWorkspaceTool={activeWorkspaceTool}
+            effectiveRole={effectiveRole}
+            opsIntelligence={opsIntelligence}
+            schemaDrift={schemaDrift}
+            adminHealth={adminHealth}
+            adminAudits={adminAudits}
+            adminAuditCount={adminAuditCount}
+            adminAutomationJobs={adminAutomationJobs}
+            automationJobs={automationJobs}
+            selectedAutomationJobid={selectedAutomationJobid}
+            onSelectAutomationJobid={onSelectAutomationJobid}
+            onLoadHealth={onLoadHealth}
+            onLoadAudits={onLoadAudits}
+            onLoadAutomationJobs={onLoadAutomationJobs}
+            onRetryAutomation={onRetryAutomation}
+            onLoadSchemaDrift={onLoadSchemaDrift}
+            onLoadOpsIntelligence={onLoadOpsIntelligence}
+            peopleDirectory={peopleDirectory as Array<Record<string, unknown>>}
+            upgradeState={{ skills: upgradeState.skills }}
+            onUpsertSkill={onUpsertSkill as any}
+            onPeopleSync={onPeopleSync}
+            onFeedback={setFeedback}
+            actionPending={actionPending}
+          />
 
           {activeWorkspaceTool === "documents" ? (
             <DocumentHistoryCard
@@ -512,43 +503,6 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
               escrowByDocumentid={{}}
               onRefresh={() => undefined}
               onPublish={() => undefined}
-            />
-          ) : null}
-
-          {activeWorkspaceTool === "finance_overview" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? (
-            <FinanceOverviewCard store={upgradeState} onEnterTool={(tool) => onActiveWorkspaceToolChange(tool)} isLoading={actionPending} />
-          ) : null}
-
-          {activeWorkspaceTool === "finance_quotes" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? (
-            <FinanceQuotesCard store={upgradeState} onCreateQuote={() => undefined} onUpdateQuoteStatus={() => undefined} />
-          ) : null}
-
-          {activeWorkspaceTool === "finance_invoices" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? (
-            <FinanceInvoicesCard store={upgradeState} onCreateInvoiceFromQuote={() => undefined} />
-          ) : null}
-
-          {activeWorkspaceTool === "finance_payments" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? (
-            <FinancePaymentsCard store={upgradeState} onReconcileInvoice={() => undefined} />
-          ) : null}
-
-          {activeWorkspaceTool === "finance_debtors" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? (
-            <FinanceDebtorsCard store={upgradeState} onRebuildAnalytics={() => undefined} />
-          ) : null}
-
-          {activeWorkspaceTool === "finance_statements" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceStatementsCard store={upgradeState} /> : null}
-
-          {activeWorkspaceTool === "finance" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? (
-            <FinanceOpsCard
-              jobs={jobs}
-              documents={[]}
-              store={upgradeState}
-              onRefreshStore={() => undefined}
-              onCreateQuote={() => undefined}
-              onUpdateQuoteStatus={() => undefined}
-              onCreateInvoiceFromQuote={() => undefined}
-              onReconcileInvoice={() => undefined}
-              onLockEscrow={() => undefined}
-              onRebuildAnalytics={() => undefined}
             />
           ) : null}
 

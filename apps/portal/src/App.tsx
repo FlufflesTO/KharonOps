@@ -1286,8 +1286,9 @@ export function PortalApp(): React.JSX.Element {
                 await apiClient.upsertSkillMatrix(payload);
                 await refreshUpgradeWorkspaceState();
               }),
-            onPeopleSync: (payload: unknown) => handlePeopleSync(payload),
-            selectedJobTitle: selectedJob?.title ?? ""
+            onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => handlePeopleSync(payload),
+            selectedJobTitle: selectedJob?.title ?? "",
+            onLogout: () => runAction(handleLogout)
           }}
         />
       </PortalChrome>
