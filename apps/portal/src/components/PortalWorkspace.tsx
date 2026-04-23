@@ -38,6 +38,7 @@ interface PortalWorkspaceProps {
   state: {
     portalView: "dashboard" | "workspace";
     session: PortalSession | null;
+    isRealSuperAdmin: boolean;
     effectiveRole: Role | "";
     emulatedRole: Role | "";
     jobs: JobRecord[];
@@ -139,6 +140,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
   const {
     portalView,
     session,
+    isRealSuperAdmin,
     effectiveRole,
     emulatedRole,
     jobs,
@@ -440,8 +442,9 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
 
           <AdminWorkspacePanel
             activeWorkspaceTool={activeWorkspaceTool}
-            effectiveRole={effectiveRole}
-            session={session}
+          effectiveRole={effectiveRole}
+          isRealSuperAdmin={isRealSuperAdmin}
+          session={session}
             defaultWorkspaceTool={defaultWorkspaceTool}
             onboardingDismissed={onboardingDismissed}
             allowedWorkspaceTools={allowedWorkspaceTools}

@@ -8,6 +8,7 @@ import { AdminPanelCard } from "../../components/AdminPanelCard";
 interface AdminWorkspacePanelProps {
   activeWorkspaceTool: string;
   effectiveRole: string;
+  isRealSuperAdmin: boolean;
   emulatedRole: Role | "";
   session: any;
   defaultWorkspaceTool: string;
@@ -38,6 +39,7 @@ interface AdminWorkspacePanelProps {
 export function AdminWorkspacePanel({
   activeWorkspaceTool,
   effectiveRole,
+  isRealSuperAdmin,
   emulatedRole,
   session,
   defaultWorkspaceTool,
@@ -72,6 +74,7 @@ export function AdminWorkspacePanel({
         <AdminDashboard
           opsIntelligence={opsIntelligence}
           onEnterTool={onActiveWorkspaceToolChange}
+          canSwitchRoles={isRealSuperAdmin}
           emulatedRole={emulatedRole}
           onEmulateRole={onEmulateRole}
           isLoading={actionPending}

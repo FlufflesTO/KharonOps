@@ -687,6 +687,10 @@ export function usePortalActionControllers(args: {
     }
     setFeedback("Document published.");
   }, [isDispatchRole, refreshDispatchContext, refreshDocuments, selectedDispatchDocument, selectedJob, setFeedback]);
+
+  const loadAdminAudits = useCallback(async (): Promise<void> => {
+    const response = await apiClient.adminAudits();
+    const data = response.data ?? [];
     setAdminAudits(data);
     setAdminAuditCount(data.length);
     setFeedback("Audit log fetched.");

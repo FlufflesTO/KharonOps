@@ -5,6 +5,7 @@ import type { OpsIntelligencePayload } from "../apiClient";
 interface AdminDashboardProps {
   opsIntelligence: OpsIntelligencePayload | null;
   onEnterTool: (tool: string) => void;
+  canSwitchRoles: boolean;
   emulatedRole: Role | "";
   onEmulateRole: (role: Role | "") => void;
   isLoading: boolean;
@@ -19,7 +20,7 @@ const ROLE_CHOICES: Array<{ role: Role | ""; label: string }> = [
   { role: "", label: "Clear" }
 ];
 
-export function AdminDashboard({ opsIntelligence, onEnterTool, emulatedRole, onEmulateRole, isLoading }: AdminDashboardProps): React.JSX.Element {
+export function AdminDashboard({ opsIntelligence, onEnterTool, canSwitchRoles, emulatedRole, onEmulateRole, isLoading }: AdminDashboardProps): React.JSX.Element {
   return (
     <article className="workspace-card">
       <div className="panel-heading">
@@ -33,24 +34,26 @@ export function AdminDashboard({ opsIntelligence, onEnterTool, emulatedRole, onE
         </div>
       ) : (
         <div className="admin-grid">
-          <section className="control-block">
-            <div className="control-block__head">
-              <h3>View as role</h3>
-              <p>Switch into a role to verify what that person sees and can do.</p>
-            </div>
-            <div className="button-row">
-              {ROLE_CHOICES.map((choice) => (
-                <button
-                  key={choice.label}
-                  className={`button ${emulatedRole === choice.role ? "button--primary" : "button--secondary"}`}
-                  type="button"
-                  onClick={() => onEmulateRole(choice.role)}
-                >
-                  {choice.label}
-                </button>
-              ))}
-            </div>
-          </section>
+          {canSwitchRoles ? (
+            <section className="control-block">
+              <div className="control-block__head">
+                <h3>View as role</h3>
+                <p>Switch into a role to verify what that person sees and can do.</p>
+              </div>
+              <div className="button-row">
+                {ROLE_CHOICES.map((choice) => (
+                  <button
+                    key={choice.label}
+                    className={`button ${emulatedRole === choice.role ? "button--primary" : "button--secondary"}`}
+                    type="button"
+                    onClick={() => onEmulateRole(choice.role)}
+                  >
+                    {choice.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="summary-grid">
             <div className="summary-card" onClick={() => onEnterTool("jobs")} style={{ cursor: 'pointer' }}>
