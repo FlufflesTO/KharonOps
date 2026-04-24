@@ -17,16 +17,35 @@ import { envelopeError } from "@kharon/domain";
 import { getSessionUser } from "./auth.js";
 import type { AppBindings } from "../context.js";
 
-type PermissionType = "job:read" | "job:update_status" | "job:write_note";
+type PermissionType = 
+  | "job:read" 
+  | "job:update_status" 
+  | "job:write_note"
+  | "job:create"
+  | "job:delete"
+  | "document:generate"
+  | "document:publish"
+  | "schedule:request"
+  | "schedule:confirm"
+  | "user:read"
+  | "user:modify";
 
 interface PermissionChecker {
-  (user: SessionUser, job: JobRow): boolean;
+  (user: SessionUser, job?: JobRow): boolean;
 }
 
 const permissionMap: Record<PermissionType, PermissionChecker> = {
-  "job:read": canReadJob,
-  "job:update_status": canUpdateJobStatus,
-  "job:write_note": canWriteJobNote,
+  "job:read": (user, job) => job !== undefined ? canReadJob(user, job) : true,
+  "job:update_status": (user, job) => job !== undefined ? canUpdateJobStatus(user, job) : true,
+  "job:write_note": (user, job) => job !== undefined ? canWriteJobNote(user, job) : true,
+  "job:create": (user) => ["admin", "dispatcher", "super_admin"].includes(user.role),
+  "job:delete": (user) => ["admin", "super_admin"].includes(user.role),
+  "document:generate": (user) => ["technician", "dispatcher", "admin", "super_admin"].includes(user.role),
+  "document:publish": (user) => ["dispatcher", "admin", "super_admin"].includes(user.role),
+  "schedule:request": (user) => ["client", "dispatcher", "admin", "super_admin"].includes(user.role),
+  "schedule:confirm": (user) => ["dispatcher", "admin", "super_admin"].includes(user.role),
+  "user:read": (user) => ["admin", "super_admin"].includes(user.role),
+  "user:modify": (user) => ["admin", "super_admin"].includes(user.role),
 };
 
 export function requirePermission(permission: PermissionType) {
@@ -67,15 +86,28 @@ export function requirePermission(permission: PermissionType) {
             correlationId: c.get("correlationId"),
             error: { 
               code: "forbidden", 
-              message: `Access denied: User role '${user.role}' cannot perform action '${permission}' on job '${jobId}'` 
+              message: `Access denied: User role '${user.role}' cannot perform action '${permission}' on job '${jobId}'. You may need to contact a dispatcher or admin for this action.` 
+            } 
+          }), 
+          403
+        );
+      }
+    } else {
+      // For non-job-specific permissions, check against the user only
+      const hasPermission = permissionMap[permission](user);
+      if (!hasPermission) {
+        return c.json(
+          envelopeError({ 
+            correlationId: c.get("correlationId"),
+            error: { 
+              code: "forbidden", 
+              message: `Access denied: User role '${user.role}' does not have permission to perform action '${permission}'.` 
             } 
           }), 
           403
         );
       }
     }
-
-    // For non-job-specific permissions, we can allow the request to continue
     await next();
   });
 }

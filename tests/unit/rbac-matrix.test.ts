@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPublishDocument, canReadJob, canUpdateJobStatus, type JobRow, type SessionUser } from "@kharon/domain";
+import { canPublishDocument, canReadJob, canUpdateJobStatus, type JobRow, type SessionUser, canCreateJob, canDeleteJob, canReadUser, canModifyUser, canReadFinanceData, canModifyFinanceData, canAccessPeopleDirectory, canManageSchedules } from "@kharon/domain";
 
 const job: JobRow = {
   job_id: "JOB-1001",
@@ -55,5 +55,58 @@ describe("RBAC matrix", () => {
     expect(canPublishDocument("dispatcher")).toBe(true);
     expect(canPublishDocument("admin")).toBe(true);
     expect(canPublishDocument("technician")).toBe(false);
+  });
+
+  it("validates job creation permissions", () => {
+    expect(canCreateJob("admin")).toBe(true);
+    expect(canCreateJob("dispatcher")).toBe(true);
+    expect(canCreateJob("super_admin")).toBe(true);
+    expect(canCreateJob("client")).toBe(false);
+    expect(canCreateJob("technician")).toBe(false);
+  });
+
+  it("validates job deletion permissions", () => {
+    expect(canDeleteJob("admin")).toBe(true);
+    expect(canDeleteJob("super_admin")).toBe(true);
+    expect(canDeleteJob("dispatcher")).toBe(false);
+    expect(canDeleteJob("client")).toBe(false);
+    expect(canDeleteJob("technician")).toBe(false);
+  });
+
+  it("validates user access permissions", () => {
+    expect(canReadUser("admin")).toBe(true);
+    expect(canReadUser("super_admin")).toBe(true);
+    expect(canReadUser("dispatcher")).toBe(false);
+    expect(canReadUser("client")).toBe(false);
+  });
+
+  it("validates user modification permissions", () => {
+    expect(canModifyUser("admin")).toBe(true);
+    expect(canModifyUser("super_admin")).toBe(true);
+    expect(canModifyUser("dispatcher")).toBe(false);
+    expect(canModifyUser("client")).toBe(false);
+  });
+
+  it("validates finance data permissions", () => {
+    expect(canReadFinanceData("admin")).toBe(true);
+    expect(canReadFinanceData("finance")).toBe(true);
+    expect(canReadFinanceData("super_admin")).toBe(true);
+    expect(canReadFinanceData("dispatcher")).toBe(false);
+  });
+
+  it("validates people directory access", () => {
+    expect(canAccessPeopleDirectory("admin")).toBe(true);
+    expect(canAccessPeopleDirectory("dispatcher")).toBe(true);
+    expect(canAccessPeopleDirectory("super_admin")).toBe(true);
+    expect(canAccessPeopleDirectory("client")).toBe(false);
+    expect(canAccessPeopleDirectory("technician")).toBe(false);
+  });
+
+  it("validates schedule management permissions", () => {
+    expect(canManageSchedules("admin")).toBe(true);
+    expect(canManageSchedules("dispatcher")).toBe(true);
+    expect(canManageSchedules("super_admin")).toBe(true);
+    expect(canManageSchedules("client")).toBe(false);
+    expect(canManageSchedules("technician")).toBe(false);
   });
 });

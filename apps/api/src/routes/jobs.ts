@@ -12,7 +12,9 @@ import {
   canUpdateJobStatus,
   canTransitionStatus,
   canWriteJobNote,
-  listAllowedStatusTransitions
+  listAllowedStatusTransitions,
+  canCreateJob,
+  canDeleteJob
 } from "@kharon/domain";
 import { parseJsonBody } from "../services/parse.js";
 import { createStoreContext } from "../services/meta.js";
@@ -178,6 +180,45 @@ jobs.post("/:job_id/note",
     });
 
     return c.json(envelopeSuccess({ correlationId, rowVersion: result.job.row_version, data: result.job }));
+});
+
+// Adding a job creation endpoint using the enhanced RBAC
+jobs.post("/", async (c) => {
+  const correlationId = c.get("correlationId");
+  const user = getSessionUser(c);
+  const store = c.get("store");
+
+  if (!canCreateJob(user.role)) {
+    return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot create jobs" } }), 403);
+  }
+
+  // Add job creation logic here
+  // This would involve parsing job data, validating it, and storing it
+  // Implementation details would depend on the specific job creation requirements
+
+  return c.json(envelopeError({ correlationId, error: { code: "not_implemented", message: "Job creation endpoint not yet implemented" } }), 501);
+});
+
+// Adding a job deletion endpoint using the enhanced RBAC
+jobs.delete("/:job_id", async (c) => {
+  const correlationId = c.get("correlationId");
+  const user = getSessionUser(c);
+  const store = c.get("store");
+  const jobid = c.req.param("job_id");
+
+  if (!canDeleteJob(user.role)) {
+    return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot delete jobs" } }), 403);
+  }
+
+  const job = await store.getJob(jobid);
+  if (!job) {
+    return c.json(envelopeError({ correlationId, error: { code: "not_found", message: "Job not found" } }), 404);
+  }
+
+  // Add actual deletion logic here
+  // Implementation details would depend on the specific job deletion requirements
+
+  return c.json(envelopeError({ correlationId, error: { code: "not_implemented", message: "Job deletion endpoint not yet implemented" } }), 501);
 });
 
 export default jobs;

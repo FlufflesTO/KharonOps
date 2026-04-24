@@ -4,7 +4,9 @@ import type { JobRecord } from "../../components/JobListView";
 import { DispatchDashboardCard } from "../../components/DispatchDashboardCard";
 import { DispatchUnassignedCard } from "../../components/DispatchUnassignedCard";
 import { DispatchDailyPlanCard } from "../../components/DispatchDailyPlanCard";
-import { ScheduleControlCard } from "../../components/ScheduleControlCard";
+import { DispatchPlannerCard } from "../../components/DispatchPlannerCard";
+import { DispatchBookingCard } from "../../components/DispatchBookingCard";
+import { DispatchPublisherCard } from "../../components/DispatchPublisherCard";
 import { CommunicationRailsCard } from "../../components/CommunicationRailsCard";
 
 interface DispatchWorkspacePanelProps {
@@ -94,13 +96,18 @@ export function DispatchWorkspacePanel({
       {activeWorkspaceTool === "dispatch_dashboard" ? <DispatchDashboardCard opsIntelligence={opsIntelligence} onEnterTool={onActiveWorkspaceToolChange} isLoading={false} /> : null}
       {activeWorkspaceTool === "dispatch_unassigned" ? <DispatchUnassignedCard jobs={jobs} onSelectJob={onSelectJobid} onEnterTool={onActiveWorkspaceToolChange} /> : null}
       {activeWorkspaceTool === "dispatch_daily" ? <DispatchDailyPlanCard jobs={jobs} opsIntelligence={opsIntelligence} /> : null}
-      {activeWorkspaceTool === "schedule" ? (
-        <ScheduleControlCard
+      {activeWorkspaceTool === "dispatch_planner" ? (
+        <DispatchPlannerCard
+          requests={dispatchRequests}
+          technicians={technicians}
+          setSelectedRequestid={setSelectedRequestid}
+          setConfirmTechid={setConfirmTechid}
+          onEnterTool={onActiveWorkspaceToolChange}
+        />
+      ) : null}
+      {activeWorkspaceTool === "dispatch_booking" ? (
+        <DispatchBookingCard
           selectedJobid={selectedJob?.job_id ?? ""}
-          preferredStart={preferredStart}
-          setPreferredStart={setPreferredStart}
-          preferredEnd={preferredEnd}
-          setPreferredEnd={setPreferredEnd}
           requests={dispatchRequests}
           selectedRequestid={selectedRequestid}
           setSelectedRequestid={setSelectedRequestid}
@@ -111,23 +118,16 @@ export function DispatchWorkspacePanel({
           confirmTechid={confirmTechid}
           setConfirmTechid={setConfirmTechid}
           technicians={technicians}
-          schedules={dispatchSchedules}
-          selectedScheduleid={selectedScheduleid}
-          setSelectedScheduleid={setSelectedScheduleid}
-          rescheduleStart={rescheduleStart}
-          setRescheduleStart={setRescheduleStart}
-          rescheduleEnd={rescheduleEnd}
-          setRescheduleEnd={setRescheduleEnd}
-          rescheduleRowVersion={rescheduleRowVersion}
-          setRescheduleRowVersion={setRescheduleRowVersion}
+          onScheduleConfirm={onScheduleConfirm}
+        />
+      ) : null}
+      {activeWorkspaceTool === "dispatch_publisher" ? (
+        <DispatchPublisherCard
+          selectedJobid={selectedJob?.job_id ?? ""}
           documents={dispatchDocuments}
           selectedDocumentid={selectedDocumentid}
           setSelectedDocumentid={setSelectedDocumentid}
-          onScheduleRequest={onScheduleRequest}
-          onScheduleConfirm={onScheduleConfirm}
-          onReschedule={onReschedule}
           onDocumentPublish={onDocumentPublish}
-          onFeedback={onFeedback}
         />
       ) : null}
       {activeWorkspaceTool === "comms" ? <CommunicationRailsCard selectedJobid={selectedJob?.job_id ?? ""} selectedJobTitle={selectedJob?.title ?? ""} onFeedback={onFeedback} /> : null}

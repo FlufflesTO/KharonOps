@@ -2,7 +2,8 @@ import React from "react";
 import type { JobStatus, JobEventRow } from "@kharon/domain";
 import type { JobRecord } from "../../components/JobListView";
 import { TechMyDayCard } from "../../components/TechMyDayCard";
-import { TechCheckInOutCard } from "../../components/TechCheckInOutCard";
+import { TechStartJobCard } from "../../components/TechStartJobCard";
+import { TechCertifyCard } from "../../components/TechCertifyCard";
 import { TechHelpCard } from "../../components/TechHelpCard";
 
 type GeoVerification = {
@@ -87,8 +88,12 @@ export function TechnicianWorkspacePanel({
         <TechMyDayCard jobs={jobs} onSelectJob={onSelectJobid} onEnterTool={(tool) => onActiveWorkspaceToolChange(tool)} />
       ) : null}
 
-      {activeWorkspaceTool === "tech_checkin" ? (
-        <TechCheckInOutCard selectedJob={selectedJob} onUpdateStatus={() => onStatusUpdate()} onVerifyLocation={onVerifyLocation} geoStatus={geoVerification.status} />
+      {activeWorkspaceTool === "tech_start" ? (
+        <TechStartJobCard selectedJob={selectedJob} onUpdateStatus={() => onStatusUpdate()} onVerifyLocation={onVerifyLocation} geoStatus={geoVerification.status} />
+      ) : null}
+
+      {activeWorkspaceTool === "tech_certify" ? (
+        <TechCertifyCard selectedJob={selectedJob} onUpdateStatus={() => onStatusUpdate()} />
       ) : null}
 
       {activeWorkspaceTool === "tech_help" ? <TechHelpCard /> : null}

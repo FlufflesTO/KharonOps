@@ -85,6 +85,7 @@ import { useLiveSyncController } from "./appShell/useLiveSyncController";
 import { useWorkspacePersistence } from "./appShell/useWorkspacePersistence";
 import { usePortalDataControllers } from "./appShell/usePortalDataControllers";
 import { usePortalActionControllers } from "./appShell/usePortalActionControllers";
+import { RolePermissionsProvider } from "./contexts/RolePermissionsContext";
 
 function resolveWithin<T>(promise: Promise<T>, timeoutMs: number): Promise<{ timedOut: boolean; value?: T }> {
   return new Promise((resolve, reject) => {
@@ -799,173 +800,174 @@ export function PortalApp(): React.JSX.Element {
   }
 
   return (
-    <div className={`portal-shell portal-shell--${effectiveRole}`}>
-      <a href="#main-content" className="skip-link">Skip to main content</a>
-      <PortalChrome
-        session={session}
-        effectiveRole={effectiveRole ?? ""}
-        emulatedRole={emulatedRole}
-        offlineEnabled={offlineEnabled}
-        onOfflineEnabledChange={setOfflineEnabled}
-        networkOnline={networkOnline}
-        syncPulseText={syncPulse.at ? `Sync ${new Date(syncPulse.at).toLocaleTimeString()}` : "Sync idle"}
-        focusMode={focusMode}
-        onFocusModeChange={setFocusMode}
-        queueCount={queueCount}
-        onReplayQueue={() => runAction(portalActions.handleReplay)}
-        onLogout={() => runAction(portalActions.handleLogout)}
-        onGoHome={() => setPortalView("dashboard")}
-        activeWorkspaceTool={activeWorkspaceTool}
-        onActiveWorkspaceToolChange={setActiveWorkspaceTool}
-        primaryTools={primaryTools}
-      >
-        <PortalErrorBoundary onError={setFeedback}>
-          <PortalWorkspace
-            state={{
-            portalView,
-            session,
-            effectiveRole: effectiveRole ?? "",
-            emulatedRole,
-            jobs,
-            selectedJobid,
-            onSelectJobid: setSelectedJobid,
-            searchTerm,
-            onSearchTermChange: setSearchTerm,
-            activeWorkspaceTool,
-            onActiveWorkspaceToolChange: setActiveWorkspaceTool,
-            allowedWorkspaceTools,
-            defaultWorkspaceTool,
-            pinnedTools,
-            onboardingDismissed,
-            onDismissOnboarding: () => setOnboardingDismissed(true),
-            onSaveWorkspacePreferences: handleSaveWorkspacePreferences,
-            openJobCount,
-            selectedJob,
-            selectedJobStatus,
-            selectedJobDocumentCount,
-            documents,
-            escrowByDocumentid,
-            selectedRequestid,
-            setSelectedRequestid,
-            selectedScheduleid,
-            setSelectedScheduleid,
-            selectedDocumentid,
-            setSelectedDocumentid,
-            dispatchRequests,
-            dispatchSchedules,
-            dispatchDocuments,
-            technicians,
-            preferredStart,
-            setPreferredStart,
-            preferredEnd,
-            setPreferredEnd,
-            confirmStart,
-            setConfirmStart,
-            confirmEnd,
-            setConfirmEnd,
-            confirmTechid,
-            setConfirmTechid,
-            rescheduleStart,
-            setRescheduleStart,
-            rescheduleEnd,
-            setRescheduleEnd,
-            rescheduleRowVersion,
-            setRescheduleRowVersion,
-            documentType,
-            setDocumentType,
-            onChecklistChange: (data: Record<string, string>) => setChecklistData((prev) => ({ ...prev, ...data })),
-            onStatusUpdate: () => runAction(portalActions.handleStatusUpdate),
-            onNote: () => runAction(portalActions.handleNote),
-            noteValue,
-            setNoteValue,
-            statusTarget,
-            setStatusTarget,
-            selectableStatuses,
-            onScheduleRequest: () => runAction(portalActions.handleScheduleRequest),
-            onScheduleConfirm: () => runAction(portalActions.handleScheduleConfirm),
-            onReschedule: () => runAction(portalActions.handleReschedule),
-            onDocumentGenerate: () => runAction(portalActions.handleDocumentGenerate),
-            onDocumentPublish: () => runAction(portalActions.handleDocumentPublish),
-            onDocumentPublishInline: (documentid: string, rowVersion: number, clientVisible: boolean) =>
-              runAction(() => portalActions.handleDocumentPublishInline(documentid, rowVersion, clientVisible)),
-            onRefreshDocuments: handleRefreshDocuments,
-            onBulkStatusUpdate: (ids: string[], status: JobStatus) => runAction(() => portalActions.handleBulkStatusUpdate(ids, status)),
-            canGenerateDocuments,
-            documentGenerateDisabledReason: canGenerateDocuments
-              ? "Document APIs are currently unavailable for this account. Contact an administrator to restore access."
-              : "This role can review job status and notes, but cannot generate documents.",
-            documentAccessDenied,
-            dispatchAccessDenied,
-            geoVerification,
-            onVerifyLocation: portalActions.handleVerifyLocation,
-            syncPulseText,
-            jobEvents,
-            notifications,
-            onDismissNotification: (id: string) => setDismissedNotifications((prev) => [...prev, id]),
-            onDismissAllNotifications: () => setDismissedNotifications(notifications.map((item) => item.id)),
-            actionPending,
-            feedback,
-            generatedDocumentCount,
-            queueCount,
-            adminAuditCount,
-            networkOnline,
-            opsIntelligence,
-            schemaDrift,
-            adminHealth,
-            adminHealthState,
-            adminHealthMessage,
-            adminAudits,
-            adminAutomationJobs,
-            automationJobs,
-            selectedAutomationJobid,
-            onSelectAutomationJobid: setSelectedAutomationJobid,
-            onLoadHealth: handleLoadAdminHealth,
-            onLoadAudits: handleLoadAdminAudits,
-            onLoadAutomationJobs: handleLoadAdminAutomationJobs,
-            onRetryAutomation: handleRetryAdminAutomation,
-            isRealSuperAdmin,
-            onEmulateRole: handleEmulateRole,
-            onLoadSchemaDrift: () => runAction(loadSchemaDrift),
-            onLoadOpsIntelligence: () => runAction(loadOpsIntelligence),
-            peopleDirectory,
-            upgradeState,
-            onRefreshUpgradeState: handleRefreshUpgradeState,
-            onCreateQuote: handleCreateQuote,
-            onUpdateQuoteStatus: handleUpdateQuoteStatus,
-            onCreateInvoiceFromQuote: handleCreateInvoiceFromQuote,
-            onReconcileInvoice: handleReconcileInvoice,
-            onLockEscrow: handleLockEscrow,
-            onRebuildAnalytics: handleRebuildAnalytics,
-            setFeedback,
-            onFeedback: setFeedback,
-            onUpsertSkill: (payload: SkillMatrixRecord) =>
-              runAction(async () => {
-                await apiClient.upsertSkillMatrix(payload);
-                await refreshUpgradeWorkspaceState();
-              }),
-            onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => portalActions.handlePeopleSync(payload),
-            selectedJobTitle: selectedJob?.title ?? "",
-            onLogout: () => runAction(portalActions.handleLogout)
-            }}
-          />
-        </PortalErrorBoundary>
-      </PortalChrome>
-
-      <footer className="portal-statusbar">
-        <OfflineBanner
+    <RolePermissionsProvider effectiveRole={effectiveRole}>
+      <div className={`portal-shell portal-shell--${effectiveRole}`}>
+        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <PortalChrome
+          session={session}
+          effectiveRole={effectiveRole ?? ""}
+          emulatedRole={emulatedRole}
+          offlineEnabled={offlineEnabled}
+          onOfflineEnabledChange={setOfflineEnabled}
           networkOnline={networkOnline}
+          syncPulseText={syncPulse.at ? `Sync ${new Date(syncPulse.at).toLocaleTimeString()}` : "Sync idle"}
+          focusMode={focusMode}
+          onFocusModeChange={setFocusMode}
           queueCount={queueCount}
-          onReplay={() => runAction(portalActions.handleReplay)}
-          actionPending={actionPending}
-        />
-        <div className="feedback-line">
-          <span>Feedback</span>
-          <pre>{feedback}</pre>
-        </div>
-      </footer>
-    </div>
+          onReplayQueue={() => runAction(portalActions.handleReplay)}
+          onLogout={() => runAction(portalActions.handleLogout)}
+          onGoHome={() => setPortalView("dashboard")}
+          activeWorkspaceTool={activeWorkspaceTool}
+          onActiveWorkspaceToolChange={setActiveWorkspaceTool}
+          primaryTools={primaryTools}
+        >
+          <PortalErrorBoundary onError={setFeedback}>
+            <PortalWorkspace
+              state={{
+              portalView,
+              session,
+              effectiveRole: effectiveRole ?? "",
+              emulatedRole,
+              jobs,
+              selectedJobid,
+              onSelectJobid: setSelectedJobid,
+              searchTerm,
+              onSearchTermChange: setSearchTerm,
+              activeWorkspaceTool,
+              onActiveWorkspaceToolChange: setActiveWorkspaceTool,
+              allowedWorkspaceTools,
+              defaultWorkspaceTool,
+              pinnedTools,
+              onboardingDismissed,
+              onDismissOnboarding: () => setOnboardingDismissed(true),
+              onSaveWorkspacePreferences: handleSaveWorkspacePreferences,
+              openJobCount,
+              selectedJob,
+              selectedJobStatus,
+              selectedJobDocumentCount,
+              documents,
+              escrowByDocumentid,
+              selectedRequestid,
+              setSelectedRequestid,
+              selectedScheduleid,
+              setSelectedScheduleid,
+              selectedDocumentid,
+              setSelectedDocumentid,
+              dispatchRequests,
+              dispatchSchedules,
+              dispatchDocuments,
+              technicians,
+              preferredStart,
+              setPreferredStart,
+              preferredEnd,
+              setPreferredEnd,
+              confirmStart,
+              setConfirmStart,
+              confirmEnd,
+              setConfirmEnd,
+              confirmTechid,
+              setConfirmTechid,
+              rescheduleStart,
+              setRescheduleStart,
+              rescheduleEnd,
+              setRescheduleEnd,
+              rescheduleRowVersion,
+              setRescheduleRowVersion,
+              documentType,
+              setDocumentType,
+              onChecklistChange: (data: Record<string, string>) => setChecklistData((prev) => ({ ...prev, ...data })),
+              onStatusUpdate: () => runAction(portalActions.handleStatusUpdate),
+              onNote: () => runAction(portalActions.handleNote),
+              noteValue,
+              setNoteValue,
+              statusTarget,
+              setStatusTarget,
+              selectableStatuses,
+              onScheduleRequest: () => runAction(portalActions.handleScheduleRequest),
+              onScheduleConfirm: () => runAction(portalActions.handleScheduleConfirm),
+              onReschedule: () => runAction(portalActions.handleReschedule),
+              onDocumentGenerate: () => runAction(portalActions.handleDocumentGenerate),
+              onDocumentPublish: () => runAction(portalActions.handleDocumentPublish),
+              onDocumentPublishInline: (documentid: string, rowVersion: number, clientVisible: boolean) =>
+                runAction(() => portalActions.handleDocumentPublishInline(documentid, rowVersion, clientVisible)),
+              onRefreshDocuments: handleRefreshDocuments,
+              onBulkStatusUpdate: (ids: string[], status: JobStatus) => runAction(() => portalActions.handleBulkStatusUpdate(ids, status)),
+              canGenerateDocuments,
+              documentGenerateDisabledReason: canGenerateDocuments
+                ? "Document APIs are currently unavailable for this account. Contact an administrator to restore access."
+                : "This role can review job status and notes, but cannot generate documents.",
+              documentAccessDenied,
+              dispatchAccessDenied,
+              geoVerification,
+              onVerifyLocation: portalActions.handleVerifyLocation,
+              syncPulseText,
+              jobEvents,
+              notifications,
+              onDismissNotification: (id: string) => setDismissedNotifications((prev) => [...prev, id]),
+              onDismissAllNotifications: () => setDismissedNotifications(notifications.map((item) => item.id)),
+              actionPending,
+              feedback,
+              generatedDocumentCount,
+              queueCount,
+              adminAuditCount,
+              networkOnline,
+              opsIntelligence,
+              schemaDrift,
+              adminHealth,
+              adminHealthState,
+              adminHealthMessage,
+              adminAudits,
+              adminAutomationJobs,
+              automationJobs,
+              selectedAutomationJobid,
+              onSelectAutomationJobid: setSelectedAutomationJobid,
+              onLoadHealth: handleLoadAdminHealth,
+              onLoadAudits: handleLoadAdminAudits,
+              onLoadAutomationJobs: handleLoadAdminAutomationJobs,
+              onRetryAutomation: handleRetryAdminAutomation,
+              isRealSuperAdmin,
+              onEmulateRole: handleEmulateRole,
+              onLoadSchemaDrift: () => runAction(loadSchemaDrift),
+              onLoadOpsIntelligence: () => runAction(loadOpsIntelligence),
+              peopleDirectory,
+              upgradeState,
+              onRefreshUpgradeState: handleRefreshUpgradeState,
+              onCreateQuote: handleCreateQuote,
+              onUpdateQuoteStatus: handleUpdateQuoteStatus,
+              onCreateInvoiceFromQuote: handleCreateInvoiceFromQuote,
+              onReconcileInvoice: handleReconcileInvoice,
+              onLockEscrow: handleLockEscrow,
+              onRebuildAnalytics: handleRebuildAnalytics,
+              setFeedback,
+              onFeedback: setFeedback,
+              onUpsertSkill: (payload: SkillMatrixRecord) =>
+                runAction(async () => {
+                  await apiClient.upsertSkillMatrix(payload);
+                  await refreshUpgradeWorkspaceState();
+                }),
+              onPeopleSync: (payload: { name: string; email: string; phone: string; roleHint: string }) => portalActions.handlePeopleSync(payload),
+              selectedJobTitle: selectedJob?.title ?? "",
+              onLogout: () => runAction(portalActions.handleLogout)
+              }}
+            />
+          </PortalErrorBoundary>
+        </PortalChrome>
+
+        <footer className="portal-statusbar">
+          <OfflineBanner
+            networkOnline={networkOnline}
+            queueCount={queueCount}
+            onReplay={() => runAction(portalActions.handleReplay)}
+            actionPending={actionPending}
+          />
+          <div className="feedback-line">
+            <span>Feedback</span>
+            <pre>{feedback}</pre>
+          </div>
+        </footer>
+      </div>
+    </RolePermissionsProvider>
   );
 }
-
 
 

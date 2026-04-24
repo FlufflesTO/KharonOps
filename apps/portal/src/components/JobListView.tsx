@@ -55,7 +55,7 @@ export function statusTone(status: string): "active" | "warning" | "critical" | 
 function Highlight({ text, query }: { text: string; query: string }): React.JSX.Element {
   const trimmed = query.trim();
   if (!trimmed) return <>{text}</>;
-  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, "$&");
   const parts = text.split(new RegExp(`(${escaped})`, "ig"));
   return (
     <>

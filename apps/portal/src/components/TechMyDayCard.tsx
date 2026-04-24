@@ -35,7 +35,7 @@ export function TechMyDayCard({ jobs, onSelectJob, onEnterTool }: TechMyDayCardP
                 className="button button--primary button--large"
                 onClick={() => {
                   onSelectJob(nextJob.job_id);
-                  onEnterTool("tech_checkin");
+                  onEnterTool("tech_start");
                 }}
               >
                 Start Job Now

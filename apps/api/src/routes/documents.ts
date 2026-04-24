@@ -11,7 +11,8 @@ import {
   canGenerateDocument,
   canPublishDocument,
   canReadJob,
-  bumpMutableMeta
+  bumpMutableMeta,
+  canReadFinanceData
 } from "@kharon/domain";
 import { buildDocumentTokens } from "../services/documentTokens.js";
 import { parseJsonBody } from "../services/parse.js";
@@ -106,8 +107,8 @@ documents.post("/publish", async (c) => {
   if (!document && config.mode === "local") {
     document = {
       document_id: body.document_id,
-      job_id: body.job_id ?? "JOB-1001",
-      document_type: body.document_type ?? "jobcard",
+      job_id: body.job_id,
+      document_type: body.document_type,
       status: "generated",
       drive_file_id: body.document_id,
       pdf_file_id: body.document_id,
@@ -171,10 +172,11 @@ documents.get("/history", async (c) => {
   }
 
   const documentsResult = await store.listDocuments(jobid);
-  const internalDocumentRoles = new Set(["admin", "dispatcher", "finance", "super_admin"]);
+  // Using enhanced RBAC function
+  const canReadFinance = canReadFinanceData(user.role);
   let data: JobDocumentRow[];
 
-  if (internalDocumentRoles.has(String(user.role))) {
+  if (canReadFinance) {
     data = documentsResult;
   } else {
     const readableJobs = await store.listJobsForUser(user);

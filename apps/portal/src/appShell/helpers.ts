@@ -244,16 +244,21 @@ export const WORKSPACE_TOOL_META: Record<string, { label: string; helper: string
   dispatch_dashboard: { label: "Dashboard", helper: "Dispatch priorities and urgent assignments" },
   dispatch_unassigned: { label: "Unassigned Jobs", helper: "Jobs waiting for team assignment" },
   dispatch_daily: { label: "Daily Plan", helper: "Today's work summary and risks" },
+  dispatch_planner: { label: "Workload Planner", helper: "Magnetic D&D assignments" },
+  dispatch_booking: { label: "Booking Desk", helper: "Confirm dates & time" },
+  dispatch_publisher: { label: "Publishing Desk", helper: "Make documents live" },
   tech_day: { label: "My Day", helper: "Today's next job and schedule overview" },
+  tech_start: { label: "Start Job", helper: "Verify location and check in" },
+  tech_certify: { label: "Certify & Finish", helper: "Verify work and sign out" },
   tech_checkin: { label: "Check In / Out", helper: "Guided arrival and finish flow" },
   tech_help: { label: "Help", helper: "Contact office support and guidance" },
   client_overview: { label: "Overview", helper: "Active work and latest updates" },
   client_invoices: { label: "Invoices", helper: "View and pay outstanding balances" },
   client_support: { label: "Support", helper: "Request assistance or callbacks" },
   finance_overview: { label: "Overview", helper: "Finance summaries and urgent actions" },
-  finance_quotes: { label: "Quotes", helper: "Create and manage customer quotes" },
+  finance_quotes: { label: "Quote Generator", helper: "Create and manage customer quotes" },
   finance_invoices: { label: "Invoices", helper: "Generate and track customer invoices" },
-  finance_payments: { label: "Payments", helper: "Record and reconcile customer payments" },
+  finance_payments: { label: "Payment Tracker", helper: "Record and reconcile customer payments" },
   finance_debtors: { label: "Money Owed", helper: "Track and follow up on overdue accounts" },
   finance_statements: { label: "Statements", helper: "Generate and send account statements" },
   sa_overview: { label: "Overview", helper: "Top platform issues and summaries" },
@@ -267,10 +272,10 @@ export const WORKSPACE_TOOL_META: Record<string, { label: string; helper: string
 
 export const ROLE_PRIMARY_TOOLS: Record<string, string[]> = {
   client: ["client_overview", "jobs", "documents", "client_invoices", "client_support"],
-  technician: ["tech_day", "jobs", "tech_checkin", "documents", "tech_help"],
-  dispatcher: ["dispatch_dashboard", "schedule", "dispatch_unassigned", "people", "comms", "dispatch_daily"],
+  technician: ["tech_day", "tech_start", "tech_certify", "jobs", "documents", "tech_help"],
+  dispatcher: ["dispatch_dashboard", "dispatch_planner", "dispatch_booking", "dispatch_publisher", "dispatch_unassigned", "people", "comms", "dispatch_daily"],
   finance: ["finance_overview", "finance_quotes", "finance_invoices", "finance_payments", "finance_debtors", "finance_statements"],
-  admin: ["admin_dashboard", "jobs", "people", "documents", "schedule", "admin", "sa_health"],
+  admin: ["admin_dashboard", "jobs", "people", "documents", "dispatch_planner", "admin", "sa_health"],
   super_admin: ["sa_overview", "sa_users", "sa_units", "sa_checks", "sa_automations", "sa_health", "sa_activity"]
 };
 

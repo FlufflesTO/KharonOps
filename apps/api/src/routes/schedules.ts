@@ -11,7 +11,8 @@ import {
   canRequestSchedule,
   canConfirmSchedule,
   canReadJob,
-  bumpMutableMeta
+  bumpMutableMeta,
+  canManageSchedules
 } from "@kharon/domain";
 import { parseJsonBody } from "../services/parse.js";
 import { createMutable, createStoreContext } from "../services/meta.js";
@@ -84,7 +85,8 @@ schedules.post("/confirm", async (c) => {
   const config = c.get("config");
   const store = c.get("store");
 
-  if (!canConfirmSchedule(user.role)) {
+  // Using enhanced RBAC function
+  if (!canManageSchedules(user.role)) {
     return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot confirm schedule" } }), 403);
   }
 
@@ -167,7 +169,8 @@ schedules.post("/reschedule", async (c) => {
   const config = c.get("config");
   const store = c.get("store");
 
-  if (!canConfirmSchedule(user.role)) {
+  // Using enhanced RBAC function
+  if (!canManageSchedules(user.role)) {
     return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot reschedule" } }), 403);
   }
 

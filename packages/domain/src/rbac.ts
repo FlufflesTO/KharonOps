@@ -62,3 +62,36 @@ export function canUpdateJobStatus(user: SessionUser, job: JobRow, requestedStat
 export function canWriteJobNote(user: SessionUser, job: JobRow): boolean {
   return canUpdateJobStatus(user, job);
 }
+
+// New enhanced RBAC functions
+export function canCreateJob(role: Role): boolean {
+  return isSuperAdmin(role) || role === "admin" || role === "dispatcher";
+}
+
+export function canDeleteJob(role: Role): boolean {
+  return isSuperAdmin(role) || role === "admin";
+}
+
+export function canReadUser(role: Role): boolean {
+  return isSuperAdmin(role) || role === "admin";
+}
+
+export function canModifyUser(role: Role): boolean {
+  return isSuperAdmin(role) || role === "admin";
+}
+
+export function canReadFinanceData(role: Role): boolean {
+  return isSuperAdmin(role) || role === "admin" || role === "finance";
+}
+
+export function canModifyFinanceData(role: Role): boolean {
+  return isSuperAdmin(role) || role === "admin" || role === "finance";
+}
+
+export function canAccessPeopleDirectory(role: Role): boolean {
+  return isSuperAdmin(role) || role === "admin" || role === "dispatcher";
+}
+
+export function canManageSchedules(role: Role): boolean {
+  return isSuperAdmin(role) || role === "admin" || role === "dispatcher";
+}
