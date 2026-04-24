@@ -14,6 +14,13 @@ All notable changes to the KharonOps project are documented in this file.
   - Added `EnquiryType` union to `@kharon/domain` types.
   - Verified codebase integrity via `tsc --noEmit` across `apps/api` and `packages/domain`.
 
+### [Security]
+- **Comprehensive Hardening Run:**
+  - Verified ZERO-ANY policy compliance (0 usages of `z.any()` and `any` types).
+  - Confirmed strict UID requirements (no hardcoded "system" user).
+  - Validated proper audit collection mapping and non-nested top-level collections.
+  - Passed full `npm audit` with 0 vulnerabilities and 0 Type Errors across workspace.
+
 ## [Unreleased] - 2026-04-23
 
 ### [Changed]

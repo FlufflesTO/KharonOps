@@ -131,3 +131,5 @@ julia-*/
 # Zig
 zig-out/
 zig-cache/
+# Cloudflare Wrangler
+.wrangler/
