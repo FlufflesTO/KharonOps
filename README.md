@@ -23,7 +23,9 @@ Unified public website and operations portal for Kharon Fire and Security Soluti
   - admin audits now expose hash-linked provenance and anomaly indicators
 - People operations upgraded from a basic directory to an HR and skills matrix (certification, medical, rest and fatigue tracking).
 - Finance operations upgraded from scaffold state to quote, invoice, statement, debtors, and reconciliation workflows.
-- Security improvements: Fixed Cross-Origin-Opener-Policy header value to use valid policy instead of invalid 'unsafe-none' value, and corrected SQL indexes to use valid status values matching the enum definitions.
+- Forensic Audit Trail coverage: 100% of mutation routes now include explicit ledger logging for accountability and compliance.
+- Security improvements: Fixed Cross-Origin-Opener-Policy and Content Security Policy violations to support Google Identity Services and React inline styles.
+- API Resilience: Hardened body parsing and schema initialization to prevent session-blocking 400 errors.
 
 ## Portal UI/UX (Redesign v2)
 

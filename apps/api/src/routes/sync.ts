@@ -83,6 +83,14 @@ sync.post("/push", async (c) => {
   const status = result.applied.length === 0 && result.conflicts.length > 0 && result.failed.length === 0 ? 409 : 200;
   const conflict = result.conflicts[0]?.conflict ?? null;
 
+  if (status === 200 && result.applied.length > 0) {
+    await store.appendAudit({
+      action: "sync.push.applied",
+      payload: { applied_count: result.applied.length, conflicts_count: result.conflicts.length },
+      ctx: createStoreContext(user.user_id, correlationId)
+    });
+  }
+
   return c.json(
     status === 409
       ? envelopeError({ correlationId, conflict, error: { code: "sync_conflict", message: "One or more mutations conflicted" } })
@@ -110,6 +118,12 @@ sync.post("/conflict/resolve", async (c) => {
   if (resolved.conflict) {
     return c.json(rowVersionConflictResponse(correlationId, resolved.job.row_version, resolved.conflict), 409);
   }
+
+  await store.appendAudit({
+    action: "sync.conflict.resolved",
+    payload: { job_id: body.job_id, strategy: body.strategy },
+    ctx: createStoreContext(user.user_id, correlationId)
+  });
 
   return c.json(envelopeSuccess({ correlationId, rowVersion: resolved.job.row_version, data: resolved.job }));
 });

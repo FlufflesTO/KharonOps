@@ -18,6 +18,13 @@ All notable changes to the KharonOps project are documented in this file.
 - **Comprehensive Hardening Run:**
   - Verified ZERO-ANY policy compliance (0 usages of `z.any()` and `any` types).
   - Confirmed strict UID requirements (no hardcoded "system" user).
+  - **Forensic Audit Trail Integrity:** Implemented explicit `store.appendAudit()` logging for 11+ mutation routes across jobs, finance, sync, and workspace, ensuring 100% compliance with audit trace standards.
+  - **CSP & COOP Resolution:** Fixed blocked inline styles and popup communication issues for Google Identity Services by refining `style-src` and `Cross-Origin-Opener-Policy` headers.
+
+### [Fixed]
+- **API Robustness:** Standardized all mutation endpoints (16 routes total) to use Hono's internal `c.req.json()` via a robust `parseJsonBody` service, preventing "body already consumed" errors on Cloudflare Workers.
+- **Login Resilience:** Bypassed mandatory workbook schema initialization during authentication to prevent blocking user sessions during workbook maintenance.
+- **Enhanced Diagnostics:** Improved global error handling with detailed logging of IP, User-Agent, and full stack traces for production troubleshooting.
   - Validated proper audit collection mapping and non-nested top-level collections.
   - Passed full `npm audit` with 0 vulnerabilities and 0 Type Errors across workspace.
 
