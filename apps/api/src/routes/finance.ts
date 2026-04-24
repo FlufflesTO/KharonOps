@@ -68,6 +68,13 @@ finance.post("/quotes/:quote_id/status", async (c) => {
   if (!updated) {
     return c.json(envelopeError({ correlationId, error: { code: "not_found", message: "Quote not found" } }), 404);
   }
+
+  await store.appendAudit({
+    action: "finance.quote.status_update",
+    payload: { quote_id, status: body.status },
+    ctx: createStoreContext(user.user_id, correlationId)
+  });
+
   return c.json(envelopeSuccess({ correlationId, rowVersion: updated.row_version, data: updated }));
 });
 
@@ -98,6 +105,12 @@ finance.post("/invoices/from-quote", async (c) => {
   await store.updateFinanceQuoteStatus({
     quote_id: quote.quote_id,
     status: "invoiced",
+    ctx: createStoreContext(user.user_id, correlationId)
+  });
+
+  await store.appendAudit({
+    action: "finance.invoice.create",
+    payload: { quote_id: quote.quote_id, invoice_id: invoice.invoice_id },
     ctx: createStoreContext(user.user_id, correlationId)
   });
 
@@ -133,6 +146,12 @@ finance.post("/invoices/:invoice_id/reconcile", async (c) => {
     });
   }
 
+  await store.appendAudit({
+    action: "finance.invoice.reconcile",
+    payload: { invoice_id, status: updated.status },
+    ctx: createStoreContext(user.user_id, correlationId)
+  });
+
   return c.json(envelopeSuccess({ correlationId, rowVersion: updated.row_version, data: updated }));
 });
 
@@ -153,6 +172,13 @@ finance.post("/escrow/lock", async (c) => {
       : createMutable(user.user_id, correlationId))
   };
   await store.upsertEscrow(row);
+
+  await store.appendAudit({
+    action: "finance.escrow.lock",
+    payload: { document_id: body.document_id, invoice_id: body.invoice_id },
+    ctx: createStoreContext(user.user_id, correlationId)
+  });
+
   return c.json(envelopeSuccess({ correlationId, rowVersion: row.row_version, data: row }));
 });
 
@@ -204,6 +230,13 @@ finance.post("/analytics/rebuild", async (c) => {
 
   await store.replaceFinanceDebtors(debtors);
   await store.replaceFinanceStatements(statements);
+
+  await store.appendAudit({
+    action: "finance.analytics.rebuild",
+    payload: { debtors_count: debtors.length, statements_count: statements.length },
+    ctx: createStoreContext(user.user_id, correlationId)
+  });
+
   return c.json(envelopeSuccess({ correlationId, data: { debtors: debtors.length, statements: statements.length } }));
 });
 

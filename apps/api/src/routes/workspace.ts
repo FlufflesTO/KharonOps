@@ -150,6 +150,13 @@ workspace.put("/upgrade/skills/:user_id", requireRoles("dispatcher", "admin", "f
     ...(existing ? bumpMutableMeta(existing, user.user_id, correlationId) : createMutable(user.user_id, correlationId))
   };
   await store.upsertSkillMatrix(row);
+
+  await store.appendAudit({
+    action: "workspace.skills.update",
+    payload: { user_id },
+    ctx: createStoreContext(user.user_id, correlationId)
+  });
+
   return c.json(envelopeSuccess({ correlationId, rowVersion: row.row_version, data: row }));
 });
 

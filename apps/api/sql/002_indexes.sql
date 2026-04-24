@@ -13,7 +13,7 @@ CREATE INDEX IF NOT EXISTS idx_jobs_client_status ON jobs (client_id, status, sc
 CREATE INDEX IF NOT EXISTS idx_jobs_site_status ON jobs (site_id, status, scheduled_start DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_technician_status ON jobs (technician_id, status, scheduled_start DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_active_dispatch ON jobs (status, scheduled_start DESC)
-  WHERE status IN ('open', 'assigned', 'en_route', 'on_site', 'paused');
+  WHERE status IN ('draft', 'performed', 'rejected', 'approved', 'certified', 'cancelled');
 
 CREATE INDEX IF NOT EXISTS idx_job_events_job_id ON job_events (job_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_job_events_type ON job_events (event_type, updated_at DESC);

@@ -36,7 +36,7 @@ export function apiSecurityHeadersMiddleware() {
       c.header("X-Content-Type-Options", "nosniff");
       c.header("X-Frame-Options", "DENY");
       c.header("Referrer-Policy", "strict-origin-when-cross-origin");
-      c.header("Cross-Origin-Opener-Policy", "unsafe-none");
+      c.header("Cross-Origin-Opener-Policy", "same-origin");
       
       const csp = [
         "default-src 'self'",

@@ -2,7 +2,7 @@
 
 Unified public website and operations portal for Kharon Fire and Security Solutions, delivered from Cloudflare Workers.
 
-## Current Release Highlights (2026-04-23)
+## Current Release Highlights (2026-04-24)
 
 - Role coverage hardened end to end across client, technician, dispatcher, finance, admin, and super_admin portals.
 - Client support now submits a real public contact request instead of a placeholder action.
@@ -23,6 +23,7 @@ Unified public website and operations portal for Kharon Fire and Security Soluti
   - admin audits now expose hash-linked provenance and anomaly indicators
 - People operations upgraded from a basic directory to an HR and skills matrix (certification, medical, rest and fatigue tracking).
 - Finance operations upgraded from scaffold state to quote, invoice, statement, debtors, and reconciliation workflows.
+- Security improvements: Fixed Cross-Origin-Opener-Policy header value to use valid policy instead of invalid 'unsafe-none' value, and corrected SQL indexes to use valid status values matching the enum definitions.
 
 ## Portal UI/UX (Redesign v2)
 

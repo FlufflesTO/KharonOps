@@ -133,6 +133,12 @@ jobs.on(["POST", "PATCH"], "/:job_id/status",
       return c.json(rowVersionConflictResponse(correlationId, result.job.row_version, result.conflict), 409);
     }
 
+    await store.appendAudit({
+      action: "jobs.status.update",
+      payload: { job_id: jobid, status },
+      ctx: createStoreContext(user.user_id, correlationId)
+    });
+
     return c.json(envelopeSuccess({ correlationId, rowVersion: result.job.row_version, data: result.job }));
 });
 
@@ -164,6 +170,12 @@ jobs.post("/:job_id/note",
     if (result.conflict) {
       return c.json(rowVersionConflictResponse(correlationId, result.job.row_version, result.conflict), 409);
     }
+
+    await store.appendAudit({
+      action: "jobs.note.append",
+      payload: { job_id: jobid, note: payload.note },
+      ctx: createStoreContext(user.user_id, correlationId)
+    });
 
     return c.json(envelopeSuccess({ correlationId, rowVersion: result.job.row_version, data: result.job }));
 });
