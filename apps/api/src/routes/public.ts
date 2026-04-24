@@ -18,7 +18,7 @@ publicRouter.post("/contact", async (c) => {
   const correlationId = c.get("correlationId");
   const config = c.get("config");
   const store = c.get("store");
-  const body = await parseJsonBody(c.req.raw, publicContactRequestSchema);
+  const body = await parseJsonBody(c, publicContactRequestSchema);
 
   if (body.honey !== "") {
     logApiEvent("warn", "public.contact.honeypot_triggered", { correlationId, email: body.email });

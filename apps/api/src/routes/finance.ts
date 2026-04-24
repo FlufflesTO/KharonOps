@@ -32,7 +32,7 @@ finance.post("/quotes", async (c) => {
   const correlationId = c.get("correlationId");
   const user = getSessionUser(c);
   const store = c.get("store");
-  const body = await parseJsonBody(c.req.raw, financeQuoteCreateSchema);
+  const body = await parseJsonBody(c, financeQuoteCreateSchema);
   const quote = {
     quote_id: `QTE-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
     job_id: body.job_id,
@@ -59,7 +59,7 @@ finance.post("/quotes/:quote_id/status", async (c) => {
   const user = getSessionUser(c);
   const store = c.get("store");
   const quote_id = c.req.param("quote_id");
-  const body = await parseJsonBody(c.req.raw, financeQuoteStatusSchema);
+  const body = await parseJsonBody(c, financeQuoteStatusSchema);
   const updated = await store.updateFinanceQuoteStatus({
     quote_id,
     status: body.status,
@@ -75,7 +75,7 @@ finance.post("/invoices/from-quote", async (c) => {
   const correlationId = c.get("correlationId");
   const user = getSessionUser(c);
   const store = c.get("store");
-  const body = await parseJsonBody(c.req.raw, financeInvoiceFromQuoteSchema);
+  const body = await parseJsonBody(c, financeInvoiceFromQuoteSchema);
   const quotes = await store.listFinanceQuotes();
   const quote = quotes.find((item) => item.quote_id === body.quote_id) ?? null;
   if (!quote) {
@@ -140,7 +140,7 @@ finance.post("/escrow/lock", async (c) => {
   const correlationId = c.get("correlationId");
   const user = getSessionUser(c);
   const store = c.get("store");
-  const body = await parseJsonBody(c.req.raw, financeEscrowLockSchema);
+  const body = await parseJsonBody(c, financeEscrowLockSchema);
   const existing = await store.getEscrowByDocument(body.document_id);
   const row = {
     document_id: body.document_id,

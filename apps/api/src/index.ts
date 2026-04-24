@@ -97,6 +97,16 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
 
   app.onError((error, c) => {
     const correlationId = c.get("correlationId") ?? crypto.randomUUID();
+    logApiEvent("error", "api.request_failed", {
+      correlationId,
+      path: c.req.path,
+      method: c.req.method,
+      userAgent: c.req.header("user-agent"),
+      ip: c.req.header("cf-connecting-ip"),
+      message: error instanceof Error ? error.message : String(error),
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      stack: error instanceof Error ? error.stack : undefined
+    });
 
     if (error instanceof SyntaxError) {
       return c.json(

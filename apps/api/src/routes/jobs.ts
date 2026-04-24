@@ -87,7 +87,7 @@ jobs.on(["POST", "PATCH"], "/:job_id/status",
     const user = getSessionUser(c);
     const store = c.get("store");
     const jobid = c.req.param("job_id");
-    const payload = await parseJsonBody(c.req.raw, statusUpdateSchema);
+    const payload = await parseJsonBody(c, statusUpdateSchema);
     const { status, row_version } = payload;
 
     const job = await store.getJob(jobid);
@@ -143,7 +143,7 @@ jobs.post("/:job_id/note",
     const user = getSessionUser(c);
     const store = c.get("store");
     const jobid = c.req.param("job_id");
-    const payload = await parseJsonBody(c.req.raw, noteSchema);
+    const payload = await parseJsonBody(c, noteSchema);
 
     const job = await store.getJob(jobid);
     if (!job) {

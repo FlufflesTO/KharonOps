@@ -72,7 +72,7 @@ sync.post("/push", async (c) => {
   const correlationId = c.get("correlationId");
   const user = getSessionUser(c);
   const store = c.get("store");
-  const body = await parseJsonBody(c.req.raw, syncPushSchema);
+  const body = await parseJsonBody(c, syncPushSchema);
 
   const result = await store.applySyncMutations({
     actor: user,
@@ -95,7 +95,7 @@ sync.post("/conflict/resolve", async (c) => {
   const correlationId = c.get("correlationId");
   const user = getSessionUser(c);
   const store = c.get("store");
-  const body = await parseJsonBody(c.req.raw, resolveConflictSchema);
+  const body = await parseJsonBody(c, resolveConflictSchema);
 
   const resolved = await store.resolveSyncConflict({
     actor: user,

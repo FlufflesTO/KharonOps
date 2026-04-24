@@ -38,7 +38,7 @@ documents.post("/generate", async (c) => {
     return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot generate documents" } }), 403);
   }
 
-  const body = await parseJsonBody(c.req.raw, documentGenerateSchema);
+  const body = await parseJsonBody(c, documentGenerateSchema);
   const job = await store.getJob(body.job_id);
   if (!job) {
     return c.json(envelopeError({ correlationId, error: { code: "not_found", message: "Job not found" } }), 404);
@@ -100,7 +100,7 @@ documents.post("/publish", async (c) => {
     return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot publish documents" } }), 403);
   }
 
-  const body = await parseJsonBody(c.req.raw, documentPublishSchema);
+  const body = await parseJsonBody(c, documentPublishSchema);
   let document = await store.getDocument(body.document_id);
 
   if (!document && config.mode === "local") {

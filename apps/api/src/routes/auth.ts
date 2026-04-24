@@ -5,6 +5,7 @@
  */
 
 import { Hono } from "hono";
+import { ZodError } from "zod";
 import { envelopeError, envelopeSuccess } from "@kharon/domain";
 import { verifyIdentity } from "../auth/google.js";
 import { createSessionToken, setSessionCookie, clearSessionCookie } from "../auth/session.js";
@@ -32,9 +33,18 @@ auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 
   const correlationId = c.get("correlationId");
   const config = c.get("config");
   const store = c.get("store");
-  const body = await parseJsonBody(c.req.raw, googleLoginSchema);
+  const body = await parseJsonBody(c, googleLoginSchema);
+  const headers = c.req.header();
+  console.log(`[auth.google-login] Correlation: ${correlationId}, Headers: ${JSON.stringify(headers)}`);
   const frontendClientId = (c.req.header("x-gsi-client-id") ?? "").trim();
   const tokenAudienceHint = parseGoogleTokenAudienceFromJwt(body.id_token);
+
+  logApiEvent("info", "auth.google_login.debug", {
+    correlationId,
+    tokenAudienceHint,
+    frontendClientId,
+    backendClientId: config.googleClientId
+  });
 
   if (frontendClientId !== "" && frontendClientId !== config.googleClientId) {
     logApiEvent("warn", "auth.google_login.frontend_client_id_mismatch", {

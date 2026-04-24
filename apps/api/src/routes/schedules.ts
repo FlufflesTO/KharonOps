@@ -34,7 +34,7 @@ schedules.post("/request-slot", async (c) => {
     return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot request scheduling" } }), 403);
   }
 
-  const body = await parseJsonBody(c.req.raw, scheduleRequestSchema);
+  const body = await parseJsonBody(c, scheduleRequestSchema);
   const job = await store.getJob(body.job_id);
 
   if (!job) {
@@ -88,7 +88,7 @@ schedules.post("/confirm", async (c) => {
     return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot confirm schedule" } }), 403);
   }
 
-  const body = await parseJsonBody(c.req.raw, scheduleConfirmSchema);
+  const body = await parseJsonBody(c, scheduleConfirmSchema);
   let request = await store.getScheduleRequest(body.request_id);
 
   if (!request && config.mode === "local" && body.job_id) {
@@ -171,7 +171,7 @@ schedules.post("/reschedule", async (c) => {
     return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot reschedule" } }), 403);
   }
 
-  const body = await parseJsonBody(c.req.raw, scheduleRescheduleSchema);
+  const body = await parseJsonBody(c, scheduleRescheduleSchema);
   let schedule = await store.getSchedule(body.schedule_id);
 
   if (!schedule && config.mode === "local" && body.job_id) {

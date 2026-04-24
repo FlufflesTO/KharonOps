@@ -36,12 +36,12 @@ export function apiSecurityHeadersMiddleware() {
       c.header("X-Content-Type-Options", "nosniff");
       c.header("X-Frame-Options", "DENY");
       c.header("Referrer-Policy", "strict-origin-when-cross-origin");
-      c.header("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+      c.header("Cross-Origin-Opener-Policy", "unsafe-none");
       
       const csp = [
         "default-src 'self'",
         "script-src 'self' https://accounts.google.com/gsi/client https://static.cloudflareinsights.com",
-        "style-src 'self' https://fonts.googleapis.com https://accounts.google.com/gsi/style",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style",
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: https://*.googleusercontent.com https://accounts.google.com",
         "connect-src 'self' https://accounts.google.com https://cloudflareinsights.com",

@@ -76,7 +76,7 @@ workspace.post("/gmail/notify", requireRoles("dispatcher", "admin"), async (c) =
   const user = getSessionUser(c);
   const config = c.get("config");
   const store = c.get("store");
-  const body = await parseJsonBody(c.req.raw, gmailNotifySchema);
+  const body = await parseJsonBody(c, gmailNotifySchema);
 
   const result = await config.rails.gmail.sendNotification({
     to: body.to,
@@ -98,7 +98,7 @@ workspace.post("/chat/alert", requireRoles("dispatcher", "admin"), async (c) => 
   const user = getSessionUser(c);
   const config = c.get("config");
   const store = c.get("store");
-  const body = await parseJsonBody(c.req.raw, chatAlertSchema);
+  const body = await parseJsonBody(c, chatAlertSchema);
 
   await config.rails.chat.sendAlert({ severity: body.severity, message: body.message });
   await store.appendAudit({
@@ -115,7 +115,7 @@ workspace.post("/people/sync", requireRoles("dispatcher", "admin"), async (c) =>
   const user = getSessionUser(c);
   const config = c.get("config");
   const store = c.get("store");
-  const body = await parseJsonBody(c.req.raw, peopleSyncSchema);
+  const body = await parseJsonBody(c, peopleSyncSchema);
 
   const result = await config.rails.people.syncContact({
     name: body.name,
@@ -138,7 +138,7 @@ workspace.put("/upgrade/skills/:user_id", requireRoles("dispatcher", "admin", "f
   const user = getSessionUser(c);
   const store = c.get("store");
   const user_id = c.req.param("user_id");
-  const body = await parseJsonBody(c.req.raw, skillMatrixUpsertSchema);
+  const body = await parseJsonBody(c, skillMatrixUpsertSchema);
   const skills = await store.listSkillMatrix();
   const existing = skills.find((item) => item.user_id === user_id) ?? null;
   const row = {
