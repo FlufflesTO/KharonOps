@@ -5,10 +5,10 @@
  */
 
 import { Hono } from "hono";
-import { envelopeSuccess } from "@kharon/domain";
+import { envelopeSuccess, enquiryTypeLabel } from "@kharon/domain";
 import { parseJsonBody } from "../services/parse.js";
 import { createStoreContext } from "../services/meta.js";
-import { logApiEvent, enquiryTypeLabel } from "../services/utils.js";
+import { logApiEvent } from "../services/utils.js";
 import { publicContactRequestSchema } from "../schemas/requests.js";
 import type { AppBindings } from "../context.js";
 

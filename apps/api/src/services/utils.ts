@@ -5,6 +5,8 @@
  * Structural Role: Pure utility functions consumed by API and Services.
  */
 
+import { enquiryTypeLabel } from "@kharon/domain";
+
 export function nowIso(): string {
   return new Date().toISOString();
 }
@@ -23,23 +25,6 @@ export function logApiEvent(level: "info" | "warn" | "error", event: string, det
     console.warn(line);
   } else {
     console.log(line);
-  }
-}
-
-export function enquiryTypeLabel(type: "project" | "maintenance" | "urgent_callout" | "compliance" | "resource" | "general"): string {
-  switch (type) {
-    case "project":
-      return "New Project";
-    case "maintenance":
-      return "Maintenance Contract";
-    case "urgent_callout":
-      return "Urgent Callout";
-    case "compliance":
-      return "Compliance Request";
-    case "resource":
-      return "Resource Request";
-    default:
-      return "General Enquiry";
   }
 }
 

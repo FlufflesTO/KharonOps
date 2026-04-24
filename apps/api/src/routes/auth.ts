@@ -14,6 +14,8 @@ import { logApiEvent, parseGoogleTokenAudienceFromJwt } from "../services/utils.
 import { googleLoginSchema } from "../schemas/requests.js";
 import type { AppBindings } from "../context.js";
 import { GoogleAdapterError } from "@kharon/google";
+import { rateLimitMiddleware } from "../middleware/rateLimit.js";
+
 
 const auth = new Hono<AppBindings>();
 
@@ -26,7 +28,7 @@ function syntheticSuperAdminUserid(email: string): string {
   return `SUPER-${compact}`.slice(0, 64);
 }
 
-auth.post("/google-login", async (c) => {
+auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 20 }), async (c) => {
   const correlationId = c.get("correlationId");
   const config = c.get("config");
   const store = c.get("store");

@@ -1349,6 +1349,24 @@ export class PostgresWorkbookStore implements WorkbookStore {
       }
 
       const updated = jobRowFromPg(updatedRes.rows[0] as PgRow);
+      const event = stampEvent({
+        jobid: updated.job_id,
+        eventType: "conflict_resolved",
+        payload: {
+          strategy: args.strategy,
+          status: updated.status,
+          last_note: updated.last_note
+        },
+        ctx: args.ctx
+      });
+
+      await client.query(
+        `INSERT INTO ${this.schema}.svr_job_events
+         (event_id, job_id, event_type, payload_json, row_version, updated_at, updated_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [event.event_id, event.job_id, event.event_type, event.payload_json, event.row_version, event.updated_at, event.updated_by, event.correlation_id]
+      );
+
       await client.query("COMMIT");
       return { job: immutableClone(updated), conflict: null };
     } catch (err) {
@@ -1362,50 +1380,86 @@ export class PostgresWorkbookStore implements WorkbookStore {
   // -- Internal helpers ----------------------------------------------------
 
   /**
-   * Direct job update without going through the full updateJobStatus flow.
-   * Used by applySyncMutations to apply status/note mutations.
+   * Hardened atomic update for jobs with event logging.
+   * Used by applySyncMutations to ensure job state and event log stay in sync.
    */
-  private async _updateJobDirect(
-    job: JobRow,
-    ctx: StoreContext
-  ): Promise<{ job: JobRow; conflict: ConflictPayload | null }> {
+  async _updateJobDirect(job: JobRow, ctx: StoreContext): Promise<{ job: JobRow; conflict: ConflictPayload | null }> {
     const pool = await this.getPool();
-    const now = nowIso();
-    const newVersion = job.row_version + 1;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-    const result = await pool.query(
-      `UPDATE ${this.schema}.svr_jobs
-       SET status = $1, last_note = $2, row_version = $3, updated_at = $4, updated_by = $5, correlation_id = $6
-       WHERE job_id = $7 AND row_version = $8
-       RETURNING *`,
-      [job.status, job.last_note, newVersion, now, ctx.actorUserid, ctx.correlationId, job.job_id, job.row_version]
-    );
+      // Re-verify version under lock
+      const res = await client.query(
+        `SELECT row_version FROM ${this.schema}.svr_jobs WHERE job_id = $1 FOR UPDATE`,
+        [job.job_id]
+      );
 
-    if (result.rows.length === 0) {
-      const refetched = await this.getJob(job.job_id);
-      const refetchedJob = refetched ?? job;
-      return { job: immutableClone(refetchedJob), conflict: toConflict(refetchedJob, job.row_version) };
+      if (res.rows.length === 0) {
+        await client.query("ROLLBACK");
+        throw new Error(`Job ${job.job_id} not found`);
+      }
+
+      const currentVersion = (res.rows[0] as PgRow).row_version;
+      if (currentVersion !== job.row_version) {
+        const refetched = await client.query(`SELECT * FROM ${this.schema}.svr_jobs WHERE job_id = $1`, [job.job_id]);
+        await client.query("ROLLBACK");
+        const refetchedJob = jobRowFromPg(refetched.rows[0] as PgRow);
+        return { job: immutableClone(refetchedJob), conflict: toConflict(refetchedJob, job.row_version) };
+      }
+
+      const now = nowIso();
+      const nextVersion = job.row_version + 1;
+
+      const updatedRes = await client.query(
+        `UPDATE ${this.schema}.svr_jobs 
+         SET status = $1, last_note = $2, row_version = $3, updated_at = $4, updated_by = $5, correlation_id = $6
+         WHERE job_id = $7 AND row_version = $8
+         RETURNING *`,
+        [job.status, job.last_note, nextVersion, now, ctx.actorUserid, ctx.correlationId, job.job_id, job.row_version]
+      );
+
+      if (updatedRes.rows.length === 0) {
+        await client.query("ROLLBACK");
+        throw new Error(`Optimistic lock failure for job ${job.job_id}`);
+      }
+
+      const updated = jobRowFromPg(updatedRes.rows[0] as PgRow);
+
+      // Stamp and insert event
+      const eventType = job.status !== updated.status ? "status_changed" : "note_added";
+      const event = stampEvent({
+        jobid: updated.job_id,
+        eventType,
+        payload: {
+          status: updated.status,
+          last_note: updated.last_note
+        },
+        ctx
+      });
+
+      await client.query(
+        `INSERT INTO ${this.schema}.svr_job_events
+         (event_id, job_id, event_type, payload_json, row_version, updated_at, updated_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [event.event_id, event.job_id, event.event_type, event.payload_json, event.row_version, event.updated_at, event.updated_by, event.correlation_id]
+      );
+
+      await client.query("COMMIT");
+      return { job: immutableClone(updated), conflict: null };
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw err;
+    } finally {
+      client.release();
     }
-
-    const updated = jobRowFromPg(result.rows[0] as PgRow);
-
-    const event = stampEvent({
-      jobid: updated.job_id,
-      eventType: "sync_mutation_applied",
-      payload: { status: updated.status, last_note: updated.last_note },
-      ctx
-    });
-    await this.appendJobEvent(event);
-
-    return { job: immutableClone(updated), conflict: null };
   }
 
-  /**
-   * Graceful shutdown — releases all idle connections and ends the pool.
-   */
   async shutdown(): Promise<void> {
     if (this.poolInstance) {
       await this.poolInstance.end();
+      this.poolInstance = null;
+      this.poolPromise = null;
     }
   }
 }

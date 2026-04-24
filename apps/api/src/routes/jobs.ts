@@ -23,11 +23,23 @@ import { assertComplianceGuardrails } from "../services/compliance.js";
 import { rowVersionConflictResponse } from "../services/responses.js";
 import { noteSchema, statusUpdateSchema } from "../schemas/requests.js";
 import { getSessionUser, requireSession } from "../middleware/auth.js";
+import { rateLimitMiddleware } from "../middleware/rateLimit.js";
 import type { AppBindings } from "../context.js";
+import type { JobRow } from "@kharon/domain";
 
 const jobs = new Hono<AppBindings>();
 
 jobs.use("*", requireSession());
+
+async function enrichJobs(store: AppBindings["Variables"]["store"], rows: JobRow[]) {
+  const sources = await fetchNameSources(store);
+  const { clientNameByid, technicianNameByid } = buildNameLookups(sources);
+  return rows.map((job) => ({
+    ...job,
+    client_name: clientNameByid.get(job.client_id) ?? "",
+    technician_name: technicianNameByid.get(job.technician_id) ?? ""
+  }));
+}
 
 jobs.get("/", async (c) => {
   const correlationId = c.get("correlationId");
@@ -41,22 +53,11 @@ jobs.get("/", async (c) => {
     return c.json(envelopeSuccess({ correlationId, data: cached }));
   }
 
-  const [jobRows, sources] = await Promise.all([
-    store.listJobsForUser(user),
-    fetchNameSources(store)
-  ]);
+  const rows = await store.listJobsForUser(user);
+  const data = await enrichJobs(store, rows);
+  await putCachedJson(c.env, cacheKey, data, 60);
 
-  const { clientNameByid, technicianNameByid } = buildNameLookups(sources);
-
-  const enrichedJobs = jobRows.map((job) => ({
-    ...job,
-    client_name: clientNameByid.get(job.client_id) ?? "",
-    technician_name: technicianNameByid.get(job.technician_id) ?? ""
-  }));
-
-  await putCachedJson(c.env, cacheKey, enrichedJobs, 60);
-
-  return c.json(envelopeSuccess({ correlationId, data: enrichedJobs }));
+  return c.json(envelopeSuccess({ correlationId, data }));
 });
 
 jobs.get("/:job_id", async (c) => {
@@ -74,99 +75,97 @@ jobs.get("/:job_id", async (c) => {
     return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Ownership check failed" } }), 403);
   }
 
-  const sources = await fetchNameSources(store);
-  const { clientNameByid, technicianNameByid } = buildNameLookups(sources);
-
-  const enrichedJob = {
-    ...job,
-    client_name: clientNameByid.get(job.client_id) ?? "",
-    technician_name: technicianNameByid.get(job.technician_id) ?? ""
-  };
+  const [enrichedJob] = await enrichJobs(store, [job]);
 
   return c.json(envelopeSuccess({ correlationId, rowVersion: job.row_version, data: enrichedJob }));
 });
 
-jobs.post("/:job_id/status", async (c) => {
-  const correlationId = c.get("correlationId");
-  const user = getSessionUser(c);
-  const store = c.get("store");
-  const jobid = c.req.param("job_id");
-  const body = await parseJsonBody(c.req.raw, statusUpdateSchema);
+jobs.on(["POST", "PATCH"], "/:job_id/status",
+  rateLimitMiddleware({ windowMs: 60000, max: 10 }), 
+  async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const store = c.get("store");
+    const jobid = c.req.param("job_id");
+    const payload = await parseJsonBody(c.req.raw, statusUpdateSchema);
+    const { status, row_version } = payload;
 
-  const existing = await store.getJob(jobid);
-  if (!existing) {
-    return c.json(envelopeError({ correlationId, error: { code: "not_found", message: "Job not found" } }), 404);
-  }
+    const job = await store.getJob(jobid);
+    if (!job) {
+      return c.json(envelopeError({ correlationId, error: { code: "not_found", message: "Job not found" } }), 404);
+    }
 
-  if (!canUpdateJobStatus(user, existing, body.status)) {
-    return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Access denied" } }), 403);
-  }
+    if (!canUpdateJobStatus(user, job, status)) {
+      return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot update job to requested status" } }), 403);
+    }
 
-  if (!canTransitionStatus(existing.status, body.status)) {
-    return c.json(envelopeError({
-      correlationId,
-      rowVersion: existing.row_version,
-      error: {
-        code: "invalid_status_transition",
-        message: `Invalid transition ${existing.status} -> ${body.status}`,
-        details: { allowed: listAllowedStatusTransitions(existing.status) }
-      }
-    }), 400);
-  }
+    if (!canTransitionStatus(job.status, status)) {
+      return c.json(envelopeError({ 
+        correlationId,
+        rowVersion: job.row_version,
+        error: { 
+          code: "invalid_status_transition",
+          message: `Invalid transition ${job.status} -> ${status}`,
+          details: { allowed: listAllowedStatusTransitions(job.status) }
+        } 
+      }), 400);
+    }
 
-  const guardrailFailure = await assertComplianceGuardrails(store, existing, body.status, correlationId, user.user_id);
-  if (guardrailFailure) {
-    await store.appendAudit({
-      action: "compliance.guardrail.block",
-      payload: { job_id: existing.job_id, reason: guardrailFailure },
-      ctx: createStoreContext(user.user_id, correlationId),
-      entry_type: "compliance_guardrail"
+    const guardrailFailure = await assertComplianceGuardrails(store, job, status, correlationId, user.user_id);
+    if (guardrailFailure) {
+      await store.appendAudit({
+        action: "compliance.guardrail.block",
+        payload: { job_id: job.job_id, reason: guardrailFailure },
+        ctx: createStoreContext(user.user_id, correlationId),
+        entry_type: "compliance_guardrail"
+      });
+      return c.json(envelopeError({ correlationId, rowVersion: job.row_version, error: { code: "compliance_failed", message: guardrailFailure } }), 400);
+    }
+
+    const result = await store.updateJobStatus({
+      jobid,
+      status,
+      expectedRowVersion: row_version,
+      ctx: createStoreContext(user.user_id, correlationId)
     });
-    return c.json(envelopeError({ correlationId, rowVersion: existing.row_version, error: { code: "compliance_failed", message: guardrailFailure } }), 400);
-  }
 
-  const update = await store.updateJobStatus({
-    jobid,
-    status: body.status,
-    expectedRowVersion: body.row_version,
-    ctx: createStoreContext(user.user_id, correlationId)
-  });
+    if (result.conflict) {
+      return c.json(rowVersionConflictResponse(correlationId, result.job.row_version, result.conflict), 409);
+    }
 
-  if (update.conflict) {
-    return c.json(rowVersionConflictResponse(correlationId, update.job.row_version, update.conflict), 409);
-  }
-
-  return c.json(envelopeSuccess({ correlationId, rowVersion: update.job.row_version, data: update.job }));
+    return c.json(envelopeSuccess({ correlationId, rowVersion: result.job.row_version, data: result.job }));
 });
 
-jobs.post("/:job_id/note", async (c) => {
-  const correlationId = c.get("correlationId");
-  const user = getSessionUser(c);
-  const store = c.get("store");
-  const jobid = c.req.param("job_id");
-  const body = await parseJsonBody(c.req.raw, noteSchema);
+jobs.post("/:job_id/note", 
+  rateLimitMiddleware({ windowMs: 60000, max: 15 }), 
+  async (c) => {
+    const correlationId = c.get("correlationId");
+    const user = getSessionUser(c);
+    const store = c.get("store");
+    const jobid = c.req.param("job_id");
+    const payload = await parseJsonBody(c.req.raw, noteSchema);
 
-  const existing = await store.getJob(jobid);
-  if (!existing) {
-    return c.json(envelopeError({ correlationId, error: { code: "not_found", message: "Job not found" } }), 404);
-  }
+    const job = await store.getJob(jobid);
+    if (!job) {
+      return c.json(envelopeError({ correlationId, error: { code: "not_found", message: "Job not found" } }), 404);
+    }
 
-  if (!canWriteJobNote(user, existing)) {
-    return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Access denied" } }), 403);
-  }
+    if (!canWriteJobNote(user, job)) {
+      return c.json(envelopeError({ correlationId, error: { code: "forbidden", message: "Role cannot write job notes" } }), 403);
+    }
 
-  const update = await store.appendJobNote({
-    jobid,
-    note: body.note,
-    expectedRowVersion: body.row_version,
-    ctx: createStoreContext(user.user_id, correlationId)
-  });
+    const result = await store.appendJobNote({
+      jobid,
+      note: payload.note,
+      expectedRowVersion: payload.row_version,
+      ctx: createStoreContext(user.user_id, correlationId)
+    });
 
-  if (update.conflict) {
-    return c.json(rowVersionConflictResponse(correlationId, update.job.row_version, update.conflict), 409);
-  }
+    if (result.conflict) {
+      return c.json(rowVersionConflictResponse(correlationId, result.job.row_version, result.conflict), 409);
+    }
 
-  return c.json(envelopeSuccess({ correlationId, rowVersion: update.job.row_version, data: update.job }));
+    return c.json(envelopeSuccess({ correlationId, rowVersion: result.job.row_version, data: result.job }));
 });
 
 export default jobs;

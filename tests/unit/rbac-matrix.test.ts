@@ -42,6 +42,15 @@ describe("RBAC matrix", () => {
     expect(canUpdateJobStatus(user("client", "CLI-001"), job)).toBe(false);
   });
 
+  it("limits assigned technician status updates to field outcomes", () => {
+    const technician = user("technician", "", "TECH-001");
+
+    expect(canUpdateJobStatus(technician, job, "performed")).toBe(true);
+    expect(canUpdateJobStatus(technician, job, "cancelled")).toBe(true);
+    expect(canUpdateJobStatus(technician, job, "approved")).toBe(false);
+    expect(canUpdateJobStatus(user("technician", "", "TECH-999"), job, "performed")).toBe(false);
+  });
+
   it("restricts document publish to dispatcher/admin", () => {
     expect(canPublishDocument("dispatcher")).toBe(true);
     expect(canPublishDocument("admin")).toBe(true);

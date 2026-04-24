@@ -13,6 +13,9 @@ export type JobStatus =
 
 export type DocumentType = "jobcard" | "service_report" | "certificate";
 
+export type EnquiryType = "project" | "maintenance" | "urgent_callout" | "compliance" | "resource" | "general";
+
+
 export interface MutableMeta {
   row_version: number;
   updated_at: string;

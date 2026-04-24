@@ -124,23 +124,43 @@ export class DualWorkbookStore implements WorkbookStore {
   // -- User operations -----------------------------------------------------
 
   async getUserByEmail(email: string): Promise<UserRow | null> {
-    return this.primary.getUserByEmail(email);
+    return this.executeReadOperation(
+      `getUserByEmail(${email})`,
+      () => this.primary.getUserByEmail(email),
+      () => this.mirror.getUserByEmail(email)
+    );
   }
 
   async listUsers(): Promise<UserRow[]> {
-    return this.primary.listUsers();
+    return this.executeReadOperation(
+      "listUsers",
+      () => this.primary.listUsers(),
+      () => this.mirror.listUsers()
+    );
   }
 
   async listClients(): Promise<ClientRow[]> {
-    return this.primary.listClients();
+    return this.executeReadOperation(
+      "listClients",
+      () => this.primary.listClients(),
+      () => this.mirror.listClients()
+    );
   }
 
   async listTechnicians(): Promise<TechnicianRow[]> {
-    return this.primary.listTechnicians();
+    return this.executeReadOperation(
+      "listTechnicians",
+      () => this.primary.listTechnicians(),
+      () => this.mirror.listTechnicians()
+    );
   }
 
   async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {
-    return this.primary.listFinanceQuotes();
+    return this.executeReadOperation(
+      "listFinanceQuotes",
+      () => this.primary.listFinanceQuotes(),
+      () => this.mirror.listFinanceQuotes()
+    );
   }
 
   async createFinanceQuote(row: FinanceQuoteRow): Promise<void> {
@@ -159,7 +179,11 @@ export class DualWorkbookStore implements WorkbookStore {
   }
 
   async listFinanceInvoices(): Promise<FinanceInvoiceRow[]> {
-    return this.primary.listFinanceInvoices();
+    return this.executeReadOperation(
+      "listFinanceInvoices",
+      () => this.primary.listFinanceInvoices(),
+      () => this.mirror.listFinanceInvoices()
+    );
   }
 
   async createFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
@@ -173,7 +197,11 @@ export class DualWorkbookStore implements WorkbookStore {
   }
 
   async listFinanceStatements(): Promise<FinanceStatementRow[]> {
-    return this.primary.listFinanceStatements();
+    return this.executeReadOperation(
+      "listFinanceStatements",
+      () => this.primary.listFinanceStatements(),
+      () => this.mirror.listFinanceStatements()
+    );
   }
 
   async replaceFinanceStatements(rows: FinanceStatementRow[]): Promise<void> {
@@ -182,7 +210,11 @@ export class DualWorkbookStore implements WorkbookStore {
   }
 
   async listFinanceDebtors(): Promise<FinanceDebtorRow[]> {
-    return this.primary.listFinanceDebtors();
+    return this.executeReadOperation(
+      "listFinanceDebtors",
+      () => this.primary.listFinanceDebtors(),
+      () => this.mirror.listFinanceDebtors()
+    );
   }
 
   async replaceFinanceDebtors(rows: FinanceDebtorRow[]): Promise<void> {
@@ -191,11 +223,19 @@ export class DualWorkbookStore implements WorkbookStore {
   }
 
   async listEscrowRows(): Promise<EscrowRow[]> {
-    return this.primary.listEscrowRows();
+    return this.executeReadOperation(
+      "listEscrowRows",
+      () => this.primary.listEscrowRows(),
+      () => this.mirror.listEscrowRows()
+    );
   }
 
   async getEscrowByDocument(document_id: string): Promise<EscrowRow | null> {
-    return this.primary.getEscrowByDocument(document_id);
+    return this.executeReadOperation(
+      `getEscrowByDocument(${document_id})`,
+      () => this.primary.getEscrowByDocument(document_id),
+      () => this.mirror.getEscrowByDocument(document_id)
+    );
   }
 
   async upsertEscrow(row: EscrowRow): Promise<void> {
@@ -214,12 +254,44 @@ export class DualWorkbookStore implements WorkbookStore {
 
   // -- Job operations ------------------------------------------------------
 
+  /**
+   * Execute a read operation with fallback to mirror if primary fails
+   */
+  private async executeReadOperation<T>(
+    operationName: string,
+    primaryOperation: () => Promise<T>,
+    mirrorOperation: () => Promise<T>
+  ): Promise<T> {
+    try {
+      return await primaryOperation();
+    } catch (primaryError) {
+      console.warn(`Primary store failed for ${operationName}, falling back to mirror`, primaryError);
+      try {
+        return await mirrorOperation();
+      } catch (mirrorError) {
+        console.error(`Both primary and mirror failed for ${operationName}`, { 
+          primaryError: (primaryError as Error).message, 
+          mirrorError: (mirrorError as Error).message 
+        });
+        throw primaryError; // Throw the primary error as it occurred first
+      }
+    }
+  }
+
   async listJobsForUser(user: SessionUser): Promise<JobRow[]> {
-    return this.primary.listJobsForUser(user);
+    return this.executeReadOperation(
+      "listJobsForUser",
+      () => this.primary.listJobsForUser(user),
+      () => this.mirror.listJobsForUser(user)
+    );
   }
 
   async getJob(jobid: string): Promise<JobRow | null> {
-    return this.primary.getJob(jobid);
+    return this.executeReadOperation(
+      `getJob(${jobid})`,
+      () => this.primary.getJob(jobid),
+      () => this.mirror.getJob(jobid)
+    );
   }
 
   async updateJobStatus(args: {
@@ -273,6 +345,41 @@ export class DualWorkbookStore implements WorkbookStore {
     );
   }
 
+  // Add fallback to other read operations
+  async getDocument(documentid: string): Promise<JobDocumentRow | null> {
+    return this.executeReadOperation(
+      `getDocument(${documentid})`,
+      () => this.primary.getDocument(documentid),
+      () => this.mirror.getDocument(documentid)
+    );
+  }
+
+  async listDocuments(jobid?: string): Promise<JobDocumentRow[]> {
+    return this.executeReadOperation(
+      "listDocuments",
+      () => this.primary.listDocuments(jobid),
+      () => this.mirror.listDocuments(jobid)
+    );
+  }
+
+  async getSchedule(scheduleid: string): Promise<ScheduleRow | null> {
+    return this.executeReadOperation(
+      `getSchedule(${scheduleid})`,
+      () => this.primary.getSchedule(scheduleid),
+      () => this.mirror.getSchedule(scheduleid)
+    );
+  }
+
+  async listSchedules(jobid?: string): Promise<ScheduleRow[]> {
+    return this.executeReadOperation(
+      "listSchedules",
+      () => this.primary.listSchedules(jobid),
+      () => this.mirror.listSchedules(jobid)
+    );
+  }
+
+  // Add similar fallbacks for other read operations as needed...
+
   // -- Schedule operations -------------------------------------------------
 
   async createScheduleRequest(row: ScheduleRequestRow): Promise<void> {
@@ -310,14 +417,6 @@ export class DualWorkbookStore implements WorkbookStore {
     );
   }
 
-  async getSchedule(scheduleid: string): Promise<ScheduleRow | null> {
-    return this.primary.getSchedule(scheduleid);
-  }
-
-  async listSchedules(jobid?: string): Promise<ScheduleRow[]> {
-    return this.primary.listSchedules(jobid);
-  }
-
   async upsertSchedule(row: ScheduleRow): Promise<void> {
     await this.primary.upsertSchedule(row);
     await this._mirrorWrite(
@@ -338,10 +437,6 @@ export class DualWorkbookStore implements WorkbookStore {
     );
   }
 
-  async getDocument(documentid: string): Promise<JobDocumentRow | null> {
-    return this.primary.getDocument(documentid);
-  }
-
   async upsertDocument(row: JobDocumentRow): Promise<void> {
     await this.primary.upsertDocument(row);
     await this._mirrorWrite(
@@ -349,10 +444,6 @@ export class DualWorkbookStore implements WorkbookStore {
       row.document_id,
       () => this.mirror.upsertDocument(row)
     );
-  }
-
-  async listDocuments(jobid?: string): Promise<JobDocumentRow[]> {
-    return this.primary.listDocuments(jobid);
   }
 
   // -- Audit operations ----------------------------------------------------
@@ -414,7 +505,11 @@ export class DualWorkbookStore implements WorkbookStore {
   }
 
   async listJobEventsByJob(jobid: string): Promise<JobEventRow[]> {
-    return this.primary.listJobEventsByJob(jobid);
+    return this.executeReadOperation(
+      `listJobEventsByJob(${jobid})`,
+      () => this.primary.listJobEventsByJob(jobid),
+      () => this.mirror.listJobEventsByJob(jobid)
+    );
   }
 
   // -- Sync operations -----------------------------------------------------

@@ -37,11 +37,13 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
           schemaReady = true;
         })
         .catch((error) => {
+          // Reset the promise on error so subsequent calls can retry
           schemaInitPromise = null;
           throw error;
         });
     }
 
+    // Wait for the schema initialization to complete
     await schemaInitPromise;
   };
 
@@ -165,7 +167,9 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   });
 
   app.route("/api/v1/auth", auth);
-  app.route("/api/v1/jobs", jobs);
+  app.get("/health", (c) => c.json({ status: "ok" }));
+
+app.route("/api/v1/jobs", jobs);
   app.route("/api/v1/schedules", schedules);
   app.route("/api/v1/workspace", workspace);
   app.route("/api/v1/documents", documents);
@@ -222,7 +226,53 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
   return app;
 }
 
-const runtimeAppCache = new Map<string, Hono<AppBindings>>();
+const MAX_CACHE_SIZE = 100; // Maximum number of cached apps
+
+class LRUCache<K, V> {
+  private cache = new Map<K, V>();
+  private keys: K[] = [];
+
+  constructor(private maxSize: number = MAX_CACHE_SIZE) {}
+
+  get(key: K): V | undefined {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      // Move key to end to mark as recently used
+      this.keys = [...this.keys.filter(k => k !== key), key];
+    }
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    if (this.cache.size >= this.maxSize) {
+      // Remove least recently used item
+      const lruKey = this.keys.shift();
+      if (lruKey !== undefined) {
+        this.cache.delete(lruKey);
+      }
+    }
+    
+    this.cache.set(key, value);
+    this.keys.push(key);
+  }
+
+  delete(key: K): boolean {
+    const result = this.cache.delete(key);
+    this.keys = this.keys.filter(k => k !== key);
+    return result;
+  }
+
+  clear(): void {
+    this.cache.clear();
+    this.keys = [];
+  }
+
+  get size(): number {
+    return this.cache.size;
+  }
+}
+
+const runtimeAppCache = new LRUCache<string, Hono<AppBindings>>();
 let processEnvApp: Hono<AppBindings> | null = null;
 
 function getProcessEnvApp(): Hono<AppBindings> {

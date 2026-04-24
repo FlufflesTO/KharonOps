@@ -1,3 +1,10 @@
+/**
+ * Project KharonOps - Security Middleware
+ * Purpose: Enforce security headers and CSP policies for the API.
+ * Dependencies: hono
+ * Structural Role: Middleware layer for infrastructure hardening.
+ */
+
 import { createMiddleware } from "hono/factory";
 import type { AppBindings } from "../context.js";
 
@@ -33,8 +40,8 @@ export function apiSecurityHeadersMiddleware() {
       
       const csp = [
         "default-src 'self'",
-        "script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' https://accounts.google.com/gsi/client https://static.cloudflareinsights.com",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style",
+        "script-src 'self' https://accounts.google.com/gsi/client https://static.cloudflareinsights.com",
+        "style-src 'self' https://fonts.googleapis.com https://accounts.google.com/gsi/style",
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: https://*.googleusercontent.com https://accounts.google.com",
         "connect-src 'self' https://accounts.google.com https://cloudflareinsights.com",

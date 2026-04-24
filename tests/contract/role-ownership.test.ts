@@ -34,4 +34,36 @@ describe("contract: role and ownership boundaries", () => {
 
     expect(response.status).toBe(403);
   });
+
+  it("blocks assigned technician from approving completed work", async () => {
+    const app = makeTestApp();
+    const cookie = await loginAs(app, "dev-technician");
+
+    const performed = await app.request("/api/v1/jobs/JOB-1001/status", {
+      method: "POST",
+      headers: {
+        cookie,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        status: "performed",
+        row_version: 1
+      })
+    });
+    expect(performed.status).toBe(200);
+
+    const approved = await app.request("/api/v1/jobs/JOB-1001/status", {
+      method: "POST",
+      headers: {
+        cookie,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        status: "approved",
+        row_version: 2
+      })
+    });
+
+    expect(approved.status).toBe(403);
+  });
 });

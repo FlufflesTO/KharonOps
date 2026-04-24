@@ -4,42 +4,6 @@ import {
   bumpMutableMeta,
   canReadJob,
   canTransitionStatus,
-  nowIso,
-  normalizeValue,
-  field,
-  firstNonEmpty,
-  toNum,
-  stringifyRow,
-  normalizeToken,
-  parseBoolean,
-  boolString,
-  legacyBool,
-  asDateCell,
-  safeJsonParse,
-  jobStatusLabel,
-  parseJobStatus,
-  parseJobTitle,
-  parseUserRow,
-  parseClientRow,
-  parseTechnicianRow,
-  parseJobRow,
-  parseScheduleRequest,
-  parseSchedule,
-  parseAutomation,
-  parseSyncQueue,
-  parseJobEvent,
-  parseFinanceQuote,
-  parseFinanceInvoice,
-  parseFinanceStatement,
-  parseFinanceDebtor,
-  parseEscrow,
-  parseSkillMatrix,
-  parseDocumentRow,
-  serializeDocumentRow,
-  serializePortalFileRow,
-  findPortalFileForDocument,
-  serializeJobRow,
-  serializeJobEventRow,
   type EscrowRow,
   type ApiError,
   type AutomationJobRow,
@@ -60,16 +24,54 @@ import {
   type SkillMatrixRow,
   type ClientRow,
   type TechnicianRow,
-  type UserRow
+  type UserRow,
+  normalizeValue,
+  field,
+  firstNonEmpty,
+  toNum,
+  normalizeToken,
+  parseBoolean,
+  boolString,
+  legacyBool,
+  asDateCell,
+  safeJsonParse,
+  jobStatusLabel,
+  parseJobStatus,
+  parseUserRow,
+  parseClientRow,
+  parseTechnicianRow,
+  parseJobRow,
+  parseScheduleRequest,
+  parseSchedule,
+  parseJobEvent,
+  parseFinanceQuote,
+  parseFinanceInvoice,
+  parseFinanceStatement,
+  parseFinanceDebtor,
+  parseEscrow,
+  parseSkillMatrix,
+  parseAutomationJob as parseAutomation,
+  parseSyncQueueRow as parseSyncQueue,
+  parseDocumentRow,
+  serializeJobRow,
+  serializeJobEventRow,
+  serializeDocumentRow as mapSerializeDocumentRow,
+  serializePortalFileRow as mapSerializePortalFileRow,
+  findPortalFileForDocument as mapPortalFileForDocument
 } from "@kharon/domain";
 import type { WorkspaceRails } from "@kharon/google";
 import type { WorkbookStore } from "./types.js";
 
-type Row = Record<string, unknown>;
+type Row = Record<string, string>;
 
-function toSheetRow(record: object): Record<string, string> {
-  return stringifyRow(record as Record<string, unknown>);
+function stringifyRow(record: object): Row {
+  const row: Row = {};
+  for (const [key, value] of Object.entries(record)) {
+    row[key] = String(value ?? "");
+  }
+  return row;
 }
+
 
 function conflictFor(job: JobRow, expected: number): ConflictPayload {
   return buildConflict({
@@ -80,6 +82,12 @@ function conflictFor(job: JobRow, expected: number): ConflictPayload {
     serverRowVersion: job.row_version
   });
 }
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+
 
 export class SheetsWorkbookStore implements WorkbookStore {
   private readonly rowCache = new Map<string, { rows: Row[]; expiresAt: number }>();
@@ -163,7 +171,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async createFinanceQuote(row: FinanceQuoteRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Finance_Quotes", "quote_id", toSheetRow(row));
+    await this.rails.sheets.upsertRow("Finance_Quotes", "quote_id", stringifyRow(row));
   }
 
   async updateFinanceQuoteStatus(args: {
@@ -179,7 +187,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
       status: args.status,
       ...bumpMutableMeta(current, args.ctx.actorUserid, args.ctx.correlationId)
     };
-    await this.rails.sheets.upsertRow("Finance_Quotes", "quote_id", toSheetRow(updated));
+    await this.rails.sheets.upsertRow("Finance_Quotes", "quote_id", stringifyRow(updated));
     return updated;
   }
 
@@ -188,11 +196,11 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async createFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Finance_Invoices", "invoice_id", toSheetRow(row));
+    await this.rails.sheets.upsertRow("Finance_Invoices", "invoice_id", stringifyRow(row));
   }
 
   async updateFinanceInvoice(row: FinanceInvoiceRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Finance_Invoices", "invoice_id", toSheetRow(row));
+    await this.rails.sheets.upsertRow("Finance_Invoices", "invoice_id", stringifyRow(row));
   }
 
   async listFinanceStatements(): Promise<FinanceStatementRow[]> {
@@ -201,7 +209,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
 
   async replaceFinanceStatements(rows: FinanceStatementRow[]): Promise<void> {
     for (const row of rows) {
-      await this.rails.sheets.upsertRow("Finance_Statements", "statement_id", toSheetRow(row));
+      await this.rails.sheets.upsertRow("Finance_Statements", "statement_id", stringifyRow(row));
     }
   }
 
@@ -211,7 +219,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
 
   async replaceFinanceDebtors(rows: FinanceDebtorRow[]): Promise<void> {
     for (const row of rows) {
-      await this.rails.sheets.upsertRow("Finance_Debtors", "client_id", toSheetRow(row));
+      await this.rails.sheets.upsertRow("Finance_Debtors", "client_id", stringifyRow(row));
     }
   }
 
@@ -225,7 +233,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async upsertEscrow(row: EscrowRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Compliance_Escrow", "document_id", toSheetRow(row));
+    await this.rails.sheets.upsertRow("Compliance_Escrow", "document_id", stringifyRow(row));
   }
 
   async listSkillMatrix(): Promise<SkillMatrixRow[]> {
@@ -233,7 +241,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async upsertSkillMatrix(row: SkillMatrixRow): Promise<void> {
-    await this.rails.sheets.upsertRow("HR_Skills_Matrix", "user_id", toSheetRow(row));
+    await this.rails.sheets.upsertRow("HR_Skills_Matrix", "user_id", stringifyRow(row));
   }
 
   async listJobsForUser(user: SessionUser): Promise<JobRow[]> {
@@ -271,7 +279,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
       ...bumpMutableMeta(current, args.ctx.actorUserid, args.ctx.correlationId)
     };
 
-    await this.rails.sheets.upsertRow("Jobs_Master", "job_id", toSheetRow(serializeJobRow(updated, currentRaw)));
+    await this.rails.sheets.upsertRow("Jobs_Master", "job_id", serializeJobRow(updated, currentRaw));
     const statusEventMeta = { updated_at: nowIso(), updated_by: args.ctx.actorUserid, correlation_id: args.ctx.correlationId, row_version: 1 };
       await this.appendJobEvent({
         event_id: `EVT-${crypto.randomUUID()}`,
@@ -308,7 +316,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
       ...bumpMutableMeta(current, args.ctx.actorUserid, args.ctx.correlationId)
     };
 
-    await this.rails.sheets.upsertRow("Jobs_Master", "job_id", toSheetRow(serializeJobRow(updated, currentRaw)));
+    await this.rails.sheets.upsertRow("Jobs_Master", "job_id", serializeJobRow(updated, currentRaw));
     const noteEventMeta = { updated_at: nowIso(), updated_by: args.ctx.actorUserid, correlation_id: args.ctx.correlationId, row_version: 1 };
       await this.appendJobEvent({
         event_id: `EVT-${crypto.randomUUID()}`,
@@ -324,11 +332,11 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async appendJobEvent(event: JobEventRow): Promise<void> {
-    await this.rails.sheets.appendRow("Job_Events", toSheetRow(serializeJobEventRow(event)));
+    await this.rails.sheets.appendRow("Job_Events", serializeJobEventRow(event));
   }
 
   async createScheduleRequest(row: ScheduleRequestRow): Promise<void> {
-    await this.rails.sheets.appendRow("Schedule_Requests", toSheetRow(row));
+    await this.rails.sheets.appendRow("Schedule_Requests", stringifyRow(row));
   }
 
   async getScheduleRequest(requestid: string): Promise<ScheduleRequestRow | null> {
@@ -344,11 +352,11 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async upsertScheduleRequest(row: ScheduleRequestRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Schedule_Requests", "request_id", toSheetRow(row));
+    await this.rails.sheets.upsertRow("Schedule_Requests", "request_id", stringifyRow(row));
   }
 
   async createSchedule(row: ScheduleRow): Promise<void> {
-    await this.rails.sheets.appendRow("Schedules_Master", toSheetRow(row));
+    await this.rails.sheets.appendRow("Schedules_Master", stringifyRow(row));
   }
 
   async getSchedule(scheduleid: string): Promise<ScheduleRow | null> {
@@ -364,13 +372,13 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async upsertSchedule(row: ScheduleRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Schedules_Master", "schedule_id", toSheetRow(row));
+    await this.rails.sheets.upsertRow("Schedules_Master", "schedule_id", stringifyRow(row));
   }
 
   async createDocument(row: JobDocumentRow): Promise<void> {
     const relatedJob = (await this.getRawJobRow(row.job_id)) ?? {};
-    await this.rails.sheets.appendRow("Job_Documents", toSheetRow(serializeDocumentRow(row, {}, relatedJob)));
-    await this.rails.sheets.upsertRow("Portal_Files", "file_id", toSheetRow(serializePortalFileRow(row, {}, relatedJob)));
+    await this.rails.sheets.appendRow("Job_Documents", mapSerializeDocumentRow(row, {}, relatedJob));
+    await this.rails.sheets.upsertRow("Portal_Files", "file_id", mapSerializePortalFileRow(row, {}, relatedJob));
     this.invalidateRows("Job_Documents", "Portal_Files");
   }
 
@@ -381,7 +389,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
     }
 
     const portalFiles = await this.rows("Portal_Files");
-    return parseDocumentRow(row, findPortalFileForDocument(row, portalFiles));
+    return parseDocumentRow(row, mapPortalFileForDocument(row, portalFiles));
   }
 
   async upsertDocument(row: JobDocumentRow): Promise<void> {
@@ -392,10 +400,10 @@ export class SheetsWorkbookStore implements WorkbookStore {
       field(existingDocument, "document_id") !== ""
         ? existingDocument
         : { document_id: row.document_id, job_id: row.job_id, document_type: String(row.document_type) };
-    const existingPortalFile = findPortalFileForDocument(portalLookupSource as Row, portalFiles) ?? {};
+    const existingPortalFile = mapPortalFileForDocument(portalLookupSource as Row, portalFiles) ?? {};
 
-    await this.rails.sheets.upsertRow("Job_Documents", "document_id", toSheetRow(serializeDocumentRow(row, existingDocument, relatedJob)));
-    await this.rails.sheets.upsertRow("Portal_Files", "file_id", toSheetRow(serializePortalFileRow(row, existingPortalFile as Record<string, string>, relatedJob)));
+    await this.rails.sheets.upsertRow("Job_Documents", "document_id", mapSerializeDocumentRow(row, existingDocument, relatedJob));
+    await this.rails.sheets.upsertRow("Portal_Files", "file_id", mapSerializePortalFileRow(row, existingPortalFile, relatedJob));
     this.invalidateRows("Job_Documents", "Portal_Files");
   }
 
@@ -403,7 +411,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
     const [documentRows, portalFiles] = await Promise.all([this.rows("Job_Documents"), this.rows("Portal_Files")]);
     return documentRows
       .filter((row) => (jobid ? field(row, "job_id") === jobid : true))
-      .map((row) => parseDocumentRow(row, findPortalFileForDocument(row, portalFiles)));
+      .map((row) => parseDocumentRow(row, mapPortalFileForDocument(row, portalFiles)));
   }
 
   async appendAudit(args: {
@@ -427,11 +435,11 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async listAudits(): Promise<Array<Record<string, string>>> {
-    return (await this.rows("Ledger")).map(toSheetRow);
+    return this.rows("Ledger");
   }
 
   async upsertAutomationJob(row: AutomationJobRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Automation_Jobs", "automation_job_id", toSheetRow(row));
+    await this.rails.sheets.upsertRow("Automation_Jobs", "automation_job_id", stringifyRow(row));
   }
 
   async getAutomationJob(automationJobid: string): Promise<AutomationJobRow | null> {
@@ -446,7 +454,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
   }
 
   async upsertSyncQueue(row: SyncQueueRow): Promise<void> {
-    await this.rails.sheets.upsertRow("Sync_Queue", "mutation_id", toSheetRow(row));
+    await this.rails.sheets.upsertRow("Sync_Queue", "mutation_id", stringifyRow(row));
   }
 
   async getSyncQueue(mutationid: string): Promise<SyncQueueRow | null> {
@@ -538,7 +546,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
           ...bumpMutableMeta(job, args.ctx.actorUserid, args.ctx.correlationId)
         };
 
-        await this.rails.sheets.upsertRow("Jobs_Master", "job_id", toSheetRow(serializeJobRow(updated, rawJob)));
+        await this.rails.sheets.upsertRow("Jobs_Master", "job_id", serializeJobRow(updated, rawJob));
         await this.upsertSyncQueue({
           mutation_id: mutation.mutation_id,
           job_id: mutation.job_id,
@@ -609,7 +617,7 @@ export class SheetsWorkbookStore implements WorkbookStore {
       ...job,
       ...bumpMutableMeta(job, args.ctx.actorUserid, args.ctx.correlationId)
     };
-    await this.rails.sheets.upsertRow("Jobs_Master", "job_id", toSheetRow(serializeJobRow(updated, rawJob)));
+    await this.rails.sheets.upsertRow("Jobs_Master", "job_id", serializeJobRow(updated, rawJob));
 
     return { job: updated, conflict: null };
   }

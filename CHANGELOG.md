@@ -2,6 +2,18 @@
 
 All notable changes to the KharonOps project are documented in this file.
 
+## [Unreleased] - 2026-04-24
+
+### [Changed]
+- **Normalization Logic Consolidation:**
+  - Migrated redundant value normalization logic (`normalizeValue`, `field`, `toNum`, `parseBoolean`, etc.) from `apps/api` to `@kharon/domain`.
+  - Consolidated string labeling and formatting helpers (`enquiryTypeLabel`, `formatLabel`, `formatStatusIcon`, `formatDateTime`, `formatDateOnly`, `formatTimeOnly`) into `@kharon/domain`.
+  - Refactored `apps/api/src/services/utils.ts` and `apps/api/src/services/documentTokens.ts` to consume domain-level utilities.
+  - Updated `apps/api/src/routes/public.ts` to import `enquiryTypeLabel` from the domain package.
+- **Type Safety Hardening:**
+  - Added `EnquiryType` union to `@kharon/domain` types.
+  - Verified codebase integrity via `tsc --noEmit` across `apps/api` and `packages/domain`.
+
 ## [Unreleased] - 2026-04-23
 
 ### [Changed]

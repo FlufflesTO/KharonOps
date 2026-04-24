@@ -6,3 +6,4 @@ export * from "./schema.js";
 export * from "./concurrency.js";
 export * from "./offline.js";
 export * from "./workbook.js";
+export * from "./normalize.js";

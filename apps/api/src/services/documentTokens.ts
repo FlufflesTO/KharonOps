@@ -1,3 +1,10 @@
+import { 
+  formatDateTime, 
+  formatDateOnly, 
+  formatLabel, 
+  formatStatusIcon, 
+  formatTimeOnly 
+} from "@kharon/domain";
 import type { DocumentType, JobRow, SessionUser, UserRow } from "@kharon/domain";
 import type { StructuralToken } from "@kharon/google";
 import { generateQrDataUri } from "./qr.js";
@@ -5,40 +12,6 @@ import { generateQrDataUri } from "./qr.js";
 const BRAND_NAME = "Kharon Fire & Security Solutions";
 const BRAND_SHORT_NAME = "Kharon";
 const BRAND_PORTAL_NAME = "Kharon Command Centre";
-const DOCUMENT_TIME_ZONE = "Africa/Johannesburg";
-
-function formatStatusIcon(value: string | undefined): string {
-  if (value === "PASS") {
-    return "☑ PASS";
-  }
-  if (value === "FAIL") {
-    return "☒ FAIL";
-  }
-  return "☐ N/A";
-}
-
-function formatLabel(value: string | undefined): string {
-  if (!value) return "";
-  return value
-    .split(/[_-]/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-function formatDateTime(iso: string | undefined): string {
-  if (!iso) return "N/A";
-  return new Date(iso).toLocaleString("en-ZA", { timeZone: DOCUMENT_TIME_ZONE });
-}
-
-function formatDateOnly(iso: string | undefined): string {
-  if (!iso) return "N/A";
-  return new Date(iso).toLocaleDateString("en-ZA", { timeZone: DOCUMENT_TIME_ZONE });
-}
-
-function formatTimeOnly(iso: string | undefined): string {
-  if (!iso) return "N/A";
-  return new Date(iso).toLocaleTimeString("en-ZA", { timeZone: DOCUMENT_TIME_ZONE });
-}
 
 function formatScheduleWindow(job: JobRow): string {
   return `${formatTimeOnly(job.scheduled_start)} - ${formatTimeOnly(job.scheduled_end)}`;
