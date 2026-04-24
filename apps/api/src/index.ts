@@ -63,7 +63,8 @@ export function createApp(env: Record<string, string | undefined> = {}): Hono<Ap
     const skipSchemaInit =
       path === "/api/v1/auth/config" ||
       path === "/api/v1/auth/session" ||
-      path === "/api/v1/auth/logout";
+      path === "/api/v1/auth/logout" ||
+      path === "/api/v1/auth/google-login";
 
     if (skipSchemaInit) {
       await next();
