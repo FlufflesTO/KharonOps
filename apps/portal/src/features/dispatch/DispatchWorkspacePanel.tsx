@@ -16,6 +16,9 @@ interface DispatchWorkspacePanelProps {
   selectedRequestid: string;
   selectedScheduleid: string;
   selectedDocumentid: string;
+  setSelectedRequestid: (value: string) => void;
+  setSelectedScheduleid: (value: string) => void;
+  setSelectedDocumentid: (value: string) => void;
   onSelectJobid: (id: string) => void;
   preferredStart: string;
   setPreferredStart: (value: string) => void;
@@ -51,6 +54,9 @@ export function DispatchWorkspacePanel({
   selectedRequestid,
   selectedScheduleid,
   selectedDocumentid,
+  setSelectedRequestid,
+  setSelectedScheduleid,
+  setSelectedDocumentid,
   onSelectJobid,
   preferredStart,
   setPreferredStart,
@@ -97,7 +103,7 @@ export function DispatchWorkspacePanel({
           setPreferredEnd={setPreferredEnd}
           requests={dispatchRequests}
           selectedRequestid={selectedRequestid}
-          setSelectedRequestid={() => undefined}
+          setSelectedRequestid={setSelectedRequestid}
           confirmStart={confirmStart}
           setConfirmStart={setConfirmStart}
           confirmEnd={confirmEnd}
@@ -107,7 +113,7 @@ export function DispatchWorkspacePanel({
           technicians={technicians}
           schedules={dispatchSchedules}
           selectedScheduleid={selectedScheduleid}
-          setSelectedScheduleid={() => undefined}
+          setSelectedScheduleid={setSelectedScheduleid}
           rescheduleStart={rescheduleStart}
           setRescheduleStart={setRescheduleStart}
           rescheduleEnd={rescheduleEnd}
@@ -116,7 +122,7 @@ export function DispatchWorkspacePanel({
           setRescheduleRowVersion={setRescheduleRowVersion}
           documents={dispatchDocuments}
           selectedDocumentid={selectedDocumentid}
-          setSelectedDocumentid={() => undefined}
+          setSelectedDocumentid={setSelectedDocumentid}
           onScheduleRequest={onScheduleRequest}
           onScheduleConfirm={onScheduleConfirm}
           onReschedule={onReschedule}

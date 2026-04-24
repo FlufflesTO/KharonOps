@@ -26,11 +26,16 @@ export function OperationalWorkspacePanel({ state }: OperationalWorkspacePanelPr
     jobs,
     selectedJob,
     selectedJobDocumentCount,
+    documents,
+    escrowByDocumentid,
     selectedJobTitle,
     selectedJobid,
     selectedRequestid,
+    setSelectedRequestid,
     selectedScheduleid,
+    setSelectedScheduleid,
     selectedDocumentid,
+    setSelectedDocumentid,
     dispatchRequests,
     dispatchSchedules,
     dispatchDocuments,
@@ -53,6 +58,7 @@ export function OperationalWorkspacePanel({ state }: OperationalWorkspacePanelPr
     setRescheduleRowVersion,
     documentType,
     setDocumentType,
+    onChecklistChange,
     onStatusUpdate,
     onNote,
     noteValue,
@@ -65,6 +71,8 @@ export function OperationalWorkspacePanel({ state }: OperationalWorkspacePanelPr
     onReschedule,
     onDocumentGenerate,
     onDocumentPublish,
+    onDocumentPublishInline,
+    onRefreshDocuments,
     canGenerateDocuments,
     documentGenerateDisabledReason,
     documentAccessDenied,
@@ -104,7 +112,7 @@ export function OperationalWorkspacePanel({ state }: OperationalWorkspacePanelPr
           setPreferredEnd={setPreferredEnd}
           requests={dispatchRequests}
           selectedRequestid={selectedRequestid}
-          setSelectedRequestid={() => undefined}
+          setSelectedRequestid={setSelectedRequestid}
           confirmStart={confirmStart}
           setConfirmStart={setConfirmStart}
           confirmEnd={confirmEnd}
@@ -114,7 +122,7 @@ export function OperationalWorkspacePanel({ state }: OperationalWorkspacePanelPr
           technicians={technicians}
           schedules={dispatchSchedules}
           selectedScheduleid={selectedScheduleid}
-          setSelectedScheduleid={() => undefined}
+          setSelectedScheduleid={setSelectedScheduleid}
           rescheduleStart={rescheduleStart}
           setRescheduleStart={setRescheduleStart}
           rescheduleEnd={rescheduleEnd}
@@ -123,7 +131,7 @@ export function OperationalWorkspacePanel({ state }: OperationalWorkspacePanelPr
           setRescheduleRowVersion={setRescheduleRowVersion}
           documents={dispatchDocuments}
           selectedDocumentid={selectedDocumentid}
-          setSelectedDocumentid={() => undefined}
+          setSelectedDocumentid={setSelectedDocumentid}
           onScheduleRequest={onScheduleRequest}
           onScheduleConfirm={onScheduleConfirm}
           onReschedule={onReschedule}
@@ -153,7 +161,7 @@ export function OperationalWorkspacePanel({ state }: OperationalWorkspacePanelPr
           onDocumentGenerate={onDocumentGenerate}
           canGenerateDocuments={canGenerateDocuments && !documentAccessDenied}
           documentGenerateDisabledReason={documentGenerateDisabledReason}
-          onChecklistChange={() => undefined}
+          onChecklistChange={onChecklistChange}
           selectedJobTitle={selectedJobTitle}
           documentCountForJob={selectedJobDocumentCount}
           geoVerification={geoVerification}
@@ -162,7 +170,7 @@ export function OperationalWorkspacePanel({ state }: OperationalWorkspacePanelPr
           events={jobEvents}
         />
       ) : null}
-      {activeWorkspaceTool === "documents" ? <DocumentHistoryCard documents={[]} selectedJobid={selectedJob?.job_id ?? ""} role={effectiveRole ?? "client"} escrowByDocumentid={{}} onRefresh={() => undefined} onPublish={() => undefined} /> : null}
+      {activeWorkspaceTool === "documents" ? <DocumentHistoryCard documents={documents} selectedJobid={selectedJob?.job_id ?? ""} role={effectiveRole ?? "client"} escrowByDocumentid={escrowByDocumentid} onRefresh={onRefreshDocuments} onPublish={onDocumentPublishInline} /> : null}
       {activeWorkspaceTool === "people" && (effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin") ? <PeopleDirectoryCard people={peopleDirectory} skillsState={upgradeState.skills} onUpsertSkill={onUpsertSkill} onSync={onPeopleSync} onFeedback={onFeedback} /> : null}
     </>
   );

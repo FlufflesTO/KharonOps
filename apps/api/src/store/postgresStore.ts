@@ -22,6 +22,8 @@ import {
   type SyncQueueRow,
   type SkillMatrixRow,
   type ClientRow,
+  type PortalFileRow,
+  type SiteRow,
   type TechnicianRow,
   type UserRow
 } from "@kharon/domain";
@@ -39,8 +41,10 @@ import {
   jobDocumentRowFromPg,
   jobEventRowFromPg,
   jobRowFromPg,
+  portalFileRowFromPg,
   scheduleRequestRowFromPg,
   scheduleRowFromPg,
+  siteRowFromPg,
   skillMatrixRowFromPg,
   syncQueueRowFromPg,
   technicianRowFromPg,
@@ -78,6 +82,19 @@ CREATE TABLE IF NOT EXISTS svr_jobs (
   scheduled_start TEXT NOT NULL,
   scheduled_end   TEXT NOT NULL,
   last_note       TEXT NOT NULL DEFAULT '',
+  row_version     INTEGER NOT NULL DEFAULT 1,
+  updated_at      TEXT NOT NULL,
+  updated_by      TEXT NOT NULL,
+  correlation_id  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS svr_sites (
+  site_id         TEXT PRIMARY KEY,
+  client_id       TEXT NOT NULL,
+  site_name       TEXT NOT NULL DEFAULT '',
+  address         TEXT NOT NULL DEFAULT '',
+  geo_lat         DOUBLE PRECISION NOT NULL DEFAULT 0,
+  geo_lng         DOUBLE PRECISION NOT NULL DEFAULT 0,
   row_version     INTEGER NOT NULL DEFAULT 1,
   updated_at      TEXT NOT NULL,
   updated_by      TEXT NOT NULL,
@@ -139,6 +156,21 @@ CREATE TABLE IF NOT EXISTS svr_job_documents (
   correlation_id  TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS svr_portal_files (
+  file_id         TEXT PRIMARY KEY,
+  job_id          TEXT NOT NULL DEFAULT '',
+  client_id       TEXT NOT NULL DEFAULT '',
+  site_id         TEXT NOT NULL DEFAULT '',
+  file_role       TEXT NOT NULL DEFAULT '',
+  file_category   TEXT NOT NULL DEFAULT '',
+  drive_file_id   TEXT NOT NULL DEFAULT '',
+  portal_visible  BOOLEAN NOT NULL DEFAULT FALSE,
+  source_url      TEXT NOT NULL DEFAULT '',
+  row_version     INTEGER NOT NULL DEFAULT 1,
+  updated_at      TEXT NOT NULL,
+  updated_by      TEXT NOT NULL,
+  correlation_id  TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS svr_automation_jobs (
   automation_job_id TEXT PRIMARY KEY,
@@ -277,6 +309,9 @@ CREATE TABLE IF NOT EXISTS svr_technicians (
 CREATE INDEX IF NOT EXISTS idx_svr_jobs_client_id ON svr_jobs(client_id);
 CREATE INDEX IF NOT EXISTS idx_svr_jobs_technician_id ON svr_jobs(technician_id);
 CREATE INDEX IF NOT EXISTS idx_svr_job_documents_job_id ON svr_job_documents(job_id);
+CREATE INDEX IF NOT EXISTS idx_svr_sites_client_id ON svr_sites(client_id);
+CREATE INDEX IF NOT EXISTS idx_svr_portal_files_job_id ON svr_portal_files(job_id);
+CREATE INDEX IF NOT EXISTS idx_svr_portal_files_client_id ON svr_portal_files(client_id);
 CREATE INDEX IF NOT EXISTS idx_svr_finance_quotes_job_id ON svr_finance_quotes(job_id);
 CREATE INDEX IF NOT EXISTS idx_svr_finance_invoices_client_id ON svr_finance_invoices(client_id);
 CREATE INDEX IF NOT EXISTS idx_svr_clients_active ON svr_clients(active);
@@ -286,6 +321,8 @@ CREATE INDEX IF NOT EXISTS idx_svr_technicians_active ON svr_technicians(active)
 // ---------------------------------------------------------------------------
 // Store Implementation
 // ---------------------------------------------------------------------------
+
+const CURRENT_SCHEMA_VERSION = "1.2.0";
 
 export class PostgresWorkbookStore implements WorkbookStore {
   protected readonly label = "PostgresWorkbookStore";
@@ -316,8 +353,37 @@ export class PostgresWorkbookStore implements WorkbookStore {
 
   async ensureSchema(): Promise<void> {
     const pool = await this.getPool();
+    await pool.query(`CREATE SCHEMA IF NOT EXISTS ${this.schema}`);
     await pool.query(`SET search_path TO ${this.schema};`);
     await pool.query(SCHEMA_DDL);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ${this.schema}.system_metadata (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW(),
+        updated_by TEXT DEFAULT 'system'
+      )
+    `);
+    await pool.query(
+      `INSERT INTO ${this.schema}.system_metadata (key, value, updated_by)
+       VALUES ('schema_version', $1, 'system')
+       ON CONFLICT (key)
+       DO UPDATE SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by`,
+      [CURRENT_SCHEMA_VERSION]
+    );
+  }
+
+  async getSchemaVersion(): Promise<string> {
+    const pool = await this.getPool();
+    try {
+      const result = await pool.query(
+        `SELECT value FROM ${this.schema}.system_metadata WHERE key = 'schema_version' LIMIT 1`
+      );
+      const value = result.rows[0]?.value;
+      return typeof value === "string" && value ? value : CURRENT_SCHEMA_VERSION;
+    } catch {
+      return CURRENT_SCHEMA_VERSION;
+    }
   }
 
   // -- User operations -----------------------------------------------------
@@ -1400,7 +1466,7 @@ export class PostgresWorkbookStore implements WorkbookStore {
         throw new Error(`Job ${job.job_id} not found`);
       }
 
-      const currentVersion = (res.rows[0] as PgRow).row_version;
+      const currentVersion = Number((res.rows[0] as PgRow).row_version ?? 0);
       if (currentVersion !== job.row_version) {
         const refetched = await client.query(`SELECT * FROM ${this.schema}.svr_jobs WHERE job_id = $1`, [job.job_id]);
         await client.query("ROLLBACK");
@@ -1461,5 +1527,20 @@ export class PostgresWorkbookStore implements WorkbookStore {
       this.poolInstance = null;
       this.poolPromise = null;
     }
+  }
+
+  // Add missing methods to implement the full WorkbookStore interface
+  async listSites(): Promise<SiteRow[]> {
+    const pool = await this.getPool();
+    const result = await pool.query(`SELECT * FROM ${this.schema}.svr_sites ORDER BY updated_at DESC`);
+    return result.rows.map(siteRowFromPg);
+  }
+
+  async listPortalFiles(jobid?: string): Promise<PortalFileRow[]> {
+    const pool = await this.getPool();
+    const result = jobid
+      ? await pool.query(`SELECT * FROM ${this.schema}.svr_portal_files WHERE job_id = $1 ORDER BY updated_at DESC`, [jobid])
+      : await pool.query(`SELECT * FROM ${this.schema}.svr_portal_files ORDER BY updated_at DESC`);
+    return result.rows.map(portalFileRowFromPg);
   }
 }

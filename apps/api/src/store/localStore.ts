@@ -23,6 +23,8 @@ import {
   type SyncQueueRow,
   type SkillMatrixRow,
   type ClientRow,
+  type PortalFileRow,
+  type SiteRow,
   type TechnicianRow,
   type UserRow
 } from "@kharon/domain";
@@ -35,6 +37,8 @@ interface LocalData {
   scheduleRequests: Map<string, ScheduleRequestRow>;
   schedules: Map<string, ScheduleRow>;
   documents: Map<string, JobDocumentRow>;
+  sites: Map<string, SiteRow>;
+  portalFiles: Map<string, PortalFileRow>;
   automationJobs: Map<string, AutomationJobRow>;
   syncQueue: Map<string, SyncQueueRow>;
   audits: Array<Record<string, string>>;
@@ -166,6 +170,8 @@ function makeSeedData(): LocalData {
     scheduleRequests: new Map<string, ScheduleRequestRow>(),
     schedules: new Map<string, ScheduleRow>(),
     documents: new Map<string, JobDocumentRow>(),
+    sites: new Map<string, SiteRow>(),
+    portalFiles: new Map<string, PortalFileRow>(),
     automationJobs,
     syncQueue: new Map<string, SyncQueueRow>(),
     audits: [],
@@ -237,6 +243,12 @@ export class LocalWorkbookStore implements WorkbookStore {
   // falls back to Users_Master seed rows (which use matching TECH-xxx IDs).
   async listClients(): Promise<ClientRow[]> { return []; }
   async listTechnicians(): Promise<TechnicianRow[]> { return []; }
+  async listSites(): Promise<SiteRow[]> { return [...this.data.sites.values()].map((row) => immutableClone(row)); }
+  async listPortalFiles(jobid?: string): Promise<PortalFileRow[]> {
+    return [...this.data.portalFiles.values()]
+      .filter((row) => !jobid || row.job_id === jobid)
+      .map((row) => immutableClone(row));
+  }
 
   async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {
     return [...this.data.financeQuotes.values()].sort((a, b) => b.created_at.localeCompare(a.created_at)).map(immutableClone);

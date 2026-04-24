@@ -84,16 +84,15 @@ Confirm:
 1. `dist/public` is generated successfully.
 2. `_headers` contains the expected CSP, cache, and robots rules.
 3. `_redirects` contains `/portal -> /portal/`.
-4. `wrangler.toml` public environments point their assets directory at `dist/public`.
+4. `wrangler.toml` points the main Worker assets directory at `dist/public`.
 
 ### Step 6: Harden Worker configuration
 
 Confirm:
 
-1. `kharon-unified-api` remains internal or Access-protected.
-2. `kharon-unified-api-public` serves static assets plus `/api/*`.
-3. observability is enabled.
-4. cookie and Access settings match the final environment.
+1. `kharon-unified-api` serves static assets plus `/api/*`.
+2. observability is enabled.
+3. cookie and auth settings match production.
 
 ### Step 7: Lock session and auth posture
 
@@ -101,7 +100,7 @@ Validate:
 
 1. at least two high-entropy session keys
 2. `httpOnly`, `secure`, and `sameSite=Lax` cookie behavior
-3. Google ID token verification in staging and production
+3. Google ID token verification in production
 4. no client role claims are trusted
 5. admin endpoints require the correct role server-side
 
@@ -125,11 +124,10 @@ node scripts/migrate-workbook.mjs
 node scripts/cutover-rehearsal.mjs
 ```
 
-### Step 10: Deploy staging first
+### Step 10: Deploy production
 
 ```bash
-npx wrangler deploy --env staging
-npx wrangler deploy --env staging-public
+npx wrangler deploy --env=""
 ```
 
 Smoke test:

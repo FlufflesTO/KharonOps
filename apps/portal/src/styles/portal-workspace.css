@@ -277,7 +277,7 @@
   display: block;
   margin-top: 0.45rem;
   font-size: 1.45rem;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .summary-card small {

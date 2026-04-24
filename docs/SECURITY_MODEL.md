@@ -63,7 +63,7 @@ System-initiated operations (cron, webhooks, automated reconciliation) use names
 
 ## Secrets Management
 
-- set production secrets with `wrangler secret put`
+- set production secrets with `wrangler secret put --env=""`
 - never commit production secrets
 - keep static delivery and API on the same Cloudflare account and review secret scope per environment
 

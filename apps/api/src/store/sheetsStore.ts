@@ -22,6 +22,8 @@ import {
   parseUserRow,
   parseClientRow,
   parseTechnicianRow,
+  parseSiteRow,
+  parsePortalFileRow,
   parseJobRow,
   parseScheduleRequest,
   parseSchedule,
@@ -51,9 +53,11 @@ import {
   type JobDocumentRow,
   type JobEventRow,
   type JobRow,
+  type PortalFileRow,
   type ScheduleRequestRow,
   type ScheduleRow,
   type SessionUser,
+  type SiteRow,
   type SyncMutation,
   type SyncPushResult,
   type SyncQueueRow,
@@ -156,6 +160,17 @@ export class SheetsWorkbookStore implements WorkbookStore {
    */
   async listTechnicians(): Promise<TechnicianRow[]> {
     return (await this.rows("Technicians_Master")).map(parseTechnicianRow);
+  }
+
+  async listSites(): Promise<SiteRow[]> {
+    return (await this.rows("Sites_Master")).map(parseSiteRow);
+  }
+
+  async listPortalFiles(jobid?: string): Promise<PortalFileRow[]> {
+    const rows = await this.rows("Portal_Files");
+    const all = rows.map(parsePortalFileRow);
+    if (!jobid) return all;
+    return all.filter((f) => f.job_id === jobid);
   }
 
   async listFinanceQuotes(): Promise<FinanceQuoteRow[]> {

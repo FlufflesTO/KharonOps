@@ -9,8 +9,10 @@ import type {
   JobDocumentRow,
   JobEventRow,
   JobRow,
+  PortalFileRow,
   ScheduleRequestRow,
   ScheduleRow,
+  SiteRow,
   SkillMatrixRow,
   SyncQueueRow,
   TechnicianRow,
@@ -221,7 +223,8 @@ export function clientRowFromPg(row: PgRow | undefined): ClientRow {
     client_name: String(row.client_name ?? ""),
     billing_entity: String(row.billing_entity ?? ""),
     ops_email: String(row.ops_email ?? ""),
-    active: String(row.active ?? "true") as ClientRow["active"]
+    active: String(row.active ?? "true") as ClientRow["active"],
+    ...rowToMutableMeta(row)
   };
 }
 
@@ -230,7 +233,37 @@ export function technicianRowFromPg(row: PgRow | undefined): TechnicianRow {
   return {
     technician_id: String(row.technician_id),
     display_name: String(row.display_name ?? ""),
-    active: String(row.active ?? "true") as TechnicianRow["active"]
+    active: String(row.active ?? "true") as TechnicianRow["active"],
+    ...rowToMutableMeta(row)
+  };
+}
+
+export function siteRowFromPg(row: PgRow | undefined): SiteRow {
+  if (!row) throw new Error("Missing row for SiteRow mapping");
+  return {
+    site_id: String(row.site_id),
+    client_id: String(row.client_id),
+    site_name: String(row.site_name ?? ""),
+    address: String(row.address ?? ""),
+    geo_lat: Number(row.geo_lat ?? 0),
+    geo_lng: Number(row.geo_lng ?? 0),
+    ...rowToMutableMeta(row)
+  };
+}
+
+export function portalFileRowFromPg(row: PgRow | undefined): PortalFileRow {
+  if (!row) throw new Error("Missing row for PortalFileRow mapping");
+  return {
+    file_id: String(row.file_id),
+    job_id: String(row.job_id),
+    client_id: String(row.client_id),
+    site_id: String(row.site_id),
+    file_role: String(row.file_role ?? ""),
+    file_category: String(row.file_category ?? ""),
+    drive_file_id: String(row.drive_file_id ?? ""),
+    portal_visible: Boolean(row.portal_visible ?? false),
+    source_url: String(row.source_url ?? ""),
+    ...rowToMutableMeta(row)
   };
 }
 

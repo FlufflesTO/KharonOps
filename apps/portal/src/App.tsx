@@ -271,6 +271,13 @@ export function PortalApp(): React.JSX.Element {
   const openJobCount = filteredJobs.filter((job) => job.status !== "certified" && job.status !== "cancelled").length;
   const generatedDocumentCount = documents.length;
   const selectedJobDocumentCount = selectedJob ? documents.filter((document) => String(document.job_id) === selectedJob.job_id).length : 0;
+  const escrowByDocumentid = useMemo(
+    () =>
+      Object.fromEntries(
+        upgradeState.escrow.map((item) => [item.document_id, item])
+      ),
+    [upgradeState.escrow]
+  );
   const selectedJobStatus = selectedJob?.status ?? "No selection";
   const syncPulseText = syncPulse.at
     ? `Last sync ${new Date(syncPulse.at).toLocaleTimeString()} (jobs ${syncPulse.jobsChanged}, queue ${syncPulse.queueChanged})`
@@ -643,6 +650,89 @@ export function PortalApp(): React.JSX.Element {
     [allowedWorkspaceTools, landingWorkspaceTool]
   );
 
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+    void refreshJobs();
+    void refreshDocuments();
+    void refreshUpgradeWorkspaceState();
+    if (canAccessPeopleDirectory) {
+      void refreshPeopleDirectory();
+    }
+  }, [canAccessPeopleDirectory, refreshDocuments, refreshJobs, refreshPeopleDirectory, refreshUpgradeWorkspaceState, session]);
+
+  const handleRefreshDocuments = useCallback(() => {
+    void runAction(() => refreshDocuments(selectedJob?.job_id));
+  }, [refreshDocuments, runAction, selectedJob?.job_id]);
+
+  const handleRefreshUpgradeState = useCallback(() => {
+    void runAction(refreshUpgradeWorkspaceState);
+  }, [refreshUpgradeWorkspaceState, runAction]);
+
+  const handleCreateQuote = useCallback(
+    (payload: { job_id: string; client_id: string; description: string; amount: number }) => {
+      void runAction(async () => {
+        await apiClient.createFinanceQuote(payload);
+        await refreshUpgradeWorkspaceState();
+        setFeedback("Quote created.");
+      });
+    },
+    [refreshUpgradeWorkspaceState, runAction]
+  );
+
+  const handleUpdateQuoteStatus = useCallback(
+    (quoteid: string, status: "draft" | "sent" | "approved" | "rejected" | "invoiced") => {
+      void runAction(async () => {
+        await apiClient.updateFinanceQuoteStatus(quoteid, status);
+        await refreshUpgradeWorkspaceState();
+        setFeedback(`Quote ${quoteid} moved to ${status}.`);
+      });
+    },
+    [refreshUpgradeWorkspaceState, runAction]
+  );
+
+  const handleCreateInvoiceFromQuote = useCallback(
+    (quoteid: string, dueDate: string) => {
+      void runAction(async () => {
+        await apiClient.createInvoiceFromQuote(quoteid, dueDate);
+        await refreshUpgradeWorkspaceState();
+        setFeedback(`Invoice generated from ${quoteid}.`);
+      });
+    },
+    [refreshUpgradeWorkspaceState, runAction]
+  );
+
+  const handleReconcileInvoice = useCallback(
+    (invoiceid: string) => {
+      void runAction(async () => {
+        await apiClient.reconcileInvoice(invoiceid);
+        await refreshUpgradeWorkspaceState();
+        setFeedback(`Invoice ${invoiceid} reconciled.`);
+      });
+    },
+    [refreshUpgradeWorkspaceState, runAction]
+  );
+
+  const handleLockEscrow = useCallback(
+    (documentid: string, invoiceid: string) => {
+      void runAction(async () => {
+        await apiClient.lockEscrow(documentid, invoiceid);
+        await refreshUpgradeWorkspaceState();
+        setFeedback(`Escrow locked for ${documentid}.`);
+      });
+    },
+    [refreshUpgradeWorkspaceState, runAction]
+  );
+
+  const handleRebuildAnalytics = useCallback(() => {
+    void runAction(async () => {
+      const result = await apiClient.rebuildUpgradeAnalytics();
+      await refreshUpgradeWorkspaceState();
+      setFeedback(`Finance analytics rebuilt: ${result.debtors} debtor profile(s), ${result.statements} statement(s).`);
+    });
+  }, [refreshUpgradeWorkspaceState, runAction]);
+
   // Contextual dispatch: auto-populate ids from selected job metadata
   useEffect(() => {
     let isActive = true;
@@ -753,9 +843,14 @@ export function PortalApp(): React.JSX.Element {
             selectedJob,
             selectedJobStatus,
             selectedJobDocumentCount,
+            documents,
+            escrowByDocumentid,
             selectedRequestid,
+            setSelectedRequestid,
             selectedScheduleid,
+            setSelectedScheduleid,
             selectedDocumentid,
+            setSelectedDocumentid,
             dispatchRequests,
             dispatchSchedules,
             dispatchDocuments,
@@ -778,6 +873,7 @@ export function PortalApp(): React.JSX.Element {
             setRescheduleRowVersion,
             documentType,
             setDocumentType,
+            onChecklistChange: (data: Record<string, string>) => setChecklistData((prev) => ({ ...prev, ...data })),
             onStatusUpdate: () => runAction(portalActions.handleStatusUpdate),
             onNote: () => runAction(portalActions.handleNote),
             noteValue,
@@ -790,6 +886,9 @@ export function PortalApp(): React.JSX.Element {
             onReschedule: () => runAction(portalActions.handleReschedule),
             onDocumentGenerate: () => runAction(portalActions.handleDocumentGenerate),
             onDocumentPublish: () => runAction(portalActions.handleDocumentPublish),
+            onDocumentPublishInline: (documentid: string, rowVersion: number, clientVisible: boolean) =>
+              runAction(() => portalActions.handleDocumentPublishInline(documentid, rowVersion, clientVisible)),
+            onRefreshDocuments: handleRefreshDocuments,
             onBulkStatusUpdate: (ids: string[], status: JobStatus) => runAction(() => portalActions.handleBulkStatusUpdate(ids, status)),
             canGenerateDocuments,
             documentGenerateDisabledReason: canGenerateDocuments
@@ -830,6 +929,13 @@ export function PortalApp(): React.JSX.Element {
             onLoadOpsIntelligence: () => runAction(loadOpsIntelligence),
             peopleDirectory,
             upgradeState,
+            onRefreshUpgradeState: handleRefreshUpgradeState,
+            onCreateQuote: handleCreateQuote,
+            onUpdateQuoteStatus: handleUpdateQuoteStatus,
+            onCreateInvoiceFromQuote: handleCreateInvoiceFromQuote,
+            onReconcileInvoice: handleReconcileInvoice,
+            onLockEscrow: handleLockEscrow,
+            onRebuildAnalytics: handleRebuildAnalytics,
             setFeedback,
             onFeedback: setFeedback,
             onUpsertSkill: (payload: SkillMatrixRecord) =>

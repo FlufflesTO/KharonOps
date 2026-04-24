@@ -7,23 +7,23 @@
 }
 
 .portal-shell--client {
-  --role-accent: #4f9dff;
-  --role-glow: rgba(79, 157, 255, 0.25);
+  --role-accent: var(--color-secondary);
+  --role-glow: rgba(var(--color-secondary-rgb), 0.22);
 }
 
 .portal-shell--technician {
-  --role-accent: #37c089;
-  --role-glow: rgba(55, 192, 137, 0.24);
+  --role-accent: var(--color-accent);
+  --role-glow: rgba(var(--color-accent-rgb), 0.2);
 }
 
 .portal-shell--dispatcher {
-  --role-accent: #f0aa4a;
-  --role-glow: rgba(240, 170, 74, 0.24);
+  --role-accent: var(--color-primary);
+  --role-glow: rgba(var(--color-primary-rgb), 0.22);
 }
 
 .portal-shell--finance {
-  --role-accent: #2ecc71;
-  --role-glow: rgba(46, 204, 113, 0.24);
+  --role-accent: #7c8aa3;
+  --role-glow: rgba(124, 138, 163, 0.2);
 }
 
 .portal-shell--admin {
@@ -31,10 +31,9 @@
   --role-glow: rgba(157, 167, 189, 0.24);
 }
 
-/* Super Admin gets a distinct gold accent to visually signal elevated platform access */
 .portal-shell--super_admin {
-  --role-accent: #f0c050;
-  --role-glow: rgba(240, 192, 80, 0.28);
+  --role-accent: var(--color-primary);
+  --role-glow: rgba(var(--color-primary-rgb), 0.28);
 }
 
 .portal-shell {
@@ -72,7 +71,7 @@
   margin: 0;
   font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: #ffffff;
 }
 
@@ -104,10 +103,10 @@
   gap: 0.25rem;
   padding: 0.15rem 0.5rem;
   margin-left: 0.5rem;
-  background: rgba(240, 192, 80, 0.15);
-  border: 1px solid rgba(240, 192, 80, 0.3);
+  background: rgba(var(--color-primary-rgb), 0.15);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.32);
   border-radius: var(--radius-sm);
-  color: #f0c050;
+  color: var(--color-accent);
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -438,14 +437,14 @@
 }
 
 /* Accents */
-.dashboard-card--blue:hover { border-color: rgba(78, 132, 238, 0.4); }
-.dashboard-card--blue .dashboard-card__icon { color: #4e84ee; }
-.dashboard-card--green:hover { border-color: rgba(55, 192, 137, 0.4); }
-.dashboard-card--green .dashboard-card__icon { color: #37c089; }
-.dashboard-card--amber:hover { border-color: rgba(240, 170, 74, 0.4); }
-.dashboard-card--amber .dashboard-card__icon { color: #f0aa4a; }
-.dashboard-card--purple:hover { border-color: rgba(139, 92, 246, 0.4); }
-.dashboard-card--purple .dashboard-card__icon { color: #8b5cf6; }
+.dashboard-card--blue:hover { border-color: rgba(var(--color-secondary-rgb), 0.4); }
+.dashboard-card--blue .dashboard-card__icon { color: var(--color-secondary); }
+.dashboard-card--green:hover,
+.dashboard-card--amber:hover { border-color: rgba(148, 163, 184, 0.38); }
+.dashboard-card--green .dashboard-card__icon,
+.dashboard-card--amber .dashboard-card__icon { color: var(--color-text-muted); }
+.dashboard-card--purple:hover { border-color: rgba(var(--color-primary-rgb), 0.4); }
+.dashboard-card--purple .dashboard-card__icon { color: var(--color-primary); }
 
 .dashboard-footer {
   margin-top: auto;
@@ -551,7 +550,7 @@
   margin: 0;
   font-size: 1.75rem;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   color: #ffffff;
 }
 
@@ -883,7 +882,7 @@ summary:focus-visible,
   margin: 0;
   font-size: clamp(1.7rem, 2.8vw, 2.4rem);
   line-height: 1.03;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   font-weight: 650;
   color: var(--color-text);
 }
@@ -953,7 +952,7 @@ summary:focus-visible,
 .portal-title {
   font-size: 1rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .portal-subtitle {
@@ -1352,7 +1351,7 @@ summary:focus-visible,
   display: block;
   margin-top: 0.45rem;
   font-size: 1.45rem;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .summary-card small {

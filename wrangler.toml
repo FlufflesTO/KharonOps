@@ -27,154 +27,24 @@ STORE_BACKEND = "sheets"
 GOOGLE_RAILS_MODE = "production"
 SESSION_COOKIE_NAME = "kharon_session"
 SESSION_TTL_SECONDS = "28800"
-CF_ACCESS_ENABLED = "true"
-CF_ACCESS_AUD = "64026cae8eb5946cfaa9e0915a953b9bd0e84a4876babcb5a7834cba53cd172c"
-CF_ACCESS_JWKS_URL = "https://kharonops-pages.cloudflareaccess.com/cdn-cgi/access/certs"
-CF_ACCESS_ISSUER = "https://kharonops-pages.cloudflareaccess.com"
-
-[env.staging]
-name = "kharon-unified-api-staging"
-
-[env.staging.vars]
-KHARON_MODE = "production"
-NODE_ENV = "production"
-SESSION_COOKIE_NAME = "kharon_session"
-SESSION_TTL_SECONDS = "28800"
-CF_ACCESS_ENABLED = "true"
-CF_ACCESS_AUD = "64026cae8eb5946cfaa9e0915a953b9bd0e84a4876babcb5a7834cba53cd172c"
-CF_ACCESS_JWKS_URL = "https://kharonops-pages.cloudflareaccess.com/cdn-cgi/access/certs"
-CF_ACCESS_ISSUER = "https://kharonops-pages.cloudflareaccess.com"
-
-[env.staging.secrets]
-required = [
-  "SESSION_KEYS",
-  "GOOGLE_CLIENT_ID",
-  "GOOGLE_SERVICE_ACCOUNT_EMAIL",
-  "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
-  "GOOGLE_IMPERSONATED_USER",
-  "WORKBOOK_SPREADSHEET_ID",
-  "GOOGLE_DRIVE_ROOT_FOLDER_ID",
-  "GOOGLE_JOBCARD_TEMPLATE_ID",
-  "GOOGLE_SERVICE_REPORT_TEMPLATE_ID",
-  "GOOGLE_CHAT_WEBHOOK_URL",
-  "GOOGLE_CALENDAR_ID",
-  "GMAIL_SENDER_ADDRESS"
-]
-
-[[env.staging.kv_namespaces]]
-binding = "KHARON_CACHE"
-id = "67ae1740081b449f98fd72e70574a341"
-
-[env.public]
-name = "kharon-unified-api-public"
-compatibility_flags = ["nodejs_compat"]
-
-[env.public.vars]
-KHARON_MODE = "production"
-NODE_ENV = "production"
-STORE_BACKEND = "sheets"
-GOOGLE_RAILS_MODE = "production"
-SESSION_COOKIE_NAME = "kharon_session"
-SESSION_TTL_SECONDS = "28800"
 CF_ACCESS_ENABLED = "false"
 CF_ACCESS_AUD = "64026cae8eb5946cfaa9e0915a953b9bd0e84a4876babcb5a7834cba53cd172c"
 CF_ACCESS_JWKS_URL = "https://kharonops-pages.cloudflareaccess.com/cdn-cgi/access/certs"
 CF_ACCESS_ISSUER = "https://kharonops-pages.cloudflareaccess.com"
 
-[env.public.assets]
-binding = "ASSETS"
-directory = "./dist/public"
-run_worker_first = ["/*"]
-
-[[env.public.routes]]
+[[routes]]
 pattern = "tequit.co.za"
 custom_domain = true
 
-[[env.public.routes]]
+[[routes]]
 pattern = "www.tequit.co.za"
 custom_domain = true
-
-[env.public.secrets]
-required = [
-  "SESSION_KEYS",
-  "GOOGLE_CLIENT_ID",
-  "GOOGLE_SERVICE_ACCOUNT_JSON",
-  "GOOGLE_IMPERSONATED_USER",
-  "WORKBOOK_SPREADSHEET_ID",
-  "GOOGLE_DRIVE_ROOT_FOLDER_ID",
-  "GOOGLE_JOBCARD_TEMPLATE_ID",
-  "GOOGLE_SERVICE_REPORT_TEMPLATE_ID",
-  "GOOGLE_CHAT_WEBHOOK_URL",
-  "GOOGLE_CALENDAR_ID",
-  "GMAIL_SENDER_ADDRESS"
-]
-
-[[env.public.kv_namespaces]]
-binding = "KHARON_CACHE"
-id = "67ae1740081b449f98fd72e70574a341"
-
-[env.staging-public]
-name = "kharon-unified-api-staging-public"
-
-[env.staging-public.vars]
-KHARON_MODE = "local"
-NODE_ENV = "production"
-STORE_BACKEND = "local"
-GOOGLE_RAILS_MODE = "local"
-SESSION_COOKIE_NAME = "kharon_session"
-SESSION_TTL_SECONDS = "28800"
-SUPER_ADMIN_EMAILS = "dev.super-admin@kharon.invalid,dev.admin@kharon.invalid"
-CF_ACCESS_ENABLED = "false"
-CF_ACCESS_AUD = ""
-CF_ACCESS_JWKS_URL = ""
-CF_ACCESS_ISSUER = ""
-
-[env.staging-public.assets]
-binding = "ASSETS"
-directory = "./dist/public"
-run_worker_first = ["/*"]
-
-[env.staging-public.secrets]
-required = [
-  "SESSION_KEYS",
-  "GOOGLE_CLIENT_ID",
-  "GOOGLE_SERVICE_ACCOUNT_EMAIL",
-  "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
-  "GOOGLE_IMPERSONATED_USER",
-  "WORKBOOK_SPREADSHEET_ID",
-  "GOOGLE_DRIVE_ROOT_FOLDER_ID",
-  "GOOGLE_JOBCARD_TEMPLATE_ID",
-  "GOOGLE_SERVICE_REPORT_TEMPLATE_ID",
-  "GOOGLE_CHAT_WEBHOOK_URL",
-  "GOOGLE_CALENDAR_ID",
-  "GMAIL_SENDER_ADDRESS"
-]
-
-[[env.staging-public.kv_namespaces]]
-binding = "KHARON_CACHE"
-id = "67ae1740081b449f98fd72e70574a341"
-
-[secrets]
-required = [
-  "SESSION_KEYS",
-  "PORTAL_SESSION_SECRET",
-  "GOOGLE_CLIENT_ID",
-  "GOOGLE_SERVICE_ACCOUNT_JSON",
-  "GOOGLE_IMPERSONATED_USER",
-  "WORKBOOK_SPREADSHEET_ID",
-  "GOOGLE_DRIVE_ROOT_FOLDER_ID",
-  "GOOGLE_JOBCARD_TEMPLATE_ID",
-  "GOOGLE_SERVICE_REPORT_TEMPLATE_ID",
-  "GOOGLE_CHAT_WEBHOOK_URL",
-  "GOOGLE_CALENDAR_ID",
-  "GMAIL_SENDER_ADDRESS"
-]
 
 [[kv_namespaces]]
 binding = "KHARON_CACHE"
 id = "67ae1740081b449f98fd72e70574a341"
 
-# Configure secrets via `wrangler secret put`
+# Configure top-level production secrets via `wrangler secret put --env=""`
 # SESSION_KEYS
 # PORTAL_SESSION_SECRET
 # GOOGLE_CLIENT_ID

@@ -28,8 +28,11 @@ export function GovernanceWorkspacePanel({ state }: GovernanceWorkspacePanelProp
     emulatedRole,
     session,
     defaultWorkspaceTool,
+    pinnedTools,
+    onboardingDismissed,
     allowedWorkspaceTools,
     upgradeState,
+    documents,
     opsIntelligence,
     schemaDrift,
     adminHealth,
@@ -52,6 +55,14 @@ export function GovernanceWorkspacePanel({ state }: GovernanceWorkspacePanelProp
     onFeedback,
     jobs,
     onActiveWorkspaceToolChange,
+    onSaveWorkspacePreferences,
+    onRefreshUpgradeState,
+    onCreateQuote,
+    onUpdateQuoteStatus,
+    onCreateInvoiceFromQuote,
+    onReconcileInvoice,
+    onLockEscrow,
+    onRebuildAnalytics,
     peopleDirectory,
     onUpsertSkill,
     onPeopleSync
@@ -74,10 +85,10 @@ export function GovernanceWorkspacePanel({ state }: GovernanceWorkspacePanelProp
           <AdminSettingsCard
             session={session}
             defaultWorkspaceTool={defaultWorkspaceTool}
-            pinnedTools={[]}
-            onboardingDismissed={state.onboardingDismissed}
+            pinnedTools={pinnedTools}
+            onboardingDismissed={onboardingDismissed}
             allowedWorkspaceTools={allowedWorkspaceTools}
-            onSavePreferences={() => undefined}
+            onSavePreferences={onSaveWorkspacePreferences}
           />
         ) : effectiveRole === "super_admin" ? (
           <AdminPanelCard
@@ -105,12 +116,12 @@ export function GovernanceWorkspacePanel({ state }: GovernanceWorkspacePanelProp
         ) : null
       ) : null}
       {state.activeWorkspaceTool === "finance_overview" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceOverviewCard store={upgradeState} onEnterTool={(tool: string) => onActiveWorkspaceToolChange(tool)} isLoading={actionPending} /> : null}
-      {state.activeWorkspaceTool === "finance_quotes" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceQuotesCard store={upgradeState} onCreateQuote={() => undefined} onUpdateQuoteStatus={() => undefined} /> : null}
-      {state.activeWorkspaceTool === "finance_invoices" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceInvoicesCard store={upgradeState} onCreateInvoiceFromQuote={() => undefined} /> : null}
-      {state.activeWorkspaceTool === "finance_payments" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinancePaymentsCard store={upgradeState} onReconcileInvoice={() => undefined} /> : null}
-      {state.activeWorkspaceTool === "finance_debtors" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceDebtorsCard store={upgradeState} onRebuildAnalytics={() => undefined} /> : null}
+      {state.activeWorkspaceTool === "finance_quotes" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceQuotesCard store={upgradeState} onCreateQuote={onCreateQuote} onUpdateQuoteStatus={onUpdateQuoteStatus} /> : null}
+      {state.activeWorkspaceTool === "finance_invoices" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceInvoicesCard store={upgradeState} onCreateInvoiceFromQuote={onCreateInvoiceFromQuote} /> : null}
+      {state.activeWorkspaceTool === "finance_payments" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinancePaymentsCard store={upgradeState} onReconcileInvoice={onReconcileInvoice} /> : null}
+      {state.activeWorkspaceTool === "finance_debtors" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceDebtorsCard store={upgradeState} onRebuildAnalytics={onRebuildAnalytics} /> : null}
       {state.activeWorkspaceTool === "finance_statements" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceStatementsCard store={upgradeState} /> : null}
-      {state.activeWorkspaceTool === "finance" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceOpsCard jobs={jobs} documents={[]} store={upgradeState} onRefreshStore={() => undefined} onCreateQuote={() => undefined} onUpdateQuoteStatus={() => undefined} onCreateInvoiceFromQuote={() => undefined} onReconcileInvoice={() => undefined} onLockEscrow={() => undefined} onRebuildAnalytics={() => undefined} /> : null}
+      {state.activeWorkspaceTool === "finance" && (effectiveRole === "finance" || effectiveRole === "super_admin") ? <FinanceOpsCard jobs={jobs} documents={documents} store={upgradeState} onRefreshStore={onRefreshUpgradeState} onCreateQuote={onCreateQuote} onUpdateQuoteStatus={onUpdateQuoteStatus} onCreateInvoiceFromQuote={onCreateInvoiceFromQuote} onReconcileInvoice={onReconcileInvoice} onLockEscrow={onLockEscrow} onRebuildAnalytics={onRebuildAnalytics} /> : null}
       {state.activeWorkspaceTool === "sa_overview" && effectiveRole === "super_admin" ? <SuperAdminOverview opsIntelligence={opsIntelligence} onRefresh={onLoadOpsIntelligence} isLoading={actionPending} /> : null}
       {state.activeWorkspaceTool === "sa_users" && effectiveRole === "super_admin" ? <PeopleDirectoryCard people={peopleDirectory} skillsState={upgradeState.skills} onUpsertSkill={onUpsertSkill} onSync={onPeopleSync} onFeedback={onFeedback} /> : null}
       {state.activeWorkspaceTool === "sa_units" && effectiveRole === "super_admin" ? <SuperAdminBusinessUnits /> : null}

@@ -17,6 +17,8 @@ import type {
   SyncQueueRow,
   SkillMatrixRow,
   ClientRow,
+  PortalFileRow,
+  SiteRow,
   TechnicianRow,
   UserRow
 } from "@kharon/domain";
@@ -113,6 +115,14 @@ export abstract class ScaffoldWorkbookStore implements WorkbookStore {
 
   async listDocuments(_jobid?: string): Promise<JobDocumentRow[]> {
     return this.notImplemented("listDocuments");
+  }
+
+  async listSites(): Promise<SiteRow[]> {
+    return this.notImplemented("listSites");
+  }
+
+  async listPortalFiles(_jobid?: string): Promise<PortalFileRow[]> {
+    return this.notImplemented("listPortalFiles");
   }
 
   async appendAudit(_args: { action: string; payload: Record<string, unknown>; ctx: StoreContext }): Promise<void> {

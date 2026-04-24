@@ -19,6 +19,8 @@ import type {
   SkillMatrixRow,
   TechnicianRow,
   ClientRow,
+  SiteRow,
+  PortalFileRow,
   UserRow
 } from "@kharon/domain";
 
@@ -57,6 +59,8 @@ export interface WorkbookStore {
   getDocument(documentid: string): Promise<JobDocumentRow | null>;
   upsertDocument(row: JobDocumentRow): Promise<void>;
   listDocuments(jobid?: string): Promise<JobDocumentRow[]>;
+  listSites(): Promise<SiteRow[]>;
+  listPortalFiles(jobid?: string): Promise<PortalFileRow[]>;
   appendAudit(args: {
     action: string;
     payload: Record<string, unknown>;

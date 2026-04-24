@@ -18,6 +18,9 @@
   --color-primary: #6366f1;   /* Kharon Purple/Indigo */
   --color-secondary: #0ea5e9; /* Kharon Blue/Cyan */
   --color-accent: #818cf8;    /* Subtle highlight */
+  --color-primary-rgb: 99, 102, 241;
+  --color-secondary-rgb: 14, 165, 233;
+  --color-accent-rgb: 129, 140, 248;
   
   /* Text Colors */
   --color-text: #f8fafc;

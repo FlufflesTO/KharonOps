@@ -20,6 +20,10 @@ function client(overrides: Partial<ClientRow> = {}): ClientRow {
     billing_entity: "Acme",
     ops_email: "ops@acme.co",
     active: "true",
+    row_version: 1,
+    updated_at: "2026-01-01T00:00:00Z",
+    updated_by: "seed",
+    correlation_id: "test",
     ...overrides
   };
 }
@@ -29,6 +33,10 @@ function technician(overrides: Partial<TechnicianRow> = {}): TechnicianRow {
     technician_id: "ROY001",
     display_name: "Roy Meyers",
     active: "true",
+    row_version: 1,
+    updated_at: "2026-01-01T00:00:00Z",
+    updated_by: "seed",
+    correlation_id: "test",
     ...overrides
   };
 }

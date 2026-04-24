@@ -164,12 +164,8 @@ export interface SkillMatrixRow extends MutableMeta {
 
 /**
  * ClientRow — parsed from Clients_Master.
- * NOTE: This sheet currently lacks the full MutableMeta governance columns
- * (updated_at, updated_by, correlation_id, row_version). It does NOT extend
- * MutableMeta intentionally; adding those columns is tracked as a separate
- * schema migration task.
  */
-export interface ClientRow {
+export interface ClientRow extends MutableMeta {
   /** Primary key matching Jobs_Master.client_id (format: CLT-xxxxx). */
   client_id: string;
   client_name: string;
@@ -180,14 +176,40 @@ export interface ClientRow {
 
 /**
  * TechnicianRow — parsed from Technicians_Master.
- * NOTE: Same governance-column gap as ClientRow above.
  */
-export interface TechnicianRow {
+export interface TechnicianRow extends MutableMeta {
   /** Primary key matching Jobs_Master.primary_technician_id (e.g., ROY001). */
   technician_id: string;
   /** Preferred display name (display_name > technician_name fallback). */
   display_name: string;
   active: "true" | "false";
+}
+
+/**
+ * SiteRow — parsed from Sites_Master.
+ */
+export interface SiteRow extends MutableMeta {
+  site_id: string;
+  client_id: string;
+  site_name: string;
+  address: string;
+  geo_lat: number;
+  geo_lng: number;
+}
+
+/**
+ * PortalFileRow — parsed from Portal_Files.
+ */
+export interface PortalFileRow extends MutableMeta {
+  file_id: string;
+  job_id: string;
+  client_id: string;
+  site_id: string;
+  file_role: string;
+  file_category: string;
+  drive_file_id: string;
+  portal_visible: boolean;
+  source_url: string;
 }
 
 export interface UpgradeWorkspaceState {

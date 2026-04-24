@@ -33,16 +33,16 @@ const quickPaths = [
 
 const valuePillars = [
   {
-    title: "Fast routing",
-    copy: "Each request path points to a dedicated page, so visitors do not need to scroll through everything first."
+    title: "Compliance-ready work",
+    copy: "Fire and security tasks are handled with service records, certificates, and clear handover paths."
   },
   {
-    title: "Plain language",
-    copy: "Services and industries are described the way clients actually ask for them."
+    title: "Operational response",
+    copy: "Urgent faults, planned maintenance, and project requests route into the correct response path quickly."
   },
   {
-    title: "Clear next steps",
-    copy: "Every page ends with a direct action, not a dead-end marketing paragraph."
+    title: "Site-specific guidance",
+    copy: "Visitors can start from the system, service type, or industry environment that matches their site."
   }
 ] as const;
 
@@ -63,10 +63,10 @@ export function HomePage(): React.JSX.Element {
         <div className="public-hero__inner">
           <div className="public-hero__copy">
             <p className="section-kicker">Kharon Fire and Security Solutions</p>
-            <h1>One place to choose the right service, industry, or support path.</h1>
+            <h1>Fire and security support for sites that need clear action, records, and response.</h1>
             <p className="public-hero__summary">
-              This site is organised as a simple front door. Use it to reach services, industries, documentation, resources,
-              or contact quickly without wading through a long landing page.
+              Kharon supports fire detection, suppression, access control, CCTV, maintenance, emergency callouts, and
+              compliance handover. Start with the service you need or route straight to support.
             </p>
             <div className="hero-actions">
               <Link className="site-button site-button--primary site-button--large" to="/contact?intent=project">
@@ -82,16 +82,16 @@ export function HomePage(): React.JSX.Element {
           </div>
 
           <aside className="public-hero__panel" aria-label="Company snapshot">
-            <span className="public-hero__panel-label">Direct navigation</span>
-            <strong>Start with the page that does one job well.</strong>
+            <span className="public-hero__panel-label">Operations snapshot</span>
+            <strong>Built around practical site outcomes.</strong>
             <p>
-              Kharon supports {companyProfile.serviceFootprint.join(", ")} and keeps the public website focused on fast
-              routing into the right path.
+              Kharon supports {companyProfile.serviceFootprint.join(", ")} with clear request paths for planned work,
+              urgent callouts, documentation, and service follow-up.
             </p>
             <ul>
-              <li>Services, industries, compliance, and contact all have their own pages</li>
-              <li>Portal and public site are separated by purpose</li>
-              <li>Mobile visitors get short paths instead of a long scroll</li>
+              <li>Fire and security systems grouped by service need</li>
+              <li>Industry routes for site-specific requirements</li>
+              <li>Direct contact paths for quotes, support, and callouts</li>
             </ul>
           </aside>
         </div>
@@ -100,9 +100,9 @@ export function HomePage(): React.JSX.Element {
       <section className="site-section">
         <div className="section-heading">
           <p className="section-kicker">Start here</p>
-          <h2>Choose the page that matches what you need.</h2>
+          <h2>Choose the route that matches the work.</h2>
           <p className="section-subtitle">
-            The home page now works as a hub, not a brochure wall.
+            Each route is kept short so visitors can move from need to action without decoding internal terminology.
           </p>
         </div>
         <div className="service-grid service-grid--compact">
@@ -148,7 +148,7 @@ export function HomePage(): React.JSX.Element {
       <section className="site-section">
         <div className="section-heading section-heading--tight">
           <p className="section-kicker">How to use the site</p>
-          <h2>Short pages, clear routes, no dead ends.</h2>
+          <h2>Designed to reduce request errors.</h2>
         </div>
         <div className="pillar-grid">
           {valuePillars.map((pillar) => (
@@ -164,9 +164,10 @@ export function HomePage(): React.JSX.Element {
         <div className="cta-panel">
           <div className="cta-panel__copy">
             <p className="section-kicker">Next step</p>
-            <h2>Go straight to the page you need.</h2>
+            <h2>Tell us what the site needs next.</h2>
             <p>
-              If you already know the path, use it. If not, start with services or contact and we will route it from there.
+              Start with a quote, maintenance visit, emergency callout, or a service question. The right details can be
+              captured from the first contact.
             </p>
           </div>
           <div className="cta-panel__actions">

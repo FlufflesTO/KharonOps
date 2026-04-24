@@ -5,7 +5,6 @@ This runbook moves the current public Kharon stack from `*.workers.dev` to `tequ
 ## Recommended Hostnames
 
 - Production public app: `https://tequit.co.za`
-- Staging public app: `https://staging.tequit.co.za`
 - Future internal admin host: `https://internal.tequit.co.za`
 
 The current public worker serves the marketing site, `/portal/`, and `/api/*` on one host. Keep that shape for now.
@@ -41,12 +40,12 @@ At the registrar where `tequit.co.za` was purchased:
 
 Do not continue until Cloudflare marks the zone as `Active`.
 
-## Phase 2: Attach the Public Workers to the Domain
+## Phase 2: Attach the Worker to the Domain
 
 ### Production custom domain
 
 1. In Cloudflare, go to `Workers & Pages`.
-2. Open `kharon-unified-api-public`.
+2. Open `kharon-unified-api`.
 3. Open `Settings`.
 4. Open `Domains & Routes`.
 5. Click `Add custom domain`.
@@ -55,21 +54,11 @@ Do not continue until Cloudflare marks the zone as `Active`.
 
 Cloudflare should create and manage the DNS record automatically because the zone is in the same account.
 
-### Staging custom domain
-
-1. Go back to `Workers & Pages`.
-2. Open `kharon-unified-api-staging-public`.
-3. Open `Settings`.
-4. Open `Domains & Routes`.
-5. Click `Add custom domain`.
-6. Enter `staging.tequit.co.za`.
-7. Save.
-
 ### What I will do after you finish this
 
-- verify both custom domains resolve
+- verify the custom domain resolves
 - smoke test `/`, `/portal/`, and `/api/v1/auth/config`
-- confirm the custom domains are serving the latest bundle
+- confirm the custom domain is serving the latest bundle
 
 ## Phase 3: Update Google Auth Platform
 
@@ -101,7 +90,6 @@ Open `Clients`, then open the web client used by this repo.
 Under `Authorized JavaScript origins`, add:
 
 - `https://tequit.co.za`
-- `https://staging.tequit.co.za`
 - keep the current `workers.dev` origins until cutover is confirmed
 
 Do not include any path. These must be origin only.

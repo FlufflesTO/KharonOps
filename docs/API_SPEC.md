@@ -1,6 +1,6 @@
 # KharonOps API Specification
 
-Base URL: deployment dependent (local worker preview, staging, or production).
+Base URL: production deployment, or local development when running the API locally.
 
 All application endpoints are under `/api/v1/*`.
 

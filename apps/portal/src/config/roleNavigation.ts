@@ -1,54 +1,52 @@
 import type { Role } from "@kharon/domain";
+import { ROLE_PRIMARY_TOOLS, WORKSPACE_TOOL_META } from "../appShell/helpers";
 
 export type RoleMenuItem = {
   tool: string;
   label: string;
 };
 
+const ROLE_MENU_LABELS: Record<string, string> = {
+  client_support: "Request",
+  client_overview: "Follow Up",
+  tech_day: "Today",
+  jobs: "My Jobs",
+  tech_checkin: "Check In / Out",
+  dispatch_unassigned: "Unassigned",
+  dispatch_dashboard: "Overview",
+  finance_debtors: "Money Owed",
+  admin_dashboard: "Office",
+  sa_overview: "Overview",
+  sa_checks: "Checks",
+  sa_automations: "Automations",
+  sa_activity: "Activity"
+};
+
+function menuItem(tool: string): RoleMenuItem {
+  return {
+    tool,
+    label: ROLE_MENU_LABELS[tool] ?? WORKSPACE_TOOL_META[tool]?.label ?? tool
+  };
+}
+
+function roleTools(role: Role): string[] {
+  return ROLE_PRIMARY_TOOLS[role] ?? [];
+}
+
 export const ROLE_PRIMARY_NAV: Record<Role, RoleMenuItem[]> = {
-  client: [
-    { tool: "client_support", label: "Request" },
-    { tool: "jobs", label: "My Jobs" },
-    { tool: "client_overview", label: "Follow Up" }
-  ],
-  technician: [
-    { tool: "tech_day", label: "Today" },
-    { tool: "jobs", label: "Assigned Jobs" },
-    { tool: "tech_checkin", label: "Check In / Out" },
-    { tool: "documents", label: "Reports" },
-    { tool: "tech_help", label: "Help" }
-  ],
-  dispatcher: [
-    { tool: "schedule", label: "Schedule" },
-    { tool: "dispatch_unassigned", label: "Unassigned" },
-    { tool: "dispatch_dashboard", label: "Confirm" },
-    { tool: "comms", label: "Messages" }
-  ],
-  finance: [
-    { tool: "finance_invoices", label: "Invoices" },
-    { tool: "finance_payments", label: "Payments" },
-    { tool: "finance_statements", label: "Statements" }
-  ],
-  admin: [
-    { tool: "admin", label: "Settings" },
-    { tool: "admin_dashboard", label: "Audit" },
-    { tool: "sa_health", label: "Recovery" }
-  ],
-  super_admin: [
-    { tool: "sa_health", label: "Health" },
-    { tool: "sa_checks", label: "Checks" },
-    { tool: "sa_overview", label: "Governance" },
-    { tool: "sa_users", label: "Users" },
-    { tool: "sa_activity", label: "Activity" }
-  ]
+  client: roleTools("client").map(menuItem),
+  technician: roleTools("technician").map(menuItem),
+  dispatcher: roleTools("dispatcher").map(menuItem),
+  finance: roleTools("finance").map(menuItem),
+  admin: roleTools("admin").map(menuItem),
+  super_admin: roleTools("super_admin").map(menuItem)
 };
 
 export const ROLE_LANDING_TOOL: Record<Role, string> = {
-  client: "client_support",
-  technician: "tech_day",
-  dispatcher: "dispatch_unassigned",
-  finance: "finance_invoices",
-  admin: "admin_dashboard",
-  super_admin: "sa_health"
+  client: roleTools("client")[0] ?? "jobs",
+  technician: roleTools("technician")[0] ?? "jobs",
+  dispatcher: roleTools("dispatcher")[0] ?? "jobs",
+  finance: roleTools("finance")[0] ?? "jobs",
+  admin: roleTools("admin")[0] ?? "jobs",
+  super_admin: roleTools("super_admin")[0] ?? "jobs"
 };
-

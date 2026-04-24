@@ -76,19 +76,13 @@ The portal has been redesigned for task-first, non-technical efficiency across a
 
 ## Cloudflare Deployment Shape
 
-- `kharon-unified-api`
-  Internal or Access-protected Worker for admin and internal traffic.
-- `kharon-unified-api-staging`
-  Staging internal Worker.
-- `kharon-unified-api-public`
-  Public Worker serving:
-  - `/` marketing site
-  - `/portal/` portal app
-  - `/api/v1/*` API
-- `kharon-unified-api-staging-public`
-  Staging public Worker serving the same paths.
+`kharon-unified-api` is the only Worker target. It serves:
 
-The public Workers use `dist/public` as their static asset directory via [wrangler.toml](C:/Users/User/KharonOps/KharonOps/wrangler.toml).
+- `/` marketing site
+- `/portal/` portal app
+- `/api/v1/*` API
+
+The Worker uses `dist/public` as its static asset directory via [wrangler.toml](C:/Users/User/KharonOps/KharonOps/wrangler.toml).
 
 ## Build Output
 
@@ -112,16 +106,14 @@ Production:
 
 ```bash
 npm run build
-npx wrangler deploy
-npx wrangler deploy --env public
+npx wrangler deploy --env=""
 ```
 
-Single-command production deploy (existing npm scripts):
+Single-command production deploy:
 
 ```bash
 npm run build
-npm run deploy:worker
-npm run deploy:public
+npm run deploy
 ```
 
 Workbook governance:
@@ -136,14 +128,6 @@ npm run workbook:fix
 - duplicate `user_id` conflict resolution
 - `Jobs_Master.job_status` backfill where empty
 - optional technician auto-provisioning into `Technicians_Master` when active technician users have no master record
-
-Staging:
-
-```bash
-npm run build
-npx wrangler deploy --env staging
-npx wrangler deploy --env staging-public
-```
 
 ## Required Cloudflare Secrets
 

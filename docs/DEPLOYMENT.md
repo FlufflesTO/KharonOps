@@ -8,21 +8,13 @@
 ## Worker Topology
 
 - `kharon-unified-api`
-  Production internal Worker
-- `kharon-unified-api-staging`
-  Staging internal Worker
-- `kharon-unified-api-public`
-  Production public Worker with static assets from `dist/public`
-- `kharon-unified-api-staging-public`
-  Staging public Worker with static assets from `dist/public`
+  Production Worker with static assets from `dist/public`
 
-The public Workers serve:
+The Worker serves:
 
 - `/`
 - `/portal/`
 - `/api/v1/*`
-
-The internal Workers remain API-only.
 
 ## Build Output
 
@@ -44,17 +36,16 @@ The internal Workers remain API-only.
 
 [wrangler.toml](C:/Users/User/KharonOps/KharonOps/wrangler.toml) defines:
 
-- public asset-backed environments for `public` and `staging-public`
-- required secrets for all environments
-- Cloudflare Access config for internal environments
+- one asset-backed top-level Worker environment
+- required production secrets
 - observability for runtime visibility
 
-The public environments use:
+The Worker uses:
 
 - `directory = "./dist/public"`
-- `run_worker_first = ["/api/*"]`
+- `run_worker_first = ["/*"]`
 
-That keeps static requests on the asset path while ensuring `/api/*` executes Worker code first.
+That lets the Hono worker apply API handling and shared security headers before static assets are served.
 
 ## Required Secrets
 
@@ -84,17 +75,11 @@ Compatibility fallbacks still supported by runtime:
    npm install
    npm run check
    ```
-2. Deploy staging:
+2. Deploy production:
    ```bash
-   npx wrangler deploy --env staging
-   npx wrangler deploy --env staging-public
+   npx wrangler deploy --env=""
    ```
-3. Deploy production:
-   ```bash
-   npx wrangler deploy
-   npx wrangler deploy --env public
-   ```
-4. Validate:
+3. Validate:
    - `/`
    - `/portal/`
    - `/api/v1/auth/session`

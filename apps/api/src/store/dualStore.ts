@@ -55,6 +55,8 @@ import {
   type SyncQueueRow,
   type SkillMatrixRow,
   type ClientRow,
+  type PortalFileRow,
+  type SiteRow,
   type TechnicianRow,
   type UserRow
 } from "@kharon/domain";
@@ -152,6 +154,22 @@ export class DualWorkbookStore implements WorkbookStore {
       "listTechnicians",
       () => this.primary.listTechnicians(),
       () => this.mirror.listTechnicians()
+    );
+  }
+
+  async listSites(): Promise<SiteRow[]> {
+    return this.executeReadOperation(
+      "listSites",
+      () => this.primary.listSites(),
+      () => this.mirror.listSites()
+    );
+  }
+
+  async listPortalFiles(jobid?: string): Promise<PortalFileRow[]> {
+    return this.executeReadOperation(
+      "listPortalFiles",
+      () => this.primary.listPortalFiles(jobid),
+      () => this.mirror.listPortalFiles(jobid)
     );
   }
 

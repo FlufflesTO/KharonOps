@@ -7,7 +7,8 @@ import type {
   SchemaDriftPayload, 
   SkillMatrixRecord, 
   UpgradeWorkspaceState,
-  AutomationJobEntry
+  AutomationJobEntry,
+  EscrowRecord
 } from "../apiClient";
 import type { JobRecord } from "./JobListView";
 import { JobListView } from "./JobListView";
@@ -61,9 +62,14 @@ export interface PortalWorkspaceState {
   selectedJob: JobRecord | null;
   selectedJobStatus: string;
   selectedJobDocumentCount: number;
+  documents: Array<Record<string, unknown>>;
+  escrowByDocumentid: Record<string, EscrowRecord | undefined>;
   selectedRequestid: string;
+  setSelectedRequestid: (v: string) => void;
   selectedScheduleid: string;
+  setSelectedScheduleid: (v: string) => void;
   selectedDocumentid: string;
+  setSelectedDocumentid: (v: string) => void;
   dispatchRequests: ScheduleRequestRow[];
   dispatchSchedules: ScheduleRow[];
   dispatchDocuments: JobDocumentRow[];
@@ -86,6 +92,7 @@ export interface PortalWorkspaceState {
   setRescheduleRowVersion: (v: number) => void;
   documentType: "jobcard" | "service_report" | "certificate";
   setDocumentType: (v: "jobcard" | "service_report" | "certificate") => void;
+  onChecklistChange: (data: Record<string, string>) => void;
   onStatusUpdate: () => void;
   onNote: () => void;
   noteValue: string;
@@ -98,6 +105,8 @@ export interface PortalWorkspaceState {
   onReschedule: () => void;
   onDocumentGenerate: () => void;
   onDocumentPublish: () => void;
+  onDocumentPublishInline: (documentid: string, rowVersion: number, clientVisible: boolean) => void;
+  onRefreshDocuments: () => void;
   onBulkStatusUpdate: (ids: string[], status: JobStatus) => void;
   canGenerateDocuments: boolean;
   documentGenerateDisabledReason: string;
@@ -135,6 +144,13 @@ export interface PortalWorkspaceState {
   onLoadOpsIntelligence: () => void;
   peopleDirectory: PeopleDirectoryEntry[];
   upgradeState: UpgradeWorkspaceState;
+  onRefreshUpgradeState: () => void;
+  onCreateQuote: (payload: { job_id: string; client_id: string; description: string; amount: number }) => void;
+  onUpdateQuoteStatus: (quoteid: string, status: "draft" | "sent" | "approved" | "rejected" | "invoiced") => void;
+  onCreateInvoiceFromQuote: (quoteid: string, dueDate: string) => void;
+  onReconcileInvoice: (invoiceid: string) => void;
+  onLockEscrow: (documentid: string, invoiceid: string) => void;
+  onRebuildAnalytics: () => void;
   setFeedback: (f: string) => void;
   onFeedback: (msg: string) => void;
   onUpsertSkill: (payload: SkillMatrixRecord) => void;
@@ -171,9 +187,14 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
     selectedJob,
     selectedJobStatus,
     selectedJobDocumentCount,
+    documents,
+    escrowByDocumentid,
     selectedRequestid,
+    setSelectedRequestid,
     selectedScheduleid,
+    setSelectedScheduleid,
     selectedDocumentid,
+    setSelectedDocumentid,
     dispatchRequests,
     dispatchSchedules,
     dispatchDocuments,
@@ -196,6 +217,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
     setRescheduleRowVersion,
     documentType,
     setDocumentType,
+    onChecklistChange,
     onStatusUpdate,
     onNote,
     noteValue,
@@ -208,6 +230,8 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
     onReschedule,
     onDocumentGenerate,
     onDocumentPublish,
+    onDocumentPublishInline,
+    onRefreshDocuments,
     onBulkStatusUpdate,
     canGenerateDocuments,
     documentGenerateDisabledReason,
@@ -245,6 +269,13 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
     onLoadOpsIntelligence,
     peopleDirectory,
     upgradeState,
+    onRefreshUpgradeState,
+    onCreateQuote,
+    onUpdateQuoteStatus,
+    onCreateInvoiceFromQuote,
+    onReconcileInvoice,
+    onLockEscrow,
+    onRebuildAnalytics,
     setFeedback,
     onUpsertSkill,
     onPeopleSync,
@@ -391,6 +422,9 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             selectedRequestid={selectedRequestid}
             selectedScheduleid={selectedScheduleid}
             selectedDocumentid={selectedDocumentid}
+            setSelectedRequestid={setSelectedRequestid}
+            setSelectedScheduleid={setSelectedScheduleid}
+            setSelectedDocumentid={setSelectedDocumentid}
             onSelectJobid={onSelectJobid}
             preferredStart={preferredStart}
             setPreferredStart={setPreferredStart}
@@ -438,7 +472,7 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
               onDocumentGenerate={onDocumentGenerate}
               canGenerateDocuments={canGenerateDocuments && !documentAccessDenied}
               documentGenerateDisabledReason={documentGenerateDisabledReason}
-              onChecklistChange={() => undefined}
+              onChecklistChange={onChecklistChange}
               selectedJobTitle={selectedJobTitle}
               documentCountForJob={selectedJobDocumentCount}
               geoVerification={geoVerification}
@@ -452,7 +486,15 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
             activeWorkspaceTool={activeWorkspaceTool}
             effectiveRole={effectiveRole}
             jobs={jobs}
+            documents={documents}
             store={upgradeState}
+            onRefreshStore={onRefreshUpgradeState}
+            onCreateQuote={onCreateQuote}
+            onUpdateQuoteStatus={onUpdateQuoteStatus}
+            onCreateInvoiceFromQuote={onCreateInvoiceFromQuote}
+            onReconcileInvoice={onReconcileInvoice}
+            onLockEscrow={onLockEscrow}
+            onRebuildAnalytics={onRebuildAnalytics}
             onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
           />
 
@@ -520,12 +562,12 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
 
           {activeWorkspaceTool === "documents" ? (
             <DocumentHistoryCard
-              documents={[]}
+              documents={documents}
               selectedJobid={selectedJob?.job_id ?? ""}
               role={(effectiveRole || "client") as Role}
-              escrowByDocumentid={{}}
-              onRefresh={() => undefined}
-              onPublish={() => undefined}
+              escrowByDocumentid={escrowByDocumentid}
+              onRefresh={onRefreshDocuments}
+              onPublish={onDocumentPublishInline}
             />
           ) : null}
 

@@ -22,7 +22,9 @@ import type {
   SkillMatrixRow, 
   AutomationJobRow, 
   SyncQueueRow,
-  JobDocumentRow
+  JobDocumentRow,
+  SiteRow,
+  PortalFileRow
 } from "./types.js";
 
 
@@ -232,7 +234,11 @@ export function parseClientRow(row: Row): ClientRow {
     client_name: firstNonEmpty(field(row, "client_name"), field(row, "account"), field(row, "billing_entity")),
     billing_entity: firstNonEmpty(field(row, "billing_entity"), field(row, "client_name")),
     ops_email: field(row, "ops_email", "email"),
-    active: boolString(field(row, "active_flag", "active"))
+    active: boolString(field(row, "active_flag", "active")),
+    row_version: Math.max(1, toNum(field(row, "row_version"))),
+    updated_at: firstNonEmpty(field(row, "updated_at"), field(row, "last_sync_at")),
+    updated_by: firstNonEmpty(field(row, "updated_by"), field(row, "client_name")),
+    correlation_id: firstNonEmpty(field(row, "correlation_id"), field(row, "client_id"))
   };
 }
 
@@ -240,7 +246,44 @@ export function parseTechnicianRow(row: Row): TechnicianRow {
   return {
     technician_id: field(row, "technician_id"),
     display_name: firstNonEmpty(field(row, "display_name"), field(row, "technician_name")),
-    active: boolString(field(row, "active_flag", "active"))
+    active: boolString(field(row, "active_flag", "active")),
+    row_version: Math.max(1, toNum(field(row, "row_version"))),
+    updated_at: firstNonEmpty(field(row, "updated_at"), field(row, "last_sync_at")),
+    updated_by: firstNonEmpty(field(row, "updated_by"), field(row, "display_name")),
+    correlation_id: firstNonEmpty(field(row, "correlation_id"), field(row, "technician_id"))
+  };
+}
+
+export function parseSiteRow(row: Row): SiteRow {
+  return {
+    site_id: field(row, "site_id"),
+    client_id: field(row, "client_id"),
+    site_name: firstNonEmpty(field(row, "site_name"), field(row, "site")),
+    address: field(row, "address"),
+    geo_lat: toNum(field(row, "geo_lat")),
+    geo_lng: toNum(field(row, "geo_lng")),
+    row_version: Math.max(1, toNum(field(row, "row_version"))),
+    updated_at: field(row, "updated_at"),
+    updated_by: field(row, "updated_by"),
+    correlation_id: field(row, "correlation_id")
+  };
+}
+
+export function parsePortalFileRow(row: Row): PortalFileRow {
+  return {
+    file_id: field(row, "file_id"),
+    job_id: field(row, "job_id"),
+    client_id: field(row, "client_id"),
+    site_id: field(row, "site_id"),
+    file_role: field(row, "file_role"),
+    file_category: field(row, "file_category"),
+    drive_file_id: field(row, "drive_file_id"),
+    portal_visible: parseBoolean(field(row, "portal_visible")),
+    source_url: field(row, "source_url"),
+    row_version: Math.max(1, toNum(field(row, "row_version"))),
+    updated_at: field(row, "updated_at"),
+    updated_by: field(row, "updated_by"),
+    correlation_id: field(row, "correlation_id")
   };
 }
 

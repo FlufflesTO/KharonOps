@@ -10,9 +10,9 @@ Kharon Unified Rebuild v1 is a single Cloudflare-hosted product with:
 
 ## Hosting Topology
 
-- Public and staging public Workers serve static assets from `dist/public`
-- Those same public Workers execute `/api/*`
-- Internal and staging internal Workers remain API-only and can stay Access-protected
+- One Cloudflare Worker serves static assets from `dist/public`
+- The same Worker executes `/api/*`
+- No preview or staging Workers are configured
 
 ## Runtime Components
 

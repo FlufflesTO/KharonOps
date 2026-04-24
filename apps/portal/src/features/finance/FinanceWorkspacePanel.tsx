@@ -13,7 +13,15 @@ interface FinanceWorkspacePanelProps {
   activeWorkspaceTool: string;
   effectiveRole: string;
   jobs: JobRecord[];
+  documents: Array<Record<string, unknown>>;
   store: UpgradeWorkspaceState;
+  onRefreshStore: () => void;
+  onCreateQuote: (payload: { job_id: string; client_id: string; description: string; amount: number }) => void;
+  onUpdateQuoteStatus: (quoteid: string, status: "draft" | "sent" | "approved" | "rejected" | "invoiced") => void;
+  onCreateInvoiceFromQuote: (quoteid: string, dueDate: string) => void;
+  onReconcileInvoice: (invoiceid: string) => void;
+  onLockEscrow: (documentid: string, invoiceid: string) => void;
+  onRebuildAnalytics: () => void;
   onActiveWorkspaceToolChange: (tool: string) => void;
 }
 
@@ -21,7 +29,15 @@ export function FinanceWorkspacePanel({
   activeWorkspaceTool,
   effectiveRole,
   jobs,
+  documents,
   store,
+  onRefreshStore,
+  onCreateQuote,
+  onUpdateQuoteStatus,
+  onCreateInvoiceFromQuote,
+  onReconcileInvoice,
+  onLockEscrow,
+  onRebuildAnalytics,
   onActiveWorkspaceToolChange
 }: FinanceWorkspacePanelProps): React.JSX.Element | null {
   if (effectiveRole !== "finance" && effectiveRole !== "super_admin") return null;
@@ -29,23 +45,23 @@ export function FinanceWorkspacePanel({
   return (
     <>
       {activeWorkspaceTool === "finance_overview" ? <FinanceOverviewCard store={store} onEnterTool={onActiveWorkspaceToolChange} isLoading={false} /> : null}
-      {activeWorkspaceTool === "finance_quotes" ? <FinanceQuotesCard store={store} onCreateQuote={() => undefined} onUpdateQuoteStatus={() => undefined} /> : null}
-      {activeWorkspaceTool === "finance_invoices" ? <FinanceInvoicesCard store={store} onCreateInvoiceFromQuote={() => undefined} /> : null}
-      {activeWorkspaceTool === "finance_payments" ? <FinancePaymentsCard store={store} onReconcileInvoice={() => undefined} /> : null}
-      {activeWorkspaceTool === "finance_debtors" ? <FinanceDebtorsCard store={store} onRebuildAnalytics={() => undefined} /> : null}
+      {activeWorkspaceTool === "finance_quotes" ? <FinanceQuotesCard store={store} onCreateQuote={onCreateQuote} onUpdateQuoteStatus={onUpdateQuoteStatus} /> : null}
+      {activeWorkspaceTool === "finance_invoices" ? <FinanceInvoicesCard store={store} onCreateInvoiceFromQuote={onCreateInvoiceFromQuote} /> : null}
+      {activeWorkspaceTool === "finance_payments" ? <FinancePaymentsCard store={store} onReconcileInvoice={onReconcileInvoice} /> : null}
+      {activeWorkspaceTool === "finance_debtors" ? <FinanceDebtorsCard store={store} onRebuildAnalytics={onRebuildAnalytics} /> : null}
       {activeWorkspaceTool === "finance_statements" ? <FinanceStatementsCard store={store} /> : null}
       {activeWorkspaceTool === "finance" ? (
         <FinanceOpsCard
           jobs={jobs}
-          documents={[]}
+          documents={documents}
           store={store}
-          onRefreshStore={() => undefined}
-          onCreateQuote={() => undefined}
-          onUpdateQuoteStatus={() => undefined}
-          onCreateInvoiceFromQuote={() => undefined}
-          onReconcileInvoice={() => undefined}
-          onLockEscrow={() => undefined}
-          onRebuildAnalytics={() => undefined}
+          onRefreshStore={onRefreshStore}
+          onCreateQuote={onCreateQuote}
+          onUpdateQuoteStatus={onUpdateQuoteStatus}
+          onCreateInvoiceFromQuote={onCreateInvoiceFromQuote}
+          onReconcileInvoice={onReconcileInvoice}
+          onLockEscrow={onLockEscrow}
+          onRebuildAnalytics={onRebuildAnalytics}
         />
       ) : null}
     </>

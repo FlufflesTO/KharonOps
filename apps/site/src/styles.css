@@ -1,18 +1,7 @@
 :root {
-  --color-primary: #6366f1;
-  --color-secondary: #3b82f6;
-  --color-accent: #8b5cf6;
-  --color-bg: #030712;
-  --color-surface: #111827;
-  --color-surface-hover: #1f2937;
-  --color-text: #f9fafb;
-  --color-text-muted: #9ca3af;
-  --color-border: rgba(255, 255, 255, 0.1);
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --max-width: 1280px;
 }
 
 .site-shell {
@@ -46,7 +35,7 @@ body {
 
 h1, h2, h3 {
   line-height: 1.1;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 /* Nav */
