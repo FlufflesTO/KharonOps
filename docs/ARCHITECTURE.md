@@ -1,143 +1,82 @@
-# Architecture
+# KharonOps Architecture
 
-## System Overview
+## Overview
 
-Kharon Unified Rebuild v1 is a single Cloudflare-hosted product with:
+KharonOps is a role-based operations platform built with TypeScript, React, and Cloudflare Workers. The system consists of multiple applications, a shared domain library, and supporting infrastructure.
 
-- `apps/site` for public marketing
-- `apps/portal` for authenticated operations
-- `apps/api` for the Hono API under `/api/v1/*`
+## Core Components
 
-## Hosting Topology
+### Applications
 
-- One Cloudflare Worker serves static assets from `dist/public`
-- The same Worker executes `/api/*`
-- No preview or staging Workers are configured
+- **API** (`apps/api`): RESTful API backend with authentication, authorization, and business logic
+- **Portal** (`apps/portal`): Client-facing React application with role-based UI components
+- **Site** (`apps/site`): Static marketing/public information site
 
-## Runtime Components
+### Packages
 
-### UI Layer
+- **Domain** (`packages/domain`): Shared business logic, types, and RBAC utilities
+- **Google** (`packages/google`): Google Workspace integration utilities
+- **UI** (`packages/ui`): Shared UI components
 
-- shared design tokens from `packages/ui`
-- public marketing site
-- **Redesigned Role-Based Portal:** Modular, component-driven architecture for client, technician, dispatcher, finance, admin, and super_admin roles.
-- **Workflow Components:** Each role utilizes specialized React components for task-first workflows (e.g., `FinanceQuotesCard`, `TechMyDayCard`, `AdminDashboard`).
-- **Progressive Disclosure:** Advanced technical diagnostics and platform controls are encapsulated behind specialized SuperAdmin modules with detailed viewing affordances.
-- **Responsive Layouts:** Fluid, sidebar-driven navigation optimized for mobile, tablet, and desktop environments.
-- offline support in the portal:
-  - service worker caches shell
-  - IndexedDB queue stores mutations
-  - replay posts batches to `/api/v1/sync/push`
+## Key Architectural Patterns
 
-### API Layer
+### Role-Based Access Control (RBAC)
 
-- Hono-based API router
-- correlation ID middleware on every request
-- session middleware with signed `httpOnly` cookie validation
-- route groups:
-  - `auth`
-  - `jobs`
-  - `schedules`
-  - `documents`
-  - `sync`
-  - `workspace`
-  - `admin`
+The system implements a comprehensive RBAC system with the following roles:
 
-### Domain Layer
+- `client`: Limited access to their own jobs
+- `technician`: Access to assigned jobs and document generation
+- `dispatcher`: Access to all jobs, scheduling, and document publishing
+- `finance`: Financial data access and reporting
+- `admin`: Full administrative capabilities
+- `super_admin`: Platform-level administrative access
 
-- canonical types and schemas
-- response envelopes
-- RBAC and ownership rules
-- status transitions
-- workbook schema definitions
-- conflict payload helpers
+**NEW**: Enhanced RBAC includes granular permissions for specific operations:
+- Job creation/deletion
+- Document generation/publishing
+- Schedule management
+- User/finance data access
 
-### Services Layer
+### Data Flow
 
-- `nameEnrichment.ts` — builds client/technician name-lookup maps with priority hierarchy (Master sheets → Users_Master fallback)
-- `documentTokens.ts` — token builder for controlled document generation
-- `meta.ts` — mutable metadata stamping utilities
-- `parse.ts` — Zod-validated JSON body parser
+1. Authentication via Google OAuth
+2. Session management with signed cookies
+3. Role-based authorization at API gateway
+4. Business logic processing with audit logging
+5. Data persistence to Google Sheets and PostgreSQL
+6. Real-time synchronization for offline capabilities
 
-### Google Adapter Layer
+### Offline Support
 
-- Sheets
-- Drive
-- Docs
-- Calendar
-- Gmail
-- Chat
-- People
+The system includes comprehensive offline support:
+- Local storage of job data
+- Queue for pending mutations
+- Conflict resolution mechanisms
+- Automatic sync when connectivity is restored
 
-Production mode uses service-account-backed API calls. Local mode uses deterministic fallbacks.
+## Infrastructure
 
-## Data Model
+### Deployment
 
-### Canonical Source of Record
+- Cloudflare Workers for API backend
+- Cloudflare Pages for frontend applications
+- Google Workspace for data storage and calendar integration
+- PostgreSQL for primary data storage (migration in progress)
 
-Google Sheets remains canonical in the current production design.
+### Security
 
-### Name Enrichment
+- End-to-end encryption for sensitive data
+- Role-based access controls
+- Audit logging for privileged operations
+- Rate limiting and DDoS protection
+- Secure session management
 
-Job records reference clients and technicians by id only (`client_id`, `technician_id`). Display names are enriched at query time using a priority hierarchy:
+## Technology Stack
 
-1. **Clients_Master / Technicians_Master** — authoritative registration data
-2. **Users_Master** — portal-provisioned fallback only
-
-The enrichment logic is implemented in `apps/api/src/services/nameEnrichment.ts` and is resilient to individual sheet-fetch failures via `Promise.allSettled`.
-
-### Store Implementations
-
-- `LocalWorkbookStore` — in-memory, deterministic seed data for development
-- `SheetsWorkbookStore` — production Google Sheets backend
-- `PostgresWorkbookStore` — SQL-backed store with `svr_clients` and `svr_technicians` tables
-- `DualWorkbookStore` — primary+mirror write strategy with consistency verification
-
-All stores enforce:
-
-- row version checks
-- mutable audit fields
-- conflict payload generation
-- replay-safe mutation behavior
-- `listClients()` / `listTechnicians()` interface contract
-
-## Identity and Session
-
-- Google ID token verification is server-side
-- session token signing uses rotating `SESSION_KEYS`
-- session cookie is `httpOnly`, `secure`, `sameSite=Lax`
-- client role claims are never trusted
-
-## RBAC and Ownership
-
-Enforced server-side:
-
-- client: own jobs and schedule requests
-- technician: assigned jobs and controlled document generation for owned jobs
-- dispatcher: operational overrides and workspace actions
-- finance: quotes, invoices, payments, debtors, and statements
-- admin: full access, audits, recovery actions, and workspace preference management
-- super_admin: platform health, data checks, automations, activity, and business-unit governance
-
-Portal role workspaces map to the current primary tool sets:
-
-- client: overview, jobs, documents, invoices, support
-- technician: my day, jobs, check-in/out, documents, help
-- dispatcher: dashboard, schedule, unassigned queue, people, comms, daily plan
-- finance: overview, quotes, invoices, payments, debtors, statements
-- admin: dashboard, jobs, people, documents, schedule, settings
-- super_admin: overview, users, business units, data checks, automations, health, activity
-
-## Controlled Documents
-
-Current controlled documents:
-
-- Jobcard
-- Service Report
-
-Flow:
-
-1. generate from Docs template
-2. export PDF
-3. store in Drive
-4. publish and update status/history
+- **Frontend**: React 18, TypeScript, Vite
+- **Backend**: Hono, Cloudflare Workers, TypeScript
+- **Database**: Google Sheets (legacy), PostgreSQL (primary)
+- **Authentication**: Google OAuth
+- **Infrastructure**: Cloudflare (Workers, Pages, KV, D1)
+- **Testing**: Vitest
+- **Build**: TypeScript compiler

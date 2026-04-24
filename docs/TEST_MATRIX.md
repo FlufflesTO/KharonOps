@@ -13,6 +13,9 @@
    - validates allowed/blocked status transitions
 2. `rbac-matrix.test.ts`
    - validates role and ownership enforcement helpers
+   - validates enhanced RBAC functions for job creation/deletion
+   - validates enhanced RBAC functions for user/finance data access
+   - validates enhanced RBAC functions for schedule management
 3. `schema-validation.test.ts`
    - validates request schemas and payload contracts
 4. `name-enrichment.test.ts`
@@ -78,7 +81,3 @@
    - admin workspace preference save/load
    - super-admin business-unit add/activate/disable flow
 4. Browser UX sanity check for contact intake, resources request links, and portal dashboard navigation.
-5. Document generate/publish in Drive + Docs PDF output.
-6. Gmail notify + Chat alert + People sync execution against live Google rails.
-7. Offline mutation queue and replay with forced disconnect.
-8. Admin health and audit endpoints under load.

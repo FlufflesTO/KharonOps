@@ -425,7 +425,7 @@ export function ScheduleControlCard({
         .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .whitespace-nowrap { white-space: nowrap; }
         .font-semibold { font-weight: 600; }
-        .text-white { color: #fff; }
+        .text-white { color: var(--color-text); }
         .text-xs { font-size: 0.75rem; }
         .opacity-50 { opacity: 0.5; }
         .bg-white\\/5 { background-color: rgba(255, 255, 255, 0.05); }

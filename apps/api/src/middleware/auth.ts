@@ -22,6 +22,21 @@ export function sessionMiddleware(config: RuntimeConfig) {
       signingKeys: config.sessionKeys
     });
 
+    if (!sessionUser) {
+      c.set("sessionUser", null);
+      const correlationId = c.get("correlationId");
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "session_invalid",
+            message: "Invalid or expired session token"
+          }
+        }),
+        401
+      );
+    }
+
     c.set("sessionUser", sessionUser);
     await next();
   });
@@ -113,19 +128,103 @@ export function requireRoles(...roles: Role[]) {
       );
     }
 
-    if (user.role !== "super_admin" && !roles.includes(user.role)) {
+    // Enhanced security: Super admin bypass with audit trail
+    if (user.role === "super_admin") {
+      // Log super admin access for audit purposes
+      console.log(`[auth.audit] Super admin access granted for user ${user.user_id} (${user.email})`);
+      await next();
+      return;
+    }
+
+    if (!roles.includes(user.role)) {
       return c.json(
         envelopeError({
           correlationId,
           error: {
             code: "forbidden",
-            message: "Insufficient role"
+            message: `Insufficient role. Required: ${roles.join(', ')}, Current: ${user.role}`
           }
         }),
         403
       );
     }
 
+    await next();
+  });
+}
+
+export function requireAdminOrSuperAdmin() {
+  return createMiddleware<AppBindings>(async (c, next) => {
+    const correlationId = c.get("correlationId");
+    const user = c.get("sessionUser");
+    if (!user) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "unauthorized",
+            message: "Authentication required"
+          }
+        }),
+        401
+      );
+    }
+
+    if (user.role !== "admin" && user.role !== "super_admin") {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "forbidden",
+            message: `Insufficient role. Admin or Super Admin required. Current: ${user.role}`
+          }
+        }),
+        403
+      );
+    }
+
+    // Enhanced audit logging for admin actions
+    if (user.role === "admin") {
+      console.log(`[auth.audit] Admin action by user ${user.user_id} (${user.email})`);
+    } else if (user.role === "super_admin") {
+      console.log(`[auth.audit] Super admin action by user ${user.user_id} (${user.email})`);
+    }
+
+    await next();
+  });
+}
+
+export function requireSuperAdmin() {
+  return createMiddleware<AppBindings>(async (c, next) => {
+    const correlationId = c.get("correlationId");
+    const user = c.get("sessionUser");
+    if (!user) {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "unauthorized",
+            message: "Authentication required"
+          }
+        }),
+        401
+      );
+    }
+
+    if (user.role !== "super_admin") {
+      return c.json(
+        envelopeError({
+          correlationId,
+          error: {
+            code: "forbidden",
+            message: `Super admin access required. Current: ${user.role}`
+          }
+        }),
+        403
+      );
+    }
+
+    console.log(`[auth.audit] Super admin access by user ${user.user_id} (${user.email})`);
     await next();
   });
 }

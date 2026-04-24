@@ -11,6 +11,8 @@ interface SessionPayload {
   client_id: string;
   technician_id: string;
   exp: number;
+  iat: number;  // issued at time
+  jti?: string; // JWT ID for potential revocation
 }
 
 function base64UrlEncode(input: string | Uint8Array): string {
@@ -62,7 +64,8 @@ export async function createSessionToken(args: {
     display_name: args.user.display_name,
     client_id: args.user.client_id,
     technician_id: args.user.technician_id,
-    exp: Math.floor(Date.now() / 1_000) + args.ttlSeconds
+    exp: Math.floor(Date.now() / 1_000) + args.ttlSeconds,
+    iat: Math.floor(Date.now() / 1_000)
   };
 
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
@@ -77,6 +80,7 @@ export async function verifySessionToken(args: {
 }): Promise<SessionUser | null> {
   const parts = args.token.split(".");
   if (parts.length !== 3) {
+    console.log("[auth.security] Invalid token format");
     return null;
   }
 
@@ -88,9 +92,27 @@ export async function verifySessionToken(args: {
       const computedSignature = await sign(unsigned, signingKey);
       if (computedSignature === providedSignature) {
         const parsed = JSON.parse(base64UrlDecode(payload)) as SessionPayload;
-        if (parsed.exp <= Math.floor(Date.now() / 1_000)) {
+        
+        // Enhanced security checks
+        const now = Math.floor(Date.now() / 1_000);
+        
+        // Check expiration
+        if (parsed.exp <= now) {
+          console.log(`[auth.security] Token expired for user ${parsed.user_id}`);
           return null;
         }
+        
+        // Check if issued in the future (clock drift protection)
+        if (parsed.iat > now + 300) { // Allow 5 minutes for clock drift
+          console.log(`[auth.security] Token issued in the future for user ${parsed.user_id}`);
+          return null;
+        }
+        
+        // Additional security: Log super admin access
+        if (parsed.role === "super_admin") {
+          console.log(`[auth.security] Super admin token validated for user ${parsed.user_id} (${parsed.email})`);
+        }
+        
         return {
           user_id: parsed.user_id,
           email: parsed.email,
@@ -100,12 +122,14 @@ export async function verifySessionToken(args: {
           technician_id: parsed.technician_id
         };
       }
-    } catch {
+    } catch (error) {
+      console.log(`[auth.security] Error validating token: ${error}`);
       // If parsing fails for one key, continue to next key or return null
       continue;
     }
   }
 
+  console.log("[auth.security] Invalid token signature");
   return null;
 }
 
@@ -118,8 +142,8 @@ export async function setSessionCookie(args: {
   setCookie(args.c, args.cookieName, args.token, {
     path: "/",
     httpOnly: true,
-    secure: true,
-    sameSite: "Lax",
+    secure: true,           // Ensure cookie is only sent over HTTPS
+    sameSite: "Strict",     // Enhanced CSRF protection
     maxAge: args.ttlSeconds
   });
 }

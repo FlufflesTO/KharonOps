@@ -97,7 +97,7 @@ export function DispatchPublisherCard({
         .interaction-panel { background: rgba(255,255,255,0.02); padding: var(--space-6); border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,0.05); }
         .enhanced-select { width: 100%; padding: 0.875rem 1rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-md); color: white; font-size: 0.95rem; transition: border-color 0.2s; }
         .enhanced-select:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
-        .info-readout { padding: 0.875rem 1rem; background: rgba(99,102,241,0.05); border-left: 3px solid var(--color-primary); border-radius: 0 var(--radius-md) var(--radius-md) 0; color: #cbd5e1; font-size: 0.9rem; min-height: 48px; }
+        .info-readout { padding: 0.875rem 1rem; background: rgba(99,102,241,0.05); border-left: 3px solid var(--color-primary); border-radius: 0 var(--radius-md) var(--radius-md) 0; color: var(--color-text-muted); font-size: 0.9rem; min-height: 48px; }
         .button--large { padding: 1rem 2.5rem; font-size: 1.1rem; font-weight: 600; }
         .button--loading { opacity: 0.8; cursor: wait; }
         .mt-4 { margin-top: 1rem; }

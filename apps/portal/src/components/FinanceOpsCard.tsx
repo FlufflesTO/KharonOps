@@ -473,11 +473,11 @@ export function FinanceOpsCard({
         }
         .module-tab:hover {
           background: rgba(255, 255, 255, 0.1);
-          color: #fff;
+          color: var(--color-text);
         }
         .module-tab--active {
           background: var(--color-primary);
-          color: #fff;
+          color: var(--color-text);
           border-color: var(--color-primary);
           box-shadow: 0 2px 10px rgba(var(--color-primary-rgb), 0.3);
         }
@@ -499,7 +499,7 @@ export function FinanceOpsCard({
         }
         .kpi-card strong {
           font-size: 1.5rem;
-          color: #fff;
+          color: var(--color-text);
           font-weight: 800;
         }
         .form-grid--two { grid-template-columns: 1fr; }

@@ -95,3 +95,53 @@ export function canAccessPeopleDirectory(role: Role): boolean {
 export function canManageSchedules(role: Role): boolean {
   return isSuperAdmin(role) || role === "admin" || role === "dispatcher";
 }
+
+// Enhanced security functions for admin and superadmin
+export function canPerformCriticalAdminAction(role: Role): boolean {
+  return role === "super_admin";
+}
+
+export function canAccessSystemLogs(role: Role): boolean {
+  return role === "super_admin";
+}
+
+export function canManageUsers(role: Role): boolean {
+  return role === "super_admin" || role === "admin";
+}
+
+export function canAccessAllData(role: Role): boolean {
+  return role === "super_admin";
+}
+
+export function canModifySystemSettings(role: Role): boolean {
+  return role === "super_admin";
+}
+
+export function canBypassRateLimits(role: Role): boolean {
+  return role === "super_admin";
+}
+
+// Role validation function
+export function isValidRole(role: string): role is Role {
+  const validRoles: Role[] = ["client", "technician", "dispatcher", "finance", "admin", "super_admin"];
+  return validRoles.includes(role as Role);
+}
+
+// Enhanced role validation with additional security
+export function validateUserRole(user: SessionUser, requiredRole: Role, bypassWithSuperAdmin: boolean = true): boolean {
+  if (bypassWithSuperAdmin && user.role === "super_admin") {
+    return true;
+  }
+  
+  return user.role === requiredRole;
+}
+
+// Function to determine if a role has elevated privileges
+export function hasElevatedPrivileges(role: Role): boolean {
+  return role === "admin" || role === "super_admin";
+}
+
+// Function to determine if a role has system-level access
+export function hasSystemLevelAccess(role: Role): boolean {
+  return role === "super_admin";
+}

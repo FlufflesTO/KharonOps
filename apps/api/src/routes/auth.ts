@@ -29,13 +29,15 @@ function syntheticSuperAdminUserid(email: string): string {
   return `SUPER-${compact}`.slice(0, 64);
 }
 
-auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 20 }), async (c) => {
+auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 10 }), async (c) => {
   const correlationId = c.get("correlationId");
   const config = c.get("config");
   const store = c.get("store");
   const body = await parseJsonBody(c, googleLoginSchema);
   const headers = c.req.header();
-  console.log(`[auth.google-login] Correlation: ${correlationId}, Headers: ${JSON.stringify(headers)}`);
+  const ip = c.req.header("CF-Connecting-IP") || c.req.header("X-Forwarded-For") || "unknown";
+  
+  console.log(`[auth.google-login] Correlation: ${correlationId}, IP: ${ip}, Headers: ${JSON.stringify(headers)}`);
   const frontendClientId = (c.req.header("x-gsi-client-id") ?? "").trim();
   const tokenAudienceHint = parseGoogleTokenAudienceFromJwt(body.id_token);
 
@@ -43,14 +45,16 @@ auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 
     correlationId,
     tokenAudienceHint,
     frontendClientId,
-    backendClientId: config.googleClientId
+    backendClientId: config.googleClientId,
+    ip
   });
 
   if (frontendClientId !== "" && frontendClientId !== config.googleClientId) {
     logApiEvent("warn", "auth.google_login.frontend_client_id_mismatch", {
       correlationId,
       frontendClientId,
-      backendClientId: config.googleClientId
+      backendClientId: config.googleClientId,
+      ip
     });
   }
 
@@ -58,11 +62,12 @@ auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 
     logApiEvent("warn", "auth.google_login.token_audience_mismatch_hint", {
       correlationId,
       tokenAudienceHint,
-      backendClientId: config.googleClientId
+      backendClientId: config.googleClientId,
+      ip
     });
   }
 
-  let identity: Awaited<ReturnType<typeof verifyIdentity>>;
+  let identity: Awaited<ReturnType<typeof verifyIdentity>> | null = null;
   try {
     identity = await verifyIdentity({
       mode: config.mode,
@@ -79,7 +84,18 @@ auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 
       stack: error instanceof Error ? error.stack : undefined,
       googleStatus: error instanceof GoogleAdapterError ? error.status : undefined,
       googleCode: error instanceof GoogleAdapterError ? error.code : undefined,
-      googleDetails: error instanceof GoogleAdapterError ? error.details : undefined
+      googleDetails: error instanceof GoogleAdapterError ? error.details : undefined,
+      ip
+    });
+    await store.appendAudit({
+      action: "auth.login.failure",
+      entry_type: "auth_audit",
+      payload: {
+        email: normalizeEmail(identity?.email || body.id_token || "unknown"),
+        reason: "identity_verification_failed",
+        ip
+      },
+      ctx: createStoreContext("system:unauthenticated", correlationId)
     });
     throw error;
   }
@@ -98,13 +114,15 @@ auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 
   const normalizedEmail = normalizeEmail(identity.email);
   const isConfiguredSuperAdmin = config.superAdminEmails.includes(normalizedEmail);
 
+  // Additional security check for admin/superadmin access
   if (!userRow && !isConfiguredSuperAdmin) {
     await store.appendAudit({
       action: "auth.login.denied",
       entry_type: "auth_audit",
       payload: {
         email: normalizedEmail,
-        reason: "not_provisioned"
+        reason: "not_provisioned",
+        ip
       },
       ctx: createStoreContext("system:unauthenticated", correlationId)
     });
@@ -121,13 +139,23 @@ auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 
     );
   }
 
+  // Enhanced security check for super_admin role
   if (userRow?.role === "super_admin" && !isConfiguredSuperAdmin) {
+    logApiEvent("warn", "auth.super_admin_access_denied", {
+      correlationId,
+      email: normalizedEmail,
+      role: userRow?.role,
+      ip
+    });
+    
     await store.appendAudit({
       action: "auth.login.denied",
       entry_type: "auth_audit",
       payload: {
         email: normalizedEmail,
-        reason: "super_admin_requires_configured_email"
+        reason: "super_admin_requires_configured_email",
+        attempted_role: userRow?.role,
+        ip
       },
       ctx: createStoreContext("system:unauthenticated", correlationId)
     });
@@ -143,6 +171,16 @@ auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 
     );
   }
 
+  // Enhanced security check for admin role
+  if (userRow?.role === "admin" && config.mode === "production") {
+    logApiEvent("info", "auth.admin_login_attempt", {
+      correlationId,
+      email: normalizedEmail,
+      role: userRow?.role,
+      ip
+    });
+  }
+
   const sessionUser = {
     user_id: userRow?.user_id ?? syntheticSuperAdminUserid(normalizedEmail),
     email: userRow?.email ?? normalizedEmail,
@@ -151,6 +189,16 @@ auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 
     client_id: userRow?.client_id ?? "",
     technician_id: userRow?.technician_id ?? ""
   };
+
+  // Enhanced security: Log role escalation attempts
+  if (sessionUser.role === "super_admin") {
+    logApiEvent("info", "auth.super_admin_login", {
+      correlationId,
+      user_id: sessionUser.user_id,
+      email: sessionUser.email,
+      ip
+    });
+  }
 
   const token = await createSessionToken({
     user: sessionUser,
@@ -171,7 +219,8 @@ auth.post("/google-login", rateLimitMiddleware({ windowMs: 15 * 60 * 1000, max: 
     payload: {
       user_id: sessionUser.user_id,
       email: sessionUser.email,
-      role: sessionUser.role
+      role: sessionUser.role,
+      ip
     },
     ctx: createStoreContext(sessionUser.user_id, correlationId)
   });
@@ -227,12 +276,15 @@ auth.post("/logout", async (c) => {
   const user = c.get("sessionUser");
 
   if (user) {
+    const ip = c.req.header("CF-Connecting-IP") || c.req.header("X-Forwarded-For") || "unknown";
     await store.appendAudit({
       action: "auth.logout",
       entry_type: "auth_audit",
       payload: {
         user_id: user.user_id,
-        email: user.email
+        email: user.email,
+        role: user.role,
+        ip
       },
       ctx: createStoreContext(user.user_id, correlationId)
     });
@@ -246,6 +298,54 @@ auth.post("/logout", async (c) => {
         logged_out: true
       }
     })
+  );
+});
+
+// Additional security endpoint for role validation
+auth.get("/validate-session-role/:required_role", async (c) => {
+  const correlationId = c.get("correlationId");
+  const requiredRole = c.req.param("required_role") as "client" | "technician" | "dispatcher" | "finance" | "admin" | "super_admin";
+  const user = c.get("sessionUser");
+
+  if (!user) {
+    return c.json(
+      envelopeError({
+        correlationId,
+        error: {
+          code: "unauthorized",
+          message: "Authentication required"
+        }
+      }),
+      401
+    );
+  }
+
+  // Super admin bypass
+  if (user.role === "super_admin" || user.role === requiredRole) {
+    return c.json(
+      envelopeSuccess({
+        correlationId,
+        data: {
+          valid: true,
+          user: {
+            user_id: user.user_id,
+            email: user.email,
+            role: user.role
+          }
+        }
+      })
+    );
+  }
+
+  return c.json(
+    envelopeError({
+      correlationId,
+      error: {
+        code: "forbidden",
+        message: `Insufficient role. Required: ${requiredRole}, Current: ${user.role}`
+      }
+    }),
+    403
   );
 });
 

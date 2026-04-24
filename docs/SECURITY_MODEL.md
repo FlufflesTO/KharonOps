@@ -12,7 +12,7 @@ Cookie flags:
 
 - `httpOnly`
 - `secure`
-- `sameSite=Lax`
+- `sameSite=Strict` (enhanced CSRF protection)
 - bounded TTL via `SESSION_TTL_SECONDS`
 
 ## Authorization
@@ -20,12 +20,15 @@ Cookie flags:
 - RBAC and ownership checks are server-side only.
 - No client-provided role or ownership claim is trusted.
 - Portal roles currently enforced end to end: client, technician, dispatcher, finance, admin, super_admin.
+- Enhanced RBAC system with granular permissions for job creation/deletion, document generation/publishing, schedule management, and user/finance data access.
 
 ## Request Integrity
 
 - correlation ID assigned on every request
 - correlation ID propagated in responses and mutable writes
 - optional Cloudflare Access JWT verification on `/api/v1/*`
+- IP address logging for all authentication requests
+- Enhanced audit logging for admin and super admin actions
 
 ## Concurrency Controls
 
@@ -44,6 +47,9 @@ Privileged actions append audits for:
 - workspace rail triggers
 - admin automation retries
 - super-admin business-unit and platform control actions
+- **NEW**: Enhanced audit logging for admin/superadmin access
+- **NEW**: Failed authentication attempts logging
+- **NEW**: Super admin access validation logging
 
 ### System Actor ids
 
@@ -74,3 +80,30 @@ System-initiated operations (cron, webhooks, automated reconciliation) use names
 3. Confirm `_headers` reflects final CSP, caching, and robots posture.
 4. Lock final domains before customer rollout.
 5. Review Cloudflare logs, audits, and health outputs daily during pilot.
+
+## NEW: Enhanced Security Measures
+
+The system now includes additional security hardening:
+
+- **Admin/Superadmin Access Validation**: Enhanced validation and audit logging for admin and super admin access
+- **Session Token Security**: Additional security checks for session tokens including clock drift protection
+- **IP Address Logging**: All authentication requests now log IP addresses for security monitoring
+- **Rate Limiting**: Enhanced rate limiting on authentication endpoints
+- **Super Admin Bypass**: Super admin access now includes enhanced audit logging
+- **Critical Action Protection**: Additional validation for critical admin actions
+- **Enhanced Session Security**: Stricter session cookie policies with SameSite=Strict
+
+## NEW: Enhanced RBAC Documentation
+
+The system now supports granular permissions including:
+
+- Job creation: Available to admin, dispatcher, and super_admin roles
+- Job deletion: Available to admin and super_admin roles
+- Document generation: Available to technician, dispatcher, admin, and super_admin roles
+- Document publishing: Available to dispatcher, admin, and super_admin roles
+- Schedule management: Available to dispatcher, admin, and super_admin roles
+- User data access: Available to admin and super_admin roles
+- Finance data access: Available to finance, admin, and super_admin roles
+- System-level access: Super admin only
+- Critical admin actions: Super admin only
+- Bypass rate limits: Super admin only

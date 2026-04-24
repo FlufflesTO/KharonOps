@@ -228,7 +228,7 @@ export function WorkspaceInfo({
         .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
         .font-bold { font-weight: 700; }
         .font-semibold { font-weight: 600; }
-        .text-white { color: #fff; }
+        .text-white { color: var(--color-text); }
         .text-primary { color: var(--color-primary); }
         .uppercase { text-transform: uppercase; }
         .tracking-wider { letter-spacing: 0.05em; }

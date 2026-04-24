@@ -328,7 +328,7 @@ export function JobListView({
           border: 1px solid rgba(255,255,255,0.1);
           padding: 0.6rem 1rem;
           border-radius: 8px;
-          color: #fff;
+          color: var(--color-text);
         }
         .job-scroller {
           flex: 1;
@@ -406,7 +406,7 @@ export function JobListView({
           font-size: 1rem;
           font-weight: 700;
           margin-bottom: 0.25rem;
-          color: #fff;
+          color: var(--color-text);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -460,7 +460,7 @@ export function JobListView({
           z-index: 1;
           font-size: 0.6rem;
           font-weight: 800;
-          color: #fff;
+          color: var(--color-text);
           text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
         .risk-bar {

@@ -198,7 +198,7 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
         .title-block h1 {
           font-size: 1.75rem;
           font-weight: 800;
-          color: #fff;
+          color: var(--color-text);
           margin-top: 0.5rem;
         }
         .status-badge {
@@ -209,8 +209,8 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
-        .status-badge--active { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.2); }
-        .status-badge--warning { background: rgba(234, 179, 8, 0.1); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.2); }
+        .status-badge--active { background: rgba(34, 197, 94, 0.1); color: var(--color-positive); border: 1px solid rgba(74, 222, 128, 0.2); }
+        .status-badge--warning { background: rgba(234, 179, 8, 0.1); color: var(--color-warning); border: 1px solid rgba(250, 204, 21, 0.2); }
         
         .telemetry-grid {
           display: grid;
@@ -235,7 +235,7 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
         .telemetry-cell .val {
           font-size: 0.9rem;
           font-weight: 600;
-          color: #fff;
+          color: var(--color-text);
         }
         .mono { font-family: monospace; }
         
@@ -254,13 +254,13 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
           flex: 1;
           background: rgba(0,0,0,0.3);
           border: 1px solid rgba(255,255,255,0.1);
-          color: #fff;
+          color: var(--color-text);
           padding: 0.75rem;
           border-radius: 8px;
         }
         .btn-primary {
           background: var(--color-primary);
-          color: #fff;
+          color: var(--color-text);
           border: none;
           padding: 0.75rem 1.5rem;
           border-radius: 8px;
@@ -274,7 +274,7 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
           min-height: 100px;
           background: rgba(0,0,0,0.3);
           border: 1px solid rgba(255,255,255,0.1);
-          color: #fff;
+          color: var(--color-text);
           padding: 1rem;
           border-radius: 8px;
           margin-bottom: 0.75rem;
@@ -282,7 +282,7 @@ export function JobDetailView(props: JobDetailViewProps): React.JSX.Element {
         }
         .btn-secondary {
           background: rgba(255, 255, 255, 0.1);
-          color: #fff;
+          color: var(--color-text);
           border: 1px solid rgba(255,255,255,0.1);
           padding: 0.6rem 1.25rem;
           border-radius: 8px;

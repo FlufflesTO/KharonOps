@@ -84,7 +84,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  text-transform: uppercase;
+  
 }
 
 .dashboard-header .role-tag::before {
@@ -110,7 +110,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
+  
   animation: pulse 2s ease-in-out infinite;
 }
 
@@ -180,7 +180,7 @@
   font-size: 1rem;
   font-weight: 600;
   color: #94a3b8;
-  text-transform: uppercase;
+  
   letter-spacing: 0.05em;
 }
 
@@ -465,7 +465,7 @@
   font-size: 0.75rem;
   color: var(--color-text-soft);
   opacity: 0.6;
-  text-transform: uppercase;
+  
   letter-spacing: 0.05em;
 }
 
@@ -584,7 +584,7 @@
 .field-label {
   font-size: 0.75rem;
   font-weight: 700;
-  text-transform: uppercase;
+  
   letter-spacing: 0.05em;
   color: var(--color-text-soft);
   margin-bottom: 0.5rem;
@@ -675,7 +675,7 @@
   font-size: 0.77rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
+  
 }
 
 .button-row,
@@ -918,7 +918,7 @@ summary:focus-visible,
   font-size: 0.69rem;
   font-weight: 700;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+  
 }
 
 .brief-pill strong,
@@ -1020,7 +1020,7 @@ summary:focus-visible,
   color: var(--color-text-soft);
   font-size: 0.7rem;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
+  
 }
 
 .portal-nav__header h3 {
@@ -1344,7 +1344,7 @@ summary:focus-visible,
   color: var(--color-text-soft);
   font-size: 0.7rem;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
+  
 }
 
 .summary-card strong {
@@ -1388,7 +1388,7 @@ summary:focus-visible,
   font-size: 0.67rem;
   font-weight: 700;
   letter-spacing: 0.11em;
-  text-transform: uppercase;
+  
 }
 
 .count-pill {
@@ -1435,7 +1435,7 @@ summary:focus-visible,
 .detail-grid dt {
   color: var(--color-text-soft);
   font-size: 0.7rem;
-  text-transform: uppercase;
+  
   letter-spacing: 0.11em;
 }
 
@@ -1529,7 +1529,7 @@ summary:focus-visible,
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+  
 }
 
 .highlight-box p {
@@ -1678,7 +1678,7 @@ summary:focus-visible,
   font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.14em;
-  text-transform: uppercase;
+  
 }
 
 /* ── Media Queries ─────────────────────────────────────────────────────── */
@@ -2080,7 +2080,7 @@ mark.highlight {
 .telemetry-card summary {
   font-size: 0.75rem;
   font-weight: 700;
-  text-transform: uppercase;
+  
   letter-spacing: 0.08em;
   color: var(--color-text-soft);
   cursor: pointer;
@@ -2118,7 +2118,7 @@ mark.highlight {
   font-size: 0.65rem;
   color: var(--color-text-soft);
   font-weight: 700;
-  text-transform: uppercase;
+  
 }
 
 .telemetry-item code {
@@ -2272,7 +2272,7 @@ mark.highlight {
 .command-palette__section-title {
   font-size: 0.7rem;
   font-weight: 700;
-  text-transform: uppercase;
+  
   letter-spacing: 0.08em;
   color: var(--color-text-soft);
   padding: var(--space-2) var(--space-3);

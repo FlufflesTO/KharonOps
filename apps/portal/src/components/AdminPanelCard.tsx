@@ -23,6 +23,7 @@ interface AdminPanelCardProps {
   opsIntelligence: OpsIntelligencePayload | null;
   onLoadSchemaDrift: () => void;
   onLoadOpsIntelligence: () => void;
+  isRealSuperAdmin?: boolean;
 }
 
 export function AdminPanelCard({
@@ -45,7 +46,8 @@ export function AdminPanelCard({
   schemaDrift,
   opsIntelligence,
   onLoadSchemaDrift,
-  onLoadOpsIntelligence
+  onLoadOpsIntelligence,
+  isRealSuperAdmin
 }: AdminPanelCardProps): React.JSX.Element {
   return (
     <article className="workspace-card glass-panel">
@@ -54,29 +56,31 @@ export function AdminPanelCard({
         <h2>Admin tools</h2>
       </div>
 
-      <section className="admin-section glass-panel-inner mb-6">
-        <h3 className="text-base font-bold text-white mb-2">View as role</h3>
-        <p className="text-sm opacity-75 mb-4">Temporarily switch to another role to verify workflow coverage and access.</p>
-        <div className="flex flex-wrap gap-2">
-          {(["client", "technician", "dispatcher", "finance", "admin"] as const).map((role) => (
-            <button
-              key={role}
-              className={`button ${emulatedRole === role ? "button--primary" : "button--secondary"} button--compact`}
-              onClick={() => onEmulateRole(role)}
-            >
-              {role}
+      {isRealSuperAdmin && (
+        <section className="admin-section glass-panel-inner mb-6">
+          <h3 className="text-base font-bold text-white mb-2">View as role</h3>
+          <p className="text-sm opacity-75 mb-4">Temporarily switch to another role to verify workflow coverage and access.</p>
+          <div className="flex flex-wrap gap-2">
+            {(["client", "technician", "dispatcher", "finance", "admin"] as const).map((role) => (
+              <button
+                key={role}
+                className={`button ${emulatedRole === role ? "button--primary" : "button--secondary"} button--compact`}
+                onClick={() => onEmulateRole(role)}
+              >
+                {role}
+              </button>
+            ))}
+            <button className={`button ${emulatedRole === "" ? "button--primary" : "button--ghost"} button--compact`} onClick={() => onEmulateRole("")}>
+              Clear (SuperAdmin)
             </button>
-          ))}
-          <button className={`button ${emulatedRole === "" ? "button--primary" : "button--ghost"} button--compact`} onClick={() => onEmulateRole("")}>
-            Clear (SuperAdmin)
-          </button>
-          {emulatedRole && (
-            <button className="button button--secondary button--compact ml-auto" onClick={() => onEmulateRole("")}>
-              Clear view
-            </button>
-          )}
-        </div>
-      </section>
+            {emulatedRole && (
+              <button className="button button--secondary button--compact ml-auto" onClick={() => onEmulateRole("")}>
+                Clear view
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       <div className="flex flex-wrap gap-3 mb-8">
         <button className="button button--secondary" onClick={onLoadHealth} disabled={!onLoadHealth}>
@@ -273,7 +277,7 @@ export function AdminPanelCard({
         .font-bold { font-weight: 700; }
         .font-semibold { font-weight: 600; }
         .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-        .text-white { color: #fff; }
+        .text-white { color: var(--color-text); }
         .text-center { text-align: center; }
         .text-critical { color: var(--color-critical); }
         .text-warning { color: var(--color-warning); }
@@ -325,14 +329,13 @@ export function AdminPanelCard({
         }
         .kpi-card span {
           font-size: 0.75rem;
-          color: rgba(255,255,255,0.5);
-          text-transform: uppercase;
+          color: var(--color-text-muted);
           letter-spacing: 0.05em;
           font-weight: 700;
         }
         .kpi-card strong {
           font-size: 1.5rem;
-          color: #fff;
+          color: var(--color-text);
           font-weight: 800;
         }
       `}</style>
