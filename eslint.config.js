@@ -25,7 +25,7 @@ export default [
       parserOptions: {
         ecmaVersion: "latest",
         sourceType: "module",
-        project: "./tsconfig.check.json"
+        project: true
       },
       globals: {
         console: "readonly",

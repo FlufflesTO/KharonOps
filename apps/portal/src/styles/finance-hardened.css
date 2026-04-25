@@ -1,0 +1,106 @@
+/**
+ * KharonOps - Finance Workspace Hardening
+ * Purpose: Level 4 UI tokens for fiduciary integrity and ledger governance.
+ * Dependencies: portal-theme.css, glassmorphism-tokens
+ */
+
+:root {
+  --finance-accent: #eab308; /* Gold/Amber for financial prestige */
+  --finance-glow: hsla(45, 100%, 50%, 0.1);
+  --finance-border-alpha: rgba(234, 179, 8, 0.15);
+}
+
+/* Fiduciary Card Layout */
+.fiduciary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+/* Asset/Ledger Summary */
+.asset-card {
+  padding: 1.5rem;
+  background: var(--glass-surface);
+  border: 1px solid var(--finance-border-alpha);
+  border-radius: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.asset-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle at center, var(--finance-glow), transparent 70%);
+  opacity: 0.4;
+}
+
+.asset-card__value {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--finance-accent);
+}
+
+/* Ledger Table Rows */
+.ledger-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 120px 100px;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--dispatch-border-alpha);
+  border-radius: 0.75rem;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.ledger-row:hover {
+  background: var(--glass-surface);
+  border-color: var(--finance-accent);
+  transform: translateX(4px);
+}
+
+.ledger-row__id {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--finance-accent);
+  opacity: 0.8;
+}
+
+/* Financial Status Chips */
+.finance-chip {
+  padding: 0.25rem 0.6rem;
+  border-radius: 2rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid currentColor;
+}
+
+.finance-chip--settled { color: var(--color-positive); background: rgba(16, 185, 129, 0.1); }
+.finance-chip--issued { color: var(--color-primary-light); background: rgba(99, 102, 241, 0.1); }
+.finance-chip--overdue { color: var(--color-critical); background: rgba(239, 68, 68, 0.1); }
+
+/* Transactional Feed */
+.tx-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tx-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--dispatch-border-alpha);
+}
+
+.tx-item:last-child { border-bottom: none; }

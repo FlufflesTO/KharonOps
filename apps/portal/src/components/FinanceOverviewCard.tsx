@@ -1,3 +1,10 @@
+/**
+ * KharonOps - Finance Posture Registry
+ * Purpose: Level 4 Fiduciary Integrity and Asset Visibility
+ * Dependencies: finance-hardened.css, @kharon/domain
+ * Structural Role: Strategic financial oversight for the Kharon platform.
+ */
+
 import React from "react";
 import type { UpgradeWorkspaceState } from "../apiClient";
 
@@ -13,69 +20,112 @@ export function FinanceOverviewCard({ store, onEnterTool, isLoading }: FinanceOv
   const overdueInvoices = store.invoices.filter(i => i.status === "issued" && new Date(i.due_date) < new Date()).length;
 
   return (
-    <article className="workspace-card">
+    <article className="workspace-card workspace-card--hardened">
       <div className="panel-heading">
-        <p className="panel-eyebrow">Finance Overview</p>
-        <h2>Financial posture and actions</h2>
+        <div className="flex justify-between items-end w-full">
+          <div>
+            <p className="panel-eyebrow">Fiduciary Governance</p>
+            <h2 className="text-2xl font-bold tracking-tight">Financial Posture Registry</h2>
+          </div>
+          <div className="text-right hidden md:block">
+            <span className="status-chip status-chip--active">Ledger Synchronized</span>
+          </div>
+        </div>
       </div>
 
-      <div className="admin-grid">
+      <div className="control-stack mt-8">
+        {/* Asset Value / Posture Grid */}
         <section className="summary-grid">
-          <div className="summary-card" onClick={() => onEnterTool("finance_quotes")} style={{ cursor: 'pointer' }}>
-            <span className="summary-card__label">Draft Quotes</span>
-            <strong>{pendingQuotes}</strong>
-            <small>Ready to be sent to clients</small>
+          <div className="summary-card shadow-glow" onClick={() => onEnterTool("finance_quotes")} style={{ cursor: 'pointer' }}>
+            <span className="summary-card__label">Strategic Pipeline</span>
+            <strong className="text-finance">{pendingQuotes}</strong>
+            <div className="utilization-bar">
+              <div className="utilization-bar__fill bg-finance" style={{ width: `${Math.min(100, (pendingQuotes / 10) * 100)}%` }}></div>
+            </div>
+            <small className="opacity-60">Draft quotes awaiting issuance</small>
           </div>
+          
           <div className="summary-card" onClick={() => onEnterTool("finance_invoices")} style={{ cursor: 'pointer' }}>
-            <span className="summary-card__label">Unsent Invoices</span>
+            <span className="summary-card__label">Receivables: Issued</span>
             <strong>{pendingInvoices}</strong>
-            <small>Awaiting your confirmation</small>
+            <div className="utilization-bar">
+              <div className="utilization-bar__fill" style={{ width: `${Math.min(100, (pendingInvoices / 15) * 100)}%` }}></div>
+            </div>
+            <small className="opacity-60">Invoices pending settlement</small>
           </div>
-          <div className="summary-card" onClick={() => onEnterTool("finance_debtors")} style={{ cursor: 'pointer' }}>
-            <span className="summary-card__label">Overdue</span>
-            <strong className={overdueInvoices > 0 ? "text-critical" : ""}>{overdueInvoices}</strong>
-            <small>Accounts requiring follow-up</small>
+          
+          <div className="summary-card border-critical" onClick={() => onEnterTool("finance_debtors")} style={{ cursor: 'pointer' }}>
+            <span className="summary-card__label">Fiduciary Risk</span>
+            <strong className={overdueInvoices > 0 ? "text-critical" : "opacity-40"}>{overdueInvoices}</strong>
+            <div className="utilization-bar">
+              <div className="utilization-bar__fill bg-critical" style={{ width: `${Math.min(100, (overdueInvoices / 5) * 100)}%` }}></div>
+            </div>
+            <small className="opacity-60">Overdue account reconciliations</small>
           </div>
         </section>
 
-        <section className="control-block">
+        {/* Priority Interventions */}
+        <section className="control-block mt-8">
           <div className="control-block__head">
-            <h3>Urgent Finance Actions</h3>
-            <p>Top priorities for today's financial coordination.</p>
+            <h3 className="text-lg font-bold">Priority Interventions</h3>
+            <p className="muted-copy">Items requiring immediate fiduciary reconciliation.</p>
           </div>
-          <div className="fact-list">
+          
+          <div className="priority-feed mt-6">
             {overdueInvoices > 0 && (
-              <div className="highlight-box border-critical">
-                <span className="highlight-box__label">Overdue Payments</span>
-                <p>There are {overdueInvoices} invoices past their due date. Review the Debtors list for follow-up actions.</p>
-                <button className="button button--secondary mt-2" onClick={() => onEnterTool("finance_debtors")}>
-                  Manage Debtors
+              <div className="priority-item priority-item--critical">
+                <div className="indicator-dot bg-critical"></div>
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Asset Recovery Required</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {overdueInvoices} accounts have exceeded the standard payment window. Intervention mandated.
+                  </p>
+                </div>
+                <button className="button button--secondary-glass" onClick={() => onEnterTool("finance_debtors")}>
+                  Reconcile
                 </button>
               </div>
             )}
+
             {pendingInvoices > 0 && (
-              <div className="highlight-box border-active mt-4">
-                <span className="highlight-box__label">Invoices Ready</span>
-                <p>{pendingInvoices} invoices are in draft status and ready to be issued to customers.</p>
-                <button className="button button--secondary mt-2" onClick={() => onEnterTool("finance_invoices")}>
-                  Review Invoices
+              <div className="priority-item">
+                <div className="indicator-dot indicator-dot--live"></div>
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Transactional Throughput</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {pendingInvoices} invoices are ready for final audit before client delivery.
+                  </p>
+                </div>
+                <button className="button button--secondary-glass" onClick={() => onEnterTool("finance_invoices")}>
+                  Review
                 </button>
               </div>
             )}
-            {overdueInvoices === 0 && pendingInvoices === 0 && (
-              <p className="muted-copy">No urgent finance actions detected. All accounts are currently up to date.</p>
+
+            {pendingQuotes > 0 && (
+              <div className="priority-item priority-item--warning">
+                <div className="indicator-dot bg-warning"></div>
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Quote Maturity Alert</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {pendingQuotes} quotes are nearing the 48h staleness threshold. Expedite approval.
+                  </p>
+                </div>
+                <button className="button button--secondary-glass" onClick={() => onEnterTool("finance_quotes")}>
+                  Expedite
+                </button>
+              </div>
             )}
           </div>
         </section>
       </div>
 
       <style>{`
-        .admin-grid { display: grid; gap: 2rem; margin-top: 1.5rem; }
+        .text-finance { color: var(--finance-accent); }
+        .bg-finance { background: var(--finance-accent) !important; box-shadow: 0 0 8px var(--finance-accent) !important; }
         .text-critical { color: var(--color-critical); }
-        .border-active { border-left: 4px solid var(--color-positive); }
-        .border-critical { border-left: 4px solid var(--color-critical); }
-        .mt-2 { margin-top: 0.5rem; }
-        .mt-4 { margin-top: 1rem; }
+        .bg-critical { background: var(--color-critical) !important; }
+        .bg-warning { background: var(--color-warning) !important; }
       `}</style>
     </article>
   );

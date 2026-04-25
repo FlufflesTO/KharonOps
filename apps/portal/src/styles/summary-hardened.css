@@ -1,0 +1,78 @@
+/**
+ * KharonOps - Summary Board Hardening
+ * Purpose: Level 4 design tokens for the persistent workspace status bar.
+ * Dependencies: portal-theme.css
+ */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--glass-surface);
+  border-bottom: 1px solid var(--dispatch-border-alpha);
+  backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 100;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--dispatch-border-alpha);
+  border-radius: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.summary-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-primary-light);
+  transform: translateY(-2px);
+}
+
+.summary-card__label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 700;
+  opacity: 0.5;
+  margin-bottom: 0.5rem;
+}
+
+.summary-card strong {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.summary-card small {
+  font-size: 0.7rem;
+  opacity: 0.4;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+/* Status Specific Pulses */
+.summary-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.summary-pulse--active {
+  background: var(--color-primary-light);
+  box-shadow: 0 0 10px var(--color-primary-light);
+  animation: pulse-primary 2s infinite;
+}
+
+@keyframes pulse-primary {
+  0% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.4; transform: scale(0.9); }
+}

@@ -1,0 +1,104 @@
+/**
+ * KharonOps - Dispatch Workspace Hardening
+ * Purpose: Level 4 UI tokens for logistics coordination and resource allocation.
+ * Dependencies: portal-theme.css, glassmorphism-tokens
+ */
+
+:root {
+  --dispatch-glow-accent: hsla(280, 80%, 60%, 0.1);
+  --dispatch-border-alpha: rgba(255, 255, 255, 0.1);
+}
+
+/* Logistic Grid */
+.coord-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Workforce Stats */
+.utilization-card {
+  padding: 1.5rem;
+  background: var(--glass-surface);
+  border: 1px solid var(--dispatch-border-alpha);
+  border-radius: 1.25rem;
+  transition: transform 0.2s;
+}
+
+.utilization-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-primary-light);
+}
+
+.utilization-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  margin: 1rem 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.utilization-bar__fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 3px;
+  box-shadow: 0 0 8px var(--color-primary);
+}
+
+/* Priority Alerts Feed */
+.priority-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.priority-item {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 1rem;
+  border-left: 4px solid var(--tech-border-alpha);
+  position: relative;
+}
+
+.priority-item--critical { border-left-color: var(--color-critical); background: hsla(0, 80%, 50%, 0.05); }
+.priority-item--warning { border-left-color: var(--color-warning); background: hsla(45, 80%, 50%, 0.05); }
+
+/* Allocation Map (Unassigned) */
+.allocation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.allocation-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--glass-surface);
+  border: 1px solid var(--dispatch-border-alpha);
+  border-radius: 0.75rem;
+  align-items: center;
+}
+
+.allocation-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Dispatch Indicators */
+.indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.indicator-dot--live {
+  background: var(--color-positive);
+  box-shadow: 0 0 8px var(--color-positive);
+}

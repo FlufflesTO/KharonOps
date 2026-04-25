@@ -1,45 +1,30 @@
 {
-  "name": "kharon-unified-rebuild-v1",
-  "version": "1.0.0",
+  "name": "kharon-platform",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "db:postgres:migrate:plan": "node ./scripts/migrate-postgres.mjs",
-    "db:postgres:backfill:plan": "node ./scripts/backfill-sheets-to-postgres.mjs",
-    "db:postgres:parity:plan": "node ./scripts/verify-store-parity.mjs",
-    "workbook:audit": "node ./scripts/workbook-governance.mjs",
-    "workbook:fix": "node ./scripts/workbook-governance.mjs --apply",
-    "typecheck": "tsc -p tsconfig.check.json --noEmit",
-    "check": "npm run build && npm run test",
-    "build:packages": "npm run build -w @kharon/domain && npm run build -w @kharon/google && npm run build -w @kharon/ui",
-    "build:apps": "npm run build -w @kharon/api && npm run build -w @kharon/site && npm run build -w @kharon/portal && node ./scripts/build-static.mjs",
-    "build:web": "npm run build -w @kharon/site && npm run build -w @kharon/portal && node ./scripts/build-static.mjs",
-    "build": "npm run build:packages && npm run build:apps",
-    "deploy": "npx wrangler deploy --env=\"\"",
-    "ui:tokens:check": "node ./scripts/check-design-tokens.mjs",
-    "pretest": "npm run build",
-    "test": "vitest run",
-    "lint": "eslint ."
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "clean": "turbo clean && rimraf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
-    "@eslint/js": "^9.23.0",
-    "@types/node": "^22.14.1",
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
-    "@typescript-eslint/eslint-plugin": "^8.29.0",
-    "@typescript-eslint/parser": "^8.29.0",
-    "@vitejs/plugin-react": "^4.4.1",
-    "eslint": "^9.23.0",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.2",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.1.1"
-  }
+    "turbo": "^2.0.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "prettier": "^3.0.0",
+    "eslint": "^8.0.0",
+    "rimraf": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "npm@8.19.2"
 }

@@ -1,0 +1,96 @@
+/**
+ * KharonOps - Chrome Hardening
+ * Purpose: Level 4 structural tokens for the portal shell.
+ * Dependencies: portal-theme.css, glassmorphism-tokens
+ */
+
+.portal-topbar {
+  background: var(--glass-surface);
+  border-bottom: 1px solid var(--dispatch-border-alpha);
+  padding: 0.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(30px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.portal-mark {
+  color: var(--color-primary-light);
+  filter: drop-shadow(0 0 10px var(--color-primary-alpha));
+}
+
+.portal-title {
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: white;
+}
+
+.portal-subtitle {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  opacity: 0.5;
+  font-weight: 700;
+  margin-top: 0.15rem;
+}
+
+/* Sidebar Hardening */
+.portal-nav {
+  background: rgba(10, 10, 15, 0.4);
+  border-right: 1px solid var(--dispatch-border-alpha);
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.portal-nav__item {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1.25rem;
+  border: 1px solid transparent;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.portal-nav__item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.portal-nav__item--active {
+  background: var(--color-primary-alpha);
+  border-color: var(--color-primary-alpha-heavy);
+  box-shadow: 0 10px 30px -10px var(--color-primary-alpha-heavy);
+}
+
+.portal-nav__item span {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.3s ease;
+}
+
+.portal-nav__item--active span {
+  color: white;
+}
+
+.portal-nav__item small {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.3;
+  margin-top: 0.25rem;
+  font-weight: 600;
+}
+
+.portal-nav__item--active small {
+  opacity: 0.6;
+}

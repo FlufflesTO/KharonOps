@@ -308,6 +308,119 @@ async function main() {
       technician_id: normalizeText(row.data.technician_id)
     }));
 
+  const existingClientIds = new Set(clientsSheet.rows.map((r) => normalizeText(r.data.client_id)).filter(Boolean));
+  const existingSiteIds = new Set(sheets.get("Sites_Master").rows.map((r) => normalizeText(r.data.site_id)).filter(Boolean));
+
+  const orphanedClients = [];
+  const orphanedSites = [];
+
+  for (const row of jobsSheet.rows) {
+    const cid = normalizeText(row.data.client_id);
+    if (cid && !existingClientIds.has(cid)) {
+      orphanedClients.push({ row: row.rowNumber, job_id: row.data.job_id, client_id: cid });
+    }
+    const sid = normalizeText(row.data.site_id);
+    if (sid && !existingSiteIds.has(sid)) {
+      orphanedSites.push({ row: row.rowNumber, job_id: row.data.job_id, site_id: sid });
+    }
+  }
+
+  const forensicGaps = [];
+  const forensicChanges = [];
+  for (const [name, sheet] of sheets.entries()) {
+    if (!WORKBOOK_HEADERS[name]) continue;
+    const versionCol = sheet.headerMap.get("row_version");
+    const updatedCol = sheet.headerMap.get("updated_at");
+    const updatedByCol = sheet.headerMap.get("updated_by");
+    const correlationCol = sheet.headerMap.get("correlation_id");
+    
+    for (const row of sheet.rows) {
+      const gaps = [];
+      if (versionCol !== undefined && !row.data.row_version) {
+        gaps.push("row_version");
+        updateCells.push({
+          range: `'${name}'!${columnToA1(versionCol)}${row.rowNumber}`,
+          value: "1"
+        });
+      }
+      if (updatedCol !== undefined && !row.data.updated_at) {
+        gaps.push("updated_at");
+        updateCells.push({
+          range: `'${name}'!${columnToA1(updatedCol)}${row.rowNumber}`,
+          value: new Date().toISOString()
+        });
+      }
+      if (updatedByCol !== undefined && !row.data.updated_by) {
+        updateCells.push({
+          range: `'${name}'!${columnToA1(updatedByCol)}${row.rowNumber}`,
+          value: "workbook-governance:backfill"
+        });
+      }
+      if (correlationCol !== undefined && !row.data.correlation_id) {
+        updateCells.push({
+          range: `'${name}'!${columnToA1(correlationCol)}${row.rowNumber}`,
+          value: `backfill:${Date.now()}`
+        });
+      }
+      
+      if (gaps.length > 0) {
+        forensicGaps.push({ sheet: name, row: row.rowNumber, gaps });
+        forensicChanges.push({ sheet: name, row: row.rowNumber, gaps });
+      }
+    }
+  }
+
+  const invoiceMasterSheet = sheets.get("Invoices_Master");
+  const financeInvoicesSheet = sheets.get("Finance_Invoices");
+  const financeInvoicesProposed = [];
+  
+  if (invoiceMasterSheet && financeInvoicesSheet) {
+    const existingInvoices = new Map(financeInvoicesSheet.rows.map(r => [normalizeText(r.data.invoice_id), r]));
+    const financeHeaders = financeInvoicesSheet.headers;
+    const rowsToAppend = [];
+
+    for (const master of invoiceMasterSheet.rows) {
+      const invoiceId = normalizeText(master.data.invoice_id);
+      if (!invoiceId || invoiceId === "") continue;
+      
+      if (!existingInvoices.has(invoiceId)) {
+        financeInvoicesProposed.push({
+          invoice_id: invoiceId,
+          job_id: master.data.job_id,
+          amount: master.data.invoice_amount,
+          status: master.data.payment_status || "issued"
+        });
+        
+        if (apply) {
+          const rowData = financeHeaders.map(header => {
+            if (header === "invoice_id") return invoiceId;
+            if (header === "job_id") return master.data.job_id;
+            if (header === "quote_id") return master.data.quotation_reference || "";
+            if (header === "client_id") return master.data.client_id;
+            if (header === "amount") return master.data.invoice_amount;
+            if (header === "due_date") return master.data.payment_date || "";
+            if (header === "status") return master.data.payment_status || "issued";
+            if (header === "row_version") return "1";
+            if (header === "updated_at") return new Date().toISOString();
+            if (header === "updated_by") return "workbook-governance:sync";
+            if (header === "correlation_id") return `sync:${Date.now()}`;
+            return "";
+          });
+          rowsToAppend.push(rowData);
+        }
+      }
+    }
+
+    if (apply && rowsToAppend.length > 0) {
+      const appendRange = encodeURIComponent("'Finance_Invoices'!A:ZZ");
+      await api(`https://sheets.googleapis.com/v4/spreadsheets/${workbookId}/values/${appendRange}:append?valueInputOption=RAW`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ values: rowsToAppend })
+      });
+    }
+  }
+
   const createdTechnicians = [];
   const techidCol = usersSheet.headerMap.get("technician_id");
   if (apply && unresolvedTechUsers.length > 0) {
@@ -399,13 +512,18 @@ async function main() {
       jobsStatusBackfilled: jobStatusChanges.length
     },
     unresolved: {
-      usersTechniciansWithoutTechMasterMatch: apply ? [] : unresolvedTechUsers
+      usersTechniciansWithoutTechMasterMatch: apply ? [] : unresolvedTechUsers,
+      orphanedClients,
+      orphanedSites,
+      forensicGaps: forensicGaps.slice(0, 100)
     },
     changes: {
       usersTechnicianid: techidChanges,
       duplicateUserid: duplicateidChanges,
       jobsPrimaryTechnicianId: jobTechIdChanges.slice(0, 100),
       jobsStatus: jobStatusChanges.slice(0, 100),
+      forensicBackfills: forensicChanges.slice(0, 100),
+      financeInvoicesProposed: financeInvoicesProposed.slice(0, 100),
       techniciansCreatedFromUsers: createdTechnicians
     },
     schema: schemaSummary

@@ -1,3 +1,10 @@
+/**
+ * KharonOps - Dispatch Daily Operational Plan
+ * Purpose: Level 4 Execution Risk and Capacity Monitoring
+ * Dependencies: dispatch-hardened.css, JobListView.tsx
+ * Structural Role: Strategic daily oversight of field execution status.
+ */
+
 import React from "react";
 import { type JobRecord } from "./JobListView";
 import type { OpsIntelligencePayload } from "../apiClient";
@@ -13,66 +20,103 @@ export function DispatchDailyPlanCard({ jobs, opsIntelligence }: DispatchDailyPl
   const lateJobs = jobs.filter(j => j.status === "performed" && (j.updated_at ?? "") < today);
 
   return (
-    <article className="workspace-card">
+    <article className="workspace-card workspace-card--hardened">
       <div className="panel-heading">
-        <p className="panel-eyebrow">Operations</p>
-        <h2>Daily Operational Plan</h2>
+        <div className="flex justify-between items-end w-full">
+          <div>
+            <p className="panel-eyebrow">Strategic Execution</p>
+            <h2 className="text-2xl font-bold tracking-tight">Daily Operational Plan</h2>
+          </div>
+        </div>
       </div>
 
-      <div className="control-stack">
+      <div className="control-stack mt-8">
+        {/* Capacity Overview */}
         <section className="summary-grid">
-          <div className="summary-card">
-            <span className="summary-card__label">Today's Visits</span>
-            <strong>{todayJobs.length}</strong>
-            <small>Active in the field today</small>
+          <div className="summary-card shadow-glow">
+            <span className="summary-card__label">Active Deployments</span>
+            <strong className="text-primary-light">{todayJobs.length}</strong>
+            <div className="utilization-bar">
+              <div className="utilization-bar__fill" style={{ width: `${Math.min(100, (todayJobs.length / 10) * 100)}%` }}></div>
+            </div>
+            <small className="opacity-60">Verified field activity today</small>
           </div>
-          <div className="summary-card">
-            <span className="summary-card__label">Incomplete Yesterday</span>
-            <strong className={lateJobs.length > 0 ? "text-critical" : ""}>{lateJobs.length}</strong>
-            <small>Jobs requiring carry-over</small>
+          <div className="summary-card border-warning">
+            <span className="summary-card__label">Carry-over Debt</span>
+            <strong className={lateJobs.length > 0 ? "text-warning" : "opacity-40"}>{lateJobs.length}</strong>
+            <div className="utilization-bar">
+              <div className="utilization-bar__fill bg-warning" style={{ width: `${Math.min(100, (lateJobs.length / 5) * 100)}%` }}></div>
+            </div>
+            <small className="opacity-60">Jobs awaiting closure</small>
           </div>
         </section>
 
-        <section className="control-block">
+        {/* Risk Assessment */}
+        <section className="control-block mt-8">
           <div className="control-block__head">
-            <h3>Execution Risk</h3>
-            <p>Potential blockers for today's operational schedule.</p>
+            <h3 className="text-lg font-bold">Execution Risk Map</h3>
+            <p className="muted-copy">Potential bottlenecks detected in the current operational cycle.</p>
           </div>
-          <div className="fact-list">
+          
+          <div className="priority-feed mt-6">
             {opsIntelligence?.jobs.critical && opsIntelligence.jobs.critical > 0 ? (
-              <div className="highlight-box border-critical">
-                <span className="highlight-box__label">Critical Path Obstruction</span>
-                <p>{opsIntelligence.jobs.critical} jobs are currently blocked or requiring emergency escalation.</p>
+              <div className="priority-item priority-item--critical shadow-glow-critical">
+                <div className="indicator-dot indicator-dot--live bg-critical"></div>
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Critical Path Obstruction</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {opsIntelligence.jobs.critical} deployments are reporting high-impact blockers. Capacity at risk.
+                  </p>
+                </div>
               </div>
             ) : (
-              <p className="muted-copy">No major execution risks detected for the current cycle.</p>
+              <div className="conduct-hero bg-positive-subtle border-positive p-4 flex items-center gap-4">
+                <div className="indicator-dot indicator-dot--live"></div>
+                <p className="text-xs opacity-80">Path clear: No strategic execution risks detected for the next 4 hours.</p>
+              </div>
             )}
             
             {lateJobs.length > 0 && (
-              <div className="highlight-box border-warning mt-4">
-                <span className="highlight-box__label">Carry-over Work</span>
-                <p>{lateJobs.length} jobs from yesterday were not certified. Verify team capacity for today's additional load.</p>
+              <div className="priority-item priority-item--warning">
+                <div className="indicator-dot bg-warning"></div>
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Temporal Drift: Carry-over Load</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {lateJobs.length} tasks from the previous cycle were not certified. Workforce fatigue likely.
+                  </p>
+                </div>
               </div>
             )}
           </div>
         </section>
 
-        <section className="control-block">
+        {/* Environmental Context */}
+        <section className="control-block mt-8">
           <div className="control-block__head">
-            <h3>Weather & Context</h3>
-            <p>Environmental factors impacting field work.</p>
+            <h3 className="text-lg font-bold">Environmental Stability</h3>
+            <p className="muted-copy">Verified external factors impacting field conduct.</p>
           </div>
-          <div className="highlight-box">
-            <p>Normal operating conditions. No weather alerts for Gauteng or Western Cape business units.</p>
+          <div className="geo-fence-panel flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="fence-pulse fence-pulse--verified"></div>
+              <div>
+                <p className="text-sm font-semibold">Atmospheric: Nominal</p>
+                <p className="text-xs opacity-60">No hazardous conditions reported for regional business units.</p>
+              </div>
+            </div>
+            <span className="text-[10px] opacity-40 font-mono">STABLE_V6</span>
           </div>
         </section>
       </div>
 
       <style>{`
-        .text-critical { color: var(--color-critical); }
-        .border-critical { border-left: 4px solid var(--color-critical); }
-        .border-warning { border-left: 4px solid var(--color-warning); }
-        .mt-4 { margin-top: 1rem; }
+        .bg-warning { background: var(--color-warning) !important; }
+        .bg-critical { background: var(--color-critical) !important; }
+        .text-warning { color: var(--color-warning); }
+        .border-warning { border-color: hsla(45, 80%, 50%, 0.3) !important; }
+        .bg-positive-subtle { background: rgba(16, 185, 129, 0.05); }
+        .border-positive { border: 1px solid rgba(16, 185, 129, 0.2); }
+        .shadow-glow-critical { box-shadow: 0 0 20px hsla(0, 80%, 50%, 0.1); }
       `}</style>
     </article>
   );

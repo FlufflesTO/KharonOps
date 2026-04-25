@@ -1,3 +1,9 @@
+/**
+ * KharonOps - Governance Pulse Summary
+ * Purpose: Persistent status visualization for the active workspace.
+ * Dependencies: summary-hardened.css, @kharon/domain
+ */
+
 import React from "react";
 import type { Role } from "@kharon/domain";
 
@@ -5,14 +11,18 @@ type SummaryCardProps = {
   label: string;
   value: string | number;
   detail: string;
+  isStatus?: boolean;
 };
 
-function SummaryCard({ label, value, detail }: SummaryCardProps): React.JSX.Element {
+function SummaryCard({ label, value, detail, isStatus }: SummaryCardProps): React.JSX.Element {
   return (
-    <article className="summary-card">
-      <span className="summary-card__label">{label}</span>
+    <article className="summary-card group">
+      <div className="flex items-center gap-2 mb-2">
+        {isStatus && <span className="summary-pulse summary-pulse--active"></span>}
+        <span className="summary-card__label">{label}</span>
+      </div>
       <strong>{value}</strong>
-      <small>{detail}</small>
+      <small className="group-hover:opacity-60 transition-opacity">{detail}</small>
     </article>
   );
 }
@@ -39,61 +49,63 @@ export function SummaryBoard({
   syncPulseText
 }: SummaryBoardProps): React.JSX.Element {
   const cards = React.useMemo(() => {
+    const connDetail = networkOnline ? `Verified ${syncPulseText}` : `Conflict Watch: ${syncPulseText}`;
+    
     switch (role) {
       case "client":
         return [
-          { label: "Active jobs", value: openJobCount, detail: "Current service work" },
-          { label: "Selected job", value: selectedJobStatus, detail: "Latest status" },
-          { label: "Files", value: generatedDocumentCount, detail: "Published reports" },
-          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: syncPulseText }
+          { label: "Active Engagements", value: openJobCount, detail: "Facility services in progress" },
+          { label: "Governance Stage", value: selectedJobStatus, detail: "Current compliance state", isStatus: true },
+          { label: "Asset Reports", value: generatedDocumentCount, detail: "Verified field documentation" },
+          { label: "System Pulse", value: networkOnline ? "Online" : "Cached", detail: connDetail, isStatus: true }
         ];
       case "admin":
         return [
-          { label: "Office queue", value: openJobCount, detail: "Work needing oversight" },
-          { label: "Queued changes", value: queueCount, detail: "Waiting to sync" },
-          { label: "Files loaded", value: generatedDocumentCount, detail: "Current history" },
-          { label: "Audit entries", value: adminAuditCount, detail: syncPulseText }
+          { label: "Operational Queue", value: openJobCount, detail: "Jobs requiring oversight" },
+          { label: "Ledger Sync", value: queueCount, detail: "Updates pending commit", isStatus: true },
+          { label: "Registry Files", value: generatedDocumentCount, detail: "Historical state items" },
+          { label: "Governance Pulse", value: adminAuditCount, detail: syncPulseText, isStatus: true }
         ];
       case "finance":
         return [
-          { label: "Billable work", value: openJobCount, detail: "Jobs to review for billing" },
-          { label: "Payment files", value: generatedDocumentCount, detail: "Documents in billing scope" },
-          { label: "Queued changes", value: queueCount, detail: "Finance updates waiting to sync" },
-          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: syncPulseText }
+          { label: "Fiduciary Queue", value: openJobCount, detail: "Items awaiting reconciliation" },
+          { label: "Ledger Documents", value: generatedDocumentCount, detail: "Billing evidence records" },
+          { label: "Financial Sync", value: queueCount, detail: "Transactions pending commit", isStatus: true },
+          { label: "Registry State", value: networkOnline ? "Stable" : "Isolated", detail: connDetail, isStatus: true }
         ];
       case "technician":
         return [
-          { label: "Today", value: openJobCount, detail: "Assigned jobs still active" },
-          { label: "Current status", value: selectedJobStatus, detail: "Selected job stage" },
-          { label: "Queued field notes", value: queueCount, detail: "Offline updates waiting" },
-          { label: "Files", value: generatedDocumentCount, detail: syncPulseText }
+          { label: "Conduct Timeline", value: openJobCount, detail: "Active field engagements" },
+          { label: "Active Handshake", value: selectedJobStatus, detail: "Current conduct stage", isStatus: true },
+          { label: "Field Cache", value: queueCount, detail: "Evidence pending sync", isStatus: true },
+          { label: "System Integrity", value: networkOnline ? "Online" : "Offline", detail: connDetail }
         ];
       case "dispatcher":
         return [
-          { label: "Dispatch load", value: openJobCount, detail: "Jobs needing coordination" },
-          { label: "Selected job", value: selectedJobStatus, detail: "Schedule context" },
-          { label: "Queued updates", value: queueCount, detail: "Changes waiting to sync" },
-          { label: "Files ready", value: generatedDocumentCount, detail: syncPulseText }
+          { label: "Coordination Load", value: openJobCount, detail: "Jobs needing allocation" },
+          { label: "Resource State", value: selectedJobStatus, detail: "Selected task status", isStatus: true },
+          { label: "Schedule Sync", value: queueCount, detail: "Protocols pending commit", isStatus: true },
+          { label: "System Pulse", value: networkOnline ? "Online" : "Offline", detail: syncPulseText }
         ];
       case "super_admin":
         return [
-          { label: "Platform work", value: openJobCount, detail: "Jobs visible in current role" },
-          { label: "Queued changes", value: queueCount, detail: "Sync and conflict watch" },
-          { label: "Audit entries", value: adminAuditCount, detail: "Governance activity" },
-          { label: "Connection", value: networkOnline ? "Online" : "Offline", detail: syncPulseText }
+          { label: "Platform Load", value: openJobCount, detail: "Global active work" },
+          { label: "Integrity Sync", value: queueCount, detail: "Global protocol buffer", isStatus: true },
+          { label: "Forensic Audit", value: adminAuditCount, detail: "Platform governance logs" },
+          { label: "Universal Pulse", value: networkOnline ? "Online" : "Syncing", detail: connDetail, isStatus: true }
         ];
       default:
         return [
-          { label: "Open jobs", value: openJobCount, detail: "Work in progress" },
-          { label: "Selected job", value: selectedJobStatus, detail: "Current status" },
-          { label: "Queued changes", value: queueCount, detail: "Waiting to sync" },
-          { label: "Files in scope", value: generatedDocumentCount, detail: syncPulseText }
+          { label: "Active Jobs", value: openJobCount, detail: "Operations in progress" },
+          { label: "Protocol Stage", value: selectedJobStatus, detail: "Current state", isStatus: true },
+          { label: "Ledger Sync", value: queueCount, detail: "Pending updates", isStatus: true },
+          { label: "System State", value: networkOnline ? "Online" : "Offline", detail: connDetail }
         ];
     }
   }, [role, openJobCount, selectedJobStatus, queueCount, generatedDocumentCount, adminAuditCount, networkOnline, syncPulseText]);
 
   return (
-    <section className="summary-grid">
+    <section className="summary-grid animate-fade-in">
       {cards.map((card) => (
         <SummaryCard key={card.label} {...card} />
       ))}

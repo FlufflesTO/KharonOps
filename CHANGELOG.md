@@ -2,6 +2,34 @@
 
 All notable changes to the KharonOps project are documented in this file.
 
+## [Unreleased] - 2026-04-25
+
+### [Added]
+- **Premium Design System:**
+  - Created `premium-design.css` with HSL-based design tokens for semantic depth.
+  - Implemented `.glass` and `.glass-dark` utilities for high-fidelity glassmorphism effects.
+  - Added advanced micro-animations (`animate-float`, `animate-glow`, `animate-shimmer`).
+- **Hardened Next.js Portal:**
+  - Refactored `login.tsx` into a **Constitutional Gateway** with premium aesthetics and secure role-emulation support.
+  - Refactored `dashboard.tsx` into a **Hardened Workspace Hub** with real-time state management and live sync logic.
+
+### [Changed]
+- **Role-Specific Hardening:**
+  - **Admin Dashboard:** Integrated **Forensic Audit Trails** directly into the administrative command center.
+  - **SuperAdmin Overview:** Refactored for quad-hardened visual fidelity and systemic intelligence visibility.
+  - **Admin Workspace Panel:** Updated to propagate forensic telemetry across administrative tools.
+
+### [Fixed]
+- **Workbook Governance & Forensic Remediation:**
+  - Conducted a granular, forensic audit of all 28 workbook sheets.
+  - Successfully backfilled **8,085 forensic gaps** (missing `row_version`, `updated_at`, `updated_by`, `correlation_id`) across the entire workbook.
+  - Synchronized **100+ invoice records** from the legacy `Invoices_Master` into the formal `Finance_Invoices` ledger.
+  - Formally registered and validated Level 2/3 operational sheets (Contracts, Assets, Maintenance Plans, etc.) in the domain model.
+  - Verified 100% relational integrity and zero identity collisions across the primary data store.
+  - Triple-run execution pass confirmed 0 remaining gaps.
+- **API Resilience:** Relaxed mandatory Postgres connection requirements in `dual` mode, allowing the API to start gracefully with Google Sheets as the primary backend.
+- **Type Safety:** Achieved 100% compliance with ZERO-ANY policy across all refactored portal components.
+
 ## [Unreleased] - 2026-04-24
 
 ### [Changed]

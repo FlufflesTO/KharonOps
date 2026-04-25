@@ -9,147 +9,129 @@ interface SuperAdminOverviewProps {
 
 export function SuperAdminOverview({ opsIntelligence, onRefresh, isLoading }: SuperAdminOverviewProps): React.JSX.Element {
   return (
-    <article className="workspace-card glass-panel">
-      <div className="panel-heading panel-heading--inline">
-        <div>
-          <p className="panel-eyebrow">Platform health</p>
-          <h2>Latest checks</h2>
+    <article className="workspace-card workspace-card--primary">
+      <div className="panel-header-premium">
+        <div className="panel-title-stack">
+          <span className="panel-eyebrow-premium">System Intelligence</span>
+          <h2 className="panel-title-premium">Platform Governance Overview</h2>
         </div>
         <button 
-          className={`button button--secondary ${isLoading ? "button--loading" : ""}`} 
+          className={`button button--premium-action ${isLoading ? "button--loading" : ""}`} 
           onClick={onRefresh}
           disabled={isLoading}
         >
-          {isLoading ? "Refreshing..." : "Refresh"}
+          <div className="button-inner">
+            {isLoading ? (
+              <span className="loader-mini" />
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            )}
+            <span>{isLoading ? "Synchronizing..." : "Refresh Intelligence"}</span>
+          </div>
         </button>
       </div>
 
       {!opsIntelligence ? (
-        <div className="highlight-box empty-state-enhanced mt-4">
-          <div className="loader-spinner mb-4 inline-block"></div>
-          <h3>Gathering Telemetry</h3>
-          <p className="muted-copy mt-2">No summary loaded. Click refresh to pull the latest checks.</p>
+        <div className="telemetry-loading-state">
+          <div className="telemetry-pulse" />
+          <h3>Aggregating Real-Time Data</h3>
+          <p>Connecting to secure ledger nodes. This may take a few moments...</p>
         </div>
       ) : (
-        <div className="admin-grid">
-          <section className="summary-grid mt-4">
-            <div className="summary-card hover-scale">
-              <span className="summary-card__label">Jobs needing review</span>
-              <strong className="text-4xl text-white">{opsIntelligence.jobs.open}</strong>
-              <small className="text-muted block mt-2">Open jobs awaiting action</small>
+        <div className="admin-intelligence-layout">
+          <section className="stats-grid-premium">
+            <div className="intelligence-card">
+              <div className="intel-header">
+                <span className="intel-label">Operational Backlog</span>
+                <div className="intel-icon intel-icon--blue" />
+              </div>
+              <strong className="intel-value">{opsIntelligence.jobs.open}</strong>
+              <p className="intel-description">Open engagements requiring active coordination.</p>
             </div>
-            <div className="summary-card hover-scale">
-              <span className="summary-card__label">Priority jobs</span>
-              <strong className={`text-4xl ${opsIntelligence.jobs.critical > 0 ? "text-critical" : "text-white"}`}>
-                {opsIntelligence.jobs.critical}
-              </strong>
-              <small className="text-muted block mt-2">Critical priority jobs</small>
+
+            <div className="intelligence-card intelligence-card--critical">
+              <div className="intel-header">
+                <span className="intel-label">Critical Alerts</span>
+                <div className="intel-icon intel-icon--red" />
+              </div>
+              <strong className="intel-value">{opsIntelligence.jobs.critical}</strong>
+              <p className="intel-description">High-priority systemic risks detected.</p>
             </div>
-            <div className="summary-card hover-scale">
-              <span className="summary-card__label">Older than 24h</span>
-              <strong className={`text-4xl ${opsIntelligence.jobs.stale_over_24h > 0 ? "text-warning" : "text-white"}`}>
-                {opsIntelligence.jobs.stale_over_24h}
-              </strong>
-              <small className="text-muted block mt-2">No updates in 24 hours</small>
+
+            <div className="intelligence-card intelligence-card--warning">
+              <div className="intel-header">
+                <span className="intel-label">Temporal Drift</span>
+                <div className="intel-icon intel-icon--amber" />
+              </div>
+              <strong className="intel-value">{opsIntelligence.jobs.stale_over_24h}</strong>
+              <p className="intel-description">Stagnant engagements exceeding 24h threshold.</p>
             </div>
-            <div className="summary-card hover-scale">
-              <span className="summary-card__label">Pending files</span>
-              <strong className="text-4xl text-white">{opsIntelligence.operations.documents_pending_publish}</strong>
-              <small className="text-muted block mt-2">Generated but not published</small>
+
+            <div className="intelligence-card">
+              <div className="intel-header">
+                <span className="intel-label">Evidence Queue</span>
+                <div className="intel-icon intel-icon--green" />
+              </div>
+              <strong className="intel-value">{opsIntelligence.operations.documents_pending_publish}</strong>
+              <p className="intel-description">Unpublished certificates awaiting final verification.</p>
             </div>
           </section>
 
-          <section className="control-block mt-8">
-            <div className="control-block__head">
-              <h3>Money owed</h3>
-              <p>Outstanding balances and held files across the business.</p>
+          <section className="governance-section">
+            <div className="section-head-premium">
+              <h3>Financial Forensic Integrity</h3>
+              <p>Canonical record of outstanding liabilities and escrow status.</p>
             </div>
-            <div className="posture-grid mt-4">
-              <div className="glass-panel-subtle flex flex-col justify-center items-center py-6 hover-scale">
-                <span className="text-sm text-muted uppercase tracking-wider mb-2">Outstanding</span>
-                <strong className="text-3xl text-white">R {opsIntelligence.finance.outstanding_amount.toLocaleString()}</strong>
+            <div className="posture-grid-premium">
+              <div className="posture-card">
+                <span className="posture-label">Aggregated Outstanding</span>
+                <strong className="posture-value">R {opsIntelligence.finance.outstanding_amount.toLocaleString()}</strong>
               </div>
-              <div className="glass-panel-subtle flex flex-col justify-center items-center py-6 hover-scale">
-                <span className="text-sm text-muted uppercase tracking-wider mb-2">Escrow Locked</span>
-                <strong className="text-3xl text-white">{opsIntelligence.operations.escrow_locked} items</strong>
+              <div className="posture-card">
+                <span className="posture-label">Escrow Lock Protocol</span>
+                <strong className="posture-value">{opsIntelligence.operations.escrow_locked} <small>Items Secured</small></strong>
               </div>
             </div>
           </section>
           
-          <section className="control-block mt-8">
-            <div className="control-block__head">
-              <h3>Review items</h3>
-              <p>Top priorities for follow-up.</p>
+          <section className="governance-section">
+            <div className="section-head-premium">
+              <h3>Risk Mitigation Registry</h3>
+              <p>Prioritized interventions based on systemic telemetry.</p>
             </div>
-            <div className="fact-list mt-4 flex flex-col gap-4">
-              {opsIntelligence.jobs.critical > 0 && (
-                <div className="highlight-box border-critical glass-panel-subtle flex flex-col items-start gap-3">
-                  <span className="status-chip status-chip--critical animate-pulse">Critical jobs</span>
-                  <p className="text-white">{opsIntelligence.jobs.critical} jobs are marked critical. Review the jobs list for details.</p>
+            <div className="risk-registry">
+              {opsIntelligence.jobs.critical > 0 ? (
+                <div className="risk-item risk-item--critical">
+                  <div className="risk-indicator" />
+                  <div className="risk-content">
+                    <strong>Critical Systemic Breach</strong>
+                    <p>{opsIntelligence.jobs.critical} jobs are operating outside of safe compliance boundaries.</p>
+                  </div>
                 </div>
-              )}
-              {opsIntelligence.operations.documents_pending_publish > 10 && (
-                <div className="highlight-box border-warning glass-panel-subtle flex flex-col items-start gap-3">
-                  <span className="status-chip status-chip--warning">File queue</span>
-                  <p className="text-white">A high volume of files is waiting to be published.</p>
+              ) : null}
+              {opsIntelligence.operations.documents_pending_publish > 10 ? (
+                <div className="risk-item risk-item--warning">
+                  <div className="risk-indicator" />
+                  <div className="risk-content">
+                    <strong>Publication Backlog Overflow</strong>
+                    <p>Evidence generation is exceeding processing capacity. Delay in client transparency expected.</p>
+                  </div>
                 </div>
-              )}
-              {opsIntelligence.jobs.critical === 0 && opsIntelligence.operations.documents_pending_publish <= 10 && (
-                <div className="highlight-box glass-panel-subtle text-center py-6">
-                  <span className="text-2xl block mb-2">✅</span>
-                  <p className="text-white font-medium">Platform is operating within normal parameters. No urgent actions detected.</p>
+              ) : null}
+              {opsIntelligence.jobs.critical === 0 && opsIntelligence.operations.documents_pending_publish <= 10 ? (
+                <div className="risk-item risk-item--safe">
+                  <div className="risk-indicator" />
+                  <div className="risk-content">
+                    <strong>System Parameters Nominal</strong>
+                    <p>All governance protocols are reporting stable state transitions.</p>
+                  </div>
                 </div>
-              )}
+              ) : null}
             </div>
           </section>
         </div>
       )}
-
-      <style>{`
-        .admin-grid { display: grid; gap: 2rem; margin-top: 1.5rem; }
-        .text-critical { color: var(--color-critical); }
-        .text-warning { color: var(--color-warning); }
-        .text-white { color: white; }
-        .text-muted { color: var(--color-text-muted); }
-        .text-sm { font-size: 0.875rem; }
-        .text-2xl { font-size: 1.5rem; }
-        .text-3xl { font-size: 1.875rem; font-weight: 700; }
-        .text-4xl { font-size: 2.25rem; font-weight: 700; line-height: 1; }
-        .font-medium { font-weight: 500; }
-        .uppercase { text-transform: uppercase; }
-        .tracking-wider { letter-spacing: 0.05em; }
-        .border-warning { border-left: 4px solid var(--color-warning); }
-        .border-critical { border-left: 4px solid var(--color-critical); }
-        .glass-panel-subtle { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: 1.5rem; transition: all 0.2s; }
-        .hover-scale { cursor: pointer; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s; }
-        .hover-scale:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); border-color: rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05); }
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
-        .posture-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
-        .loader-spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .button--loading { opacity: 0.8; cursor: wait; }
-        
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .items-start { align-items: flex-start; }
-        .items-center { align-items: center; }
-        .justify-center { justify-content: center; }
-        .text-center { text-align: center; }
-        .block { display: block; }
-        .inline-block { display: inline-block; }
-        
-        .mt-2 { margin-top: 0.5rem; }
-        .mt-4 { margin-top: 1rem; }
-        .mt-8 { margin-top: 2rem; }
-        .mb-2 { margin-bottom: 0.5rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-        .gap-3 { gap: 0.75rem; }
-        .gap-4 { gap: 1rem; }
-        
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-      `}</style>
     </article>
   );
 }
+

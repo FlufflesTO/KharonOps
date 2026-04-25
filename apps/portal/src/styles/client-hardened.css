@@ -1,0 +1,92 @@
+/**
+ * KharonOps - Client Workspace Hardening
+ * Purpose: Level 4 UI tokens for client visibility and executive reporting.
+ * Dependencies: portal-theme.css, glassmorphism-tokens
+ */
+
+:root {
+  --client-accent: hsla(180, 70%, 50%, 1); /* Teal/Cyan for calm professional feel */
+  --client-glow: hsla(180, 70%, 50%, 0.1);
+  --client-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Executive Summary Layout */
+.executive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* Service Pulse Card */
+.service-pulse-card {
+  padding: 2rem;
+  background: var(--glass-surface);
+  border: 1px solid var(--client-border);
+  border-radius: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.service-pulse-card:hover {
+  border-color: var(--client-accent);
+  box-shadow: 0 12px 40px -12px var(--client-glow);
+}
+
+.compliance-status {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.compliance-status__ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 4px solid var(--client-border);
+  border-top-color: var(--client-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--client-accent);
+}
+
+/* Feed for Client Activity */
+.client-activity-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.activity-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 1rem;
+  border: 1px solid var(--client-border);
+}
+
+.activity-row__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: var(--client-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--client-accent);
+}
+
+/* Settlement View */
+.settlement-card {
+  background: linear-gradient(135deg, hsla(180, 70%, 10%, 0.4), transparent);
+  border: 1px solid var(--client-border);
+  border-radius: 1.5rem;
+  padding: 2rem;
+}

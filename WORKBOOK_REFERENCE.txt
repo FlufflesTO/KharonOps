@@ -1,0 +1,727 @@
+# Kharon Platform - Google Workbook Reference
+
+## Overview
+This document provides a comprehensive reference for all sheets and columns in the Kharon Platform Google Workbook.
+
+---
+
+## 1. Users_Master
+**Description**: Stores user accounts and authentication details, linking users to their roles and client/technician associations.
+
+### Columns:
+- user_id: Unique identifier for each user
+- email: User's email address for login and communication
+- display_name: Name displayed in the system for the user
+- role: User's role in the system (Client, Technician, Dispatcher, etc.)
+- client_id: Link to the client entity for client users
+- technician_id: Link to the technician entity for technician users
+- active: Flag indicating if the user account is active
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 2. Jobs_Master
+**Description**: Core job tracking sheet with comprehensive metadata for job lifecycle management.
+
+### Columns:
+- job_id: Unique identifier for each job
+- api_locked: Flag indicating if the job is locked from API changes
+- sync_status: Status of synchronization between systems
+- last_sync_at: Timestamp of last synchronization
+- last_sync_error: Details of any sync errors
+- source_system: Original system where the job originated
+- source_submission_id: ID from the source system
+- legacy_job_id: Old job identifier for historical tracking
+- client_id: Link to the client entity
+- client_group: Grouping for related clients
+- client_name: Name of the client
+- account: Billing account information
+- site_id: Link to the site where the job occurs
+- site: Name of the job site
+- system_type: Type of system involved in the job
+- system_confidence: Confidence level in system identification
+- contract_id: Associated contract identifier
+- asset_or_system_id: Identifier for the asset or system
+- request_type: Type of job request
+- job_status: Current status of the job
+- status_raw: Raw status from the source system
+- document_status: Status of associated documents
+- billing_status: Billing status of the job
+- priority_score: Calculated priority score
+- sla_tier: SLA tier applicable to the job
+- response_due_at: Deadline for response
+- attendance_due_at: Deadline for attending the site
+- completion_due_at: Deadline for job completion
+- breach_risk: Risk level of breaching deadlines
+- breached_at: Time when deadline was breached
+- job_owner: User responsible for the job
+- dispatcher_owner: Dispatcher responsible for the job
+- assigned_team: Team assigned to the job
+- technician_raw: Raw technician name from source
+- primary_technician_id: ID of primary technician
+- primary_technician_name: Name of primary technician
+- secondary_technician_id: ID of secondary technician
+- secondary_technician_name: Name of secondary technician
+- initial_date: Initial date of job request
+- date_scheduled: Scheduled date for the job
+- date_completed: Completion date of the job
+- last_contact_at: Last contact with client
+- next_action_at: Scheduled time for next action
+- next_action_type: Type of next scheduled action
+- quotation_reference: Reference to related quotation
+- details_of_works: Description of the work to be done
+- jobcard_id: ID of the associated jobcard
+- po_number: Purchase order number
+- amount: Monetary amount related to the job
+- invoice_number: Invoice number for the job
+- invoice_date: Date of the invoice
+- date_paid: Payment date
+- billing_notes: Additional billing notes
+- ready_to_invoice: Flag indicating if job is ready to invoice
+- requires_quote: Flag indicating if a quote is required
+- requires_site_visit: Flag indicating if site visit is required
+- requires_po: Flag indicating if purchase order is required
+- requires_report: Flag indicating if a report is required
+- requires_certificate: Flag indicating if certificate is required
+- requires_rams: Flag indicating if RAMS is required
+- requires_safety_file: Flag indicating if safety file is required
+- requires_client_signoff: Flag indicating if client sign-off is required
+- requires_followup_visit: Flag indicating if follow-up is required
+- jobcard_scanned: Flag indicating if jobcard was scanned
+- jobcard_sent: Flag indicating if jobcard was sent
+- report_sent: Flag indicating if report was sent
+- client_contact: Contact person at the client site
+- client_contact_email: Email of client contact
+- site_access_contact: Contact for site access
+- site_access_phone: Phone for site access
+- site_open_time: Opening time of the site
+- site_close_time: Closing time of the site
+- after_hours_allowed: Flag indicating if after-hours work is allowed
+- permit_required: Flag indicating if permit is required
+- induction_required: Flag indicating if induction is required
+- site_risk_level: Risk level of the site
+- site_geo_lat: Latitude of the site location
+- site_geo_lng: Longitude of the site location
+- drive_folder_id: Google Drive folder ID for job files
+- pdf_file_id: Google Drive file ID for job PDF
+- source_month_board: Month board where source originated
+- source_sheet: Sheet in source system
+- source_row: Row in source system
+- source_refs: References in source system
+- source_occurrences: Occurrences in source system
+- import_conflict_flag: Flag indicating import conflicts
+- legacy_formula_notes: Notes from legacy formulas
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 3. Clients_Master
+**Description**: Client information and billing details for relationship management.
+
+### Columns:
+- client_id: Unique identifier for each client
+- client_group: Grouping for related clients
+- legacy_account: Legacy account number for reference
+- client_name: Name of the client organization
+- billing_entity: Entity responsible for billing
+- default_sla_tier: Default SLA tier for the client
+- preferred_contact_method: Preferred way to contact the client
+- ops_email: Operations email for the client
+- billing_email: Billing email for the client
+- portal_enabled: Flag indicating if client can access portal
+- active_flag: Flag indicating if client is active
+- first_job_date: Date of first job with the client
+- last_job_date: Date of last job with the client
+- total_jobs: Total number of jobs for the client
+- open_jobs: Number of currently open jobs
+- distinct_sites: Number of distinct sites for the client
+- default_docs_required: Default documents required for the client
+- contract_id_default: Default contract ID for the client
+- notes: Additional notes about the client
+- source_confidence: Confidence level in the source data
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 4. Sites_Master
+**Description**: Location and site-specific information for job sites.
+
+### Columns:
+- site_id: Unique identifier for each site
+- client_id: Link to the client entity
+- client_name: Name of the client organization
+- site_name: Name of the site
+- normalized_site_name: Standardized site name
+- address: Physical address of the site
+- site_access_contact: Contact person for site access
+- site_access_phone: Phone number for site access
+- site_open_time: Opening time of the site
+- site_close_time: Closing time of the site
+- after_hours_allowed: Flag indicating if after-hours work is allowed
+- permit_required: Flag indicating if permit is required
+- induction_required: Flag indicating if induction is required
+- site_risk_level: Risk level classification of the site
+- geo_lat: Latitude of the site location
+- geo_lng: Longitude of the site location
+- primary_contract_id: Primary contract associated with the site
+- job_count: Total number of jobs at the site
+- first_job_date: Date of first job at the site
+- last_job_date: Date of last job at the site
+- system_types_seen: Types of systems observed at the site
+- source_confidence: Confidence level in the source data
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 5. Technicians_Master
+**Description**: Technician profiles and capabilities for workforce management.
+
+### Columns:
+- technician_id: Unique identifier for each technician
+- technician_name: Name of the technician
+- display_name: Name displayed in the system
+- is_dispatch_owner: Flag indicating if technician can dispatch
+- active_flag: Flag indicating if technician is active
+- total_jobs: Total number of jobs handled by technician
+- last_job_date: Date of last job handled by technician
+- team: Team the technician belongs to
+- email: Technician's email address
+- phone: Technician's phone number
+- skills: Skills possessed by the technician
+- source_confidence: Confidence level in the source data
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 6. Job_Events
+**Description**: Event logging and audit trail for job-related activities.
+
+### Columns:
+- event_id: Unique identifier for each event
+- job_id: Link to the associated job
+- legacy_job_id: Legacy identifier for the job
+- event_type: Type of event that occurred
+- event_date: Date when the event occurred
+- actor: Person or system that triggered the event
+- actor_type: Type of actor (human, system, etc.)
+- event_source: Source where the event originated
+- trigger_type: Type of trigger that caused the event
+- automation_rule_id: ID of automation rule if applicable
+- retry_count: Number of retries attempted
+- success_flag: Flag indicating if the event was successful
+- source_sheet: Sheet in source system
+- source_row: Row in source system
+- old_value: Previous value before change
+- new_value: New value after change
+- notes: Additional notes about the event
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 7. Job_Documents
+**Description**: Document management and tracking for job-related documents.
+
+### Columns:
+- document_id: Unique identifier for each document
+- sync_status: Status of synchronization between systems
+- last_sync_at: Timestamp of last synchronization
+- last_sync_error: Details of any sync errors
+- legacy_document_id: Legacy identifier for the document
+- job_id: Link to the associated job
+- legacy_job_id: Legacy identifier for the job
+- client_id: Link to the client entity
+- site_id: Link to the site entity
+- contract_id: Associated contract identifier
+- link_status: Status of document linking
+- document_status: Current status of the document
+- status_raw: Raw status from the source system
+- job_owner: User responsible for the document
+- assigned_to: User assigned to handle the document
+- requested_at: Time when document was requested
+- due_at: Deadline for document completion
+- date_scheduled: Scheduled date for document work
+- date_completed: Completion date of the document
+- sent_at: Time when document was sent
+- approved_at: Time when document was approved
+- client_viewed_at: Time when client viewed the document
+- client_acknowledged_at: Time when client acknowledged the document
+- account: Billing account information
+- site: Name of the site associated with document
+- document_type: Type of document (jobcard, report, etc.)
+- template_id: ID of the template used for the document
+- document_version: Version of the document
+- approval_required: Flag indicating if approval is required
+- approved_by: User who approved the document
+- sent_to: Recipient of the document
+- details_of_works: Description of the work in the document
+- requested_by: User who requested the document
+- legacy_job_reference_raw: Raw legacy job reference
+- legacy_job_reference_formula: Formula for legacy job reference
+- drive_file_id: Google Drive file ID for the document
+- drive_folder_id: Google Drive folder ID for the document
+- portal_visible: Flag indicating if document is visible on portal
+- source_sheet: Sheet in source system
+- source_row: Row in source system
+- source_refs: References in source system
+- source_occurrences: Occurrences in source system
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 8. Portal_Files
+**Description**: Client portal file visibility and management.
+
+### Columns:
+- file_id: Unique identifier for each file
+- job_id: Link to the associated job
+- legacy_job_id: Legacy identifier for the job
+- client_id: Link to the client entity
+- site_id: Link to the site entity
+- contract_id: Associated contract identifier
+- file_role: Role of the file in the system
+- file_category: Category of the file
+- storage_provider: Provider where the file is stored
+- drive_file_id: Google Drive file ID
+- drive_folder_id: Google Drive folder ID
+- portal_visible: Flag indicating if file is visible on portal
+- visible_to_client: Flag indicating if file is visible to client
+- uploaded_at: Time when file was uploaded
+- captured_at: Time when file was captured
+- uploaded_by: User who uploaded the file
+- captured_by: User who captured the file
+- is_signature: Flag indicating if file is a signature
+- is_before_photo: Flag indicating if file is a before photo
+- is_after_photo: Flag indicating if file is an after photo
+- sort_order: Order in which to sort the file
+- source_url: URL where the source file is located
+- notes: Additional notes about the file
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 9. Schedule_Requests
+**Description**: Requests for scheduling job appointments.
+
+### Columns:
+- request_id: Unique identifier for each schedule request
+- job_id: Link to the associated job
+- client_id: Link to the client entity
+- preferred_slots_json: JSON array of preferred time slots
+- timezone: Timezone for the scheduling request
+- notes: Additional notes about the request
+- status: Current status of the request
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 10. Schedules_Master
+**Description**: Master record of scheduled job appointments.
+
+### Columns:
+- schedule_id: Unique identifier for each schedule
+- request_id: Link to the associated request
+- job_id: Link to the associated job
+- calendar_event_id: ID of the calendar event
+- start_at: Start time of the scheduled appointment
+- end_at: End time of the scheduled appointment
+- technician_id: ID of the assigned technician
+- status: Current status of the schedule
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 11. Automation_Jobs
+**Description**: Tracking of automated jobs and tasks.
+
+### Columns:
+- automation_job_id: Unique identifier for each automation job
+- action: Action to be performed by the automation
+- payload_json: JSON payload containing the job details
+- status: Current status of the automation job
+- retry_count: Number of retries attempted
+- last_error: Details of the last error if any
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 12. Sync_Queue
+**Description**: Queue for synchronization operations between systems.
+
+### Columns:
+- mutation_id: Unique identifier for each sync operation
+- job_id: Link to the associated job
+- actor_id: ID of the user who initiated the operation
+- payload_json: JSON payload containing the sync details
+- status: Current status of the sync operation
+- last_result: Result of the last sync attempt
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 13. Finance_Quotes
+**Description**: Financial quotes for jobs and services.
+
+### Columns:
+- quote_id: Unique identifier for each quote
+- job_id: Link to the associated job
+- client_id: Link to the client entity
+- description: Description of the quoted items/services
+- amount: Monetary amount of the quote
+- status: Current status of the quote
+- created_at: Time when the quote was created
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 14. Finance_Invoices
+**Description**: Financial invoices for jobs and services.
+
+### Columns:
+- invoice_id: Unique identifier for each invoice
+- job_id: Link to the associated job
+- quote_id: Link to the associated quote
+- client_id: Link to the client entity
+- amount: Monetary amount of the invoice
+- due_date: Due date for payment
+- status: Current status of the invoice
+- reconciled_at: Time when invoice was reconciled
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 15. Finance_Statements
+**Description**: Financial statements for client billing.
+
+### Columns:
+- statement_id: Unique identifier for each statement
+- client_id: Link to the client entity
+- period_label: Label for the billing period
+- opening_balance: Opening balance at start of period
+- billed: Amount billed during the period
+- paid: Amount paid during the period
+- closing_balance: Closing balance at end of period
+- generated_at: Time when statement was generated
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 16. Finance_Debtors
+**Description**: Financial debtor tracking for outstanding payments.
+
+### Columns:
+- client_id: Link to the client entity
+- total_due: Total amount due from the client
+- current_bucket: Amount in current (not overdue) bucket
+- bucket_30: Amount overdue by 1-30 days
+- bucket_60: Amount overdue by 31-60 days
+- bucket_90_plus: Amount overdue by more than 90 days
+- risk_band: Risk band classification for the debtor
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 17. Compliance_Escrow
+**Description**: Compliance escrow tracking for financial guarantees.
+
+### Columns:
+- document_id: Link to the associated document
+- invoice_id: Link to the associated invoice
+- status: Current status of the escrow
+- locked_at: Time when escrow was locked
+- released_at: Time when escrow was released
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 18. HR_Skills_Matrix
+**Description**: HR skills matrix for tracking technician certifications and qualifications.
+
+### Columns:
+- user_id: Link to the user entity
+- saqcc_type: SAQCC certification type held
+- saqcc_expiry: Expiry date of SAQCC certification
+- medical_expiry: Expiry date of medical examination
+- rest_hours_last_24h: Hours of rest in the last 24 hours
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 19. System_Config
+**Description**: System configuration settings.
+
+### Columns:
+- config_key: Key for the configuration setting
+- config_value: Value for the configuration setting
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 20. Ledger
+**Description**: General ledger for audit and financial tracking.
+
+### Columns:
+- ledger_id: Unique identifier for each ledger entry
+- entry_type: Type of ledger entry
+- action: Action recorded in the entry
+- entity_type: Type of entity involved
+- entity_id: ID of the entity involved
+- payload_json: JSON payload with additional details
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 21. Invoices_Master
+**Description**: Detailed master record of invoices.
+
+### Columns:
+- invoice_id: Unique identifier for each invoice
+- sync_status: Status of synchronization between systems
+- last_sync_at: Timestamp of last synchronization
+- last_sync_error: Details of any sync errors
+- legacy_invoice_id: Legacy identifier for the invoice
+- job_id: Link to the associated job
+- legacy_job_id: Legacy identifier for the job
+- client_id: Link to the client entity
+- site_id: Link to the site entity
+- contract_id: Associated contract identifier
+- link_status: Status of invoice linking
+- invoice_date: Date of the invoice
+- bill_to: Entity being billed
+- description: Description of the invoiced items/services
+- billing_type: Type of billing arrangement
+- invoice_amount: Amount of the invoice
+- quote_value: Value from the associated quote
+- approved_value: Approved value of the invoice
+- labour_value: Labour portion of the invoice value
+- materials_value: Materials portion of the invoice value
+- callout_value: Callout charges in the invoice
+- tax_value: Tax amount in the invoice
+- retention_amount: Retention amount held back
+- credit_note_flag: Flag indicating if this is a credit note
+- billing_hold_reason: Reason if billing is on hold
+- payment_status: Current payment status
+- payment_date: Date when payment was received
+- payment_notes: Additional notes about payment
+- legacy_notes: Notes from legacy system
+- legacy_flag_1: First legacy flag
+- legacy_flag_2: Second legacy flag
+- legacy_flag_3: Third legacy flag
+- legacy_flag_4: Fourth legacy flag
+- source_sheet: Sheet in source system
+- source_row: Row in source system
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 22. Contracts_Master
+**Description**: Master record of contracts with clients.
+
+### Columns:
+- contract_id: Unique identifier for each contract
+- client_id: Link to the client entity
+- site_id: Link to the site entity
+- client_name: Name of the client organization
+- contract_name: Name of the contract
+- contract_scope: Scope of work covered by the contract
+- sla_tier: SLA tier applicable to the contract
+- included_callouts: Number of included callouts
+- service_frequency: Frequency of service visits
+- billing_rules: Rules for billing under the contract
+- contract_start: Start date of the contract
+- contract_end: End date of the contract
+- auto_create_next_job: Flag to automatically create next job
+- advance_notice_days: Days of advance notice required
+- active_flag: Flag indicating if contract is active
+- source_confidence: Confidence level in the source data
+- source_basis: Basis for the source data
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 23. Assets_Master
+**Description**: Master record of assets and systems at sites.
+
+### Columns:
+- asset_or_system_id: Unique identifier for each asset/system
+- site_id: Link to the site entity
+- client_id: Link to the client entity
+- client_name: Name of the client organization
+- site_name: Name of the site
+- system_type: Type of system or asset
+- asset_name: Name of the asset
+- make: Make of the asset
+- model: Model of the asset
+- serial_number: Serial number of the asset
+- install_date: Installation date of the asset
+- warranty_expiry: Warranty expiration date
+- service_interval: Interval between services
+- last_service_date: Date of last service
+- next_service_due: Date when next service is due
+- active_flag: Flag indicating if asset is active
+- source_confidence: Confidence level in the source data
+- inference_basis: Basis for any inferred data
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 24. Maintenance_Plans
+**Description**: Plans for regular maintenance of assets and systems.
+
+### Columns:
+- plan_id: Unique identifier for each maintenance plan
+- contract_id: Associated contract identifier
+- client_id: Link to the client entity
+- site_id: Link to the site entity
+- asset_or_system_id: Link to the asset/system
+- client_name: Name of the client organization
+- site_name: Name of the site
+- system_type: Type of system involved
+- plan_name: Name of the maintenance plan
+- service_frequency: Frequency of maintenance
+- last_service_date: Date of last maintenance
+- next_service_due: Date when next maintenance is due
+- auto_create_next_job: Flag to automatically create maintenance job
+- advance_notice_days: Days of advance notice required
+- status: Current status of the maintenance plan
+- source_confidence: Confidence level in the source data
+- basis_job_count: Basis for job count estimation
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 25. Lookups
+**Description**: Lookup table for standardized values.
+
+### Columns:
+- lookup_id: Unique identifier for each lookup entry
+- lookup_type: Type of lookup value
+- lookup_value: Actual lookup value
+- lookup_group: Grouping for related lookups
+- sort_order: Order in which to sort the lookup values
+- source_sheet: Sheet in source system
+- source_row: Row in source system
+- source_col: Column in source system
+- notes: Additional notes about the lookup
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 26. Office_Jobs_Master
+**Description**: Master record of office-based jobs.
+
+### Columns:
+- office_job_id: Unique identifier for each office job
+- sync_status: Status of synchronization between systems
+- last_sync_at: Timestamp of last synchronization
+- legacy_office_job_id: Legacy identifier for the office job
+- status_normalized: Normalized status of the job
+- status_raw: Raw status from the source system
+- initial_date: Initial date of the office job
+- supplier: Supplier associated with the job
+- details_of_works: Description of the work to be done
+- originator: Person who originated the job
+- date_supplied: Date when supplies were provided
+- amount: Monetary amount related to the job
+- notes: Additional notes about the job
+- source_sheet: Sheet in source system
+- source_row: Row in source system
+- source_refs: References in source system
+- source_occurrences: Occurrences in source system
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---
+
+## 27. Import_Issues
+**Description**: Tracking of issues encountered during data imports.
+
+### Columns:
+- issue_type: Type of import issue
+- entity_type: Type of entity affected
+- legacy_id: Legacy identifier for the entity
+- source_sheet: Sheet in source system
+- source_row: Row in source system
+- details: Detailed description of the issue
+- row_version: Version number for optimistic locking
+- updated_at: Timestamp of last update
+- updated_by: User who made the last update
+- correlation_id: ID for tracing operations across systems
+
+---

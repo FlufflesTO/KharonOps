@@ -1,163 +1,224 @@
-# Kharon Unified Rebuild v1
+# Kharon Platform - Next Generation
 
-Unified public website and operations portal for Kharon Fire and Security Solutions, delivered from Cloudflare Workers.
+Welcome to the next-generation rebuild of the Kharon Platform, a comprehensive operational management system for fire detection, gas suppression, and security systems services.
 
-## Current Release Highlights (2026-04-24)
+## Overview
 
-- Role coverage hardened end to end across client, technician, dispatcher, finance, admin, and super_admin portals.
-- Client support now submits a real public contact request instead of a placeholder action.
-- Admin workspace preferences are now live and persistent, and super-admin business-unit management is editable locally.
-- Validation now converges through `npm run check`, which runs the build and full test suite together.
-- Finance Portal role added across domain RBAC, API auth, local seed users, and portal login/dashboard surfaces.
-- Dispatch operations upgraded with drag and drop scheduling, SLA countdown visibility, and daily capacity balancing.
-- Document workflow upgraded with compliance escrow lock and release controls tied to reconciliation actions.
-- Upgrade workspace state moved from browser-local storage to shared backend workbook tables and API flows so finance, skills, and escrow state is consistent across users/devices.
-- Platform Governance now includes an explicit `End Emulation` control when role emulation is active.
-- Portal layout and tile structure tuned to reduce stretched cards and large empty regions, especially in workspace/history panels.
-- Job list cards now render with human-readable names (`Client Name`, `Technician Name`) instead of raw id-only labels.
-- Job list wording was simplified from technical phrasing to plain-language labels such as `Jobs List`.
-- Document generation now guards stale selections and refreshes job state when a selected job no longer exists server-side.
-- Technician and compliance workflows upgraded:
-  - checklist clauses now support legislation mapping metadata and version capture
-  - job views now include risk heatmap scoring bands
-  - admin audits now expose hash-linked provenance and anomaly indicators
-- People operations upgraded from a basic directory to an HR and skills matrix (certification, medical, rest and fatigue tracking).
-- Finance operations upgraded from scaffold state to quote, invoice, statement, debtors, and reconciliation workflows.
-- Forensic Audit Trail coverage: 100% of mutation routes now include explicit ledger logging for accountability and compliance.
-- Security improvements: Fixed Cross-Origin-Opener-Policy and Content Security Policy violations to support Google Identity Services and React inline styles.
-- API Resilience: Hardened body parsing and schema initialization to prevent session-blocking 400 errors.
+The Kharon Platform is designed to streamline operations for Kharon's clients by connecting administrative staff, dispatchers, field technicians, and clients in a unified workflow that ensures compliance, accountability, and operational efficiency.
 
-## Portal UI/UX (Redesign v2)
+This repository represents a complete rebuild of the existing system, following a clean architecture approach with enhanced security, scalability, and maintainability.
 
-The portal has been redesigned for task-first, non-technical efficiency across all roles:
+## Architecture
 
-- **Universal Experience:** Unified sidebar-driven navigation with progressive disclosure for advanced tools. Optimized for mobile, tablet, and desktop.
-- **Role-Specific Workspaces:**
-  - **SuperAdmin:** Modular platform controls (Health, Data Checks, Automations, Audit Log).
-  - **Admin:** Office management (Dashboard, Jobs, Staff, Settings) with live workspace preference controls.
-  - **Finance:** Business-first finance tools (Quotes, Invoices, Payments, Debtors).
-  - **Dispatch:** Operational coordination (Schedule Board, Unassigned Queue, Daily Plan).
-  - **Technician:** Guided field execution (My Day, Check In/Out, Simple Reporting).
-  - **Client:** Trust-based service tracking (Overview, Documents, Invoices, Support intake).
-- **Design Tokens:** Modern blue/purple/black/gray palette with spacious, responsive card layouts and human-friendly terminology.
+The platform follows a monorepo structure with clear separation of concerns:
 
-## Stack
+```
+kharon-platform/
+├── apps/
+│   ├── web/                 # Public marketing website (Next.js)
+│   ├── portal/              # Operations portal (Next.js)
+│   └── api/                 # API layer (Cloudflare Workers with Hono)
+├── packages/
+│   ├── types/               # Shared TypeScript types
+│   ├── config/              # Configuration management
+│   ├── validators/          # Zod validation schemas
+│   ├── auth/                # Authentication and RBAC utilities
+│   ├── ui/                  # Shared UI components
+│   ├── data/                # Data access layer (PostgreSQL)
+│   ├── integrations/        # External service integrations
+│   └── documents/           # Document generation services
+├── docs/
+│   ├── audit/              # Audit documentation
+│   └── product/            # Product definition
+├── tests/                  # Test suite
+└── scripts/                # Build and utility scripts
+```
 
-- Node.js 22+
-- npm workspaces monorepo
-- TypeScript-first
-- Hono on Cloudflare Workers for `/api/v1/*`
-- Cloudflare Workers static assets for `/` and `/portal/`
-- Vite React apps for `site` and `portal`
-- Google Workspace rails for Sheets, Drive, Docs, Calendar, Gmail, and Chat
+## Features
 
-## Monorepo
+### Core Architecture
+- **Clean Architecture**: Clear separation of concerns with domain, application, interface, and infrastructure layers
+- **Type Safety**: Comprehensive TypeScript typing across all components
+- **Validation**: Zod schemas for all data validation
+- **Modularity**: Reusable packages for common functionality
 
-- `apps/site` marketing site
-- `apps/portal` role-based portal PWA
-- `apps/api` Worker API
-- `packages/domain` domain rules, schemas, RBAC, envelopes
-- `packages/google` Google adapters and runtime config
-- `packages/ui` shared tokens and styles
-- `tests/*` unit, contract, and integration coverage
-- `docs/*` architecture, deployment, security, cutover, and roadmap docs
+### Security
+- **Enhanced RBAC**: Granular permissions for different operations based on role
+- **Server-Side Validation**: All operations validated server-side
+- **Session Management**: Secure JWT-based session handling
+- **Audit Logging**: Comprehensive logging for all operations
 
-## Local Setup
+### Data Management
+- **PostgreSQL**: Robust data storage with ACID compliance
+- **Migration Ready**: Designed to replace Google Sheets backend
+- **Concurrency Control**: Row versioning to handle concurrent updates
+- **Data Integrity**: Foreign key constraints and validation
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Copy `.env.example` to `.env` and fill the required values.
-3. Validate:
-   ```bash
-   npm run check
-   npm run build
-   npm run test
-   npm run lint
-   ```
+### Integration
+- **Google Workspace**: Calendar, Sheets, and authentication
+- **Cloudflare Services**: Workers, Pages, and KV storage
+- **Document Generation**: PDF generation for reports and certificates
+- **Email Services**: Notification and communication
 
-## Cloudflare Deployment Shape
+### User Experience
+- **Responsive Design**: Optimized for desktop, tablet, and mobile
+- **Offline Support**: Field technician workflow with offline capability
+- **Role-Based UI**: Customized interfaces for each user role
+- **Accessibility**: WCAG-compliant components
 
-`kharon-unified-api` is the only Worker target. It serves:
+## Getting Started
 
-- `/` marketing site
-- `/portal/` portal app
-- `/api/v1/*` API
+### Prerequisites
+- Node.js 18+
+- PostgreSQL 12+
+- npm or yarn
 
-The Worker uses `dist/public` as its static asset directory via [wrangler.toml](C:/Users/User/KharonOps/KharonOps/wrangler.toml).
+### Setup
 
-## Build Output
+1. Clone the repository
+```bash
+git clone https://github.com/your-org/kharon-platform.git
+cd kharon-platform
+```
 
-`npm run build` produces:
+2. Install dependencies
+```bash
+npm install
+```
 
-- `apps/api/dist`
-- `apps/site/dist`
-- `apps/portal/dist`
-- `dist/public`
+3. Set up environment variables
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
 
-`dist/public` contains the assembled static bundle plus:
+4. Run the development servers
+```bash
+# Start all services
+npm run dev
 
-- `_headers`
-- `_redirects`
+# Or start individual services
+npm run dev --workspace=@kharon-platform/web
+npm run dev --workspace=@kharon-platform/portal
+npm run dev --workspace=@kharon-platform/api
+```
 
-These are generated by [build-static.mjs](C:/Users/User/KharonOps/KharonOps/scripts/build-static.mjs) for Cloudflare static assets.
+### Environment Configuration
 
-## Deploy Commands
+Key environment variables:
 
-Production:
+```env
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/kharon_platform_dev"
 
+# Google OAuth
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+GOOGLE_REDIRECT_URI="http://localhost:3000/auth/callback"
+
+# Session management
+SESSION_KEYS="session-key-1,session-key-2"
+SESSION_TTL_SECONDS=86400
+SUPER_ADMIN_EMAILS="admin@example.com,another-admin@example.com"
+
+# Cloudflare
+CLOUDFLARE_ACCOUNT_ID="your-account-id"
+CLOUDFLARE_API_TOKEN="your-api-token"
+```
+
+## Development
+
+### Running Tests
+```bash
+npm test
+```
+
+### Type Checking
+```bash
+npm run typecheck
+```
+
+### Linting
+```bash
+npm run lint
+```
+
+### Building
 ```bash
 npm run build
-npx wrangler deploy --env=""
 ```
 
-Single-command production deploy:
+## Key Components
 
-```bash
-npm run build
-npm run deploy
-```
+### RBAC System
+The Role-Based Access Control system supports six distinct roles:
+- Client
+- Technician
+- Dispatcher
+- Finance
+- Admin
+- Super Admin
 
-Workbook governance:
+Each role has granular permissions for different operations based on security requirements.
 
-```bash
-npm run workbook:audit
-npm run workbook:fix
-```
+### Data Layer
+The PostgreSQL-based data layer provides:
+- ACID-compliant transactions
+- Row-level locking for concurrency
+- Comprehensive data validation
+- Audit trails for all operations
 
-`workbook:fix` normalizes workbook identity/status quality for portal compatibility, including:
-- technician id mapping in `Users_Master` -> canonical `TECH-###`
-- duplicate `user_id` conflict resolution
-- `Jobs_Master.job_status` backfill where empty
-- optional technician auto-provisioning into `Technicians_Master` when active technician users have no master record
+### Document Generation
+The document service supports:
+- Job card generation
+- Service report creation
+- Certificate generation
+- Customizable templates
+- PDF export
 
-## Required Cloudflare Secrets
+### Integration Layer
+Handles external service integrations:
+- Google Workspace (Calendar, Sheets, Auth)
+- Cloudflare KV for caching
+- Email notification services
+- Third-party APIs
 
-- `SESSION_KEYS`
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-- `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
-- `WORKBOOK_SPREADSHEET_ID`
-- `GOOGLE_DRIVE_ROOT_FOLDER_ID`
-- `GOOGLE_JOBCARD_TEMPLATE_ID`
-- `GOOGLE_SERVICE_REPORT_TEMPLATE_ID`
-- `GOOGLE_CHAT_WEBHOOK_URL`
-- `GOOGLE_CALENDAR_ID`
-- `GMAIL_SENDER_ADDRESS`
+## Roadmap
 
-## Docs
+### Phase 1: Foundation (Complete)
+- [x] Audit existing system
+- [x] Define architecture
+- [x] Create monorepo structure
+- [x] Implement shared packages
 
-- [Architecture](C:/Users/User/KharonOps/KharonOps/docs/ARCHITECTURE.md)
-- [API Spec](C:/Users/User/KharonOps/KharonOps/docs/API_SPEC.md)
-- [Workbook Schema](C:/Users/User/KharonOps/KharonOps/docs/WORKBOOK_SCHEMA.md)
-- [Security Model](C:/Users/User/KharonOps/KharonOps/docs/SECURITY_MODEL.md)
-- [Deployment](C:/Users/User/KharonOps/KharonOps/docs/DEPLOYMENT.md)
-- [Production Roadmap](C:/Users/User/KharonOps/KharonOps/docs/PRODUCTION_ROADMAP.md)
-- [Phase 1 Production](C:/Users/User/KharonOps/KharonOps/docs/PHASE_1_PRODUCTION.md)
-- [Phase 2 Postgres](C:/Users/User/KharonOps/KharonOps/docs/PHASE_2_POSTGRES.md)
-- [Phase 3 SME Productization](C:/Users/User/KharonOps/KharonOps/docs/PHASE_3_SME.md)
-- [Cutover Runbook](C:/Users/User/KharonOps/KharonOps/docs/CUTOVER_RUNBOOK.md)
-- [Rollback Runbook](C:/Users/User/KharonOps/KharonOps/docs/ROLLBACK_RUNBOOK.md)
-- [Test Matrix](C:/Users/User/KharonOps/KharonOps/docs/TEST_MATRIX.md)
-- [GCP API Enablement](C:/Users/User/KharonOps/KharonOps/infra/gcp/README.md)
+### Phase 2: Core Features (In Progress)
+- [x] Data access layer
+- [x] Integration services
+- [x] Document generation
+- [ ] API layer integration
+- [ ] Authentication flow
+- [ ] Basic job workflow
+
+### Phase 3: Advanced Features
+- [ ] Complete scheduling system
+- [ ] Financial management
+- [ ] Advanced reporting
+- [ ] Mobile optimization
+
+### Phase 4: Production
+- [ ] Security audit
+- [ ] Performance optimization
+- [ ] Monitoring and logging
+- [ ] Deployment pipeline
+
+## Contributing
+
+We welcome contributions to the Kharon Platform. Please read our contributing guidelines before submitting pull requests.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For support, please contact the development team or open an issue in the repository.

@@ -304,56 +304,75 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
   }
 
   return (
-    <>
+    <div className="portal-workspace-layout">
       {showOperationalEngagements ? (
-        <aside className="portal-sidebar portal-sidebar--jobs">
-          <JobListView
-            jobs={jobs}
-            selectedJobid={selectedJobid}
-            onSelectJob={onSelectJobid}
-            globalQuery={searchTerm}
-            onGlobalQueryChange={onSearchTermChange}
-            onBulkStatusUpdate={onBulkStatusUpdate}
-            title="Jobs List"
-          />
+        <aside className="portal-sidebar-enhanced">
+          <div className="sidebar-glass-container">
+            <JobListView
+              jobs={jobs}
+              selectedJobid={selectedJobid}
+              onSelectJob={onSelectJobid}
+              globalQuery={searchTerm}
+              onGlobalQueryChange={onSearchTermChange}
+              onBulkStatusUpdate={onBulkStatusUpdate}
+              title="Operations Registry"
+            />
+          </div>
         </aside>
       ) : null}
 
-      <main className="portal-main" id="main-content">
-        <section className="workspace-header-card">
-          <h1>{activeToolMeta.label}</h1>
-          <p>{activeToolMeta.helper.replace("documents", COPY_GLOSSARY.documents.toLowerCase())}</p>
-          <div className="workspace-header-card__actions">
-            <input
-              type="search"
-              id="workspace-global-search"
-              value={searchTerm}
-              onChange={(event) => onSearchTermChange(event.target.value)}
-              placeholder="Search jobs, clients, sites, IDs..."
-              aria-label="Search across all workspace data"
-            />
+      <main className="portal-main-hardened" id="main-content">
+        <header className="workspace-header-card">
+          <div className="header-glass-overlay">
+            <h1>{activeToolMeta.label}</h1>
+            <p>{activeToolMeta.helper.replace("documents", COPY_GLOSSARY.documents.toLowerCase())}</p>
+            <div className="workspace-header-card__actions">
+              <div className="search-pill">
+                <input
+                  type="search"
+                  id="workspace-global-search"
+                  value={searchTerm}
+                  onChange={(event) => onSearchTermChange(event.target.value)}
+                  placeholder="Intelligence lookup (Jobs, Sites, Technicians)..."
+                  aria-label="Universal Command Search"
+                />
+              </div>
+            </div>
           </div>
-        </section>
+        </header>
 
         {notifications.length > 0 ? (
           <section className="notification-center" aria-live="polite">
             {notifications.map((item) => (
-              <article key={item.id} className="notification-card">
+              <article key={item.id} className="notification-card premium-alert">
+                <div className={`status-glow status-glow--${item.tone}`} />
                 <span className={`status-chip status-chip--${item.tone}`}>{item.title}</span>
                 <p>{item.detail}</p>
-                <button className="button button--ghost" type="button" onClick={() => onDismissNotification(item.id)}>
-                  Dismiss
+                <button className="button button--ghost-premium" type="button" onClick={() => onDismissNotification(item.id)}>
+                  Acknowledge
                 </button>
               </article>
             ))}
-            <button className="button button--secondary" type="button" onClick={onDismissAllNotifications}>
-              Dismiss all
-            </button>
+            <div className="notification-actions">
+              <button className="button button--secondary-glass" type="button" onClick={onDismissAllNotifications}>
+                Clear All Signals
+              </button>
+            </div>
           </section>
         ) : null}
 
-        {actionPending ? <p className="inline-note">Loading latest updates…</p> : null}
-        {/failed|error|unavailable/i.test(feedback) ? <p className="inline-note">Action could not complete. Check connection and try again.</p> : null}
+        {actionPending ? (
+          <div className="loading-state-premium">
+            <div className="pulse-loader" />
+            <span>Synchronizing Ledger...</span>
+          </div>
+        ) : null}
+
+        {/failed|error|unavailable/i.test(feedback) ? (
+          <div className="error-alert-glass">
+            <p>Synchronization Interrupted. Re-establishing secure handshake...</p>
+          </div>
+        ) : null}
 
         <SummaryBoard
           role={effectiveRole || "client"}
@@ -366,95 +385,20 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
           syncPulseText={syncPulseText}
         />
 
-        <section className={`workspace-container ${activeWorkspaceTool === "jobs" && selectedJobid ? "workspace-container--split" : ""}`}>
-          <TechnicianWorkspacePanel
-            activeWorkspaceTool={activeWorkspaceTool}
-            effectiveRole={effectiveRole}
-            jobs={jobs}
-            selectedJob={selectedJob}
-            selectedJobTitle={selectedJobTitle}
-            selectedJobDocumentCount={selectedJobDocumentCount}
-            onSelectJobid={onSelectJobid}
-            onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
-            geoVerification={geoVerification}
-            onVerifyLocation={onVerifyLocation}
-            selectedJobStatus={selectedJobStatus}
-            selectableStatuses={selectableStatuses}
-            statusTarget={statusTarget}
-            setStatusTarget={setStatusTarget}
-            noteValue={noteValue}
-            setNoteValue={setNoteValue}
-            onStatusUpdate={onStatusUpdate}
-            onNote={onNote}
-            preferredStart={preferredStart}
-            setPreferredStart={setPreferredStart}
-            preferredEnd={preferredEnd}
-            setPreferredEnd={setPreferredEnd}
-            onScheduleRequest={onScheduleRequest}
-            documentType={documentType}
-            setDocumentType={setDocumentType}
-            onDocumentGenerate={onDocumentGenerate}
-            canGenerateDocuments={canGenerateDocuments && !documentAccessDenied}
-            documentGenerateDisabledReason={documentGenerateDisabledReason}
-            syncPulseText={syncPulseText}
-            jobEvents={jobEvents}
-          />
-
-          <ClientWorkspacePanel
-            activeWorkspaceTool={activeWorkspaceTool}
-            effectiveRole={effectiveRole}
-            jobs={jobs}
-            store={upgradeState}
-            onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
-          />
-
-          <DispatchWorkspacePanel
-            activeWorkspaceTool={activeWorkspaceTool}
-            effectiveRole={effectiveRole}
-            jobs={jobs}
-            dispatchContext={{
-              requests: dispatchRequests,
-              schedules: dispatchSchedules,
-              documents: dispatchDocuments,
-              technicians
-            }}
-            selectedJob={selectedJob}
-            selectedRequestid={selectedRequestid}
-            selectedScheduleid={selectedScheduleid}
-            selectedDocumentid={selectedDocumentid}
-            setSelectedRequestid={setSelectedRequestid}
-            setSelectedScheduleid={setSelectedScheduleid}
-            setSelectedDocumentid={setSelectedDocumentid}
-            onSelectJobid={onSelectJobid}
-            preferredStart={preferredStart}
-            setPreferredStart={setPreferredStart}
-            preferredEnd={preferredEnd}
-            setPreferredEnd={setPreferredEnd}
-            confirmStart={confirmStart}
-            setConfirmStart={setConfirmStart}
-            confirmEnd={confirmEnd}
-            setConfirmEnd={setConfirmEnd}
-            confirmTechid={confirmTechid}
-            setConfirmTechid={setConfirmTechid}
-            rescheduleStart={rescheduleStart}
-            setRescheduleStart={setRescheduleStart}
-            rescheduleEnd={rescheduleEnd}
-            setRescheduleEnd={setRescheduleEnd}
-            rescheduleRowVersion={rescheduleRowVersion}
-            setRescheduleRowVersion={setRescheduleRowVersion}
-            onScheduleRequest={onScheduleRequest}
-            onScheduleConfirm={onScheduleConfirm}
-            onReschedule={onReschedule}
-            onDocumentPublish={onDocumentPublish}
-            onFeedback={setFeedback}
-            opsIntelligence={opsIntelligence}
-            onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
-          />
-
-          {activeWorkspaceTool === "jobs" ? (
-            <JobDetailView
+        <section className={`workspace-stage ${activeWorkspaceTool === "jobs" && selectedJobid ? "workspace-stage--split" : ""}`}>
+          <div className="workspace-panel-container">
+            <TechnicianWorkspacePanel
+              activeWorkspaceTool={activeWorkspaceTool}
+              effectiveRole={effectiveRole}
+              jobs={jobs}
               selectedJob={selectedJob}
-              role={(effectiveRole || "client") as Role}
+              selectedJobTitle={selectedJobTitle}
+              selectedJobDocumentCount={selectedJobDocumentCount}
+              onSelectJobid={onSelectJobid}
+              onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
+              geoVerification={geoVerification}
+              onVerifyLocation={onVerifyLocation}
+              selectedJobStatus={selectedJobStatus}
               selectableStatuses={selectableStatuses}
               statusTarget={statusTarget}
               setStatusTarget={setStatusTarget}
@@ -472,110 +416,189 @@ export function PortalWorkspace({ state }: PortalWorkspaceProps): React.JSX.Elem
               onDocumentGenerate={onDocumentGenerate}
               canGenerateDocuments={canGenerateDocuments && !documentAccessDenied}
               documentGenerateDisabledReason={documentGenerateDisabledReason}
-              onChecklistChange={onChecklistChange}
-              selectedJobTitle={selectedJobTitle}
-              documentCountForJob={selectedJobDocumentCount}
-              geoVerification={geoVerification}
-              onVerifyLocation={onVerifyLocation}
               syncPulseText={syncPulseText}
-              events={jobEvents}
+              jobEvents={jobEvents}
             />
-          ) : null}
 
-          <FinanceWorkspacePanel
-            activeWorkspaceTool={activeWorkspaceTool}
-            effectiveRole={effectiveRole}
-            jobs={jobs}
-            documents={documents}
-            store={upgradeState}
-            onRefreshStore={onRefreshUpgradeState}
-            onCreateQuote={onCreateQuote}
-            onUpdateQuoteStatus={onUpdateQuoteStatus}
-            onCreateInvoiceFromQuote={onCreateInvoiceFromQuote}
-            onReconcileInvoice={onReconcileInvoice}
-            onLockEscrow={onLockEscrow}
-            onRebuildAnalytics={onRebuildAnalytics}
-            onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
-          />
+            <ClientWorkspacePanel
+              activeWorkspaceTool={activeWorkspaceTool}
+              effectiveRole={effectiveRole}
+              jobs={jobs}
+              store={upgradeState}
+              onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
+            />
 
-          <AdminWorkspacePanel
-            activeWorkspaceTool={activeWorkspaceTool}
-            effectiveRole={effectiveRole}
-            isRealSuperAdmin={isRealSuperAdmin}
-            emulatedRole={emulatedRole}
-            session={session}
-            defaultWorkspaceTool={defaultWorkspaceTool}
-            pinnedTools={pinnedTools}
-            onboardingDismissed={onboardingDismissed}
-            allowedWorkspaceTools={allowedWorkspaceTools}
-            onSaveWorkspacePreferences={onSaveWorkspacePreferences}
-            onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
-            opsIntelligence={opsIntelligence}
-            adminHealth={adminHealth}
-            adminHealthState={adminHealthState}
-            adminHealthMessage={adminHealthMessage}
-            adminAudits={adminAudits}
-            adminAutomationJobs={adminAutomationJobs}
-            adminAuditCount={adminAuditCount}
-            automationJobs={automationJobs}
-            selectedAutomationJobid={selectedAutomationJobid}
-            onSelectAutomationJobid={onSelectAutomationJobid}
-            onLoadHealth={onLoadHealth}
-            onLoadAudits={onLoadAudits}
-            onLoadAutomationJobs={onLoadAutomationJobs}
-            onRetryAutomation={onRetryAutomation}
-            onEmulateRole={onEmulateRole}
-            schemaDrift={schemaDrift}
-            onLoadSchemaDrift={onLoadSchemaDrift}
-            onLoadOpsIntelligence={onLoadOpsIntelligence}
-            actionPending={actionPending}
-            onFeedback={setFeedback}
-          />
+            <DispatchWorkspacePanel
+              activeWorkspaceTool={activeWorkspaceTool}
+              effectiveRole={effectiveRole}
+              jobs={jobs}
+              dispatchContext={{
+                requests: dispatchRequests,
+                schedules: dispatchSchedules,
+                documents: dispatchDocuments,
+                technicians
+              }}
+              selectedJob={selectedJob}
+              selectedRequestid={selectedRequestid}
+              selectedScheduleid={selectedScheduleid}
+              selectedDocumentid={selectedDocumentid}
+              setSelectedRequestid={setSelectedRequestid}
+              setSelectedScheduleid={setSelectedScheduleid}
+              setSelectedDocumentid={setSelectedDocumentid}
+              onSelectJobid={onSelectJobid}
+              preferredStart={preferredStart}
+              setPreferredStart={setPreferredStart}
+              preferredEnd={preferredEnd}
+              setPreferredEnd={setPreferredEnd}
+              confirmStart={confirmStart}
+              setConfirmStart={setConfirmStart}
+              confirmEnd={confirmEnd}
+              setConfirmEnd={setConfirmEnd}
+              confirmTechid={confirmTechid}
+              setConfirmTechid={setConfirmTechid}
+              rescheduleStart={rescheduleStart}
+              setRescheduleStart={setRescheduleStart}
+              rescheduleEnd={rescheduleEnd}
+              setRescheduleEnd={setRescheduleEnd}
+              rescheduleRowVersion={rescheduleRowVersion}
+              setRescheduleRowVersion={setRescheduleRowVersion}
+              onScheduleRequest={onScheduleRequest}
+              onScheduleConfirm={onScheduleConfirm}
+              onReschedule={onReschedule}
+              onDocumentPublish={onDocumentPublish}
+              onFeedback={setFeedback}
+              opsIntelligence={opsIntelligence}
+              onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
+            />
 
-          <SuperAdminWorkspacePanel
-            activeWorkspaceTool={activeWorkspaceTool}
-            effectiveRole={effectiveRole}
-            opsIntelligence={opsIntelligence}
-            schemaDrift={schemaDrift}
-            adminHealth={adminHealth}
-            adminHealthState={adminHealthState}
-            adminHealthMessage={adminHealthMessage}
-            adminAudits={adminAudits}
-            adminAuditCount={adminAuditCount}
-            adminAutomationJobs={adminAutomationJobs}
-            automationJobs={automationJobs}
-            selectedAutomationJobid={selectedAutomationJobid}
-            onSelectAutomationJobid={onSelectAutomationJobid}
-            onLoadHealth={onLoadHealth}
-            onLoadAudits={onLoadAudits}
-            onLoadAutomationJobs={onLoadAutomationJobs}
-            onRetryAutomation={onRetryAutomation}
-            onLoadSchemaDrift={onLoadSchemaDrift}
-            onLoadOpsIntelligence={onLoadOpsIntelligence}
-            peopleDirectory={peopleDirectory}
-            upgradeState={upgradeState}
-            onUpsertSkill={onUpsertSkill}
-            onPeopleSync={onPeopleSync}
-            onFeedback={setFeedback}
-            actionPending={actionPending}
-          />
-
-          {activeWorkspaceTool === "documents" ? (
-            <DocumentHistoryCard
+            <FinanceWorkspacePanel
+              activeWorkspaceTool={activeWorkspaceTool}
+              effectiveRole={effectiveRole}
+              jobs={jobs}
               documents={documents}
-              selectedJobid={selectedJob?.job_id ?? ""}
-              role={(effectiveRole || "client") as Role}
-              escrowByDocumentid={escrowByDocumentid}
-              onRefresh={onRefreshDocuments}
-              onPublish={onDocumentPublishInline}
+              store={upgradeState}
+              onRefreshStore={onRefreshUpgradeState}
+              onCreateQuote={onCreateQuote}
+              onUpdateQuoteStatus={onUpdateQuoteStatus}
+              onCreateInvoiceFromQuote={onCreateInvoiceFromQuote}
+              onReconcileInvoice={onReconcileInvoice}
+              onLockEscrow={onLockEscrow}
+              onRebuildAnalytics={onRebuildAnalytics}
+              onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
             />
-          ) : null}
 
-          {activeWorkspaceTool === "people" && (effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin") ? (
-            <PeopleDirectoryCard people={peopleDirectory} skillsState={upgradeState.skills} onUpsertSkill={onUpsertSkill} onSync={onPeopleSync} onFeedback={setFeedback} />
-          ) : null}
+            <AdminWorkspacePanel
+              activeWorkspaceTool={activeWorkspaceTool}
+              effectiveRole={effectiveRole}
+              isRealSuperAdmin={isRealSuperAdmin}
+              emulatedRole={emulatedRole}
+              session={session}
+              defaultWorkspaceTool={defaultWorkspaceTool}
+              pinnedTools={pinnedTools}
+              onboardingDismissed={onboardingDismissed}
+              allowedWorkspaceTools={allowedWorkspaceTools}
+              onSaveWorkspacePreferences={onSaveWorkspacePreferences}
+              onActiveWorkspaceToolChange={onActiveWorkspaceToolChange}
+              opsIntelligence={opsIntelligence}
+              adminHealth={adminHealth}
+              adminHealthState={adminHealthState}
+              adminHealthMessage={adminHealthMessage}
+              adminAudits={adminAudits}
+              adminAutomationJobs={adminAutomationJobs}
+              adminAuditCount={adminAuditCount}
+              automationJobs={automationJobs}
+              selectedAutomationJobid={selectedAutomationJobid}
+              onSelectAutomationJobid={onSelectAutomationJobid}
+              onLoadHealth={onLoadHealth}
+              onLoadAudits={onLoadAudits}
+              onLoadAutomationJobs={onLoadAutomationJobs}
+              onRetryAutomation={onRetryAutomation}
+              onEmulateRole={onEmulateRole}
+              schemaDrift={schemaDrift}
+              onLoadSchemaDrift={onLoadSchemaDrift}
+              onLoadOpsIntelligence={onLoadOpsIntelligence}
+              actionPending={actionPending}
+              onFeedback={setFeedback}
+            />
+
+            <SuperAdminWorkspacePanel
+              activeWorkspaceTool={activeWorkspaceTool}
+              effectiveRole={effectiveRole}
+              opsIntelligence={opsIntelligence}
+              schemaDrift={schemaDrift}
+              adminHealth={adminHealth}
+              adminHealthState={adminHealthState}
+              adminHealthMessage={adminHealthMessage}
+              adminAudits={adminAudits}
+              adminAuditCount={adminAuditCount}
+              adminAutomationJobs={adminAutomationJobs}
+              automationJobs={automationJobs}
+              selectedAutomationJobid={selectedAutomationJobid}
+              onSelectAutomationJobid={onSelectAutomationJobid}
+              onLoadHealth={onLoadHealth}
+              onLoadAudits={onLoadAudits}
+              onLoadAutomationJobs={onLoadAutomationJobs}
+              onRetryAutomation={onRetryAutomation}
+              onLoadSchemaDrift={onLoadSchemaDrift}
+              onLoadOpsIntelligence={onLoadOpsIntelligence}
+              peopleDirectory={peopleDirectory}
+              upgradeState={upgradeState}
+              onUpsertSkill={onUpsertSkill}
+              onPeopleSync={onPeopleSync}
+              onFeedback={setFeedback}
+              actionPending={actionPending}
+            />
+          </div>
+
+          <div className="workspace-secondary-rail">
+            {activeWorkspaceTool === "jobs" && selectedJobid ? (
+              <JobDetailView
+                selectedJob={selectedJob}
+                role={(effectiveRole || "client") as Role}
+                selectableStatuses={selectableStatuses}
+                statusTarget={statusTarget}
+                setStatusTarget={setStatusTarget}
+                noteValue={noteValue}
+                setNoteValue={setNoteValue}
+                onStatusUpdate={onStatusUpdate}
+                onNote={onNote}
+                preferredStart={preferredStart}
+                setPreferredStart={setPreferredStart}
+                preferredEnd={preferredEnd}
+                setPreferredEnd={setPreferredEnd}
+                onScheduleRequest={onScheduleRequest}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                onDocumentGenerate={onDocumentGenerate}
+                canGenerateDocuments={canGenerateDocuments && !documentAccessDenied}
+                documentGenerateDisabledReason={documentGenerateDisabledReason}
+                onChecklistChange={onChecklistChange}
+                selectedJobTitle={selectedJobTitle}
+                documentCountForJob={selectedJobDocumentCount}
+                geoVerification={geoVerification}
+                onVerifyLocation={onVerifyLocation}
+                syncPulseText={syncPulseText}
+                events={jobEvents}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "documents" ? (
+              <DocumentHistoryCard
+                documents={documents}
+                selectedJobid={selectedJob?.job_id ?? ""}
+                role={(effectiveRole || "client") as Role}
+                escrowByDocumentid={escrowByDocumentid}
+                onRefresh={onRefreshDocuments}
+                onPublish={onDocumentPublishInline}
+              />
+            ) : null}
+
+            {activeWorkspaceTool === "people" && (effectiveRole === "dispatcher" || effectiveRole === "admin" || effectiveRole === "super_admin") ? (
+              <PeopleDirectoryCard people={peopleDirectory} skillsState={upgradeState.skills} onUpsertSkill={onUpsertSkill} onSync={onPeopleSync} onFeedback={setFeedback} />
+            ) : null}
+          </div>
         </section>
       </main>
-    </>
+    </div>
   );
 }

@@ -83,6 +83,7 @@ export function AdminWorkspacePanel({
       {activeWorkspaceTool === "admin_dashboard" ? (
         <AdminDashboard
           opsIntelligence={opsIntelligence}
+          adminAudits={adminAudits}
           onEnterTool={onActiveWorkspaceToolChange}
           canSwitchRoles={isRealSuperAdmin}
           emulatedRole={emulatedRole}

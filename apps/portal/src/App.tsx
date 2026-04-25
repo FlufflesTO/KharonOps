@@ -26,7 +26,7 @@ import { ScheduleControlCard } from "./components/ScheduleControlCard";
 import { CommunicationRailsCard } from "./components/CommunicationRailsCard";
 import { AdminPanelCard } from "./components/AdminPanelCard";
 import { DocumentHistoryCard } from "./components/DocumentHistoryCard";
-import { DashboardView } from "./components/DashboardView";
+import { RoleDashboard } from "./components/RoleDashboard";
 import { RegistryCard } from "./components/RegistryCard";
 import { PeopleDirectoryCard } from "./components/PeopleDirectoryCard";
 import { FinanceOpsCard } from "./components/FinanceOpsCard";
@@ -774,28 +774,35 @@ export function PortalApp(): React.JSX.Element {
 
   if (portalView === "dashboard") {
     return (
-      <div className={`portal-shell portal-shell--${effectiveRole}`}>
-        <a href="#main-content" className="skip-link">Skip to main content</a>
-        <DashboardView
-          session={session}
-          openJobCount={openJobCount}
-          overrideRole={effectiveRole as Role}
-          onboardingDismissed={onboardingDismissed}
-          onDismissOnboarding={() => setOnboardingDismissed(true)}
-          onEnterWorkspace={(tool) => {
-            const targetTool = allowedWorkspaceTools.includes(tool) ? tool : landingWorkspaceTool;
-            setActiveWorkspaceTool(targetTool);
-            setPortalView("workspace");
-          }}
-          onLogout={() => runAction(portalActions.handleLogout)}
-        />
-        <footer className="portal-statusbar">
-          <div className="feedback-line">
-            <span>Feedback</span>
-            <pre>{feedback}</pre>
-          </div>
-        </footer>
-      </div>
+      <RoleDashboard
+        session={session}
+        effectiveRole={effectiveRole as Role}
+        openJobCount={openJobCount}
+        jobs={filteredJobs}
+        upgradeState={upgradeState}
+        opsIntelligence={opsIntelligence}
+        geoVerification={geoVerification}
+        onVerifyLocation={portalActions.handleVerifyLocation}
+        adminHealth={adminHealth}
+        adminHealthState={adminHealthState}
+        adminHealthMessage={adminHealthMessage}
+        adminAudits={adminAudits}
+        onLoadHealth={handleLoadAdminHealth}
+        onLoadAudits={handleLoadAdminAudits}
+        onEnterWorkspace={(tool) => {
+          const targetTool = allowedWorkspaceTools.includes(tool) ? tool : landingWorkspaceTool;
+          setActiveWorkspaceTool(targetTool);
+          setPortalView("workspace");
+        }}
+        onLogout={() => runAction(portalActions.handleLogout)}
+        onboardingDismissed={onboardingDismissed}
+        onDismissOnboarding={() => setOnboardingDismissed(true)}
+        actionPending={actionPending}
+        isRealSuperAdmin={isRealSuperAdmin}
+        emulatedRole={emulatedRole}
+        onEmulateRole={handleEmulateRole}
+        syncPulseText={syncPulseText}
+      />
     );
   }
 

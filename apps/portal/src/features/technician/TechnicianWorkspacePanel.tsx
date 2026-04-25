@@ -1,9 +1,7 @@
 import React from "react";
 import type { JobStatus, JobEventRow } from "@kharon/domain";
 import type { JobRecord } from "../../components/JobListView";
-import { TechMyDayCard } from "../../components/TechMyDayCard";
-import { TechStartJobCard } from "../../components/TechStartJobCard";
-import { TechCertifyCard } from "../../components/TechCertifyCard";
+import { TechnicianDashboard } from "../../components/TechnicianDashboard";
 import { TechHelpCard } from "../../components/TechHelpCard";
 
 type GeoVerification = {
@@ -54,49 +52,30 @@ export function TechnicianWorkspacePanel({
   effectiveRole,
   jobs,
   selectedJob,
-  selectedJobTitle,
-  selectedJobDocumentCount,
   onSelectJobid,
   onActiveWorkspaceToolChange,
   geoVerification,
   onVerifyLocation,
-  selectableStatuses,
-  statusTarget,
-  setStatusTarget,
-  noteValue,
-  setNoteValue,
   onStatusUpdate,
-  onNote,
-  preferredStart,
-  setPreferredStart,
-  preferredEnd,
-  setPreferredEnd,
-  onScheduleRequest,
-  documentType,
-  setDocumentType,
-  onDocumentGenerate,
-  canGenerateDocuments,
-  documentGenerateDisabledReason,
-  syncPulseText,
-  jobEvents
+  syncPulseText
 }: TechnicianWorkspacePanelProps): React.JSX.Element | null {
   if (effectiveRole !== "technician") return null;
 
+  if (activeWorkspaceTool === "tech_help") {
+    return <TechHelpCard />;
+  }
+
   return (
-    <>
-      {activeWorkspaceTool === "tech_day" ? (
-        <TechMyDayCard jobs={jobs} onSelectJob={onSelectJobid} onEnterTool={(tool) => onActiveWorkspaceToolChange(tool)} />
-      ) : null}
-
-      {activeWorkspaceTool === "tech_start" ? (
-        <TechStartJobCard selectedJob={selectedJob} onUpdateStatus={() => onStatusUpdate()} onVerifyLocation={onVerifyLocation} geoStatus={geoVerification.status} />
-      ) : null}
-
-      {activeWorkspaceTool === "tech_certify" ? (
-        <TechCertifyCard selectedJob={selectedJob} onUpdateStatus={() => onStatusUpdate()} />
-      ) : null}
-
-      {activeWorkspaceTool === "tech_help" ? <TechHelpCard /> : null}
-    </>
+    <TechnicianDashboard
+      jobs={jobs}
+      selectedJob={selectedJob}
+      activeTool={activeWorkspaceTool}
+      onEnterTool={onActiveWorkspaceToolChange}
+      onSelectJob={onSelectJobid}
+      onUpdateStatus={onStatusUpdate}
+      onVerifyLocation={onVerifyLocation}
+      geoStatus={geoVerification.status}
+      syncPulseText={syncPulseText}
+    />
   );
 }

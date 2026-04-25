@@ -14,95 +14,139 @@ export function TechStartJobCard({ selectedJob, onUpdateStatus, onVerifyLocation
 
   if (!selectedJob) {
     return (
-      <article className="workspace-card glass-panel">
-        <div className="panel-heading">
-          <p className="panel-eyebrow">Arrival</p>
-          <h2>No job selected</h2>
+      <article className="premium-card glass-dark p-12 text-center animate-in fade-in zoom-in-95 duration-500">
+        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+          <svg className="w-8 h-8 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
         </div>
-        <div className="highlight-box empty-state-enhanced">
-          <span className="empty-state__icon">📍</span>
-          <h3>Select a Job</h3>
-          <p className="muted-copy mt-2">Please select a job from "My Day" or the "Jobs" list before checking in.</p>
-        </div>
+        <h2 className="text-xl font-bold opacity-60">No active job selected</h2>
+        <p className="text-sm opacity-40 mt-2">Select a deployment to begin field capture.</p>
       </article>
     );
   }
 
   const isCheckedIn = selectedJob.status === "performed" || selectedJob.status === "certified";
+  const geoVerified = geoStatus === "verified" || geoStatus === "warning";
 
   return (
-    <article className="workspace-card glass-panel">
-      <div className="panel-heading">
-        <p className="panel-eyebrow">Field Activity</p>
-        <h2>Arrive at Site</h2>
+    <article className="premium-card glass overflow-hidden animate-in fade-in slide-in-from-right-4 duration-700">
+      <div className="p-6 border-b border-white/10 bg-white/5">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary-light/60 mb-1">Temporal Provenance</p>
+        <h2 className="text-2xl font-black tracking-tight text-white uppercase italic">
+          {isCheckedIn ? "Arrival Confirmed" : "Site Arrival Capture"}
+        </h2>
       </div>
 
-      <div className="control-stack">
-        <section className="highlight-box border-active">
-          <span className="highlight-box__label">Active Job</span>
-          <h3>{selectedJob.job_id} | {selectedJob.client_name}</h3>
-          <p className="mt-2">{selectedJob.site_id}</p>
+      <div className="p-6 space-y-8">
+        <section className="p-6 rounded-2xl bg-black/40 border border-white/5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-4">
+              <span className="px-2 py-0.5 bg-primary/20 rounded font-mono text-[10px] font-bold tracking-widest text-primary-light border border-primary/30">
+                {selectedJob.job_id}
+              </span>
+              <span className={`status-chip status-chip--compact status-chip--${isCheckedIn ? 'active' : 'neutral'}`}>
+                {isCheckedIn ? "Checked In" : "Pending Arrival"}
+              </span>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-1">{selectedJob.client_name}</h3>
+            <p className="text-xs font-bold text-white/40 uppercase tracking-wider">{selectedJob.site_id}</p>
+          </div>
         </section>
 
         {!isCheckedIn ? (
-          <section className="control-block interaction-panel">
-            <div className="control-block__head">
-              <h3>Verify & Start</h3>
-              <p>Confirm your arrival and signal to dispatch that you are beginning work.</p>
-            </div>
-            <div className="flex flex-col gap-4 mt-4">
-              <div className="button-row">
-                <button 
-                  className={`button button--large ${geoStatus === "verified" ? "button--positive" : "button--secondary"}`}
-                  onClick={onVerifyLocation}
-                >
-                  {geoStatus === "verified" ? "✓ Location Verified" : "📍 Capture Location"}
-                </button>
+          <section className="space-y-6">
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-widest text-white/80 mb-4 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px]">1</span>
+                Spatial Verification
+              </h3>
+              
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${geoVerified ? 'bg-primary shadow-[0_0_10px_rgba(var(--color-primary-rgb),0.5)]' : 'bg-white/20 animate-pulse'}`}></div>
+                    <div>
+                      <p className="font-bold text-xs text-white uppercase tracking-wider">
+                        {geoStatus === "verified" ? "Location Secure" : 
+                         geoStatus === "warning" ? "Signal Warning" :
+                         geoStatus === "error" ? "Verification Failed" : "Awaiting Pulse..."}
+                      </p>
+                      <p className="text-[10px] text-white/40 font-medium">
+                        {geoStatus === "verified" ? "Coordinates bound to audit log." : "GPS Handshake Required."}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${geoVerified ? "bg-white/10 text-white/60 hover:bg-white/20" : "bg-primary text-black shadow-glow hover:scale-105"}`}
+                    onClick={onVerifyLocation}
+                  >
+                    {geoVerified ? "Re-verify" : "Capture"}
+                  </button>
+                </div>
               </div>
+            </div>
+            
+            <div className="pt-4 border-t border-white/5">
+              <h3 className="text-sm font-black uppercase tracking-widest text-white/80 mb-4 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px]">2</span>
+                Operational Handshake
+              </h3>
               
               <button 
-                className={`button button--large mt-4 ${isStarting ? "button--loading" : "button--primary"}`}
-                disabled={geoStatus !== "verified" && geoStatus !== "warning"}
+                className="button button--primary w-full py-4 text-sm font-black uppercase tracking-widest shadow-glow disabled:opacity-30 disabled:grayscale transition-all active:scale-95 flex justify-center items-center gap-2"
+                disabled={!geoVerified || isStarting}
                 onClick={() => {
                   setIsStarting(true);
                   setTimeout(() => onUpdateStatus("performed"), 600);
                 }}
               >
-                {isStarting ? "Checking in..." : "Start Work"}
+                {isStarting ? (
+                  <>
+                    <div className="w-4 h-4 rounded-full border-2 border-black/20 border-t-black animate-spin"></div>
+                    Establishing Presence...
+                  </>
+                ) : (
+                  "Sign In to Work"
+                )}
               </button>
+              {!geoVerified && (
+                <div className="flex items-center justify-center gap-2 mt-4 text-[10px] font-bold text-white/20 uppercase">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Spatial Verification Required
+                </div>
+              )}
             </div>
           </section>
         ) : (
-          <section className="control-block">
-            <div className="success-celebration__content bg-positive-subtle border-positive rounded-lg p-6 text-center">
-              <span className="text-4xl block mb-2">✅</span>
-              <h3>You are checked in!</h3>
-              <p className="mt-2 text-positive">Proceed to "Certify Job" when finished.</p>
+          <section className="space-y-6">
+            <div className="p-6 rounded-xl bg-positive/10 border border-positive/20 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('/mesh.svg')] opacity-20"></div>
+              <div className="relative z-10">
+                <div className="w-16 h-16 rounded-full bg-positive/20 flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                  <svg className="w-8 h-8 text-positive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-black uppercase tracking-wider text-white">Checked In</h3>
+                <p className="mt-2 text-xs font-bold text-white/60">Presence established and ledger updated.</p>
+              </div>
             </div>
+            <p className="text-center text-[10px] font-bold text-white/20 uppercase mt-4 tracking-widest">
+              Proceed to "Certify Job" when finished.
+            </p>
           </section>
         )}
       </div>
-
-      <style>{`
-        .mt-2 { margin-top: 0.5rem; }
-        .mt-4 { margin-top: 1rem; }
-        .gap-4 { gap: 1rem; }
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .border-active { border-left: 4px solid var(--color-positive); }
-        .button--large { padding: 1.25rem 2rem; font-size: 1.15rem; width: 100%; border-radius: var(--radius-lg); font-weight: 600; transition: all var(--transition-fast); }
-        .button--positive { background-color: var(--color-positive); color: white; border-color: var(--color-positive); }
-        .button--loading { opacity: 0.8; cursor: wait; }
-        .bg-positive-subtle { background: rgba(16, 185, 129, 0.1); }
-        .border-positive { border: 1px solid rgba(16, 185, 129, 0.3); }
-        .rounded-lg { border-radius: var(--radius-lg); }
-        .p-6 { padding: 1.5rem; }
-        .text-center { text-align: center; }
-        .text-4xl { font-size: 2.25rem; }
-        .mb-2 { margin-bottom: 0.5rem; }
-        .text-positive { color: var(--color-positive); }
-        .interaction-panel { background: rgba(255,255,255,0.02); padding: var(--space-6); border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,0.05); }
-      `}</style>
     </article>
   );
 }

@@ -1,0 +1,175 @@
+/**
+ * KharonOps - Technician Workspace Hardening
+ * Purpose: Level 4 UI tokens for technician daily operations and conduct verification.
+ * Dependencies: portal-theme.css, glassmorphism-tokens
+ */
+
+:root {
+  --tech-glow-primary: hsla(210, 100%, 60%, 0.15);
+  --tech-glow-positive: hsla(145, 80%, 50%, 0.15);
+  --tech-border-alpha: rgba(255, 255, 255, 0.08);
+}
+
+/* Command Timeline (My Day) */
+.conduct-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  position: relative;
+}
+
+.conduct-timeline::before {
+  content: '';
+  position: absolute;
+  left: 1.25rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, 
+    var(--tech-border-alpha), 
+    rgba(255, 255, 255, 0.2) 20%, 
+    rgba(255, 255, 255, 0.2) 80%, 
+    var(--tech-border-alpha)
+  );
+}
+
+.conduct-step {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr auto;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.25rem;
+  background: var(--glass-surface);
+  border: 1px solid var(--tech-border-alpha);
+  border-radius: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.conduct-step--active {
+  background: var(--tech-glow-primary);
+  border-color: var(--color-primary-light);
+  box-shadow: 0 8px 32px -8px var(--tech-glow-primary);
+}
+
+.conduct-step--completed {
+  background: var(--tech-glow-positive);
+  border-color: var(--color-positive);
+  opacity: 0.8;
+}
+
+.conduct-step__marker {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--background-elevated);
+  border: 2px solid var(--tech-border-alpha);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.conduct-step--active .conduct-step__marker {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 0 0 12px var(--color-primary);
+}
+
+/* Operational Hero Card */
+.conduct-hero {
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--background-elevated), var(--background-default));
+  border: 1px solid var(--tech-border-alpha);
+  border-radius: 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+  box-shadow: var(--shadow-xl);
+}
+
+.conduct-hero__glow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle at center, var(--tech-glow-primary), transparent 70%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.conduct-hero__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.conduct-hero__id {
+  font-family: var(--font-mono);
+  color: var(--color-primary-light);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.conduct-hero__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  background: linear-gradient(to right, #fff, #aaa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Geo-Fence Visualization */
+.geo-fence-panel {
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 1rem;
+  border: 1px dashed var(--tech-border-alpha);
+  margin: 1.5rem 0;
+}
+
+.geo-fence-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+}
+
+.fence-pulse {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: fence-pulse 2s infinite;
+}
+
+@keyframes fence-pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 hsla(210, 100%, 60%, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px hsla(210, 100%, 60%, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 hsla(210, 100%, 60%, 0); }
+}
+
+.fence-pulse--verified {
+  background: var(--color-positive);
+  animation: none;
+  box-shadow: 0 0 12px var(--color-positive);
+}
+
+/* Mobile-First Action Grid */
+@media (max-width: 768px) {
+  .conduct-step {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .conduct-hero {
+    padding: 1.5rem;
+  }
+}

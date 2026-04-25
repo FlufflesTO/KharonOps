@@ -82,8 +82,8 @@ function parsePostgresSslMode(env: Record<string, string | undefined>): Postgres
 }
 
 function validateStoreConfig(storeBackend: StoreBackend, postgres: PostgresStoreConfig): void {
-  if ((storeBackend === "postgres" || storeBackend === "dual") && postgres.connectionString === "" && postgres.directUrl === "") {
-    throw new Error(`STORE_BACKEND=${storeBackend} requires POSTGRES_URL, DATABASE_URL, or POSTGRES_DIRECT_URL.`);
+  if (storeBackend === "postgres" && postgres.connectionString === "" && postgres.directUrl === "") {
+    throw new Error(`STORE_BACKEND=postgres requires POSTGRES_URL, DATABASE_URL, or POSTGRES_DIRECT_URL.`);
   }
 }
 

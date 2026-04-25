@@ -1,3 +1,10 @@
+/**
+ * KharonOps - Financial Proposal Generator
+ * Purpose: Level 4 Strategic Pipeline Management and Asset Generation
+ * Dependencies: finance-hardened.css, @kharon/domain
+ * Structural Role: Operational tool for generating client remedial proposals.
+ */
+
 import React, { useState } from "react";
 import type { UpgradeWorkspaceState } from "../apiClient";
 
@@ -19,61 +26,69 @@ export function FinanceQuotesCard({ store, onCreateQuote, onUpdateQuoteStatus }:
   const [isIssuing, setIsIssuing] = useState(false);
 
   return (
-    <article className="workspace-card glass-panel">
+    <article className="workspace-card workspace-card--hardened">
       <div className="panel-heading">
-        <p className="panel-eyebrow">Finance</p>
-        <h2>Quote Generator</h2>
+        <div className="flex justify-between items-end w-full">
+          <div>
+            <p className="panel-eyebrow">Strategic Pipeline</p>
+            <h2 className="text-2xl font-bold tracking-tight">Proposal Generation Registry</h2>
+          </div>
+        </div>
       </div>
 
-      <div className="control-block interaction-panel">
-        <div className="control-block__head">
-          <h3>Issue New Quote</h3>
-          <p>Generate a new client proposal for remedial or additional work.</p>
-        </div>
-        
-        <div className="form-grid mt-4">
-          <label className="field-stack">
-            <span>Job ID</span>
-            <input 
-              value={jobId} 
-              onChange={(e) => setJobId(e.target.value)} 
-              placeholder="e.g. JOB-1001" 
-              className="enhanced-input"
-            />
-          </label>
-          <label className="field-stack">
-            <span>Client ID</span>
-            <input 
-              value={clientId} 
-              onChange={(e) => setClientId(e.target.value)} 
-              placeholder="e.g. CLI-001" 
-              className="enhanced-input"
-            />
-          </label>
-          <label className="field-stack field-stack--full">
-            <span>Description</span>
-            <input 
-              value={description} 
-              onChange={(e) => setDescription(e.target.value)} 
-              className="enhanced-input"
-            />
-          </label>
-          <label className="field-stack field-stack--full">
-            <span>Amount (ZAR)</span>
-            <div className="currency-input-wrapper">
-              <span className="currency-symbol">R</span>
+      <div className="control-stack mt-8">
+        {/* Proposal Terminal */}
+        <section className="conduct-hero">
+          <div className="conduct-hero__glow"></div>
+          <div className="control-block__head">
+            <h3 className="text-lg font-bold">Proposal Terminal</h3>
+            <p className="opacity-70">Initialize a new client obligation based on remedial field intelligence.</p>
+          </div>
+          
+          <div className="form-grid mt-6">
+            <label className="field-stack">
+              <span className="text-xs font-bold opacity-60 uppercase tracking-widest">Job Reference</span>
               <input 
-                type="number" 
-                value={amount} 
-                onChange={(e) => setAmount(e.target.value)} 
-                className="enhanced-input currency-input"
+                className="bg-black/20 border-white/10 rounded-lg p-3 text-sm focus:border-finance-accent outline-none font-mono"
+                value={jobId} 
+                onChange={(e) => setJobId(e.target.value)} 
+                placeholder="JOB-XXXX" 
               />
-            </div>
-          </label>
-
-          <div className="field-stack field-stack--full flex justify-end mt-4">
+            </label>
+            <label className="field-stack">
+              <span className="text-xs font-bold opacity-60 uppercase tracking-widest">Client Identifier</span>
+              <input 
+                className="bg-black/20 border-white/10 rounded-lg p-3 text-sm focus:border-finance-accent outline-none font-mono"
+                value={clientId} 
+                onChange={(e) => setClientId(e.target.value)} 
+                placeholder="CLI-XXXX" 
+              />
+            </label>
+            <label className="field-stack field-stack--full mt-4">
+              <span className="text-xs font-bold opacity-60 uppercase tracking-widest">Operational Scope</span>
+              <input 
+                className="bg-black/20 border-white/10 rounded-lg p-3 text-sm focus:border-finance-accent outline-none"
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)} 
+              />
+            </label>
+            <label className="field-stack field-stack--full mt-4">
+              <span className="text-xs font-bold opacity-60 uppercase tracking-widest">Ledger Value (ZAR)</span>
+              <div className="relative flex items-center">
+                <span className="absolute left-4 font-bold text-finance">R</span>
+                <input 
+                  type="number" 
+                  className="bg-black/20 border-white/10 rounded-lg p-3 pl-8 text-lg font-bold font-mono focus:border-finance-accent outline-none w-full"
+                  value={amount} 
+                  onChange={(e) => setAmount(e.target.value)} 
+                />
+              </div>
+            </label>
+          </div>
+          
+          <div className="flex justify-end mt-8">
             <button
-              className={`button button--large ${isIssuing ? "button--loading" : "button--primary"}`}
+              className={`button ${isIssuing ? "button--loading" : "button--primary shadow-glow"}`}
               onClick={() => {
                 const val = Number(amount);
                 if (!jobId.trim() || !clientId.trim() || !Number.isFinite(val) || val <= 0) return;
@@ -82,75 +97,63 @@ export function FinanceQuotesCard({ store, onCreateQuote, onUpdateQuoteStatus }:
                   onCreateQuote({ job_id: jobId.trim(), client_id: clientId.trim(), description: description.trim(), amount: val });
                   setAmount("0");
                   setIsIssuing(false);
-                }, 600);
+                }, 800);
               }}
               disabled={isIssuing || !jobId.trim() || !clientId.trim() || Number(amount) <= 0}
             >
-              {isIssuing ? "Generating..." : "Issue Quote"}
+              {isIssuing ? "Authorizing Record..." : "Formalize Proposal"}
             </button>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="control-block mt-8">
-        <div className="control-block__head">
-          <h3>Recent Quotes</h3>
-          <p>Status of issued and draft client proposals.</p>
-        </div>
-        <div className="history-table bg-glass border-glass rounded-lg mt-4">
-          {store.quotes.length === 0 ? (
-            <div className="p-6 text-center text-muted">No quotes generated yet.</div>
-          ) : (
-            store.quotes.map((quote) => (
-              <div key={quote.quote_id} className="history-row hover-scale">
-                <div className="flex-1">
-                  <strong className="text-white">{quote.quote_id}</strong>
-                  <span className="job-item__meta block mt-1">{quote.job_id} • {quote.client_id}</span>
+        {/* Historical Pipeline */}
+        <section className="control-block mt-8">
+          <div className="control-block__head">
+            <h3 className="text-lg font-bold">Proposal Lifecycle Feed</h3>
+            <p className="muted-copy">State monitoring of all active and historical client proposals.</p>
+          </div>
+          
+          <div className="tx-feed mt-6">
+            {store.quotes.length === 0 ? (
+              <p className="muted-copy text-center p-8">No proposals generated in the current cycle.</p>
+            ) : (
+              store.quotes.map((quote) => (
+                <div key={quote.quote_id} className="ledger-row shadow-glow-hover">
+                  <span className="ledger-row__id">{quote.quote_id}</span>
+                  <div className="flex-1">
+                    <strong className="text-sm tracking-tight">{quote.client_id}</strong>
+                    <p className="text-[10px] opacity-40 mt-0.5">{quote.job_id} • {quote.description.slice(0, 30)}...</p>
+                  </div>
+                  <div className="text-right px-4">
+                    <p className="font-mono text-sm font-bold text-finance">{asMoney(quote.amount)}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`finance-chip finance-chip--${quote.status === "approved" ? "settled" : quote.status === "rejected" ? "overdue" : "issued"}`}>
+                      {quote.status}
+                    </span>
+                    {quote.status === "sent" && (
+                      <button 
+                        className="button button--secondary-glass p-1 px-2 text-[10px]" 
+                        onClick={() => onUpdateQuoteStatus(quote.quote_id, "approved")}
+                      >
+                        Approve
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="button-row items-center gap-4">
-                  <strong className="text-white text-lg">{asMoney(quote.amount)}</strong>
-                  <span className={`status-chip status-chip--${quote.status === "approved" ? "active" : quote.status === "rejected" ? "critical" : "warning"}`}>
-                    {quote.status}
-                  </span>
-                  {quote.status === "sent" && (
-                    <button className="button button--ghost" onClick={() => onUpdateQuoteStatus(quote.quote_id, "approved")}>
-                      ✓ Approve
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        </section>
       </div>
 
       <style>{`
-        .interaction-panel { background: rgba(255,255,255,0.02); padding: var(--space-6); border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,0.05); }
-        .enhanced-input { width: 100%; padding: 0.875rem 1rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-md); color: white; font-size: 0.95rem; transition: border-color 0.2s; }
-        .enhanced-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
-        .currency-input-wrapper { position: relative; display: flex; align-items: center; }
-        .currency-symbol { position: absolute; left: 1rem; color: var(--color-text-muted); font-weight: 600; }
-        .currency-input { padding-left: 2.5rem; font-size: 1.1rem; font-weight: 600; font-family: var(--font-mono); }
-        .button--large { padding: 1rem 2.5rem; font-size: 1.1rem; font-weight: 600; }
-        .button--loading { opacity: 0.8; cursor: wait; }
-        .bg-glass { background: rgba(255,255,255,0.02); }
-        .border-glass { border: 1px solid rgba(255,255,255,0.05); }
-        .rounded-lg { border-radius: var(--radius-lg); }
-        .hover-scale { transition: transform 0.2s; }
-        .hover-scale:hover { transform: translateX(4px); background: rgba(255,255,255,0.05); }
-        .text-white { color: white; }
-        .text-lg { font-size: 1.125rem; }
-        .text-center { text-align: center; }
-        .p-6 { padding: 1.5rem; }
-        .mt-1 { margin-top: 0.25rem; }
-        .mt-4 { margin-top: 1rem; }
-        .mt-8 { margin-top: 2rem; }
-        .block { display: block; }
-        .flex { display: flex; }
-        .flex-1 { flex: 1; }
-        .items-center { align-items: center; }
-        .justify-end { justify-content: flex-end; }
-        .gap-4 { gap: 1rem; }
+        .text-finance { color: var(--finance-accent); }
+        .shadow-glow-hover:hover {
+          box-shadow: 0 0 15px var(--finance-glow);
+          border-color: var(--finance-accent);
+          background: rgba(255,255,255,0.02);
+        }
       `}</style>
     </article>
   );

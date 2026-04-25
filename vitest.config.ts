@@ -5,7 +5,8 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     include: [
-      "tests/**/*.test.ts"
+      "tests/**/*.test.ts",
+      "apps/portal/tests/**/*.test.ts"
     ],
     environment: "node",
     globals: true,

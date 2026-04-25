@@ -1,0 +1,102 @@
+/**
+ * KharonOps - Dashboard Hardening
+ * Purpose: Level 4 UI tokens for the primary landing experience.
+ * Dependencies: portal-theme.css, glassmorphism-tokens
+ */
+
+.dashboard-view {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Operational Hero Section */
+.ops-hero {
+  background: var(--glass-surface);
+  border: 1px solid var(--dispatch-border-alpha);
+  border-radius: 2.5rem;
+  padding: 3.5rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.4);
+}
+
+.ops-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40%;
+  height: 100%;
+  background: radial-gradient(circle at center, var(--color-primary-light), transparent 70%);
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+/* Registry Quick Links */
+.registry-link {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--dispatch-border-alpha);
+  border-radius: 1.5rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+  width: 100%;
+}
+
+.registry-link:hover {
+  background: var(--glass-surface);
+  border-color: var(--color-primary-light);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.3);
+}
+
+.registry-link__icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1rem;
+  background: rgba(99, 102, 241, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary-light);
+  transition: all 0.3s ease;
+}
+
+.registry-link:hover .registry-link__icon {
+  background: var(--color-primary);
+  color: white;
+  box-shadow: 0 0 20px var(--color-primary);
+}
+
+/* Dashboard Status Bar */
+.dash-status {
+  display: flex;
+  gap: 2rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--dispatch-border-alpha);
+}
+
+.dash-status__item {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-status__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.4;
+  font-weight: 700;
+}
+
+.dash-status__value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  margin-top: 0.25rem;
+}
