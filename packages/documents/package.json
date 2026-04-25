@@ -10,7 +10,7 @@
   "dependencies": {
     "@kharon-platform/types": "1.0.0",
     "@kharon-platform/config": "1.0.0",
-    "puppeteer": "^21.0.0",
+    "puppeteer": "^24.42.0",
     "handlebars": "^4.7.8",
     "pdf-lib": "^1.17.1"
   },
