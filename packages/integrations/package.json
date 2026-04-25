@@ -10,7 +10,7 @@
   "dependencies": {
     "@kharon-platform/types": "1.0.0",
     "@kharon-platform/config": "1.0.0",
-    "googleapis": "^120.0.0",
+    "googleapis": "^171.4.0",
     "node-fetch": "^3.3.0"
   },
   "devDependencies": {
