@@ -13,6 +13,13 @@ import type {
   WorkspaceRails
 } from "./types.js";
 import { googleApiRequest } from "./client.js";
+import {
+  getCachedSheetValues,
+  batchUpdateRows,
+  batchAppendRows,
+  findRowWithCaching,
+  clearSheetCache
+} from "./performance.js";
 
 function encodeSheetRange(sheetName: string, range: string): string {
   return encodeURIComponent(`'${sheetName}'!${range}`);
@@ -65,7 +72,7 @@ async function getSheetLayout(config: GoogleRuntimeConfig, sheetName: string): P
   headerRowIndex: number;
   headers: string[];
 }> {
-  const values = await getSheetValues(config, sheetName);
+  const values = await getCachedSheetValues(config, sheetName);
   const layout = detectSheetLayout(values);
   return {
     values,
@@ -251,20 +258,8 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
     async appendRow(sheetName, row) {
       const { headers } = await getSheetLayout(config, sheetName);
       const resolvedHeaders = headers.length > 0 ? headers : Object.keys(row);
-      const encoded = encodeSheetRange(sheetName, "A:ZZ");
-      await googleApiRequest({
-        config,
-        service: "sheets",
-        url: `https://sheets.googleapis.com/v4/spreadsheets/${config.workbookSpreadsheetId}/values/${encoded}:append?valueInputOption=RAW`,
-        method: "POST",
-        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-        headers: {
-          "content-type": "application/json"
-        },
-        body: JSON.stringify({
-          values: [toRowValues(resolvedHeaders, row)]
-        })
-      });
+      await batchAppendRows(config, sheetName, [toRowValues(resolvedHeaders, row)]);
+      clearSheetCache(sheetName); // Clear cache after modification
     },
     async upsertRow(sheetName, keyField, row) {
       const { values, headerRowIndex, headers } = await getSheetLayout(config, sheetName);
@@ -276,29 +271,21 @@ export function createProductionWorkspaceRails(config: GoogleRuntimeConfig): Wor
       if (keyIndex < 0) {
         throw new Error(`Missing key field ${keyField} on sheet ${sheetName}`);
       }
-      const rowIndex = values
-        .slice(headerRowIndex + 1)
-        .findIndex((candidate) => trimCell(candidate[keyIndex]) === trimCell(row[keyField]));
-      if (rowIndex < 0) {
+
+      // Use the cached lookup function
+      const found = await findRowWithCaching(config, sheetName, keyField, trimCell(row[keyField]));
+      
+      if (!found || !found.row) {
         await this.appendRow(sheetName, row);
         return;
       }
 
-      const spreadsheetRowNumber = rowIndex + headerRowIndex + 2;
-      const encoded = encodeSheetRange(sheetName, `${spreadsheetRowNumber}:${spreadsheetRowNumber}`);
-      await googleApiRequest({
-        config,
-        service: "sheets",
-        url: `https://sheets.googleapis.com/v4/spreadsheets/${config.workbookSpreadsheetId}/values/${encoded}?valueInputOption=RAW`,
-        method: "PUT",
-        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-        headers: {
-          "content-type": "application/json"
-        },
-        body: JSON.stringify({
-          values: [toRowValues(headers, row)]
-        })
-      });
+      // Update the specific row
+      await batchUpdateRows(config, sheetName, [{
+        rowIndex: found.rowIndex,
+        rowData: toRowValues(headers, row)
+      }]);
+      clearSheetCache(sheetName); // Clear cache after modification
     }
   };
 

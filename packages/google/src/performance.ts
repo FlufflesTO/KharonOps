@@ -177,7 +177,7 @@ export async function findRowWithCaching(
   }
 
   // Find the header row and the index of the key field
-  const headerRow = values[0];
+  const headerRow = values[0]!;
   const keyFieldIndex = headerRow.findIndex((cell: string) => cell?.trim() === keyField);
 
   if (keyFieldIndex === -1) {

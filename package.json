@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "apps/*",
+    "apps/api",
+    "apps/portal",
+    "apps/site",
     "packages/*"
   ],
   "scripts": {

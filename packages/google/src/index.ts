@@ -6,6 +6,7 @@ import type { GoogleRuntimeConfig, WorkspaceRails } from "./types.js";
 export * from "./types.js";
 export * from "./retry.js";
 export * from "./errors.js";
+export * from "./performance.js"; // Export the performance utilities
 
 function envValue(env: Record<string, string | undefined>, key: string): string {
   const value = String(env[key] ?? "").trim();
